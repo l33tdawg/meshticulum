@@ -2,7 +2,7 @@
 
 Meshticulum separates what an application wants to transfer from how a scarce link can safely carry it. A public resource, a private message, a reliable flow, a radio attempt and an application admission each have their own boundaries. That separation lets the same resource logic use different carriers while keeping peer identity, expiry, receiver capacity and medium cost explicit.
 
-The current implementation is an experimental, authenticated **finite-transfer system**, with serial and Linux SX1262 adapters. Earlier paired-radio runs provide retained physical evidence for their pinned encrypted bench runtime; they do not qualify the newer public MR1 service runner, protected application bindings or the full mixed-path network. The broader design combines small-radio operation with verified resources and mixed LoRa/IP paths. It does not currently translate MeshCore or Reticulum wire protocols, and an authenticated IP carrier is still pending.
+The current implementation is an experimental, authenticated **finite-transfer system**, with serial and Linux SX1262 adapters. Earlier paired-radio runs provide retained physical evidence for their pinned encrypted bench runtime; they do not qualify the newer public MR1 service runner, protected application bindings or the full mixed-path network. The broader design combines small-radio operation with verified resources and mixed LoRa/IP paths. It does not currently translate MeshCore or Reticulum wire protocols, and an authenticated TCP source prototype now exists, with device and mixed-path qualification pending; see [IP transport](IP_TRANSPORT.md).
 
 ## The layers
 
@@ -35,7 +35,7 @@ flowchart TB
     Replay["SessionStore<br/>durable counters<br/>and replay window"]
     Attempts["AttemptJournal<br/>reservations and<br/>outcome evidence"]
     HTTP["Existing bounded<br/>HTTP resource reader"]
-    IP["Designed IP carrier<br/>authentication pending"]
+    IP["TCP source prototype<br/>hardware qualification pending"]
 
     Resources --> Blocks --> Transfer
     Envelopes --> Transfer
@@ -159,7 +159,7 @@ There are two distinct storage boundaries:
 
 The downloader chooses predicted finish time while considering work on shared bottlenecks. It allows one in-flight batch per path, avoids speculative duplicate traffic on scarce links, and validates the entire batch before committing it. Failed paths are excluded for the current transfer; verified chunks remain reusable after cancellation or failure and are checked again on resume. A rebound route needs a fresh `Source` and route generation, so measurements cannot silently follow a different carrier binding.
 
-This policy expects an **already admitted** reader enforcing its byte limit and absolute deadline. It does not open a radio, authorize a route, migrate a live wire session or refund airtime. The existing bounded HTTP reader and loopback tests demonstrate resource behavior over HTTP. They do not establish the pending authenticated IP carrier or physical mixed-path operation.
+This policy expects an **already admitted** reader enforcing its byte limit and absolute deadline. It does not open a radio, authorize a route, migrate a live wire session or refund airtime. The existing bounded HTTP reader and loopback tests demonstrate resource behavior over HTTP. They do not establish the TCP prototype's device integration or physical mixed-path operation.
 
 ## Private messages: two encryption boundaries
 
@@ -182,7 +182,7 @@ flowchart LR
     B["B: public resource / IP node"]
 
     C -->|"LoRa worker implemented<br/>new service qualification open"| A
-    A -. "Designed authenticated IP<br/>pending" .-> B
+    A -. "Authenticated TCP prototype<br/>mixed-path qualification pending" .-> B
     A -. "Designed LoRa fallback<br/>fresh admission" .-> B
     Content["Verified pieces retained<br/>original resource deadline"]
     Content -. "Resume with fresh<br/>wire state" .-> C

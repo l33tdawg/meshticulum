@@ -23,12 +23,12 @@ flowchart TB
     FLOW --> AUTH["Authenticated session<br/>Peer, expiry and replay bindings"]
     AUTH --> WORKER["Exclusive radio worker<br/>Attempt and airtime journals"]
     WORKER --> RF["LoRa peers<br/>Serial radio or SX1262 HAT"]
-    AUTH -. "Authenticated IP adapter pending" .-> IP["IP peers"]
+    AUTH -. "TCP source prototype<br/>hardware qualification pending" .-> IP["IP peers"]
 ```
 
 [Editable Mermaid](docs/diagrams/readme-1.mmd) · [Rendered SVG](docs/diagrams/readme-1.svg)
 
-The solid path is implemented source composition; the dotted IP branch is the next transport implementation and qualification step. The diagram describes components, rather than a completed hardware deployment.
+The solid path is implemented source composition; the dotted IP branch is a loopback-tested source prototype awaiting hardware and mixed-path qualification. The diagram describes components, rather than a completed hardware deployment.
 
 Two service paths sit above the flow:
 
@@ -43,7 +43,7 @@ Below them, admission binds each transfer to its peers, service, object and orig
 
 The goal is higher **useful encrypted goodput**: application bytes delivered under verification, rather than raw modem bitrate. In the retained radio bench, the timed interval ends at the sender's flow ACK; the receiver's durable hash is required separately. The design reduces avoidable carrier overhead through compact binary envelopes, bounded windows, selective acknowledgements and explicit receiver credit. Retry timing takes the carrier queue into account, and the request/reply adapters avoid carrying HTTP and base64 framing over the scarce radio link.
 
-For public resources, the path policy uses local verified request timings and shared-bottleneck information. It can retain verified chunks and select among explicitly supplied routes; it does not equate an interface name with a fast path. Authenticated IP transport and real mixed-path failover still need qualification.
+For public resources, the path policy uses local verified request timings and shared-bottleneck information. It can retain verified chunks and select among explicitly supplied routes; it does not equate an interface name with a fast path. The [authenticated TCP prototype](docs/IP_TRANSPORT.md) now supports source MR1 request/reply; hardware integration and real mixed-path failover still need qualification.
 
 Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s median useful encrypted goodput** across C→A, C→B and A→B LoRa links, with 30 completed RF samples. That is evidence from an earlier experimental runtime, and the current service runner still needs its own hardware qualification. The programme target is **1–1.5 kB/s**; matched MeshCore and Reticulum measurements remain to be collected.
 

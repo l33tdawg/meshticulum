@@ -20,6 +20,7 @@ Start with [installation and the standalone test command](../README.md#install-a
 | Guide | Use it when you need to… |
 | --- | --- |
 | [Hardware tooling](HARDWARE.md) | Build a public host runtime, understand serial/SX1262 adapters, or prepare a separately authorized device run |
+| [Authenticated TCP prototype](IP_TRANSPORT.md) | Understand the explicit IP grants, durable counters, stream-byte budgets and source controls |
 | [Optional SAGE integration](SAGE_INTEGRATION.md) | Supply the compatible local SDK and work with protected capture, replay and private inbox admission |
 | [Extraction and provenance](EXTRACTION.md) | Trace code to its original snapshot, inspect frozen flow pins or understand package bridges |
 | [Repository instructions](../AGENTS.md) | Change transport or integration behavior while preserving its contracts and writer ownership |
