@@ -27,12 +27,20 @@ The candidate includes:
 - Architecture diagrams, upstream comparisons, source provenance and historical
   RF results with their conditions and unavailable measurements preserved.
 
-This draft does not assert a released or qualified artifact. Native mixed-path
-and failure/resume qualification, standalone firmware reproduction, exact
-artifact licensing and release review remain open. Private production dispatch,
-MeshCore/Reticulum wire interoperability and matched upstream speed comparisons
-are not supported claims. Historical RF medians are about **1.2 kB/s** useful
-payload; **1.5 kB/s** remains a target. See [performance](docs/PERFORMANCE.md).
+Lantern recorded finite native public C→A LoRa→B IP request/reply and a separate
+loss/LoRa-resume/measured-IP-return campaign. The latter independently verified
+four 977-byte pieces under one unchanged expiry; see the [exact execution pins
+and scope](docs/IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return).
+These service results do not establish sustained capacity or matched upstream
+performance. Historical RF medians are about **1.2 kB/s** useful payload;
+**1.5 kB/s** remains a target. See [performance](docs/PERFORMANCE.md).
+
+The explicit firmware recipe reproduced both target outputs in fresh workspaces
+on one pinned build host. Full source/deployed-image correspondence, exact
+artifact notices and source/relinking closure, clean public history and release
+review remain open. Private native owner/consent and transport still require
+qualification. This draft represents no public alpha or production activation;
+MeshCore/Reticulum wire interoperability and speed superiority are unsupported.
 
 The alpha will permit wire/API changes. Candidate validation and artifact hashes
 must be tied to its exact commit before these notes become a release. See
