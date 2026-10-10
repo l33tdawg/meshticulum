@@ -13,7 +13,7 @@ is separate: it authenticates its header as AEAD associated data and carries an
 unchanged LM1/LM2 sealed envelope. This is not NoiseSocket wire compatibility.
 Dropping Python key references does not prove forensic memory erasure.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import wraps
 import hashlib
 import hmac
@@ -148,6 +148,30 @@ class _Symmetric:
         return plain
 
 
+@dataclass(frozen=True)
+class ReceiveCandidate:
+    """Authenticated sealed candidate for one caller-owned atomic commit.
+
+    This contains no decrypted application content or session keys. The commit
+    provider must create replay acceptance and recoverable sealed bytes in one
+    authoritative transaction, validating its original prepared intention.
+    """
+    context: ForwardContext
+    local_initiator: bool
+    counter_binding: bytes
+    counter: int
+    handshake_hash: bytes
+    packet_sha256: bytes
+    application_deadline_monotonic_us: int
+    observed_epoch_us: int
+    observed_monotonic_us: int
+    sealed_record: bytes = field(repr=False)
+
+    @property
+    def sealed_sha256(self):
+        return hashlib.sha256(self.sealed_record).digest()
+
+
 def _operation(method):
     """Callbacks may revoke/close, but cannot enter a second operation."""
     @wraps(method)
@@ -183,7 +207,7 @@ class ForwardSession:
     already committed debt/counters are never refunded.
     """
     def __init__(self, *, context, initiator, signing_key, noise_static_key, counters, authorize,
-                 clock, application_deadline_monotonic_us):
+                 clock, application_deadline_monotonic_us, receive_mode='return'):
         self._closed = False
         self._busy = True  # constructor callbacks cannot enter a public operation
         self._owner = (os.getpid(), threading.get_ident())
@@ -192,6 +216,8 @@ class ForwardSession:
         self._signer = None
         self._last_clock = None
         self._last_tx = 0
+        self._receive_mode = receive_mode
+        self._counter_binding = None
         self.handshake_hash = None
         self.state = 'new'
         try:
@@ -201,7 +227,9 @@ class ForwardSession:
                     and type(application_deadline_monotonic_us) is int
                     and application_deadline_monotonic_us > 0
                     and all(callable(getattr(counters, name, None)) for name in
-                            ('claim', 'reserve_transmit', 'record_receive')))
+                            ('claim', 'reserve_transmit', 'record_receive'))
+                    and type(receive_mode) is str and receive_mode in ('return', 'commit')
+                    and (receive_mode != 'commit' or callable(getattr(counters, 'commit_receive', None))))
             own = context.initiator if initiator else context.responder
             own_noise = context.initiator_noise_public_key if initiator else context.responder_noise_public_key
             peer_noise = context.responder_noise_public_key if initiator else context.initiator_noise_public_key
@@ -214,6 +242,7 @@ class ForwardSession:
             self._live()
             binding = hashlib.sha256(COUNTER_CLAIM_DOMAIN + context.session_id + bytes([initiator])).digest()
             require(counters.claim(binding) is True)
+            self._counter_binding = binding
             self._live()
             self._s = noise_static_key
             self._rs = X25519PublicKey.from_public_bytes(peer_noise)
@@ -410,10 +439,40 @@ class ForwardSession:
     def open(self, packet):
         try:
             require(self.state == 'ready')
+            require(self._receive_mode == 'return')
             counter, plain = self._decrypt(packet, DATA)
             require(counter >= 2)
             to_text(plain)
             self._accept(counter)
             return plain  # caller still MUST authenticate/admit the inner envelope
+        except BaseException:
+            self._failure()
+
+    @_operation
+    def receive_into(self, packet):
+        """Commit DATA acceptance with recoverable sealed bytes; return no bytes.
+
+        ``counters.commit_receive(candidate)`` MUST use the same claimed replay
+        namespace as confirmations and atomically create the receive entry plus
+        its exact sealed recovery capsule. Literal True means that commit
+        completed; every other result/error is an unknown/refused outcome and
+        closes this incarnation. No separate record_receive call follows it.
+        Native protected storage, original intention and recovery are supplied
+        by the consuming application. This API cannot prove those properties.
+        """
+        try:
+            require(self.state == 'ready' and self._receive_mode == 'commit')
+            commit = getattr(self.counters, 'commit_receive', None)
+            require(callable(commit))
+            counter, plain = self._decrypt(packet, DATA)
+            require(counter >= 2)
+            to_text(plain)
+            self._live()
+            candidate = ReceiveCandidate(self.context, self.initiator, self._counter_binding,
+                counter, self.handshake_hash, hashlib.sha256(packet).digest(), self.deadline,
+                self._last_clock[0], self._last_clock[1], plain)
+            require(commit(candidate) is True)
+            self._live()
+            return None  # commit is authenticated quarantine, not application admission
         except BaseException:
             self._failure()

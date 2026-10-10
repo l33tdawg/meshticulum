@@ -52,7 +52,8 @@ class Counters:
     def reserved(self):return self.db.execute('SELECT tx FROM claims WHERE binding=?',(self.binding,)).fetchone()[0]
 
 
-def pair(tmp_path, *, context=None, keys=None, noise_keys=None, name='one'):
+def pair(tmp_path, *, context=None, keys=None, noise_keys=None, name='one',
+         counter_factory=Counters, receive_mode='return'):
     keys=keys or (SigningKey(bytes(range(32))),SigningKey(bytes(range(32,64))))
     peers=(Peer('fixture-i',bytes(keys[0].verify_key)),Peer('fixture-r',bytes(keys[1].verify_key)))
     noise_keys=noise_keys or tuple(X25519PrivateKey.from_private_bytes(hashlib.sha256(label).digest())
@@ -60,10 +61,10 @@ def pair(tmp_path, *, context=None, keys=None, noise_keys=None, name='one'):
     context=context or ForwardContext(*peers,uuid.uuid4().bytes,b'a'*32,10000000,100000000,64,
                                      public(noise_keys[0]),public(noise_keys[1]))
     clock={'epoch':20000000,'mono':1000000,'live':True}
-    stores=(Counters(tmp_path/(name+'-i.sqlite')),Counters(tmp_path/(name+'-r.sqlite')))
+    stores=(counter_factory(tmp_path/(name+'-i.sqlite')),counter_factory(tmp_path/(name+'-r.sqlite')))
     def build(role,index):return ForwardSession(context=context,initiator=role,signing_key=keys[index],noise_static_key=noise_keys[index],
         counters=stores[index],authorize=lambda:clock['live'],clock=lambda:(clock['epoch'],clock['mono']),
-        application_deadline_monotonic_us=81000000)
+        application_deadline_monotonic_us=81000000,receive_mode=receive_mode)
     return build(True,0),build(False,1),context,keys,peers,stores,clock,noise_keys
 
 
