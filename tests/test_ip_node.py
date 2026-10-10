@@ -62,14 +62,14 @@ from meshticulum.bench import pilot_job
 if sys.platform != 'linux':
  pilot_job.kernel=lambda pid: dict(start_ticks=1,state='R',command_sha256='0'*64)
 node._facts=lambda unit: dict(unit=unit,host_boot_id=sys.argv[3],services={'source_model_only':'no_hardware'},service_lifetimes={})
-result=node.run_public_service(sys.argv[1],sys.argv[2])
+result=node.run_public_service(sys.argv[1],sys.argv[2],test_rx_cutoff=int(sys.argv[4]) if len(sys.argv)>4 else None)
 print(json.dumps(result))
 raise SystemExit(0 if result['complete'] else 1)
 '''
 
 
-def start(directory, unit):
-    return subprocess.Popen([sys.executable, '-c', CHILD, unit, str(directory), BOOT],
+def start(directory, unit,cutoff=None):
+    return subprocess.Popen([sys.executable, '-c', CHILD, unit, str(directory), BOOT,*([str(cutoff)] if cutoff is not None else [])],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 
@@ -124,6 +124,41 @@ def test_finite_public_jobs_complete_in_two_real_processes_with_exact_quarantine
         assert (directories[1] / 'receiver.bin').stat().st_mode & 0o777 == 0o600
     finally:
         reap(sender); reap(receiver)
+
+
+def test_explicit_loss_closes_the_actual_tcp_stream_without_acceptance_or_refund(tmp_path):
+    request=resource.encode_request('/packs/'+'a'*64+'/chunks/'+'b'*64+'.json',0,16356)
+    response=resource.BlockServer(lambda _:b'x'*8192).handle(request)
+    directories,grant=prepare(tmp_path,response,'MR1.response')
+    receiver=start(directories[1],'unit-b',cutoff=512);sender=None
+    try:
+        ready(receiver,directories[1]);sender=start(directories[0],'unit-a')
+        results=[]
+        for process in (sender,receiver):
+            out,err=process.communicate(timeout=10)
+            assert process.returncode!=0,(out,err)
+            results.append(json.loads(out))
+        assert all(not x['complete'] for x in results)
+        loss=results[1]['test_tcp_loss']
+        assert loss['injected'] and loss['known_rx_stream_bytes']==512
+        assert results[1]['byte_journal']['fenced']
+        assert not (directories[1]/'receiver.bin').exists()
+        assert (directories[1]/'started').exists() and (directories[1]/'wire.sqlite').exists()
+        assert results[0]['byte_journal']['reserved_stream_bytes']>0
+    finally:reap(sender);reap(receiver)
+
+
+@pytest.mark.parametrize('bad',['request','sender','boolean','too_large'])
+def test_loss_control_cannot_activate_outside_exact_public_receive_before_connection(tmp_path,monkeypatch,bad):
+    request=resource.encode_request('/packs/'+'a'*64+'/chunks/'+'b'*64+'.json',0,16356)
+    response=resource.BlockServer(lambda _:b'x'*8192).handle(request)
+    directories,grant=prepare(tmp_path,request if bad=='request' else response,'MR1.request' if bad=='request' else 'MR1.response')
+    monkeypatch.setattr(node,'_facts',facts)
+    calls=[];monkeypatch.setattr(node,'_connected',lambda *args:calls.append(args))
+    cutoff=True if bad=='boolean' else (grant.object_bytes if bad=='too_large' else 32)
+    result=node.run_public_service('unit-a' if bad=='sender' else 'unit-b',directories[0 if bad=='sender' else 1],test_rx_cutoff=cutoff)
+    assert not result['complete'] and 'invalid_explicit_public_tcp_loss_control' in result['error']
+    assert not calls
 
 
 @pytest.mark.parametrize('failure', ['private', 'malformed', 'wrong_boot', 'expired'])

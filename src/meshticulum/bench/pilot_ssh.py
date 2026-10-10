@@ -254,6 +254,8 @@ class SSHOperator:
         row=self.config['units'][unit];launcher='/opt/meshticulum-bench/runtime-'+self.config['runtime_sha256'][:16]+'/bench_node.py'
         action='service-run' if pair['transport']=='lora' else 'ip-service-run'
         command=[row['python'],'-I','-B','-c',INVOKE,launcher,self.config['manifest_sha256'],action,unit,'--run-id',run]
+        if unit==pair['receiver'] and pair.get('test_rx_cutoff') is not None:
+            command.extend(('--test-rx-cutoff',str(pair['test_rx_cutoff'])))
         job=Job(self._argv(unit,command,root=True),password=self.passwords.get(unit),deadline=self.deadline-10,clock=self.clock)
         self.jobs[(unit,run)]=job;return job
 
@@ -268,4 +270,7 @@ class SSHOperator:
         value=self._action(unit,'pilot-facts',schema='meshticulum.native-pilot-facts.v1')
         require(value['unit']==unit and value['host_boot_id']==self.config['units'][unit]['host_boot_id'],'native_host_boot_changed')
         return value
+    def cache_status(self,unit,campaign):
+        return self._action(unit,'pilot-cache-status',None,'--campaign-id',identifier(campaign),
+                            schema='meshticulum.public-pilot-cache-status.v1')
     def reap(self,job):job.close()

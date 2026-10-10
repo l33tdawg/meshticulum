@@ -29,11 +29,12 @@ def trusted(path, limit=2000000):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('inspect', 'run', 'service-run', 'ip-service-run', 'pilot-facts', 'pilot-result', 'pilot-status', 'pilot-stop', 'pilot-retire', 'pilot-verify', 'revoke', 'ip-revoke'))
+    parser.add_argument('action', choices=('inspect', 'run', 'service-run', 'ip-service-run', 'pilot-facts', 'pilot-cache-status', 'pilot-result', 'pilot-status', 'pilot-stop', 'pilot-retire', 'pilot-verify', 'revoke', 'ip-revoke'))
     parser.add_argument('unit', choices=('unit-a', 'unit-b', 'unit-c'))
     parser.add_argument('--run-id')
     parser.add_argument('--campaign-id')
     parser.add_argument('--request-run-id')
+    parser.add_argument('--test-rx-cutoff',type=int)
     args = parser.parse_args()
     if os.geteuid() != 0: raise RuntimeError('requires_root')
     bundle = Path(__file__).resolve().parent
@@ -55,6 +56,9 @@ def main():
     elif args.action == 'pilot-facts':
         from meshticulum.bench.pilot_manage import facts
         result = facts(args.unit)
+    elif args.action == 'pilot-cache-status':
+        from meshticulum.bench.pilot_manage import cache_status
+        result = cache_status(args.unit, args.campaign_id)
     else:
         if args.run_id is None or not re.fullmatch(r'[0-9a-f]{32}', args.run_id):
             raise RuntimeError('invalid_run_id')
@@ -87,7 +91,7 @@ def main():
                 if manifest.get('public_ip_service_formats') != ['MR1.request', 'MR1.response']:
                     raise RuntimeError('public_ip_runner_not_in_bundle')
                 from meshticulum.ip.node import run_public_service
-                result = run_public_service(args.unit, directory)
+                result = run_public_service(args.unit, directory,test_rx_cutoff=args.test_rx_cutoff)
             elif args.action == 'service-run':
                 if manifest.get('public_service_formats') != ['MR1.request', 'MR1.response']:
                     raise RuntimeError('public_service_runner_not_in_bundle')

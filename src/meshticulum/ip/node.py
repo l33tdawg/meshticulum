@@ -130,7 +130,7 @@ def _connected(authority, stopped, directory, directory_fd):
             channel.close()
 
 
-def run_public_service(unit, directory):
+def run_public_service(unit, directory, *, test_rx_cutoff=None):
     before = _facts(unit)
     directory = Path(directory).absolute()
     private(directory.lstat(), True)
@@ -174,6 +174,10 @@ def run_public_service(unit, directory):
                                 clock=clock, owner_probe=owned)
         require(authority.service_format in ('MR1.request', 'MR1.response'),
                 'private_ip_service_requires_qualified_native_provider')
+        require(test_rx_cutoff is None or (type(test_rx_cutoff) is int and not authority.sends
+                and authority.service_format=='MR1.response' and 8<=test_rx_cutoff<authority.grant.object_bytes),
+                'invalid_explicit_public_tcp_loss_control')
+        result['test_tcp_loss']=dict(requested_rx_stream_bytes=test_rx_cutoff,injected=False)
         payload = _read(directory / 'sender.bin', authority.grant.limits.max_object_bytes) if authority.sends else None
         if payload is not None:
             require(len(payload) == authority.grant.object_bytes
@@ -192,7 +196,7 @@ def run_public_service(unit, directory):
             run_id=authority.grant.session.session_id.hex(), grant_digest=authority.grant.digest.hex(), transport='tcp')
         journal = IpJournal(directory / 'bytes.sqlite', authority.grant, create=True)
         connected = _connected(authority, lambda: result['stop_requested'], directory, directory_fd)
-        worker = TcpWorker(connected, authority.grant, local_peer, journal)
+        worker = TcpWorker(connected, authority.grant, local_peer, journal,test_rx_cutoff=test_rx_cutoff)
         store = SessionStore(directory / 'wire.sqlite', authority.grant, local_peer,
             boot_id=before['host_boot_id'], clock=clock,
             original_deadline_us=authority.application_deadline_us, create=True)
@@ -232,6 +236,8 @@ def run_public_service(unit, directory):
         elif flow is not None:
             cleanup('flow_close', flow.close)
         if worker is not None:
+            result['test_tcp_loss'].update(injected=worker.test_loss_injected,
+                                           known_rx_stream_bytes=worker.test_rx_bytes)
             cleanup('socket_close', worker.close)
         if connected is not None:
             cleanup('original_socket_close', connected.close)
@@ -263,8 +269,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--unit', required=True, choices=('unit-a', 'unit-b', 'unit-c'))
     parser.add_argument('--grant-dir', required=True)
+    parser.add_argument('--test-rx-cutoff',type=int)
     args = parser.parse_args()
-    result = run_public_service(args.unit, args.grant_dir)
+    result = run_public_service(args.unit, args.grant_dir,test_rx_cutoff=args.test_rx_cutoff)
     print(json.dumps(result, sort_keys=True))
     return 0 if result['complete'] else 1
 

@@ -42,6 +42,8 @@ def main():
     p.add_argument('--trust',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--chunk-index',type=int,default=0)
+    p.add_argument('--mode',choices=('mixed','resume'),default='mixed')
+    p.add_argument('--loss-rx-bytes',type=int,default=512)
     p.add_argument('--country',choices=['MY'],required=True)
     p.add_argument('--antennas-confirmed',action='store_true',required=True)
     p.add_argument('--current-device-handoff-confirmed',action='store_true',required=True)
@@ -63,6 +65,15 @@ def main():
     request=resource.encode_request(path,0,16356)
     response=resource.BlockServer(cache.read).handle(request)
     if len(response)>16384:p.error('Selected whole chunk exceeds the radio pilot bound.')
+    exchanges=[]
+    if args.mode=='resume':
+        if args.chunk_index+4>len(manifest['chunks']):p.error('Resume mode needs four distinct signed chunks.')
+        for entry in manifest['chunks'][args.chunk_index:args.chunk_index+4]:
+            req=resource.encode_request('/packs/'+digest+'/chunks/'+entry['sha256']+'.json',0,16356)
+            reply=resource.BlockServer(cache.read).handle(req)
+            if len(reply)>16384:p.error('Resume chunk exceeds the radio pilot bound.')
+            exchanges.append((req,reply))
+        if not 8<=args.loss_rx_bytes<len(exchanges[1][1]):p.error('Loss cutoff must interrupt the second response.')
     args.output.mkdir(mode=0o700,exist_ok=False);private(args.output.lstat(),True)
     passwords={}
     if args.ask_sudo:
@@ -91,11 +102,15 @@ def main():
             expires_epoch_us=expires,handoff_deadline_monotonic=operator.deadline,peers=peers,
             boots={unit:row['host_boot_id'] for unit,row in config['units'].items()},
             radio_permission=dict(country=args.country,antenna_confirmed=args.antennas_confirmed))
-        piece=controller.mixed_piece(request,response)
+        if args.mode=='resume':
+            sequence=controller.failure_resume(exchanges,cutoff=args.loss_rx_bytes)
+            piece=sequence['return_piece'];result['resume_sequence']=sequence
+        else:piece=controller.mixed_piece(request,response)
         after={unit:operator.facts(unit) for unit in config['units']}
         stable=lambda values:{unit:{k:v for k,v in value.items() if k not in ('epoch_us','monotonic_us')} for unit,value in values.items()}
         if stable(before)!=stable(after):raise RuntimeError('native_service_lifecycle_changed')
-        result.update(complete=True,publisher_verified=True,piece=piece,facts_before=before,facts_after=after)
+        result.update(complete=piece is not None,publisher_verified=piece is not None,
+            piece=piece,facts_before=before,facts_after=after,mode=args.mode)
     except BaseException as error:
         result['error_type']=type(error).__name__
     finally:

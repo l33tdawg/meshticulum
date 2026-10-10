@@ -29,8 +29,9 @@ The pending controller must connect these stages, preserve their actual process 
 The source `Controller` now implements the four-hop request/reply sequence. Its
 management operator must supply real child handles, native status, preparation,
 collection, recipient verification and retirement. The concrete SSH adapter and
-one-piece mixed runner are now source-prepared; the native loss/resume driver
-remains pending. Modeled records in controller tests do not establish an
+one-piece mixed runner are source-prepared. The finite resume sequence now also
+has a source-prepared entry; its hardware execution remains open. Modeled
+records in controller tests do not establish an
 executed device route.
 
 Public jobs create `job.json` after admission and payload validation. Radio jobs
@@ -148,6 +149,30 @@ The radio child object ceiling is 16,384 bytes, including the 28-byte MR1 respon
 The native `pilot-verify` action holds the original sent request's `active` lease and checks its receipt schema, unit, boot, completed send, MR1 format, common epoch expiry and exact descriptor bytes. Its original monotonic deadline must still be live and no later than the immutable campaign deadline; that tighter bound is passed into the chunk verifier. The action rechecks the active-file identity, marker, deadlines, receipt, plan and request bytes before recording `verified-piece.json`. An uncertain or changed request cannot produce that success receipt. The receipt establishes neither private admission nor a SAGE import.
 
 ## Failure, resume and route return
+
+`run_public_pilot.py --mode resume` selects four distinct signed chunks under one
+original resource campaign. It first verifies a direct IP piece, then explicitly
+interrupts the next public IP response with `--loss-rx-bytes` (512 by default).
+Only the admitted receiving test socket is closed, after the bounded number of
+stream bytes have been charged. Its receive journal is fenced, the old sessions
+are retired and the incomplete object is never quarantined or publisher-accepted.
+This hook is root/operator-selected, receiver-only and limited to public MR1
+responses; a peer cannot request it and private formats are refused.
+
+The controller rechecks C's signed cache before and after the failed piece, then
+uses fresh direct LoRa request/response admission for that piece. The already
+verified piece remains present and is not retransferred. It samples a fresh IP
+generation on the third piece and sends the fourth over IP only if the new
+verified rate exceeds the observed LoRa rate. A slower IP sample remains a
+reported result and leaves faster-IP return unqualified.
+
+Timing uses the original sent request's start and publisher-verification receipt
+on C's own native monotonic clock. It includes management/controller gaps,
+request/reply, cleanup policy and verification; it is whole-piece service timing,
+not raw PHY capacity or one-way latency. The successful faster-IP return path
+uses ten independent child sessions; a slower-IP outcome stops after eight. They
+keep the same original application expiry, retain their journals and cannot refund
+the failed IP attempt.
 
 For a separate resource transfer, admit a direct C↔B IP route and verify a first piece. Cause a bounded loss of that test connection, retain its original reservations and verify that an incomplete piece has not entered the cache. Do not change production network configuration to inject the failure.
 

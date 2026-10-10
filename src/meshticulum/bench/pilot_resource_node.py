@@ -67,6 +67,10 @@ def verify(unit, campaign_id, request_run_id, response_run_id):
         require(json.loads(_read(request_directory / 'result.json', 100000)) == receipt
                 and json.loads(_read(request_directory / 'grant.json', 16384)) == plan
                 and _read(request_directory / 'sender.bin', 1024) == request, 'native_request_changed_during_verification')
+        epoch,mono=clock()
+        require(epoch<result['original_application_expires_epoch_us']
+                and mono<result['original_application_deadline_us'],'native_piece_receipt_deadline_expired')
+        result.update(verified_epoch_us=epoch,verified_monotonic_us=mono)
         _write(root / 'runs' / response_run_id / 'verified-piece.json', json.dumps(result, sort_keys=True).encode() + b'\n')
         return result
     finally:

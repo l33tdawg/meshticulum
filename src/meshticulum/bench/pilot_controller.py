@@ -100,7 +100,7 @@ class Controller:
         require(mono<self.deadline and epoch<self.expires_epoch_us,
                 'pilot_original_resource_or_handoff_expired')
 
-    def link(self,sender,receiver,transport,format,payload,source=None):
+    def link(self,sender,receiver,transport,format,payload,source=None,*,test_rx_cutoff=None):
         self.current()
         descriptor=dict(bytes=len(payload),sha256=hashlib.sha256(payload).hexdigest())
         pair=pair_packages(campaign_id=self.campaign_id,resource_sha256=self.resource_sha256,
@@ -109,6 +109,10 @@ class Controller:
             request=payload if source is None else None,peers=self.peers,boots=self.boots,
             now_epoch_us=self.epoch(),endpoints=self.operator.endpoints(sender,receiver) if transport=='tcp' else None,
             radio_permission=self.radio_permission)
+        require(test_rx_cutoff is None or (transport=='tcp' and format=='MR1.response'
+                and type(test_rx_cutoff) is int and 8<=test_rx_cutoff<len(payload)),
+                'invalid_controller_tcp_loss_control')
+        if test_rx_cutoff is not None:pair['test_rx_cutoff']=test_rx_cutoff
         row={k:v for k,v in pair.items() if k!='packages'}
         row.update(phase='preparing',started_monotonic=self.clock(),outcomes={})
         self.links.append(row);handles={};prepared=[];row['prepared']=prepared
@@ -141,18 +145,29 @@ class Controller:
                         'pilot_native_process_not_terminal')
                 result=self.operator.collect(unit,pair['run_id'])
                 row['outcomes'][unit]=result
-                require(handles[unit].poll()==0 and result['complete'] is True
-                        and result['unit']==unit and result['host_boot_id']==self.boots[unit]
+                require(result['unit']==unit and result['host_boot_id']==self.boots[unit]
                         and result['session_id']==pair['run_id'] and result['service_format']==format
                         and result['sends'] is (unit==sender)
                         and result['original_application_expires_epoch_us']==self.expires_epoch_us
                         and result['object']['bytes']==descriptor['bytes']
                         and result['object']['sha256']==descriptor['sha256']
-                        and not result.get('cleanup_errors'), 'pilot_link_incomplete_or_rebound')
+                        , 'pilot_link_incomplete_or_rebound')
                 require(result['native_job']['pid']==status['pid']
                         and result['native_job']['start_ticks']==status['start_ticks']
                         and result['grant_context_sha256']==status['grant_context_sha256'],
                         'pilot_result_process_binding_changed')
+                if test_rx_cutoff is not None:
+                    require(handles[unit].poll()!=0 and result['complete'] is False,
+                            'pilot_tcp_loss_not_observed')
+                    if unit==receiver:
+                        require(handles[unit].poll()!=0 and result['complete'] is False
+                                and result['test_tcp_loss']['injected'] is True
+                                and result['test_tcp_loss']['known_rx_stream_bytes']==test_rx_cutoff
+                                and result['byte_journal']['fenced'] is True
+                                and not result.get('service_object_durable'), 'pilot_tcp_loss_not_observed')
+                    continue
+                require(handles[unit].poll()==0 and result['complete'] is True
+                        and not result.get('cleanup_errors'), 'pilot_link_incomplete_or_rebound')
                 if transport=='lora':
                     require(result.get('disarmed_on_exit') is True
                             and result['attempt_journal']['fenced'] is False, 'pilot_radio_cleanup_unproven')
@@ -160,6 +175,10 @@ class Controller:
                     require(result.get('service_object_durable') is True
                             and result['service_object_sha256']==descriptor['sha256'], 'pilot_receiver_capture_missing')
             row.update(phase='complete',ended_monotonic=self.clock())
+            if test_rx_cutoff is not None:
+                row['phase']='expected_tcp_loss'
+                self._retire(row)
+                require(set(row['retired'])==set(row['attempted']),'pilot_failed_ip_retirement_unconfirmed')
             return pair['run_id']
         except BaseException as error:
             row.update(phase='failed',error=type(error).__name__+':'+str(error)[:200])
@@ -201,6 +220,76 @@ class Controller:
         except BaseException:
             self.retire()
             raise
+
+    def direct_piece(self,request,response,transport,*,test_rx_cutoff=None):
+        """Direct C↔B exchange, or one explicitly interrupted IP reply."""
+        path,offset,size=resource.decode_request(request)
+        require(offset==0 and path.startswith('/packs/'+self.resource_sha256+'/chunks/')
+                and path.endswith('.json'),'pilot_requires_whole_selected_public_chunk')
+        index=len(self.links)
+        try:
+            first=self.link('unit-c','unit-b',transport,'MR1.request',request)
+            second=self.link('unit-b','unit-c',transport,'MR1.response',response,
+                source=dict(kind='served_public_chunk',request_run_id=first),test_rx_cutoff=test_rx_cutoff)
+            if test_rx_cutoff is not None:return dict(interrupted=True,request_run_id=first,response_run_id=second)
+            self.current()
+            verified=self.operator.verify('unit-c',self.campaign_id,first,second)
+            self.current()
+            require(verified['schema']=='meshticulum.pilot-verified-piece.v1'
+                    and verified['publisher_verified'] is True and verified['private_admission'] is False
+                    and verified['sage_imported'] is False and verified['unit']=='unit-c'
+                    and verified['campaign_id']==self.campaign_id and verified['manifest_sha256']==self.resource_sha256
+                    and verified['response_run_id']==second and verified['chunk_sha256']==path.rsplit('/',1)[-1][:-5]
+                    and verified['original_application_expires_epoch_us']==self.expires_epoch_us
+                    and type(verified['original_application_deadline_us']) is int
+                    and 0<verified['original_application_deadline_us']<=min(
+                        self.links[index]['outcomes']['unit-c']['original_application_deadline_us'],
+                        self.links[index+1]['outcomes']['unit-c']['original_application_deadline_us']),
+                    'pilot_direct_piece_verification_missing_or_rebound')
+            start=self.links[index]['outcomes']['unit-c']['start_monotonic_us']
+            end=verified['verified_monotonic_us']
+            require(type(start) is int and type(end) is int and end>start,'pilot_native_verification_timing_missing')
+            verified=dict(verified,request_to_verification_us=end-start,transport=transport,
+                request_run_id=first,response_run_id=second,
+                useful_verified_bytes_per_second=verified['useful_verified_bytes']*1e6/(end-start))
+            self.verified.append(verified)
+            return verified
+        except BaseException:
+            self.retire();raise
+
+    def failure_resume(self,exchanges,*,cutoff=512):
+        """One original resource: IP loss, fresh LoRa, fresh measured IP return."""
+        require(type(exchanges) is list and len(exchanges)==4,'pilot_resume_requires_four_distinct_pieces')
+        wanted=[resource.decode_request(request)[0].rsplit('/',1)[-1][:-5] for request,_ in exchanges]
+        require(len(set(wanted))==4,'pilot_resume_requires_four_distinct_pieces')
+        first=self.direct_piece(*exchanges[0],'tcp')
+        before=self._cache_status()
+        require(wanted[0] in before['verified_chunks'],'pilot_first_verified_piece_not_in_cache')
+        interrupted=self.direct_piece(*exchanges[1],'tcp',test_rx_cutoff=cutoff)
+        after=self._cache_status()
+        require(after['verified_chunks']==before['verified_chunks'] and wanted[1] not in after['verified_chunks'],
+                'pilot_incomplete_piece_entered_cache')
+        radio=self.direct_piece(*exchanges[1],'lora')
+        resumed=self._cache_status()
+        require(wanted[0] in resumed['verified_chunks'] and wanted[1] in resumed['verified_chunks'],
+                'pilot_verified_piece_resume_missing')
+        sample=self.direct_piece(*exchanges[2],'tcp')
+        faster=sample['useful_verified_bytes_per_second']>radio['useful_verified_bytes_per_second']
+        returned=self.direct_piece(*exchanges[3],'tcp') if faster else None
+        return dict(schema='meshticulum.native-public-resume-sequence.v1',first=first,
+            interrupted=interrupted,resumed=radio,fresh_ip_sample=sample,faster_ip_observed=faster,
+            returned_to_ip=returned is not None,return_piece=returned,
+            reused_verified_chunks=before['verified_chunks'],original_application_expires_epoch_us=self.expires_epoch_us)
+
+    def _cache_status(self):
+        self.current()
+        value=self.operator.cache_status('unit-c',self.campaign_id)
+        require(value['schema']=='meshticulum.public-pilot-cache-status.v1'
+                and value['unit']=='unit-c' and value['host_boot_id']==self.boots['unit-c']
+                and value['campaign_id']==self.campaign_id and value['manifest_sha256']==self.resource_sha256
+                and value['original_application_expires_epoch_us']==self.expires_epoch_us,
+                'pilot_cache_original_context_changed')
+        return value
 
     def _retire(self,row,*,stop=False):
         for unit in row['attempted']:

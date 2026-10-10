@@ -68,3 +68,34 @@ def test_help_opens_no_management_or_hardware():
     path=Path(__file__).resolve().parents[1]/'firmware/meshticulum-bench/run_public_pilot.py'
     result=subprocess.run([sys.executable,str(path),'--help'],capture_output=True,text=True,timeout=5)
     assert result.returncode==0 and '--current-device-handoff-confirmed' in result.stdout
+
+
+@pytest.mark.parametrize('faster',[True,False])
+def test_resume_mode_reports_success_only_after_measured_faster_ip_return(pack,tmp_path,monkeypatch,faster):
+    module=load();cfg,_=config();cfg['handoff_end_epoch_us']=module.time.time_ns()//1000+600000000
+    raw=b'{}';cfg['manifest_sha256']=hashlib.sha256(raw).hexdigest();archive=tmp_path/'runtime.tar.gz'
+    with tarfile.open(archive,'w:gz') as tar:
+        item=tarfile.TarInfo('manifest.json');item.size=len(raw);tar.addfile(item,io.BytesIO(raw))
+    cfg['runtime_sha256']=hashlib.sha256(archive.read_bytes()).hexdigest()
+    path=tmp_path/'config.json';_write(path,json.dumps(cfg).encode())
+    trust=tmp_path/'trust.json';_write(trust,json.dumps(pack[1]).encode())
+    class Operator:
+        def __init__(self,*a,**k):self.deadline=module.time.monotonic()+600;self.passwords={};self.jobs={};self.events=[]
+        def facts(self,unit):return dict(unit=unit,source_only=True)
+        def seed(self,packet):pass
+    class Controller:
+        def __init__(self,*a,**k):self.links=[]
+        def failure_resume(self,exchanges,cutoff):
+            assert len(exchanges)==4 and cutoff==32
+            return dict(faster_ip_observed=faster,returned_to_ip=faster,return_piece=dict(publisher_verified=True) if faster else None)
+        def retire(self):return []
+    monkeypatch.setattr(module,'SSHOperator',Operator);monkeypatch.setattr(module,'Controller',Controller)
+    output=tmp_path/'out'
+    monkeypatch.setattr(sys,'argv',['pilot','--config',str(path),'--runtime-archive',str(archive),'--pack',str(pack[0]),
+        '--trust',str(trust),'--output',str(output),'--country','MY','--antennas-confirmed','--current-device-handoff-confirmed',
+        '--mode','resume','--loss-rx-bytes','32'])
+    if faster:module.main()
+    else:
+        with pytest.raises(SystemExit):module.main()
+    result=json.loads((output/'RESULT.json').read_bytes())
+    assert result['complete'] is faster and result['resume_sequence']['returned_to_ip'] is faster
