@@ -58,6 +58,9 @@ def prepare(tmp_path, payload, format='MR1.request'):
 
 CHILD = '''import json,sys
 from meshticulum.ip import node
+from meshticulum.bench import pilot_job
+if sys.platform != 'linux':
+ pilot_job.kernel=lambda pid: dict(start_ticks=1,state='R',command_sha256='0'*64)
 node._facts=lambda unit: dict(unit=unit,host_boot_id=sys.argv[3],services={'source_model_only':'no_hardware'},service_lifetimes={})
 result=node.run_public_service(sys.argv[1],sys.argv[2])
 print(json.dumps(result))

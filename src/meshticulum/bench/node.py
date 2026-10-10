@@ -183,6 +183,10 @@ def _run(unit, directory, object_directory, *, public_service):
         if public_service and payload is not None:
             _shape(payload, authority.service_format)
         require(authority.sends or not (directory / 'sender.bin').exists(), 'receiver_has_ip_payload')
+        if public_service:
+            from .pilot_job import record
+            result['native_job'] = record(directory, unit=unit, boot=boot,
+                run_id=grant.session.session_id.hex(), grant_digest=grant.digest.hex(), transport='lora')
         # The fixed paths contain only bench state. No system or personal store
         # is queried as an identity/key source.
         store = SessionStore(directory / 'wire.sqlite', grant, authority.local_peer,
@@ -221,6 +225,9 @@ def _run(unit, directory, object_directory, *, public_service):
             from .service_runner import ServiceRunner
             runner = ServiceRunner(ServiceTransfer(flow), payload=payload)
             runner.start()
+            from .pilot_job import ready
+            with authority.application_lease():
+                ready(directory, result['native_job'])
         elif payload is not None:
             flow.send(payload)
         complete_at = None

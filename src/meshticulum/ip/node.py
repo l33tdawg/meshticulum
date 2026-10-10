@@ -187,6 +187,9 @@ def run_public_service(unit, directory):
             sends=authority.sends, object=authority.plan['object'],
             original_application_expires_epoch_us=authority.application_expires_epoch_us,
             original_application_deadline_us=authority.application_deadline_us)
+        from ..bench.pilot_job import record
+        result['native_job'] = record(directory, unit=unit, boot=before['host_boot_id'],
+            run_id=authority.grant.session.session_id.hex(), grant_digest=authority.grant.digest.hex(), transport='tcp')
         journal = IpJournal(directory / 'bytes.sqlite', authority.grant, create=True)
         connected = _connected(authority, lambda: result['stop_requested'], directory, directory_fd)
         worker = TcpWorker(connected, authority.grant, local_peer, journal)

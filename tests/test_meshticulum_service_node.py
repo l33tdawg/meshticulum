@@ -18,6 +18,8 @@ from tests.service_helpers import scope
 
 
 def isolate_node(monkeypatch, clock):
+    from meshticulum.bench import pilot_job
+    monkeypatch.setattr(pilot_job, 'kernel', lambda pid: dict(start_ticks=1, state='R', command_sha256='0' * 64))
     original = node.Path.read_text
     monkeypatch.setattr(node.Path, 'read_text', lambda path, *a, **k:
         BOOT if str(path) == '/proc/sys/kernel/random/boot_id' else original(path, *a, **k))

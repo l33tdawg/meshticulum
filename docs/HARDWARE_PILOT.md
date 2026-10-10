@@ -15,11 +15,41 @@ Use synthetic signed public resources and independent adjacent-link keys. Privat
 | [`pilot_grant_bootstrap.py`](../firmware/meshticulum-bench/pilot_grant_bootstrap.py) | Run preparation as isolated Linux root after package, manifest, source-file and bundle permission checks; obtain current host facts and clocks locally |
 | [`pilot_resources.py`](../src/meshticulum/bench/pilot_resources.py) | Lease local authenticated quarantine, serve a selected public chunk from a verified store, or independently verify a complete reply before caching |
 | [`pilot_resource_node.py`](../src/meshticulum/bench/pilot_resource_node.py) | Verify against the original sent request and the recipient's own campaign, manifest and trust material; opens no socket or radio |
+| [`pilot_job.py`](../src/meshticulum/bench/pilot_job.py) | Record the admitted public process, recheck its actual Linux process identity through a pidfd, and stop only that held handle |
+| [`pilot_controller.py`](../src/meshticulum/bench/pilot_controller.py) | Prepare and sequence the four public hops through an explicitly supplied management operator, preserving source provenance, original deadlines and cleanup evidence |
 | [`bench_node.py`](../firmware/meshticulum-bench/bench_node.py) | Hash-verified native actions for finite radio/TCP runs, `pilot-verify` and explicit child revocation |
 
 The provisioner creates protected, create-only child files, including `grant.json`, `secret.bin`, `active`, `provision.json` and a sender body only when applicable. It does not claim the child, open a listener, arm a radio, start a transfer or create a worker journal. Receivers receive no management-supplied payload. The public runtime manifest keeps private services disabled.
 
 The pending controller must connect these stages, preserve their actual process handles and evidence, and enforce the finite device window. A set of successfully prepared children is not an executed or qualified route.
+
+The source `Controller` now implements the four-hop request/reply sequence. Its
+management operator must supply real child handles, native status, preparation,
+collection, recipient verification and retirement. The concrete management
+adapter and loss/resume runner remain pending. Modeled records in controller
+tests do not establish an executed device route.
+
+Public jobs create `job.json` after admission and payload validation. Radio jobs
+publish `radio-ready.json` only after ARM and flow startup; TCP receivers retain
+their explicit listening receipt. The controller waits for both a live native
+process handle and its bound readiness record before starting the sender. It
+requires terminal native processes, matching result/process/context bindings,
+durable receiver bytes and radio disarm with an unfenced journal before the next
+hop. The 20-second final-radio-receipt interval remains part of elapsed time.
+
+`pilot-status` and `pilot-stop` recheck the actual boot, PID, process start ticks
+and command-line digest. Stop signals the held pidfd, preventing a later PID
+reuse from receiving the signal. An absent job record is unknown; a terminated
+process proves neither radio disarm nor safe handoff. `pilot-retire` touches only
+the matching native-provisioned public child and leaves its debt in place. These
+cleanup actions remain available after a service-role change, so the pilot can
+stop its own recorded process without affecting the service that appeared.
+
+A management error during preparation is uncertain until checked independently:
+the native grant may have persisted before its reply was lost. Controller
+cleanup therefore attempts retirement for every attempted child, including one
+whose preparation did not return success. It retains retirement/stop errors and
+never upgrades those errors to a clean handoff.
 
 ## Original resource permission
 

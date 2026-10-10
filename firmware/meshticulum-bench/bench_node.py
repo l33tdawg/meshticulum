@@ -29,7 +29,7 @@ def trusted(path, limit=2000000):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('inspect', 'run', 'service-run', 'ip-service-run', 'pilot-verify', 'revoke', 'ip-revoke'))
+    parser.add_argument('action', choices=('inspect', 'run', 'service-run', 'ip-service-run', 'pilot-status', 'pilot-stop', 'pilot-retire', 'pilot-verify', 'revoke', 'ip-revoke'))
     parser.add_argument('unit', choices=('unit-a', 'unit-b', 'unit-c'))
     parser.add_argument('--run-id')
     parser.add_argument('--campaign-id')
@@ -56,7 +56,15 @@ def main():
             raise RuntimeError('invalid_run_id')
         root = Path('/var/lib/meshticulum-bench')
         directory = root / 'runs' / args.run_id
-        if args.action in ('revoke', 'ip-revoke'):
+        if args.action in ('pilot-status', 'pilot-stop', 'pilot-retire'):
+            import platform
+            if platform.system() != 'Linux': raise RuntimeError('requires_linux_root')
+            from meshticulum.bench.pilot_job import inspect, retire
+            boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+            result = (retire(directory, unit=args.unit, run_id=args.run_id, boot=boot)
+                if args.action == 'pilot-retire' else inspect(directory, unit=args.unit, run_id=args.run_id,
+                    boot=boot, stop=args.action == 'pilot-stop'))
+        elif args.action in ('revoke', 'ip-revoke'):
             node.roles(args.unit)
             if args.action == 'ip-revoke':
                 from meshticulum.ip.authority import revoke
