@@ -73,7 +73,7 @@ The newer [compact envelope codec](../src/meshticulum/privacy/mesh_binary_envelo
 
 Measured RF airtime, energy, EIRP and one-way latency remain **null** in the published record. Worker airtime reservations are source estimates; driver-operation elapsed time is not a substitute for an RF instrument. A reported local `RF_DONE`, peer receipt, durable storage and application acceptance each have a different evidence boundary.
 
-The earlier bench also retained explicit-session revocation and verified-chunk recovery, and operator-coordinated forwarding of a stored radio-received object. Those demonstrations do not establish byte-offset recovery after a device power loss, autonomous routing or the planned C→A LoRa→B IP path. Historical results remain bound to their exact runtime and conditions.
+The earlier bench also retained explicit-session revocation and verified-chunk recovery, and operator-coordinated forwarding of a stored radio-received object. Those demonstrations do not establish byte-offset recovery after a device power loss, autonomous routing or a later C→A LoRa→B IP service campaign. The finite native public [mixed and loss/resume/IP-return checkpoints](IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return) carry their own pins, verification and terminal evidence. Their tiny service timings include management and final-ACK windows and do not establish sustained capacity. Historical results remain bound to their exact runtime and conditions.
 
 The historical extraction validation and installed-wheel checkpoint are recorded in [VALIDATION.json](../provenance/VALIDATION.json). Native-job and optional SAGE application controls now belong to [Lantern](https://github.com/l33tdawg/sage-lantern/tree/codex/meshticulum-boundary/software/meshticulum-integration). Later source results must identify the exact core and Lantern commits and their validation scope; they do not retroactively qualify the historical runtime. Source controls, modeled workers and loopback HTTP serve a different purpose from a hardware benchmark.
 
@@ -85,7 +85,7 @@ The planned comparison must hold the radio hardware, antenna/placement, modem se
 
 Capture cold and warm costs separately, including discovery/session setup where applicable. Keep requests, responses, ACKs, retransmissions, timeout/refusal rates, latency distributions and reverse-medium traffic. Retain every attempted run and unavailable metric. Report single-hop, stored relay and mixed-media tests separately. Faster PHY settings or a best-case burst alone cannot support an upstream speed comparison.
 
-The programme then qualifies actual authenticated IP forwarding, IP loss followed by **fresh LoRa admission**, verified-piece resume under the original resource deadline, and return to a locally measured faster IP path. [Architecture](ARCHITECTURE.md) shows that design; [ROADMAP.md](ROADMAP.md) records the remaining gates.
+The recorded finite public campaigns exercised authenticated IP forwarding and, separately, IP loss followed by **fresh C↔B LoRa admission**, verified-piece resume under the original resource deadline, and return to a locally measured faster IP path. Broader private, lifecycle and sustained-performance qualification remains open. [Architecture](ARCHITECTURE.md) shows that design; [ROADMAP.md](ROADMAP.md) records the remaining gates.
 
 ## Reproduce the published figure and arithmetic
 

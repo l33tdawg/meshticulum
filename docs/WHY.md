@@ -30,7 +30,7 @@ That requires several things to work together:
 - **A complete cost for scarce media.** Requests, responses, acknowledgements and retries all consume capacity. The radio owner keeps attempt and airtime debt even when an application cancels or a process restarts.
 - **Path choice based on useful work.** Only verified resource bytes train the local path estimator. Shared bottlenecks and elapsed request time matter; a route name or advertised rate does not prove which path finishes sooner.
 
-These are implemented source boundaries in the [flow](../src/meshticulum/flow/flow.py), [authenticated carrier](../src/meshticulum/bench/wire.py), [resource verifier](../src/meshticulum/resources/lamplighter.py), [path scheduler](../src/meshticulum/resources/swarm.py) and [service runner](../src/meshticulum/bench/service_runner.py). The complete mixed LoRa/IP deployment is still being qualified; the [roadmap](ROADMAP.md) records the remaining integration work.
+These are implemented source boundaries in the [flow](../src/meshticulum/flow/flow.py), [authenticated carrier](../src/meshticulum/bench/wire.py), [resource verifier](../src/meshticulum/resources/lamplighter.py), [path scheduler](../src/meshticulum/resources/swarm.py) and [service runner](../src/meshticulum/bench/service_runner.py). Lantern recorded finite public mixed delivery and loss/LoRa-resume/measured-IP-return milestones; [their execution record](IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return) separates those results from broader deployment qualification. The [roadmap](ROADMAP.md) records the remaining work.
 
 ## Why performance matters
 
@@ -42,6 +42,6 @@ Those mechanisms provide a reason to test for a faster useful network. They do n
 
 ## What success looks like
 
-The programme must demonstrate a coordinated LoRa-to-IP transfer, IP failure followed by fresh LoRa admission and verified-piece resume, then a return to the locally measured faster IP path. It must preserve the original peer bindings, deadlines, replay decisions and ownership boundaries throughout.
+Finite native public campaigns have demonstrated a coordinated LoRa-to-IP transfer and, separately, IP failure followed by fresh LoRa admission and verified-piece resume, then return to a locally measured faster IP path under the original expiry. Success across the wider programme still requires native private admission, lifecycle and performance qualification while preserving peer bindings, deadlines, replay decisions and ownership boundaries.
 
 A faster transfer only counts when it delivers the intended verified object under those constraints. Source tests support development; current hardware and application evidence establish deployment readiness. The architecture and comparison documents explain the design, while the [hardware guide](HARDWARE.md), [performance record](PERFORMANCE.md) and [roadmap](ROADMAP.md) track that qualification.

@@ -28,7 +28,11 @@ Two specific precompiled archives have direct upstream blob matches:
 | `libphy.a` | `espressif/esp-phy-lib` at `dcfdccf6cc2fc02d0886624b7998c890d1a19b28` |
 | `libcoexist.a` | `espressif/esp32-wifi-lib` at `f2aae4d44ec7908013066e69d29b9948846c335c` |
 
-For each, the audit records the matching Git-blob SHA-1 plus an independently computed local SHA-256. This binds those archive bytes to the recorded upstream blobs. It does not establish the remaining SDK blobs' identities, member-level source correspondence or blanket licensing of a framework/binary. The complete fingerprints and paths remain in the [audit JSON](../provenance/FIRMWARE_LINKED_NOTICE_AUDIT.json).
+For each, the audit records the matching Git-blob SHA-1 plus an independently computed local SHA-256. These direct component-repository matches retain their original scope; the complete fingerprints remain in the [audit JSON](../provenance/FIRMWARE_LINKED_NOTICE_AUDIT.json).
+
+A later [packaged SDK blob review](../provenance/PRIMARY_PACKAGED_SDK_BLOB_REVIEW.json) independently checked every contributing SDK archive against the official [Arduino ESP32 2.0.17 tree](https://github.com/espressif/arduino-esp32/tree/5e19e086c43d0fa5e5a596497ff8f11a0a43f6c2). All **39 distinct archives across the two targets** matched their upstream Git blobs, with local SHA-256 fingerprints also retained. Each target contributes 34 SDK archives. The packaged `tools/sdk/versions.txt` and ESP32-S3 `sdkconfig` also match official upstream blobs.
+
+The SDK version record names ESP-IDF `38eeba213aa695aabfd6d89aa9f5078dbe5a94c3` and Arduino component `d75795f5e27eac7afea33b27a22d826cb4556c99`, alongside its other component revisions. Resolving those labels and matching released archives improves input provenance. It does **not** reconstruct the dirty SDK build, prove every linked member's exact source or licensing terms, inspect every unlinked SDK archive, or establish the native deployed image. Source/build modifications, per-file notices and corresponding-source/relinking closure remain open.
 
 ## Retained notice texts
 

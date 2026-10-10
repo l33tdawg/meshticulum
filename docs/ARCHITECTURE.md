@@ -2,13 +2,13 @@
 
 Meshticulum separates what an application wants to transfer from how a scarce link can safely carry it. A public resource, a private message, a reliable flow, a radio attempt and an application admission each have their own boundaries. That separation lets the same resource logic use different carriers while keeping peer identity, expiry, receiver capacity and medium cost explicit.
 
-The current implementation is an experimental, authenticated **finite-transfer system**, with serial and Linux SX1262 adapters. Earlier paired-radio runs provide retained physical evidence for their pinned encrypted bench runtime; they do not qualify the newer public MR1 service runner, protected application bindings or the full mixed-path network. The broader design combines small-radio operation with verified resources and mixed LoRa/IP paths. It does not currently translate MeshCore or Reticulum wire protocols, and an authenticated TCP source prototype now exists, with device and mixed-path qualification pending; see [IP transport](IP_TRANSPORT.md).
+The current implementation is an experimental, authenticated **finite-transfer system**, with serial, Linux SX1262 and TCP adapters. Earlier paired-radio runs retain their pinned encrypted-bench evidence. Lantern separately recorded finite public mixed-path delivery and original-deadline loss/LoRa-resume/measured-IP-return campaigns; [IP transport](IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return) gives their exact pins and limits. These public milestones do not qualify private application bindings, sustained performance or the broader network. The design combines small-radio operation with verified resources and mixed LoRa/IP paths; it does not translate MeshCore or Reticulum wire protocols.
 
 ## Repository dependency boundary
 
 The dependency runs one way: **[Lantern](https://github.com/l33tdawg/sage-lantern) → Meshticulum**. Meshticulum provides reusable protocol, cryptography, contracts, reliable flow, scheduling, resource verification and serial/SX1262/TCP drivers. It has no Lantern imports, SAGE SDK dependency, protected inbox implementation, fleet controller or device launcher.
 
-Lantern's [`software/meshticulum-integration`](https://github.com/l33tdawg/sage-lantern/tree/main/software/meshticulum-integration) consumes these libraries. Its `lantern_meshticulum` package owns the SAGE adapter, native consent/capture policy, finite Linux jobs and pilot orchestration. Lantern also owns the runtime packaging, provisioning, deployment and rollback tools. These implementations are kept in that repository, rather than duplicated here.
+Lantern's [`software/meshticulum-integration`](https://github.com/l33tdawg/sage-lantern/tree/2f96d9029f972e665286209d9883418d431ab1d0/software/meshticulum-integration) consumes these libraries. Its `lantern_meshticulum` package owns the SAGE adapter, native consent/capture policy, finite Linux jobs and pilot orchestration. Lantern also owns the runtime packaging, provisioning, deployment and rollback tools. These implementations are kept in that repository, rather than duplicated here.
 
 ## The layers
 
@@ -67,7 +67,7 @@ flowchart TB
 | Radio workers | Exclusive device access, finite arm/disarm, exact attempt evidence and retained debt | [`bench/serial_worker.py`](../src/meshticulum/bench/serial_worker.py), [`bench/hat_worker.py`](../src/meshticulum/bench/hat_worker.py) |
 | Generic services | Bind complete bounded bytes to an admitted format/object; run public transfers without opening devices | [`bench/services.py`](../src/meshticulum/bench/services.py), [`bench/service_runner.py`](../src/meshticulum/bench/service_runner.py) |
 | Public resources | Publisher trust, content verification, durable resume and local path selection | [`resources/knowledge_pack.py`](../src/meshticulum/resources/knowledge_pack.py), [`resources/lamplighter.py`](../src/meshticulum/resources/lamplighter.py), [`resources/swarm.py`](../src/meshticulum/resources/swarm.py) |
-| Lantern application integration | Native policy, protected replay/admission and uncertain-write recovery; outside Meshticulum | [Lantern SAGE adapters](https://github.com/l33tdawg/sage-lantern/tree/main/software/meshticulum-integration/src/lantern_meshticulum/sage), [Lantern finite radio jobs](https://github.com/l33tdawg/sage-lantern/tree/main/software/meshticulum-integration/src/lantern_meshticulum/bench) |
+| Lantern application integration | Native policy, protected replay/admission and uncertain-write recovery; outside Meshticulum | [Lantern SAGE adapters](https://github.com/l33tdawg/sage-lantern/tree/2f96d9029f972e665286209d9883418d431ab1d0/software/meshticulum-integration/src/lantern_meshticulum/sage), [Lantern finite radio jobs](https://github.com/l33tdawg/sage-lantern/tree/2f96d9029f972e665286209d9883418d431ab1d0/software/meshticulum-integration/src/lantern_meshticulum/bench) |
 
 The `bench` name reflects the implementation's qualification stage. It contains the actual experimental wire and worker composition, rather than only a performance harness. Importing those modules does not enroll peers, provision keys, acquire hardware or start a transfer.
 
@@ -173,31 +173,32 @@ Private content has recipient encryption and sender authentication independently
 
 [`mesh_binary_envelope.py`](../src/meshticulum/privacy/mesh_binary_envelope.py) replaces only the outer text prefix and Base64 representation with a three-byte binary selector plus the **same ciphertext**. It reduces carrier bytes without changing encryption or signatures. Conversion is a bounded codec operation, not authentication or an automatic negotiation/fallback mechanism. Recipient verification, expiry, consent and durable replay admission still follow.
 
-For private messages, Meshticulum's responsibility ends at generic transport and offline envelope verification. [Lantern's SAGE adapter](https://github.com/l33tdawg/sage-lantern/tree/main/software/meshticulum-integration/src/lantern_meshticulum/sage) adds protected storage and lifecycle controls. Its `PrivatePolicy` must hold a native owner/consent/revocation lease for the exact grant. Its [`BinaryCapture`](https://github.com/l33tdawg/sage-lantern/blob/codex/meshticulum-boundary/software/meshticulum-integration/src/lantern_meshticulum/sage/mesh_binary_capture.py) persists the original receive intention before DATA/ACK dispatch, then durably records the complete, already sealed bytes before inbox processing. Recovery retains the original operation, boot, grant and epoch/monotonic deadlines. It first reconciles an existing signed inbox result; historical capture time or a later grant cannot authorize fresh expired admission.
+For private messages, Meshticulum's responsibility ends at generic transport and offline envelope verification. [Lantern's SAGE adapter](https://github.com/l33tdawg/sage-lantern/tree/2f96d9029f972e665286209d9883418d431ab1d0/software/meshticulum-integration/src/lantern_meshticulum/sage) adds protected storage and lifecycle controls. Its `PrivatePolicy` must hold a native owner/consent/revocation lease for the exact grant. Its [`BinaryCapture`](https://github.com/l33tdawg/sage-lantern/blob/codex/meshticulum-boundary/software/meshticulum-integration/src/lantern_meshticulum/sage/mesh_binary_capture.py) persists the original receive intention before DATA/ACK dispatch, then durably records the complete, already sealed bytes before inbox processing. Recovery retains the original operation, boot, grant and epoch/monotonic deadlines. It first reconciles an existing signed inbox result; historical capture time or a later grant cannot authorize fresh expired admission.
 
 Private messages never enter `BlockServer` or public verified caches. The Meshticulum public runner refuses private MESSAGE jobs; Lantern must supply its own private policy/capture composition. A source test with a modeled lease or SDK MockTransport cannot qualify the real protected backend. The SAGE SDK and those private application tests belong in Lantern; Meshticulum's package does not include that adapter. See [the repository boundary](SAGE_INTEGRATION.md).
 
 ## Designed mixed-path network
 
-The following topology is **designed, not qualified**. A/B/C are lab roles. The solid RF edge has an implemented worker path and historical bench evidence; the new public-service composition and dashed IP/fallback paths require fresh admission and physical validation.
+The following topology combines recorded finite public paths with a broader design. A/B/C are lab roles. C→A LoRa→B IP was exercised in one public request/reply; a separate campaign resumed over fresh C↔B LoRa and returned to IP. The drawn A↔B LoRa fallback remains a design branch. Dashed TCP marks an experimental carrier; every further execution needs fresh admission and current ownership.
 
 ```mermaid
-flowchart LR
+flowchart TB
     C["C: LoRa edge node"]
     A["A: radio/IP bridge role"]
     B["B: public resource / IP node"]
 
-    C -->|"LoRa worker implemented<br/>new service qualification open"| A
-    A -. "Authenticated TCP prototype<br/>mixed-path qualification pending" .-> B
+    C -->|"Recorded public LoRa"| A
+    A -. "Recorded public TCP" .-> B
     A -. "Designed LoRa fallback<br/>fresh admission" .-> B
+    C -. "Recorded C/B resume<br/>fresh LoRa" .-> B
     Content["Verified pieces retained<br/>original resource deadline"]
-    Content -. "Resume with fresh<br/>wire state" .-> C
-    Content -. "Resume with fresh<br/>wire state" .-> A
+    Content -. "Fresh wire state" .-> C
+    Content -. "Fresh wire state" .-> A
 ```
 
 [Editable Mermaid](diagrams/architecture-3.mmd) · [Rendered SVG](diagrams/architecture-3.svg)
 
-Lantern's pilot orchestration assembles the intended qualification: C→A over LoRa followed by A→B over authenticated IP; IP loss followed by a newly admitted LoRa path and verified-piece resume; and return to the locally measured faster IP route. Each path must preserve the original resource deadline and peer/service binding. Meshticulum provides the carrier/resource primitives; the controller and device jobs live in [Lantern's integration package](https://github.com/l33tdawg/sage-lantern/tree/main/software/meshticulum-integration/src/lantern_meshticulum/bench). A socket write must not become `RF_DONE`, and IP cost must not be charged as invented radio airtime.
+Lantern's pilot orchestration recorded C→A over LoRa followed by A→B over authenticated IP, then a separate loss/LoRa-resume/measured-IP-return campaign on C/B under its own original resource expiry. Those results do not qualify an unexecuted A↔B fallback or autonomous network routing. Each path must preserve the original resource deadline and peer/service binding. Meshticulum provides the carrier/resource primitives; the controller and device jobs live in [Lantern's integration package](https://github.com/l33tdawg/sage-lantern/tree/2f96d9029f972e665286209d9883418d431ab1d0/software/meshticulum-integration/src/lantern_meshticulum/bench). A socket write must not become `RF_DONE`, and IP cost must not be charged as invented radio airtime.
 
 This is a bridge between the operating needs of small-radio meshes and transport-independent applications. It is not yet a packet gateway into either MeshCore or Reticulum. Any future interoperable adapter must define which identities, services, permissions and delivery stages cross that boundary; matching a radio setting or carrying bytes is insufficient.
 
@@ -205,4 +206,4 @@ This is a bridge between the operating needs of small-radio meshes and transport
 
 Standalone tests cover contract rejection, credit/replay behavior, durable source journals, modeled worker failures, publisher checks and resource resume. The native C++ harness checks synthetic serial input against the test coprocessor source. These are useful source controls with narrower scope than hardware operation.
 
-Physical qualification still needs current exclusive device ownership, finite grants, matched frame/ACK evidence, bounded disarm/rollback and retained raw failures. Mixed-path tests must include actual authenticated IP, fresh failover admission and measured route return. Private enablement additionally needs the real encrypted backend and native lifecycle authority. Sustained goodput and comparisons require matched hardware, settings, useful encrypted payloads and total request/response/ACK/retry cost. See [hardware tooling](HARDWARE.md) and [remaining qualification](ROADMAP.md).
+The recorded public campaigns retain actual process/driver, verification and terminal evidence. Further physical qualification needs current exclusive device ownership, finite grants, matched frame/ACK evidence, bounded disarm/rollback and retained raw failures. Broader lifecycle and mixed-path coverage remains open. Private enablement additionally needs qualified native owner/consent, encrypted-backend admission and private transport; temporary backend compatibility fixtures alone do not close those gates. Sustained goodput and comparisons require matched hardware, settings, useful encrypted payloads and total request/response/ACK/retry cost. See [hardware tooling](HARDWARE.md) and [remaining qualification](ROADMAP.md).

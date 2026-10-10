@@ -1,11 +1,12 @@
-flowchart LR
+flowchart TB
     C["C: LoRa edge node"]
     A["A: radio/IP bridge role"]
     B["B: public resource / IP node"]
 
-    C -->|"LoRa worker implemented<br/>new service qualification open"| A
-    A -. "Authenticated TCP prototype<br/>mixed-path qualification pending" .-> B
+    C -->|"Recorded public LoRa"| A
+    A -. "Recorded public TCP" .-> B
     A -. "Designed LoRa fallback<br/>fresh admission" .-> B
+    C -. "Recorded C/B resume<br/>fresh LoRa" .-> B
     Content["Verified pieces retained<br/>original resource deadline"]
-    Content -. "Resume with fresh<br/>wire state" .-> C
-    Content -. "Resume with fresh<br/>wire state" .-> A
+    Content -. "Fresh wire state" .-> C
+    Content -. "Fresh wire state" .-> A
