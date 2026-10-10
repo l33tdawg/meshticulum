@@ -3,7 +3,6 @@ recursive-include docs *.md *.mmd *.svg *.json
 recursive-include provenance *.json
 recursive-include tools *.py
 recursive-include firmware *.py *.cpp *.hpp *.c *.dts
-recursive-include scripts *.py
 recursive-include tests *.py *.h *.hpp *.cpp *.c *.json
 global-exclude __pycache__ *.py[cod] .DS_Store
 recursive-include benchmarks *.json

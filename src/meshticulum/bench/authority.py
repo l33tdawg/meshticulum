@@ -26,7 +26,7 @@ from ..contracts.negotiation import (CapabilityLimits, Feature,
 from ..scheduler.scheduler import DispatchGrant, LeaseScope
 from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
-from .profiles import MODES
+from .admission import RadioAdmission
 from .wire import BenchGrant, require
 
 
@@ -58,7 +58,8 @@ def _open(path, flags=os.O_RDONLY):
 
 
 class RunAuthority:
-    def __init__(self, directory, *, expected_unit, host_boot_id, clock, owner_probe):
+    def __init__(self, directory, *, expected_unit, host_boot_id, clock, owner_probe, radio_admission=None):
+        require(type(radio_admission) is RadioAdmission, 'explicit_native_radio_admission_required')
         self.path = Path(directory).absolute()
         _private_info(self.path.lstat(), directory=True)
         self.fds, self.held = {}, {}
@@ -103,10 +104,9 @@ class RunAuthority:
             require(p['unit'] == expected_unit
                     and p['host_boot_id'] == host_boot_id and str(uuid.UUID(host_boot_id)) == host_boot_id,
                     'wrong_bench_host')
-            require(p['country'] == 'MY' and p['antenna_confirmed'] is True,
-                    'bench_country_or_antenna_unconfirmed')
-            require(type(p['sender_unit']) is str and p['sender_unit'] in ('unit-a', 'unit-b', 'unit-c')
-                    and expected_unit in ('unit-a', 'unit-b', 'unit-c'), 'invalid_bench_unit')
+            require(all(type(value) is str and 1 <= len(value) <= 64
+                        and value.isascii() and all(c.isalnum() or c in '-_' for c in value)
+                        for value in (p['sender_unit'], expected_unit)), 'invalid_bench_unit')
             self.local_peer = PeerID(**p['local_peer'])
             session = SessionKey(PeerID(**p['initiator']), PeerID(**p['responder']),
                                  bytes.fromhex(p['session_id']), bytes.fromhex(p['generation']))
@@ -115,14 +115,7 @@ class RunAuthority:
                     'bench_endpoint_role_mismatch')
             self.profile = RadioProfile(**p['profile'])
             self.profile.encode(board_id=1)
-            require(self.profile.frequency_hz == 921375000
-                    and (self.profile.spreading_factor, self.profile.bandwidth_hz) in MODES.values()
-                    and self.profile.coding_rate == 5
-                    and self.profile.chip_power_dbm == 0 and self.profile.sync_word == 0x42
-                    and self.profile.preamble == 8 and 10000 <= self.profile.lease_ms <= 180000
-                    and self.profile.max_boot_attempts <= 256
-                    and self.profile.max_boot_estimated_airtime_us <= 60000000,
-                    'unsupported_initial_bench_profile')
+            radio_admission.check(p['country'], p['antenna_confirmed'], self.profile)
             obj = p['object']
             require(type(obj) is dict and set(obj) == {'sha256', 'bytes', 'chunk_index', 'object_id'}
                     and type(obj['bytes']) is int and 1 <= obj['bytes'] <= 16384

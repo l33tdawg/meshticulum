@@ -1,3 +1,4 @@
+from tests.radio_profiles import SOURCE_ADMISSION
 """Fresh radio admission keeps a host's original resource deadline."""
 import json
 
@@ -15,7 +16,7 @@ def admitted(path, clock, *, deadline=None):
     if deadline is not None:
         plan['application_deadline_monotonic_us'] = deadline
     (path / 'grant.json').write_text(json.dumps(plan))
-    return RunAuthority(path, expected_unit='unit-a', host_boot_id=BOOT, clock=clock, owner_probe=lambda: True)
+    return RunAuthority(path, radio_admission=SOURCE_ADMISSION, expected_unit='unit-a', host_boot_id=BOOT, clock=clock, owner_probe=lambda: True)
 
 
 def test_host_local_deadline_tightens_without_changing_the_peer_wire_context(tmp_path):
@@ -51,5 +52,5 @@ def test_invalid_or_expired_local_deadline_is_refused_before_single_use_claim(tm
     plan['application_deadline_monotonic_us'] = deadline
     (directory / 'grant.json').write_text(json.dumps(plan))
     with pytest.raises(WireError, match='invalid_original_service_deadline'):
-        RunAuthority(directory, expected_unit='unit-a', host_boot_id=BOOT, clock=clock, owner_probe=lambda: True)
+        RunAuthority(directory, radio_admission=SOURCE_ADMISSION, expected_unit='unit-a', host_boot_id=BOOT, clock=clock, owner_probe=lambda: True)
     assert not (directory / 'started').exists()

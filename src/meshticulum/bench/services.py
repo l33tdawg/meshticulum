@@ -121,20 +121,6 @@ class ServiceTransfer:
             self._check()
             return result
 
-    def deliver_private(self, inbox, *, operation_id, sender, peer_check):
-        """Protected journal admission metadata, never delivery/read authority."""
-        require(self.kind is ServiceKind.MESSAGE and self.format == 'LME.binary'
-                and callable(peer_check),
-                'private_service_binding_refused')
-        from meshticulum.integrations.sage.mesh_inbox import MeshInbox
-        require(type(inbox) is MeshInbox, 'private_service_binding_refused')
-        with self.authority.application_lease():
-            packet = self._received()
-            result = inbox.ingest_binary(operation_id, packet, sender=sender,
-                peer_check=lambda peer: self.live() and peer_check(peer) is True)
-            self._check()
-            return result
-
     def cancel(self):
         self.cancelled = True
         self.flow.close()

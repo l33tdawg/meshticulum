@@ -1,3 +1,4 @@
+from tests.radio_profiles import SOURCE_ADMISSION
 # Extracted for Meshticulum; namespace/path/test adaptation. See docs/EXTRACTION.md.
 """Recipient-sealed records across two real flow compositions and model workers.
 
@@ -25,7 +26,7 @@ from meshticulum.privacy.mesh_envelope import (
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.flow_runtime import BenchFlow
-from meshticulum.bench.profiles import profile_for
+from tests.radio_profiles import profile_for
 from meshticulum.bench.state import SessionStore
 from meshticulum.bench.wire import FrameKind, SessionCipher
 from meshticulum.scheduler.budget import BudgetPolicy, Ledger
@@ -86,7 +87,7 @@ def carrier_pair(path, payload, clock, sender_unit, receiver_unit, session_numbe
                 max_attempts=256, max_airtime_us=60000000, create=True, request_clock=lambda: clock()[0])
             stack.callback(journal.close)
             worker = ModelWorker(journal, clock)
-            authority = RunAuthority(directory, expected_unit=unit, host_boot_id=BOOT,
+            authority = RunAuthority(directory, radio_admission=SOURCE_ADMISSION, expected_unit=unit, host_boot_id=BOOT,
                 clock=clock, owner_probe=lambda w=worker: w.owned)
             stack.callback(authority.close)
             store = SessionStore(directory / "wire.db", authority.grant, authority.local_peer,

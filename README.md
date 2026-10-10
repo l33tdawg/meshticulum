@@ -6,7 +6,7 @@ A [SAGE Foundation](https://sage-foundation.net/) project, created and maintaine
 
 Meshticulum is an experimental transport and resource system for networks that mix LoRa and IP. We are building it to close the gap between practical embedded radio meshes and richer, secure networking across different transports—and to move more useful encrypted data through the radio time we have.
 
-It began in SAGE Lantern and now lives as a standalone project. The transport, public-resource and offline envelope code work without SAGE. SAGE remains an optional application integration.
+It began in SAGE Lantern and now lives as a standalone project. The transport, public-resource and offline envelope code work without SAGE or Lantern. [Lantern](https://github.com/l33tdawg/sage-lantern) consumes Meshticulum and owns its device and private SAGE integrations.
 
 ## SAGE project family
 
@@ -14,9 +14,9 @@ It began in SAGE Lantern and now lives as a standalone project. The transport, p
 | --- | --- |
 | **SAGE** | [Main SAGE repository](https://github.com/l33tdawg/sage/) — agent memory, governance and core infrastructure. |
 | **Meshticulum** | [This repository](https://github.com/l33tdawg/meshticulum) — reusable transport, reliable flow, radio/IP carrier work and verified resource protocols. |
-| **Lantern** | **A separate Lantern-specific repository is planned** for the product apps/UI, device provisioning, runtime orchestration and device integrations. Its link will be added when that repository is ready. |
+| **Lantern** | [SAGE Lantern repository](https://github.com/l33tdawg/sage-lantern) — product apps/UI, device provisioning, runtime orchestration and private SAGE integrations. |
 
-The planned Lantern repository will consume Meshticulum as an independent transport dependency. Historical Lantern lab helpers and optional integration adapters remain here during the transition; the product split is not yet complete. See [attribution and repository boundaries](docs/PROJECT_FAMILY.md).
+The dependency goes one way: **Lantern → Meshticulum**. Meshticulum has no dependency on Lantern, the SAGE SDK, protected storage or fleet services. Lantern owns `software/meshticulum-integration/` and `firmware/meshticulum-bench/`; its private adapters and native deployment tools are outside this package. See [attribution and repository boundaries](docs/PROJECT_FAMILY.md).
 
 ## Why build this?
 
@@ -44,7 +44,7 @@ The solid path is implemented source composition; the dotted IP branch is a loop
 
 Two service paths sit above the flow:
 
-- **Private messages:** recipient-encrypted, sender-signed envelopes. The compact binary carrier preserves the encrypted and signed bytes. Protected admission, durable capture and uncertain-write recovery live in the optional SAGE adapter.
+- **Private messages:** reusable recipient-encrypted, sender-signed envelopes. The compact binary carrier preserves the encrypted and signed bytes. Lantern supplies its protected admission, durable capture, consent policy and uncertain-write recovery outside Meshticulum.
 - **Public resources:** signed manifests and content-addressed chunks. Bounded MR1 requests and replies move blocks over a scarce carrier; publisher and content verification determine which chunks enter the reusable cache.
 
 Below them, admission binds each transfer to its peers, service, object and original expiry. Receiver credit bounds what can enter the flow. The scheduler and exclusive worker account for DATA, ACKs, retries and shared-medium costs. Local RF completion, peer receipt and application acceptance remain separate observations.
@@ -66,16 +66,16 @@ Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s media
 | Area | Implemented source | Next qualification |
 | --- | --- | --- |
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
-| Radio adapters | Exclusive serial-radio and Linux SX1262 workers; finite public service runner | Coordinated device runs with bounded disarm and rollback |
+| Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
 | Public resources | Signed manifests, content checks, bounded MR1 blocks, verified-piece resume and measured path policy | C→A LoRa→B IP, IP loss, fresh LoRa admission and return to the faster measured path |
-| Private messages | Offline encrypted envelopes and compact binary carrier; optional protected SAGE capture/inbox adapters | Real native ownership, encrypted backend, consent and recovery behavior |
-| Standalone packaging | Canonical Python package, public host-runtime builder and SDK-free source suite | Reproducible firmware/BSP recipe and release review |
+| Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
+| Standalone packaging | Canonical Python package and standalone source suite | Candidate artifact review and separately qualified Lantern deployment |
 
-At the standalone extraction checkpoint, **1,676 SDK-free source controls** and **258 optional SAGE integration controls** passed. [CI](.github/workflows/tests.yml) runs the standalone suite and frozen-flow check on Python 3.11, 3.12 and 3.13. These checks support the source behavior; current-runtime hardware qualification, full mixed-path operation and production private admission remain open. The [roadmap](docs/ROADMAP.md) tracks that work.
+[CI](.github/workflows/tests.yml) runs the standalone suite and frozen-flow check on Python 3.11, 3.12 and 3.13. Historical [extraction validation](provenance/VALIDATION.json) remains a checkpoint for its original source snapshot. Private integration controls belong to Lantern and must be tied to its exact Meshticulum dependency. Source checks support implementation behavior; current-runtime hardware qualification, full mixed-path operation and production private admission remain open. The [roadmap](docs/ROADMAP.md) tracks that work.
 
 ## Install and explore
 
-Python 3.11 or later is required. The offline core runs on a development host; radio workers and Linux device entry points need the corresponding hardware interfaces.
+Python 3.11 or later is required. The offline core runs on a development host. Reusable radio drivers need the corresponding hardware interfaces; Lantern owns the native device entry points and their deployment requirements.
 
 ```sh
 git clone https://github.com/l33tdawg/meshticulum.git
@@ -83,7 +83,7 @@ cd meshticulum
 python -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[dev]'
-python -m pytest --ignore=tests/integrations
+python -m pytest
 python tools/verify_frozen_flow.py
 ```
 
@@ -97,14 +97,13 @@ from meshticulum.resources.resource import BlockReader, BlockServer
 
 `BlockReader` uses a caller-supplied, bounded exchange that must enforce authentication, admission and the absolute deadline. `BlockServer` reads from a caller-owned verified public-resource allowlist. The envelope conversion helpers change the carrier representation while preserving the sealed content; they do not create a transport session.
 
-The CLI help is safe to inspect:
+The generic public-resource CLI help is safe to inspect:
 
 ```sh
-meshticulum-service --help
 meshticulum-seed --help
 ```
 
-A radio service run needs a separately provisioned finite grant and the trusted exclusive worker. Follow [Hardware](docs/HARDWARE.md) before operating devices, and [SAGE integration](docs/SAGE_INTEGRATION.md) for the compatible local SDK and private-adapter controls. Source tests use synthetic identities and explicit source models; they do not flash radios or start production services.
+A device service run needs Lantern's separately provisioned finite grant and trusted exclusive worker. Follow [Hardware](docs/HARDWARE.md) for the boundary and [Lantern integration](docs/SAGE_INTEGRATION.md) for the owning repository. Meshticulum does not provide a product-pilot CLI or a SAGE installation extra. Source tests use synthetic identities and explicit source models; they do not flash radios or start production services.
 
 ## Repository map
 
@@ -113,12 +112,12 @@ A radio service run needs a separately provisioned finite grant and the trusted 
 | `src/meshticulum/contracts` | Peer, service, session, route, limit and deadline contracts |
 | `src/meshticulum/scheduler` | Admission, attempt settlement and medium budgeting |
 | `src/meshticulum/flow` | Accepted bounded reliable-flow and finite-port candidate |
-| `src/meshticulum/bench` | Authenticated frames, journals, workers and finite service runners |
+| `src/meshticulum/bench` | Authenticated frames, journals, reusable workers and public service composition |
+| `src/meshticulum/ip` | Authenticated TCP prototype, bounded stream budgets and replay state |
 | `src/meshticulum/resources` | Signed public packs, block exchange, verified cache and path policy |
 | `src/meshticulum/privacy` | Offline recipient-encrypted envelopes and binary carrier |
-| `src/meshticulum/integrations/sage` | Optional protected inbox, capture and storage adapters |
-| `firmware/meshticulum-bench` | Raw LoRa coprocessor source and experimental lab tooling |
-| `tests` | Acceptance and failure controls, including optional integration controls |
+| `tests` | Standalone protocol, resource, carrier and failure controls |
+| `tools` | Frozen-flow, documentation, artifact and retained-benchmark checks |
 
 New code should use `meshticulum.*` imports. Small compatibility bridges preserve the module and class identity of the unchanged accepted flow. [Extraction and provenance](docs/EXTRACTION.md) records the original source, namespace changes and frozen hashes.
 
