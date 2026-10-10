@@ -40,7 +40,9 @@ flowchart TB
 
 [Editable Mermaid](docs/diagrams/readme-1.mmd) · [Rendered SVG](docs/diagrams/readme-1.svg)
 
-The solid path is implemented source composition; the dotted IP branch is a loopback-tested source prototype awaiting hardware and mixed-path qualification. The diagram describes components, rather than a completed hardware deployment.
+The diagram shows reusable source components. The TCP branch has loopback controls and a finite public hardware milestone in Lantern; full failure/resume and production qualification remain open.
+
+At historical pins core [6605ba7](https://github.com/l33tdawg/meshticulum/commit/6605ba714ce414445673b40bfcfe93fe467b86aa), Lantern [a41851a](https://github.com/l33tdawg/sage-lantern/commit/a41851a4301008bd840a8508187a59a150eeaa0e) and runtime `d3194a9`, a finite public C→A LoRa→B IP request and reverse reply completed with **977 independently verified public bytes**. The [native milestone record](docs/IP_TRANSPORT.md#recorded-native-public-milestone) gives the full pins and scope. A separate fresh failure/resume campaign observed TCP loss after **512 stream bytes** and preserved its first verified piece, but refused fresh LoRa before ARM/TX: the fixed 90-second lease exceeded approximately 85 seconds remaining. Full resume and measured IP return remain open.
 
 Two service paths sit above the flow:
 
@@ -55,19 +57,19 @@ Below them, admission binds each transfer to its peers, service, object and orig
 
 The goal is higher **useful encrypted goodput**: application bytes delivered under verification, rather than raw modem bitrate. In the retained radio bench, the timed interval ends at the sender's flow ACK; the receiver's durable hash is required separately. The design reduces avoidable carrier overhead through compact binary envelopes, bounded windows, selective acknowledgements and explicit receiver credit. Retry timing takes the carrier queue into account, and the request/reply adapters avoid carrying HTTP and base64 framing over the scarce radio link.
 
-For public resources, the path policy uses local verified request timings and shared-bottleneck information. It can retain verified chunks and select among explicitly supplied routes; it does not equate an interface name with a fast path. The [authenticated TCP prototype](docs/IP_TRANSPORT.md) now supports source MR1 request/reply; hardware integration and real mixed-path failover still need qualification.
+For public resources, the path policy uses local verified request timings and shared-bottleneck information. It can retain verified chunks and select among explicitly supplied routes; it does not equate an interface name with a fast path. The [authenticated TCP prototype](docs/IP_TRANSPORT.md) supports MR1 request/reply and the finite native public milestone above. Successful fresh-LoRa resume and measured IP return still need qualification.
 
-Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s median useful encrypted goodput** across C→A, C→B and A→B LoRa links, with 30 completed RF samples. That is evidence from an earlier experimental runtime, and the current service runner still needs its own hardware qualification. The programme target is **1–1.5 kB/s**; matched MeshCore and Reticulum measurements remain to be collected.
+Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s median useful encrypted goodput** across C→A, C→B and A→B LoRa links, with 30 completed RF samples. That is evidence from an earlier experimental runtime. The newer public mixed pilot establishes a finite delivery milestone, not new sustained-goodput evidence. The programme target is **1–1.5 kB/s**; matched MeshCore and Reticulum measurements remain to be collected.
 
 [Performance](docs/PERFORMANCE.md) explains the available evidence, units, measurement boundaries and the matched comparisons still required.
 
 ## What works today?
 
-| Area | Implemented source | Next qualification |
+| Area | Current evidence | Next qualification |
 | --- | --- | --- |
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
 | Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
-| Public resources | Signed manifests, content checks, bounded MR1 blocks, verified-piece resume and measured path policy | C→A LoRa→B IP, IP loss, fresh LoRa admission and return to the faster measured path |
+| Public resources | Signed manifests, bounded MR1 blocks, verified-piece resume and measured path policy; a finite Lantern mixed request/reply verified 977 public bytes | Successful fresh-LoRa resume under the original deadline, then measured IP return |
 | Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
 | Standalone packaging | Canonical Python package and standalone source suite | Candidate artifact review and separately qualified Lantern deployment |
 
