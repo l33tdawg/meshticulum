@@ -2,7 +2,7 @@
 
 The `meshticulum.ip` package carries the unchanged MT05 reliable flow over an explicitly admitted TCP connection. It adds larger authenticated frames and durable stream-byte accounting without reusing the radio airtime ledger. Real loopback controls cover public MR1 request/reply, signed-pack chunk verification, malformed frames, replay, revocation, original deadlines and uncertain process/write recovery.
 
-The carrier has source and loopback controls, plus the finite native public milestone below. Full failure/resume and measured IP return, private native owner/consent and private transport qualification remain open. Meshticulum provides the generic carrier, not a device launcher or native provisioner. The finite public [TCP job lives in Lantern](https://github.com/l33tdawg/sage-lantern/blob/codex/meshticulum-boundary/software/meshticulum-integration/src/lantern_meshticulum/ip/node.py), which depends on Meshticulum. Meshticulum imports no Lantern implementation and supplies no discovery, connection daemon, MeshCore/Reticulum gateway or private native provider.
+The carrier has source and loopback controls, plus the finite native public mixed-path and loss/resume/IP-return checkpoints below. Private native owner/consent and transport, sustained performance and release qualification remain open. Meshticulum provides the generic carrier, not a device launcher or native provisioner. The finite public [TCP job lives in Lantern](https://github.com/l33tdawg/sage-lantern/blob/codex/meshticulum-boundary/software/meshticulum-integration/src/lantern_meshticulum/ip/node.py), which depends on Meshticulum. Meshticulum imports no Lantern implementation and supplies no discovery, connection daemon, MeshCore/Reticulum gateway or private native provider.
 
 ## Recorded native public milestone
 
@@ -14,11 +14,29 @@ A finite Lantern campaign completed a public C→A LoRa→B IP request and the r
 | Lantern integration | [a41851a4301008bd840a8508187a59a150eeaa0e](https://github.com/l33tdawg/sage-lantern/commit/a41851a4301008bd840a8508187a59a150eeaa0e) |
 | Host runtime SHA-256 | `d3194a92917056818dc58b6c7fce4f1320b37c4d6a16acaa9bc7512f593480a9` |
 
-A separate fresh failure/resume campaign observed real TCP loss after **512 received stream bytes**, including framing, and preserved the first verified piece. Fresh LoRa admission was then refused **before ARM/TX** because the fixed **90-second lease** exceeded approximately **85 seconds remaining** in the original resource window. That campaign did not demonstrate LoRa resume or subsequent IP return.
+A separate earlier fresh failure/resume campaign at the same historical pins observed real TCP loss after **512 received stream bytes**, including framing, and preserved the first verified piece. Fresh LoRa admission was then refused **before ARM/TX** because the fixed **90-second lease** exceeded approximately **85 seconds remaining** in the original resource window. That campaign did not demonstrate LoRa resume or subsequent IP return.
 
-A Lantern lease-sizing fix has **22 focused source controls passing**, but has not been deployed. It does not change the recorded refusal or establish a successful native rerun.
+At that checkpoint, a Lantern lease-sizing fix had **22 focused source controls passing** and was undeployed. The later native campaign below records a separate execution of the corrected runtime; it does not overwrite or relabel the earlier refusal.
 
 Device policy and operator evidence stay in [Lantern’s pilot guide](https://github.com/l33tdawg/sage-lantern/blob/c596664b41e6ae1bd37cf64591fb7bd827533900/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md) and its [evidence/cleanup section](https://github.com/l33tdawg/sage-lantern/blob/c596664b41e6ae1bd37cf64591fb7bd827533900/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md#evidence-and-cleanup). This is finite public delivery evidence, not a sustained-goodput benchmark or private production qualification. No firmware flash or full source/deployed-image equivalence was proved; measured RF airtime, energy and EIRP, fair matched MeshCore/Reticulum benchmarks, license/notice closure and clean-history publication remain open.
+
+## Recorded native public resume and IP return
+
+A later fresh Lantern campaign completed the public loss/resume/IP-return sequence under **one original 160-second resource window**, with these exact execution inputs:
+
+| Input | Execution identity |
+| --- | --- |
+| Meshticulum core | [a89c1ca6fdf1865d61367cf3a8d59ac1ab50cb39](https://github.com/l33tdawg/meshticulum/commit/a89c1ca6fdf1865d61367cf3a8d59ac1ab50cb39) |
+| Lantern runtime code | [379025e177619ee3ffd51ef8d5ae0b2bc27dd54e](https://github.com/l33tdawg/sage-lantern/commit/379025e177619ee3ffd51ef8d5ae0b2bc27dd54e) |
+| Host runtime SHA-256 | `856570c771f1377630c8456774a33f55660fe787af9336f2164d55ae9d10561f` |
+
+The campaign independently verified an initial IP piece, injected a **512-stream-byte loss** into the next reply and rejected that partial object while retaining the first verified piece. It then used **fresh C↔B LoRa request/reply sessions** and independent recipient verification, obtained a fresh faster IP sample, and independently verified the fourth piece after returning to IP. All four pieces were **977 bytes**, totaling **3,908 useful verified bytes**, with every verification before the original expiry and no deadline extension.
+
+Ten sessions ended with **twenty terminal, retired native children** and **three terminal owned management masters**. The read-only journal/holder/service audit passed; handback completed before **11:35 UTC on 2026-10-10**. Native source policy, host details and the [sanitized campaign evidence](https://github.com/l33tdawg/sage-lantern/blob/2f96d9029f972e665286209d9883418d431ab1d0/docs/lantern/evidence/meshticulum-native-resume-20261010.json) remain in Lantern; see its [pilot guide](https://github.com/l33tdawg/sage-lantern/blob/2f96d9029f972e665286209d9883418d431ab1d0/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md).
+
+The resumed LoRa piece took **54.349727 seconds** from request to independent verification; the fresh IP sample took **9.529958 seconds**. These are two tiny service transaction samples including controller/management preparation and final radio ACK windows. They support that campaign’s measured path decision, not sustained RF/IP capacity, one-way latency or a matched upstream speed comparison. Actual RF airtime, energy and EIRP remain unmeasured.
+
+The earlier four-hop mixed milestone and 90-second lease refusal remain historical at their own pins above. Private native owner/consent and transport, matched MeshCore/Reticulum benchmarking, firmware source/deployed-image equivalence, notice/source/relinking closure, clean public history and release review remain open. **The alpha is not ready.**
 
 ## Bindings and ownership
 
@@ -80,4 +98,4 @@ These generic carrier controls use actual loopback TCP, synthetic admitted peers
 
 Run Meshticulum's standalone suite for carrier/service regressions. Run Lantern's integration suite separately for private policy, SDK and native-job regressions; there is no optional SAGE suite in the Meshticulum package.
 
-The next qualification must cover current host/device ownership, actual C→A radio forwarding into A→B IP, connection loss, fresh LoRa admission with verified-piece resume, and return to the measured faster IP path. Native lifecycle and backend tests are additionally required for private messages. Version-bound, matched MeshCore/Reticulum benchmarks remain separate. See [the roadmap](ROADMAP.md).
+The recorded native public checkpoints cover a finite C→A LoRa→B IP request/reverse reply and a separate original-deadline loss/LoRa-resume/measured-IP-return campaign. Further execution requires its own current host/device ownership and finite handoff. Private native lifecycle, owner/consent and transport qualification, sustained performance and version-bound matched MeshCore/Reticulum benchmarks remain open, alongside firmware and publication gates. See [the roadmap](ROADMAP.md).
