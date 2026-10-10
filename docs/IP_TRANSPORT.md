@@ -2,7 +2,7 @@
 
 The `meshticulum.ip` package carries the unchanged MT05 reliable flow over an explicitly provisioned TCP connection. It adds larger authenticated frames and durable stream-byte accounting without reusing the radio airtime ledger. Real loopback controls cover public MR1 request/reply, signed-pack chunk verification, malformed frames, replay, revocation, original deadlines and uncertain process/write recovery.
 
-This is source integration. Current device forwarding, full C→A LoRa→B IP, physical failover and production private admission remain open. There is no listener, DNS discovery, connection daemon, MeshCore/Reticulum gateway or IP hardware launcher in this increment.
+This is source integration. Current device forwarding, full C→A LoRa→B IP, physical failover and production private admission remain open. The finite public [TCP job](../src/meshticulum/ip/node.py) opens one explicitly provisioned connection when invoked. It supplies no discovery, connection daemon, MeshCore/Reticulum gateway or private native provider.
 
 ## Bindings and ownership
 
@@ -10,7 +10,7 @@ This is source integration. Current device forwarding, full C→A LoRa→B IP, p
 
 [`IpAuthority`](../src/meshticulum/ip/authority.py) reads a private local grant, secret and active marker, checks their original identities and contents, and makes a durable single-use claim. The host supplies its boot identity and native epoch/monotonic clocks independently of peer input. A dispatch lease holds the revocation lock, checks current ownership and belongs to its acquiring thread. Closing from another thread waits for that lease to end; closing from inside the lease is refused. Original application deadlines are supplied by the native provisioner, may only tighten, and cannot be rebound on replay-store reopen.
 
-[`TcpWorker`](../src/meshticulum/ip/worker.py) adopts an already connected IP stream socket by detaching the descriptor from its caller. It validates the actual local/remote endpoints and the journal owner before use. The host must separately authorize socket setup and protect this process and its descriptors; a Python record or file hash is not proof of native authority. The worker creates no connection and performs no radio operation.
+[`TcpWorker`](../src/meshticulum/ip/worker.py) adopts an already connected IP stream socket by detaching the descriptor from its caller. It validates the actual local/remote endpoints and the journal owner before use. The host must separately authorize socket setup and protect this process and its descriptors; a Python record or file hash is not proof of native authority. The worker creates no connection and performs no radio operation. The explicit public job performs bounded socket setup before adopting it, under the same original expiry and current revocation checks.
 
 ## Framing, counters and reliable flow
 
@@ -36,15 +36,27 @@ The existing [ServiceTransfer](../src/meshticulum/bench/services.py) recognizes 
 
 Private IP dispatch still requires the existing exact-grant native `PrivatePolicy` and durable capture/inbox sink. The default runner refuses private traffic without those providers. Private sealed records are not public resources, and the prototype does not qualify a real encrypted backend or enable a private daemon.
 
+## Finite public TCP pilot entry
+
+`python -m meshticulum.ip.node --unit unit-a --grant-dir /private/native/run` invokes one public MR1 job. On real hosts it requires Linux root, independently checks the unit role/boot and service lifetimes, and reads only the native provisioner's private grant and sender file. It refuses private formats, malformed objects, a different boot or an expired deadline before socket setup.
+
+The initiator binds its exact admitted endpoint and makes one connection attempt; the responder binds its exact endpoint and accepts one peer. Setup lasts at most five seconds and remains subject to the original application deadline and revocation. An unexpected endpoint is refused. SIGTERM/SIGINT stop new operations, close the socket and retire wire state; previous stream-byte reservations remain charged.
+
+Received bytes are fsynced to a create-only, descriptor-anchored `receiver.bin` in the private run directory. They remain quarantined public blocks, with `publisher_verified=false` and `private_admission=false`. A caller must independently verify MR1 request binding, the signed manifest and the complete chunk before caching or seeding.
+
+The IP adapter flushes its pending final ACK before the finite receiver closes. A sender stops reading once it has accepted the authenticated final receipt, so a subsequent TCP EOF cannot erase that receipt. ACK kernel acceptance still does not prove peer receipt; the two endpoint results must be checked separately.
+
+The runtime builder includes this entry behind the hash-verified launcher's explicit `ip-service-run` action and `ip-revoke` containment action. Building or installing the bundle does not authorize a connection or a radio. See [the hardware pilot](HARDWARE_PILOT.md).
+
 ## Controls and remaining work
 
 Run the carrier and lifecycle controls with:
 
 ```sh
-python -m pytest tests/test_ip_transport.py tests/test_ip_ownership.py tests/test_mixed_carriers.py tests/test_mixed_resume.py
+python -m pytest tests/test_ip_transport.py tests/test_ip_ownership.py tests/test_mixed_carriers.py tests/test_mixed_resume.py tests/test_ip_node.py tests/test_ip_terminal_close.py
 ```
 
-These controls use actual loopback TCP, synthetic provisioned peers and modeled radio workers. They cover:
+These controls use actual loopback TCP, synthetic provisioned peers and modeled radio workers. The finite-job controls use independent child processes with stubbed device/root facts; they do not qualify actual host ownership or a native backend. They cover:
 
 - Lost and reused owner descriptors, concurrent close, same-thread close refusal and retained unresolved reservations.
 - C→A modeled radio→B actual TCP request/reply, preserving A's bridge identity, signed-pack verification, original expiry and each carrier's separate costs. TCP loss stops the exchange before a radio reply.

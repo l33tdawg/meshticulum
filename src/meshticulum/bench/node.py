@@ -169,7 +169,9 @@ def _run(unit, directory, object_directory, *, public_service):
                     and authority.service_format in ('MR1.request', 'MR1.response'),
                     'private_service_requires_qualified_native_provider')
             result.update(service_kind=authority.service_kind.value, service_format=authority.service_format,
-                          publisher_verified=False, private_admission=False)
+                          publisher_verified=False, private_admission=False,
+                          original_application_deadline_us=authority.application_deadline_us,
+                          original_application_expires_epoch_us=authority.application_expires_epoch_us)
         else:
             # Legacy random bench objects never consume service records.
             require(authority.plan['schema'] == 'meshticulum.bench-run.v1',

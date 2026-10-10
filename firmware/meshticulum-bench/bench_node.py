@@ -29,7 +29,7 @@ def trusted(path, limit=2000000):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('inspect', 'run', 'service-run', 'revoke'))
+    parser.add_argument('action', choices=('inspect', 'run', 'service-run', 'ip-service-run', 'revoke', 'ip-revoke'))
     parser.add_argument('unit', choices=('unit-a', 'unit-b', 'unit-c'))
     parser.add_argument('--run-id')
     args = parser.parse_args()
@@ -54,12 +54,21 @@ def main():
             raise RuntimeError('invalid_run_id')
         root = Path('/var/lib/meshticulum-bench')
         directory = root / 'runs' / args.run_id
-        if args.action == 'revoke':
+        if args.action in ('revoke', 'ip-revoke'):
             node.roles(args.unit)
-            authority.revoke(directory)
+            if args.action == 'ip-revoke':
+                from meshticulum.ip.authority import revoke
+                revoke(directory)
+            else:
+                authority.revoke(directory)
             result = {'revoked': True, 'run_id': args.run_id}
         else:
-            if args.action == 'service-run':
+            if args.action == 'ip-service-run':
+                if manifest.get('public_ip_service_formats') != ['MR1.request', 'MR1.response']:
+                    raise RuntimeError('public_ip_runner_not_in_bundle')
+                from meshticulum.ip.node import run_public_service
+                result = run_public_service(args.unit, directory)
+            elif args.action == 'service-run':
                 if manifest.get('public_service_formats') != ['MR1.request', 'MR1.response']:
                     raise RuntimeError('public_service_runner_not_in_bundle')
                 result = node.run_public_service(args.unit, directory)
@@ -68,7 +77,7 @@ def main():
     result['runtime_bundle'] = str(bundle)
     result['bundle_manifest_sha256'] = hashlib.sha256(manifest_bytes).hexdigest()
     print(json.dumps(result))
-    if args.action in ('run', 'service-run') and not result['complete']:
+    if args.action in ('run', 'service-run', 'ip-service-run') and not result['complete']:
         raise SystemExit(1)
 
 

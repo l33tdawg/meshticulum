@@ -8,7 +8,7 @@ Build a public **host runtime archive**, without installing or arming a radio:
 python firmware/meshticulum-bench/build_runtime.py --output-dir build/runtime
 ```
 
-The archive includes canonical Meshticulum packages, an exact source manifest and a hash-verified launcher. Private native services are disabled. A separate root-provisioned finite grant, owner lock, journal and current device evidence are required for dispatch. `runtime_bootstrap.py` is installation tooling; building an archive grants no device authority.
+The archive includes canonical Meshticulum packages, an exact source manifest and a hash-verified launcher. Private native services are disabled. A separate root-provisioned finite grant, owner lock, journal and current device evidence are required for dispatch. The explicit `ip-service-run` entry likewise needs a native public IP grant; it opens only its admitted connection and creates no daemon. See [the coordinated hardware pilot](HARDWARE_PILOT.md). `runtime_bootstrap.py` is installation tooling; building an archive grants no device authority.
 
 The retained firmware build and device orchestration scripts are historical lab tooling. Their defaults refer to parent SAGE lab evidence directories and A/B/C roles. A fresh clone does **not** contain that evidence, board support tree, third-party vendor libraries, rollback firmware, private management keys or live grants. These scripts are not a portable firmware provisioning installer. Treat every configured boot, host and artifact pin as requiring fresh verification.
 

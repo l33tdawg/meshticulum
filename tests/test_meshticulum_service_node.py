@@ -199,6 +199,8 @@ def test_frozen_public_runtime_contains_service_dependencies_and_imports_without
     manifest = record['manifest']
     assert manifest['private_services_enabled'] is False
     assert manifest['public_service_formats'] == ['MR1.request', 'MR1.response']
+    assert manifest['public_ip_service_formats'] == ['MR1.request', 'MR1.response']
+    assert 'meshticulum/ip/node.py' in manifest['files']
     assert 'meshticulum/resources/resource.py' in manifest['files']
     assert not any(p.startswith('sage_lantern/') or 'sdk' in p for p in manifest['files'])
     extracted = tmp_path / 'extracted'
@@ -208,6 +210,7 @@ def test_frozen_public_runtime_contains_service_dependencies_and_imports_without
     result = subprocess.run([sys.executable, '-c',
         'import sys; from meshticulum.bench import node, services, service_runner; '
         'node.BenchFlow; node.run_public_service; node.BenchFlow.__module__; '
+        'from meshticulum.ip import node as ip_node; ip_node.run_public_service; '
         'assert not any(n == "sage_lantern" or n.startswith("sage_lantern.") '
         'or n == "sage_sdk" or n.startswith("sage_sdk.") for n in sys.modules)'],
         cwd=extracted, env={**os.environ, 'PYTHONPATH': str(extracted)}, capture_output=True, text=True, timeout=10)

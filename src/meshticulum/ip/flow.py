@@ -94,6 +94,9 @@ class IpFlow:
                     at=self.clock()[1]/1e6;self.link.now=at
                     self.flow.absorb(parsed,at);self.counts['rx_'+verified.kind.name]+=1
                     self.events.append({'event':'rx','kind':verified.kind.name,'counter':verified.counter})
+                    # A valid terminal receipt is final. Do not consume a later
+                    # TCP EOF in this batch and turn that receipt into failure.
+                    if self.sends and self.flow.complete:break
                 if not self.sends and self.flow.delivered:
                     data=self.flow.consume(len(self.flow.delivered))
                     require(len(self.received)+len(data)<=self.expected_bytes,'ip_receive_limit')
@@ -104,6 +107,20 @@ class IpFlow:
                 self.authority.require_dispatch()
                 return self.flow.complete
         except BaseException:self.close();raise
+
+    def finish_receive_ack(self):
+        """Flush the pending final receipt before a finite TCP owner closes.
+
+        No further reads are needed once the complete admitted object arrived.
+        This is kernel acceptance of the ACK, not evidence the peer received it.
+        """
+        require(not self.closed and not self.sends and self.flow.complete, 'ip_receive_not_complete')
+        with self.authority.application_lease():
+            require(self.worker.owned(), 'ip_worker_not_owned')
+            self.link.now=self.clock()[1]/1e6
+            self.flow.pump(self.link.now,max_frames=self.authority.grant.limits.window_frames,drain=False)
+            self.authority.require_dispatch()
+            return not self.flow._ack_dirty
 
     def close(self):
         if not self.closed:self.closed=True;self.flow.cancel()

@@ -136,6 +136,10 @@ class Capabilities:
             raise ContractError("invalid_versions")
         _enum_tuple(self.services, ServiceKind, 4, "invalid_services")
         _enum_tuple(self.features, Feature, 6, "invalid_features")
+        # The encoder already sorts these sets. Keep accepted immutable values
+        # canonical too, so persistence and transcript digests identify one value.
+        object.__setattr__(self, "services", tuple(sorted(self.services, key=lambda item: item.value)))
+        object.__setattr__(self, "features", tuple(sorted(self.features, key=lambda item: item.value)))
         if type(self.limits) is not CapabilityLimits:
             raise ContractError("invalid_capability_limits")
 

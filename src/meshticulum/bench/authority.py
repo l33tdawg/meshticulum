@@ -80,7 +80,11 @@ class RunAuthority:
             require(type(p) is dict and p.get('schema') in
                     ('meshticulum.bench-run.v1', 'meshticulum.service-run.v1'), 'invalid_bench_plan')
             is_service = p['schema'] == 'meshticulum.service-run.v1'
-            require(set(p) == fields | ({'service'} if is_service else set()), 'invalid_bench_plan')
+            local_deadline_field = 'application_deadline_monotonic_us'
+            extras = {'service'} if is_service else set()
+            if is_service and local_deadline_field in p:
+                extras.add(local_deadline_field)
+            require(set(p) == fields | extras, 'invalid_bench_plan')
             self.service_kind, self.service_format = ServiceKind.KNOWLEDGE, None
             self.application_expires_epoch_us = p['expires_epoch_us']
             if is_service:
@@ -143,6 +147,13 @@ class RunAuthority:
                     'bench_grant_not_current')
             self.deadline_us = mono + self.grant.expires_epoch_us - epoch
             self.application_deadline_us = mono + self.application_expires_epoch_us - epoch
+            if is_service and local_deadline_field in p:
+                declared = p[local_deadline_field]
+                require(type(declared) is int and mono < declared < 2**63,
+                        'invalid_original_service_deadline')
+                # Host-local monotonic time is excluded from the shared route
+                # digest. It may tighten, never extend, this endpoint's epoch cap.
+                self.application_deadline_us = min(self.application_deadline_us, declared)
             require(epoch < self.application_expires_epoch_us, 'service_application_expired')
             self.last_clock = (epoch, mono)
             self.owner_id = hashlib.sha256(b'owner' + self.grant.digest + expected_unit.encode()).digest()[:16]

@@ -12,3 +12,5 @@ The existing Meshticulum programme remains active. Moving source into its own re
 Source estimates, loopback HTTP, simulated carrier success, type identity, manifest hashes and passing tests must remain distinct from physical and production evidence.
 
 The [TCP source prototype](IP_TRANSPORT.md) now passes real loopback controls, including original-deadline MR1 request/reply and signed-pack verification. This advances the IP implementation requirement; it does not close device, mixed-path or private native qualification.
+
+The finite public TCP entry, final-ACK/EOF control and immutable host-local pilot deadline are now source-prepared. Device/root facts were stubbed in the child-process controls. Native provisioning, the coordinated physical pilot and independent publisher verification at the recipient remain open; see [the pilot plan](HARDWARE_PILOT.md).

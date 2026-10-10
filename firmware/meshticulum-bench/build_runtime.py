@@ -36,7 +36,7 @@ def main():
              'meshticulum/__init__.py': (ROOT / 'src/meshticulum/__init__.py').read_bytes(),
              'meshticulum/resources/__init__.py': (ROOT / 'src/meshticulum/resources/__init__.py').read_bytes(),
              'meshticulum/resources/resource.py': (ROOT / 'src/meshticulum/resources/resource.py').read_bytes()}
-    for package in ('bench', 'contracts', 'scheduler', 'flow',
+    for package in ('bench', 'contracts', 'scheduler', 'flow', 'ip',
                     'meshticulum_contracts', 'meshticulum_scheduler'):
         for path in sorted((ROOT / 'src/meshticulum' / package).glob('*.py')):
             if path.name == 'flash_app.py': continue
@@ -51,6 +51,7 @@ def main():
         'activation': 'Installation only inspects; a separate root-provisioned finite grant is required to arm.',
         'private_sage_imports': False, 'private_services_enabled': False,
         'public_service_formats': ['MR1.request', 'MR1.response'],
+        'public_ip_service_formats': ['MR1.request', 'MR1.response'],
         'radio_mtu_bytes': 255, 'flow_payload_bytes': 193}
     files['manifest.json'] = json.dumps(manifest, sort_keys=True, indent=2).encode() + b'\n'
     raw = io.BytesIO()
