@@ -34,7 +34,7 @@ The flow history includes references to lab receipts in the original SAGE checko
 
 ## Follow qualification
 
-The [roadmap](ROADMAP.md) retains the full programme: finite public-radio qualification, authenticated IP transport, C→A LoRa→B IP, loss and verified-piece resume, return to a locally measured faster path, native private integration and matched MeshCore/Reticulum measurements.
+The [roadmap](ROADMAP.md) retains the full programme: finite public-radio qualification, authenticated IP transport, C→A LoRa→B IP, loss and verified-piece resume, return to a locally measured faster path, native private integration, our performance qualification and comparisons with published MeshCore/Reticulum figures.
 
 Read [Performance](PERFORMANCE.md) alongside that roadmap. Source controls, modeled workers and loopback transfers provide useful implementation evidence. Physical RF completion, peer receipt, publisher verification and production application acceptance need their respective observations.
 

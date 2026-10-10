@@ -40,7 +40,7 @@ on one pinned build host. Full source/deployed-image correspondence, exact
 artifact notices and source/relinking closure, clean public history and release
 review remain open. Private native owner/consent and transport still require
 qualification. This draft represents no public alpha or production activation;
-MeshCore/Reticulum wire interoperability and speed superiority are unsupported.
+MeshCore/Reticulum wire interoperability and overall speed/security superiority are unsupported. The competitive goal is faster useful transfers and stronger security than both; comparison uses [published figures and their conditions](docs/PERFORMANCE.md#comparison-with-published-figures), without requiring counterpart benchmark campaigns.
 
 The alpha will permit wire/API changes. Candidate validation and artifact hashes
 must be tied to its exact commit before these notes become a release. See

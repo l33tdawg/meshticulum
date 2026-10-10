@@ -77,15 +77,29 @@ The earlier bench also retained explicit-session revocation and verified-chunk r
 
 The historical extraction validation and installed-wheel checkpoint are recorded in [VALIDATION.json](../provenance/VALIDATION.json). Native-job and optional SAGE application controls now belong to [Lantern](https://github.com/l33tdawg/sage-lantern/tree/codex/meshticulum-boundary/software/meshticulum-integration). Later source results must identify the exact core and Lantern commits and their validation scope; they do not retroactively qualify the historical runtime. Source controls, modeled workers and loopback HTTP serve a different purpose from a hardware benchmark.
 
-## A fair MeshCore / Reticulum comparison
+## Comparison with published figures
 
-No matched MeshCore or Reticulum hardware sample is present in this record. Their fields remain **null**; the documentation does not rank their speed. See [the architectural comparison](COMPARISON.md) for capabilities and design differences.
+The competitive goal is faster useful throughput and stronger encryption/security than both MeshCore and Reticulum. On 2026-10-10 the owner selected **comparison with their published figures**, without requiring us to run counterpart benchmark campaigns. Our own real Meshticulum transport, sustained-performance, completion and latency qualification remains required.
 
-The planned comparison must hold the radio hardware, antenna/placement, modem settings, power, topology, useful encrypted payload and finite medium budget constant. It must identify each exact software/firmware version and use comparable trust and completion semantics. A message acknowledgement, completed Resource and durable verified object must not silently become the same endpoint.
+The [comparison record](../benchmarks/published-comparison.json) retains source, date, units, settings, authorship and measurement scope. These rows measure different things; they must not become one ranked bar chart.
 
-Capture cold and warm costs separately, including discovery/session setup where applicable. Keep requests, responses, ACKs, retransmissions, timeout/refusal rates, latency distributions and reverse-medium traffic. Retain every attempted run and unavailable metric. Report single-hop, stored relay and mixed-media tests separately. Faster PHY settings or a best-case burst alone cannot support an upstream speed comparison.
+| Published result | Figure | What was measured or reported |
+| --- | ---: | --- |
+| Meshticulum retained RF bench | **1.19–1.23 kB/s median** | Thirty completed 8,192-byte encrypted flows at SF7/BW500/CR4/5; sender flow ACK plus independently required durable receiver hash. [Record](../benchmarks/2026-10-09-radio/radio-results.json) |
+| MeshCore wide-profile contributor test | **410 B/s**, 306 ms median ACK round trip | Two SX1262 companions, approximately one metre apart; 25 frames of 128 bytes, each acknowledged. SF7/BW500; other settings/pin not fully reported. Published by **@l33tdawg**, not a project-maintainer benchmark. [Issue #3404, 2026-09-13](https://github.com/meshcore-dev/MeshCore/issues/3404) |
+| MeshCore narrow-profile contributor test | **89 B/s**, 1,432 ms median ACK round trip | Same contributed experiment at SF8/BW62.5. Different radio settings from our retained bench. [Issue #3404](https://github.com/meshcore-dev/MeshCore/issues/3404) |
+| RNode author’s LoRa guide | **3.1 kb/s** | Reported **on-air bitrate**, SF8/BW125/CR4/5, 7 dBm; example logs use RNS 0.3.3. Not application goodput. [Guide, 2023-01-14](https://unsigned.io/rnode_bootstrap_console/guides/loracomms.html) |
+| RNode status documentation | **1.30 kb/s** | An example interface rate, without a timed accepted-payload transfer. [Status guide](https://unsigned.io/rnode_bootstrap_console/m/using.html) |
+| Experimental RNode/Weave report | **~150 kb/s over 6.5 km** | Maintainer’s raw ESP32 **2.4 GHz backhaul** result, excluding packet/management overhead; not encrypted LoRa goodput. [Discussion, 2025-04-14](https://github.com/markqvist/Reticulum/discussions/788) |
+| Reticulum reference implementation | **~5 Gb/s on Raspberry Pi 5** | Published **raw CPU/network routing** throughput in interpreted Python on one core, not LoRa application goodput. [Pinned 1.5.5 README](https://github.com/markqvist/Reticulum/blob/7f2b3b9b524c9386316379af1313b43a5e4f7a5d/README.md#performance) |
 
-The recorded finite public campaigns exercised authenticated IP forwarding and, separately, IP loss followed by **fresh C↔B LoRa admission**, verified-piece resume under the original resource deadline, and return to a locally measured faster IP path. Broader private, lifecycle and sustained-performance qualification remains open. [Architecture](ARCHITECTURE.md) shows that design; [ROADMAP.md](ROADMAP.md) records the remaining gates.
+Our directional medians are approximately **2.9–3.0 times the reported 410 B/s MeshCore frame-ACK result**. This is a numerical comparison between those reports: the stated SF/BW agrees, but payload size, batching, timing, acceptance, software and placement differ. It supports the motivation for reducing per-frame ACK cost; it does not establish a general protocol-speed ranking or equal range/power/privacy behavior.
+
+No comparable Reticulum/RNode **encrypted LoRa application-goodput** measurement was found in the reviewed primary-source guides, official README and maintainer discussion. That field stays **unavailable**, rather than zero. Reticulum’s published 150 b/s–1 Gb/s broad network envelope is likewise not a radio-transfer benchmark. Third-party 0.7/2.7 kB/s tables that describe raw bitrate before RNS overhead cannot fill this gap.
+
+Published comparisons must identify hardware, modulation, bandwidth, power, topology, useful bytes, privacy and completion semantics where supplied; missing conditions stay missing. Keep request/response/ACK/retry and cold/warm scope visible. Wider bandwidth, raw routing speed or PHY arithmetic alone cannot prove a protocol advantage. Security comparisons use [explicit properties and current gaps](COMPARISON.md), not cipher names or a headline rate.
+
+The recorded finite public campaigns exercised IP forwarding and separate original-deadline loss/LoRa-resume/measured-IP-return behavior. Our private, lifecycle, sustained-goodput and latency qualification remains open. See [the roadmap](ROADMAP.md).
 
 ## Reproduce the published figure and arithmetic
 

@@ -61,9 +61,9 @@ The goal is higher **useful encrypted goodput**: application bytes delivered und
 
 For public resources, the path policy uses local verified request timings and shared-bottleneck information. It can retain verified chunks and select among explicitly supplied routes; it does not equate an interface name with a fast path. The [authenticated TCP prototype](docs/IP_TRANSPORT.md) supports MR1 request/reply, and the later finite native campaign observed fresh-LoRa resume and return to a currently measured faster IP path. Its tiny service samples include management and final-ACK windows; they do not establish sustained carrier capacity or a speed ranking against MeshCore or Reticulum.
 
-Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s median useful encrypted goodput** across C→A, C→B and A→B LoRa links, with 30 completed RF samples. That is evidence from an earlier experimental runtime. The newer public mixed pilot establishes a finite delivery milestone, not new sustained-goodput evidence. The programme target is **1–1.5 kB/s**; matched MeshCore and Reticulum measurements remain to be collected.
+Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s median useful encrypted goodput** across C→A, C→B and A→B LoRa links, with 30 completed RF samples. That is evidence from an earlier experimental runtime. The newer public mixed pilot establishes a finite delivery milestone, not new sustained-goodput evidence. The programme target is **1–1.5 kB/s**; comparison with published MeshCore/Reticulum figures is recorded with its conditions and limits in [Performance](docs/PERFORMANCE.md#comparison-with-published-figures).
 
-[Performance](docs/PERFORMANCE.md) explains the available evidence, units, measurement boundaries and the matched comparisons still required.
+[Performance](docs/PERFORMANCE.md) explains the available evidence, units, measurement boundaries and the scope of comparisons with published upstream figures.
 
 ## What works today?
 
@@ -71,7 +71,7 @@ Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s media
 | --- | --- | --- |
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
 | Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
-| Public resources | Finite native mixed request/reply verified 977 bytes; a later loss/LoRa-resume/IP-return campaign verified four pieces / 3,908 bytes under one original expiry | Broader performance qualification, matched benchmarking and release review |
+| Public resources | Finite native mixed request/reply verified 977 bytes; a later loss/LoRa-resume/IP-return campaign verified four pieces / 3,908 bytes under one original expiry | Broader Meshticulum performance qualification, published-comparison review and release review |
 | Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
 | Standalone packaging | Canonical Python package and standalone source suite | Candidate artifact review and separately qualified Lantern deployment |
 

@@ -18,7 +18,7 @@ A separate earlier fresh failure/resume campaign at the same historical pins obs
 
 At that checkpoint, a Lantern lease-sizing fix had **22 focused source controls passing** and was undeployed. The later native campaign below records a separate execution of the corrected runtime; it does not overwrite or relabel the earlier refusal.
 
-Device policy and operator evidence stay in [Lantern’s pilot guide](https://github.com/l33tdawg/sage-lantern/blob/c596664b41e6ae1bd37cf64591fb7bd827533900/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md) and its [evidence/cleanup section](https://github.com/l33tdawg/sage-lantern/blob/c596664b41e6ae1bd37cf64591fb7bd827533900/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md#evidence-and-cleanup). This is finite public delivery evidence, not a sustained-goodput benchmark or private production qualification. No firmware flash or full source/deployed-image equivalence was proved; measured RF airtime, energy and EIRP, fair matched MeshCore/Reticulum benchmarks, license/notice closure and clean-history publication remain open.
+Device policy and operator evidence stay in [Lantern’s pilot guide](https://github.com/l33tdawg/sage-lantern/blob/c596664b41e6ae1bd37cf64591fb7bd827533900/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md) and its [evidence/cleanup section](https://github.com/l33tdawg/sage-lantern/blob/c596664b41e6ae1bd37cf64591fb7bd827533900/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md#evidence-and-cleanup). This is finite public delivery evidence, not a sustained-goodput benchmark or private production qualification. No firmware flash or full source/deployed-image equivalence was proved; measured RF airtime, energy and EIRP, review of comparisons with published MeshCore/Reticulum figures, license/notice closure and clean-history publication remain open.
 
 ## Recorded native public resume and IP return
 
@@ -36,7 +36,7 @@ Ten sessions ended with **twenty terminal, retired native children** and **three
 
 The resumed LoRa piece took **54.349727 seconds** from request to independent verification; the fresh IP sample took **9.529958 seconds**. These are two tiny service transaction samples including controller/management preparation and final radio ACK windows. They support that campaign’s measured path decision, not sustained RF/IP capacity, one-way latency or a matched upstream speed comparison. Actual RF airtime, energy and EIRP remain unmeasured.
 
-The earlier four-hop mixed milestone and 90-second lease refusal remain historical at their own pins above. Private native owner/consent and transport, matched MeshCore/Reticulum benchmarking, firmware source/deployed-image equivalence, notice/source/relinking closure, clean public history and release review remain open. **The alpha is not ready.**
+The earlier four-hop mixed milestone and 90-second lease refusal remain historical at their own pins above. Private native owner/consent and transport, review of published MeshCore/Reticulum comparisons, firmware source/deployed-image equivalence, notice/source/relinking closure, clean public history and release review remain open. **The alpha is not ready.**
 
 ## Bindings and ownership
 
@@ -98,4 +98,4 @@ These generic carrier controls use actual loopback TCP, synthetic admitted peers
 
 Run Meshticulum's standalone suite for carrier/service regressions. Run Lantern's integration suite separately for private policy, SDK and native-job regressions; there is no optional SAGE suite in the Meshticulum package.
 
-The recorded native public checkpoints cover a finite C→A LoRa→B IP request/reverse reply and a separate original-deadline loss/LoRa-resume/measured-IP-return campaign. Further execution requires its own current host/device ownership and finite handoff. Private native lifecycle, owner/consent and transport qualification, sustained performance and version-bound matched MeshCore/Reticulum benchmarks remain open, alongside firmware and publication gates. See [the roadmap](ROADMAP.md).
+The recorded native public checkpoints cover a finite C→A LoRa→B IP request/reverse reply and a separate original-deadline loss/LoRa-resume/measured-IP-return campaign. Further execution requires its own current host/device ownership and finite handoff. Private native lifecycle, owner/consent and transport qualification, sustained performance and version-bound comparisons with published MeshCore/Reticulum figures remain open, alongside firmware and publication gates. See [the roadmap](ROADMAP.md).
