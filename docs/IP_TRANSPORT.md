@@ -6,7 +6,7 @@ This is source integration. Current device forwarding, full C→A LoRa→B IP, p
 
 ## Bindings and ownership
 
-[`IpGrant`](../src/meshticulum/ip/wire.py) binds complete peers, independent session/incarnation values, the TCP endpoint pair, service format, exact object size/digest, route binding, epoch expiries and finite limits. Its separate `meshticulum.ip.v1` key/signature context avoids interpreting TCP as the radio protocol. Pairwise secrets are provisioned independently; this PSK mode does not supply forward secrecy or identity enrollment.
+[`IpGrant`](../src/meshticulum/ip/wire.py) binds complete peers, independent session/incarnation values, the TCP endpoint pair, service format, exact object size/digest, route binding, epoch expiries and finite limits. Its separate `meshticulum.ip.v1` key/authentication context avoids interpreting TCP as the radio protocol. Pairwise secrets are provisioned independently; this PSK mode does not supply forward secrecy or identity enrollment.
 
 [`IpAuthority`](../src/meshticulum/ip/authority.py) reads a private local grant, secret and active marker, checks their original identities and contents, and makes a durable single-use claim. The host supplies its boot identity and native epoch/monotonic clocks independently of peer input. A dispatch lease holds the revocation lock, checks current ownership and belongs to its acquiring thread. Original application deadlines are supplied by the native provisioner, may only tighten, and cannot be rebound on replay-store reopen.
 
