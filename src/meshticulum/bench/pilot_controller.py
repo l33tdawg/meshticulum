@@ -174,6 +174,7 @@ class Controller:
         require(offset==0 and path.startswith('/packs/'+self.resource_sha256+'/chunks/')
                 and path.endswith('.json'), 'pilot_requires_whole_selected_public_chunk')
         chunk_sha256=path.rsplit('/',1)[-1][:-5]
+        first_index=len(self.links)
         try:
             first=self.link('unit-c','unit-a','lora','MR1.request',request)
             second=self.link('unit-a','unit-b','tcp','MR1.request',request,source=first)
@@ -192,7 +193,7 @@ class Controller:
                     and verified['original_application_expires_epoch_us']==self.expires_epoch_us
                     and type(verified['original_application_deadline_us']) is int
                     and 0 < verified['original_application_deadline_us'] <= min(
-                        self.links[0]['outcomes']['unit-c']['original_application_deadline_us'],
+                        self.links[first_index]['outcomes']['unit-c']['original_application_deadline_us'],
                         self.links[-1]['outcomes']['unit-c']['original_application_deadline_us']),
                     'pilot_native_piece_verification_missing_or_rebound')
             self.verified.append(verified)

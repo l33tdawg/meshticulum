@@ -145,3 +145,18 @@ def test_radio_packages_require_explicit_confirmation_without_activating_anythin
             sender='unit-c',receiver='unit-a',transport='lora',format='MR1.request',
             descriptor=dict(bytes=len(REQUEST),sha256=hashlib.sha256(REQUEST).hexdigest()),source=None,
             request=REQUEST,peers=PEERS,boots=BOOTS,now_epoch_us=clock.epoch())
+
+
+def test_later_piece_keeps_its_own_tighter_sent_request_deadline():
+    pilot,op,clock=controller()
+    pilot.mixed_piece(REQUEST,RESPONSE)
+    original=op.collect
+    def tightened(unit,run):
+        value=original(unit,run)
+        if unit=='unit-c' and value['sends'] is True:
+            value['original_application_deadline_us']=150000000
+        return value
+    op.collect=tightened
+    with pytest.raises(WireError,match='pilot_native_piece_verification_missing_or_rebound'):
+        pilot.mixed_piece(REQUEST,RESPONSE)
+    assert len(pilot.verified)==1
