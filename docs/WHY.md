@@ -34,7 +34,7 @@ These are implemented source boundaries in the [flow](../src/meshticulum/flow/fl
 
 ## Why performance matters
 
-Higher useful throughput changes what a radio network can reasonably deliver. A verified pack arriving sooner occupies the shared medium for less time and leaves more capacity for other users. Resuming verified pieces also avoids paying again for bytes the recipient already has.
+Higher useful throughput changes what a radio network can reasonably deliver. Reducing overhead and unnecessary retransmissions can reduce shared-medium cost; retaining verified pieces avoids transferring them again. Faster delivery alone does not establish lower RF airtime, which remains unmeasured in the retained results.
 
 Meshticulum pursues that efficiency through compact binary envelopes, bounded block transfers, receiver credit, burst scheduling and acknowledgement coalescing. The public MR1 adapter moves raw blocks over the scarce carrier and reconstructs host-side batch envelopes locally, avoiding HTTP and base64 expansion on the radio path. The compact private codec preserves the existing encrypted and signed bytes while removing text encoding overhead. See [MR1](../src/meshticulum/resources/resource.py) and the [binary envelope codec](../src/meshticulum/privacy/mesh_binary_envelope.py).
 
