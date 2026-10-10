@@ -30,6 +30,8 @@ Prepare these artifacts for review:
 - Release notes stating experimental behavior, supported entry points, original-deadline/replay/debt semantics, known limitations and retained benchmark conditions. Link every claimed result to evidence; keep unavailable measurements null.
 - Firmware preparation/build records from the [explicit primary-input recipe](FIRMWARE_RECIPE.md), tied to the exact input lock, patch, recipe, source manifest and target output hashes. Preserve failed attempts and identify the macOS-arm64 host/CLI environment. These artifacts do not imply flashing, native acceptance, bit-identical rebuilds or complete linked-source notices.
 
+For source-archive repeatability, retain the original backend outputs and normalize their timestamps/owner metadata with [`normalize_sdist.py`](../tools/normalize_sdist.py), using an explicit `--source-date-epoch` fixed to the candidate commit. The tool preserves file bytes and permissions, rejects duplicate/unsafe paths and refuses to overwrite an existing output. Compare two independently built normalized archives and inspect their member manifests. A raw backend archive can vary in timestamps even when its content matches; retain that failed byte-comparison alongside the normalized result. This packaging step establishes no native or release acceptance.
+
 The [extraction validation record](../provenance/VALIDATION.json) is a historical checkpoint, not proof that a later candidate passed. The current Meshticulum artifact and its paired Lantern integration each require their own records. Moving application code cannot carry qualification forward automatically.
 
 ## Reviewer checklist for the source alpha
