@@ -29,9 +29,11 @@ def trusted(path, limit=2000000):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('inspect', 'run', 'service-run', 'ip-service-run', 'revoke', 'ip-revoke'))
+    parser.add_argument('action', choices=('inspect', 'run', 'service-run', 'ip-service-run', 'pilot-verify', 'revoke', 'ip-revoke'))
     parser.add_argument('unit', choices=('unit-a', 'unit-b', 'unit-c'))
     parser.add_argument('--run-id')
+    parser.add_argument('--campaign-id')
+    parser.add_argument('--request-run-id')
     args = parser.parse_args()
     if os.geteuid() != 0: raise RuntimeError('requires_root')
     bundle = Path(__file__).resolve().parent
@@ -63,7 +65,10 @@ def main():
                 authority.revoke(directory)
             result = {'revoked': True, 'run_id': args.run_id}
         else:
-            if args.action == 'ip-service-run':
+            if args.action == 'pilot-verify':
+                from meshticulum.bench.pilot_resource_node import verify
+                result = verify(args.unit, args.campaign_id, args.request_run_id, args.run_id)
+            elif args.action == 'ip-service-run':
                 if manifest.get('public_ip_service_formats') != ['MR1.request', 'MR1.response']:
                     raise RuntimeError('public_ip_runner_not_in_bundle')
                 from meshticulum.ip.node import run_public_service

@@ -13,4 +13,6 @@ Source estimates, loopback HTTP, simulated carrier success, type identity, manif
 
 The [TCP source prototype](IP_TRANSPORT.md) now passes real loopback controls, including original-deadline MR1 request/reply and signed-pack verification. This advances the IP implementation requirement; it does not close device, mixed-path or private native qualification.
 
-The finite public TCP entry, final-ACK/EOF control and immutable host-local pilot deadline are now source-prepared. Device/root facts were stubbed in the child-process controls. Native provisioning, the coordinated physical pilot and independent publisher verification at the recipient remain open; see [the pilot plan](HARDWARE_PILOT.md).
+The finite public TCP entry, final-ACK/EOF control, immutable host-local pilot deadline, native grant preparation and independent public-piece verifier are now source-prepared. Device/root facts were stubbed in their controls. The controller, coordinated physical pilot and native recipient qualification remain open; see [the pilot plan](HARDWARE_PILOT.md).
+
+[1.0.0-alpha readiness](RELEASE_READINESS.md) tracks the public-release candidate separately from this full programme. No tag or public release exists at this checkpoint.

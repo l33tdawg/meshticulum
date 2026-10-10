@@ -24,6 +24,9 @@ Start with [installation and the standalone test command](../README.md#install-a
 | [Authenticated TCP prototype](IP_TRANSPORT.md) | Understand the explicit IP grants, durable counters, stream-byte budgets and source controls |
 | [Optional SAGE integration](SAGE_INTEGRATION.md) | Supply the compatible local SDK and work with protected capture, replay and private inbox admission |
 | [Extraction and provenance](EXTRACTION.md) | Trace code to its original snapshot, inspect frozen flow pins or understand package bridges |
+| [Coordinated public pilot](HARDWARE_PILOT.md) | Follow native provisioning, relay provenance, publisher verification and the remaining physical checks |
+| [Alpha release readiness](RELEASE_READINESS.md) | Check the proposed 1.0.0-alpha scope, artifacts and public-release gates |
+| [Third-party inventory](THIRD_PARTY.md) | Identify runtime and firmware dependencies and outstanding redistribution requirements |
 | [Repository instructions](../AGENTS.md) | Change transport or integration behavior while preserving its contracts and writer ownership |
 | [Frozen flow history](../src/meshticulum/flow/README.md) | Inspect the accepted candidate's revisions, invariants and historical source controls |
 

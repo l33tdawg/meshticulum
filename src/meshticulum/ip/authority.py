@@ -20,6 +20,20 @@ from .journal import private
 def canonical(value):return json.dumps(value,sort_keys=True,separators=(',',':')).encode()
 
 
+def grant_from_plan(p, secret, *, local_peer, host_boot_id):
+    """Pure native-plan validation; grants no operation or single-use claim."""
+    require(type(p) is dict and set(p)=={'schema','host_boot_id','local_peer','session','format','object','route_binding_digest',
+      'issued_epoch_us','expires_epoch_us','application_expires_epoch_us','application_deadline_monotonic_us','initiator_address','responder_address','limits'},'invalid_ip_plan')
+    require(p['schema']=='meshticulum.ip-service-run.v1' and p['host_boot_id']==host_boot_id and PeerID(**p['local_peer'])==local_peer,'wrong_ip_host')
+    s=p['session'];require(type(s) is dict and set(s)=={'initiator','responder','session_id','generation'},'invalid_ip_session_plan')
+    session=SessionKey(PeerID(**s['initiator']),PeerID(**s['responder']),bytes.fromhex(s['session_id']),bytes.fromhex(s['generation']))
+    require(type(p['object']) is dict and set(p['object'])=={'bytes','sha256'},'invalid_ip_object_plan')
+    grant=IpGrant(session,p['format'],p['object']['bytes'],bytes.fromhex(p['object']['sha256']),bytes.fromhex(p['route_binding_digest']),
+      p['issued_epoch_us'],p['expires_epoch_us'],p['application_expires_epoch_us'],tuple(p['initiator_address']),tuple(p['responder_address']),IpLimits(**p['limits']),secret)
+    grant.direction(local_peer)
+    return grant
+
+
 class IpAuthority:
     def __init__(self,directory,*,local_peer,host_boot_id,clock,owner_probe):
         self.path=Path(directory).absolute();private(self.path.lstat(),True)
@@ -33,15 +47,8 @@ class IpAuthority:
             self.file_ids={name:(os.fstat(fd).st_dev,os.fstat(fd).st_ino)for name,fd in self.fds.items()}
             raw=os.pread(self.fds['grant.json'],16385,0);require(0<len(raw)<=16384,'invalid_ip_plan_size')
             self.plan=json.loads(raw);self.plan_bytes=raw;p=self.plan
-            require(type(p) is dict and set(p)=={'schema','host_boot_id','local_peer','session','format','object','route_binding_digest',
-              'issued_epoch_us','expires_epoch_us','application_expires_epoch_us','application_deadline_monotonic_us','initiator_address','responder_address','limits'},'invalid_ip_plan')
-            require(p['schema']=='meshticulum.ip-service-run.v1' and p['host_boot_id']==host_boot_id and PeerID(**p['local_peer'])==local_peer,'wrong_ip_host')
-            s=p['session'];require(type(s) is dict and set(s)=={'initiator','responder','session_id','generation'},'invalid_ip_session_plan')
-            session=SessionKey(PeerID(**s['initiator']),PeerID(**s['responder']),bytes.fromhex(s['session_id']),bytes.fromhex(s['generation']))
-            require(type(p['object']) is dict and set(p['object'])=={'bytes','sha256'},'invalid_ip_object_plan')
             secret=os.pread(self.fds['secret.bin'],33,0)
-            self.grant=IpGrant(session,p['format'],p['object']['bytes'],bytes.fromhex(p['object']['sha256']),bytes.fromhex(p['route_binding_digest']),
-              p['issued_epoch_us'],p['expires_epoch_us'],p['application_expires_epoch_us'],tuple(p['initiator_address']),tuple(p['responder_address']),IpLimits(**p['limits']),secret)
+            self.grant=grant_from_plan(p,secret,local_peer=local_peer,host_boot_id=host_boot_id)
             self.local_peer=local_peer;self.sends=self.grant.direction(local_peer)==0
             self.service_format,self.service_kind=self.grant.format,self.grant.service_kind
             self.application_expires_epoch_us=self.grant.application_expires_epoch_us

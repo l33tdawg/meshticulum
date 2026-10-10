@@ -202,15 +202,21 @@ def test_frozen_public_runtime_contains_service_dependencies_and_imports_without
     assert manifest['public_ip_service_formats'] == ['MR1.request', 'MR1.response']
     assert 'meshticulum/ip/node.py' in manifest['files']
     assert 'meshticulum/resources/resource.py' in manifest['files']
+    assert 'meshticulum/bench/pilot_resource_node.py' in manifest['files']
+    assert {'LICENSE', 'NOTICE', 'docs/THIRD_PARTY.md', 'docs/EXTRACTION.md',
+            'provenance/UPSTREAM_SOURCE.json', 'provenance/THIRD_PARTY_SOURCE_AUDIT.json'} <= set(manifest['files'])
     assert not any(p.startswith('sage_lantern/') or 'sdk' in p for p in manifest['files'])
     extracted = tmp_path / 'extracted'
     extracted.mkdir()
     with tarfile.open(record['archive'], 'r:gz') as archive:
         archive.extractall(extracted, filter='data')
+    assert (extracted / 'LICENSE').read_bytes() == (root / 'LICENSE').read_bytes()
+    assert (extracted / 'NOTICE').read_bytes() == (root / 'NOTICE').read_bytes()
     result = subprocess.run([sys.executable, '-c',
         'import sys; from meshticulum.bench import node, services, service_runner; '
         'node.BenchFlow; node.run_public_service; node.BenchFlow.__module__; '
         'from meshticulum.ip import node as ip_node; ip_node.run_public_service; '
+        'from meshticulum.bench import pilot_provision, pilot_resources, pilot_resource_node; '
         'assert not any(n == "sage_lantern" or n.startswith("sage_lantern.") '
         'or n == "sage_sdk" or n.startswith("sage_sdk.") for n in sys.modules)'],
         cwd=extracted, env={**os.environ, 'PYTHONPATH': str(extracted)}, capture_output=True, text=True, timeout=10)

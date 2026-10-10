@@ -32,10 +32,15 @@ def main():
         test_report = str(report.relative_to(work))
         test_hash = hashlib.sha256(report.read_bytes()).hexdigest()
     bootstrap = (ROOT / 'firmware/meshticulum-bench/runtime_bootstrap.py').read_bytes()
-    files = {'bench_node.py': (ROOT / 'firmware/meshticulum-bench/bench_node.py').read_bytes(),
+    files = {'LICENSE': (ROOT / 'LICENSE').read_bytes(), 'NOTICE': (ROOT / 'NOTICE').read_bytes(),
+             **{name: (ROOT / name).read_bytes() for name in ('docs/THIRD_PARTY.md', 'docs/EXTRACTION.md',
+                 'provenance/UPSTREAM_SOURCE.json', 'provenance/THIRD_PARTY_SOURCE_AUDIT.json')},
+             'bench_node.py': (ROOT / 'firmware/meshticulum-bench/bench_node.py').read_bytes(),
              'meshticulum/__init__.py': (ROOT / 'src/meshticulum/__init__.py').read_bytes(),
              'meshticulum/resources/__init__.py': (ROOT / 'src/meshticulum/resources/__init__.py').read_bytes(),
-             'meshticulum/resources/resource.py': (ROOT / 'src/meshticulum/resources/resource.py').read_bytes()}
+             'meshticulum/resources/resource.py': (ROOT / 'src/meshticulum/resources/resource.py').read_bytes(),
+             **{('meshticulum/resources/' + name): (ROOT / 'src/meshticulum/resources' / name).read_bytes()
+                for name in ('knowledge_pack.py', 'lamplighter.py', 'swarm.py')}}
     for package in ('bench', 'contracts', 'scheduler', 'flow', 'ip',
                     'meshticulum_contracts', 'meshticulum_scheduler'):
         for path in sorted((ROOT / 'src/meshticulum' / package).glob('*.py')):
@@ -44,7 +49,8 @@ def main():
             if package == 'flow' and path.name in FLOW_PINS and hashlib.sha256(data).hexdigest() != FLOW_PINS[path.name]:
                 raise SystemExit('Accepted flow source changed; review required before deployment.')
             files[str(path.relative_to(ROOT / 'src'))] = data
-    for name, data in files.items(): compile(data, name, 'exec')
+    for name, data in files.items():
+        if name.endswith('.py'): compile(data, name, 'exec')
     manifest = {'schema': 'meshticulum.bench-runtime-bundle.v1', 'firmware': 'mtb1-9816f92488',
         'bootstrap_sha256': hashlib.sha256(bootstrap).hexdigest(),
         'files': {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())},
