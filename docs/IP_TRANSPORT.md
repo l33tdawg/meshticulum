@@ -48,7 +48,7 @@ These controls use actual loopback TCP, synthetic provisioned peers and modeled 
 
 - Lost and reused owner descriptors, concurrent close, same-thread close refusal and retained unresolved reservations.
 - C→A modeled radio→B actual TCP request/reply, preserving A's bridge identity, signed-pack verification, original expiry and each carrier's separate costs. TCP loss stops the exchange before a radio reply.
-- Verified chunks retained across TCP loss, fresh radio request/reply admissions, a new IP route generation and return to the faster locally verified TCP source. Every block uses independent sessions; failed attempts keep their debt, and verified pieces are not fetched again. Deliberate model-radio pump pacing makes this scheduler control repeatable. Its timings are not physical throughput measurements.
+- Verified chunks retained across TCP loss, fresh radio request/reply admissions, a new IP route generation and selection of the faster locally verified route. Every block uses independent sessions; failed attempts keep their debt, and verified pieces are not fetched again. The test checks dispatch against the actual verified timing estimates. A busy host may make loopback TCP slower than the paced radio model, so TCP is not assumed to win. These timings are not physical throughput measurements.
 
 Run the standalone and optional SAGE suites for service-registration regressions.
 

@@ -20,8 +20,8 @@ from tests.test_meshticulum_resources import pack
 class FreshCarrier:
     """Synthetic local provisioner: every block gets two independent admissions.
 
-    The RF worker is a model. Deliberate 20 ms pump pacing makes the scheduler
-    decision repeatable; neither these timings nor TCP loopback imply RF rates.
+    The RF worker is a model with deliberate 20 ms pump pacing. Host timings
+    can still make either route faster; neither timing implies RF rates.
     """
     def __init__(self, path, server, clock, expires, deadline, serials, *, radio=False, generation=1):
         path.mkdir(mode=0o700)
@@ -42,7 +42,7 @@ class FreshCarrier:
         fail = self.disconnect_next_chunk and '/chunks/' in resource_path
         if fail:
             self.disconnect_next_chunk = False
-        record = dict(path=resource_path, failed=fail, generation=self.generation)
+        record = dict(path=resource_path, failed=fail, generation=self.generation, serial=first)
         with ExitStack() as stack:
             if self.radio:
                 request_pair = stack.enter_context(carrier_pair(self.path / str(first), request,
@@ -102,15 +102,15 @@ class FreshCarrier:
 
     def source(self):
         name = 'paced-model-radio' if self.radio else 'loopback-tcp'
-        # Bootstrap preference intentionally favors radio. Verified timing must
-        # reverse this preference after fresh IP admission and verification.
+        # Bootstrap preference favors radio. Verified timings decide whether
+        # to change that preference after fresh IP admission and verification.
         rate = 10000 if self.radio else 1000
         hop = swarm.Hop('C', 'B', name, name, rate)
         return swarm.Source(swarm.Route(name, self.generation, (hop,)),
             resource.BlockReader(self.exchange, max_block=16384), request_timeout=90, max_batch=1)
 
 
-def test_tcp_loss_fresh_radio_resume_and_return_to_verified_faster_tcp(pack, tmp_path):
+def test_tcp_loss_fresh_radio_resume_and_verified_route_reselection(pack, tmp_path, record_testsuite_property):
     directory, trust, digest, manifest = pack
     cache = ll.VerifiedCache(directory, trust, digest)
     server = resource.BlockServer(cache.read)
@@ -149,11 +149,29 @@ def test_tcp_loss_fresh_radio_resume_and_return_to_verified_faster_tcp(pack, tmp
     assert (reprobed['downloaded'], reprobed['reused']) == (1, 4)
     assert returned_source._samples == 1 and radio_source._samples == 2
     now = time.monotonic()
-    assert returned_source.seconds(4096, now) < radio_source.seconds(4096, now)
+    remaining = sorted((e for e in manifest['chunks']
+        if not (destination / 'chunks' / (e['sha256'] + '.json')).exists()), key=lambda e: e['sha256'])
+    costs = {}
+    for source in (radio_source, returned_source):
+        measured = source.snapshot(now)
+        assert measured['sample_fresh']
+        costs[source.name] = remaining[0]['bytes'] / measured['verified_bytes_per_second']
+    chosen_name = min(costs, key=lambda name: (costs[name], name))
+    record_testsuite_property('mixed_resume_fixture_timing_basis', 'actual loopback TCP; radio worker model with 20 ms pump pacing')
+    record_testsuite_property('mixed_resume_initial_verified_route_choice', chosen_name)
+    record_testsuite_property('mixed_resume_tcp_seconds_per_verified_byte', returned_source._seconds_per_byte)
+    record_testsuite_property('mixed_resume_radio_model_seconds_per_verified_byte', radio_source._seconds_per_byte)
+    before_radio, before_tcp = len(radio.records), len(returned.records)
     final = fetch([radio_source, returned_source])
     assert final['complete'] and (final['downloaded'], final['reused']) == (3, 5)
-    assert final['chunks_by_peer'] == {radio_source.name: 0, returned_source.name: 3}
-    assert radio_source._samples == 2 and returned_source._samples == 4
+    # Compare dispatch with the actual verified estimator choice. A busy host
+    # may make TCP slower, and subsequent verified samples may change the route.
+    dispatched = [(r['serial'], radio_source.name) for r in radio.records[before_radio:] if '/chunks/' in r['path']]
+    dispatched += [(r['serial'], returned_source.name) for r in returned.records[before_tcp:] if '/chunks/' in r['path']]
+    assert len(dispatched) == 3 and min(dispatched)[1] == chosen_name
+    assert sum(final['chunks_by_peer'].values()) == 3
+    assert radio_source._samples == 2 + final['chunks_by_peer'][radio_source.name]
+    assert returned_source._samples == 1 + final['chunks_by_peer'][returned_source.name]
 
     records = old.records + radio.records + returned.records
     sessions = [s for r in records for s in r['sessions']]
