@@ -1,0 +1,934 @@
+{
+  "schema": "meshticulum.source-extraction.v1",
+  "source_repository": "https://github.com/l33tdawg/sage-lantern",
+  "source_head": "91b7a9cf67283d21541eaa9220ffaea3631c9462",
+  "source_checkout_dirty": true,
+  "snapshot_date": "2026-10-10",
+  "preserves_git_history": false,
+  "files": [
+    {
+      "source": "software/experiments/meshticulum_contracts/SPEC.json",
+      "destination": "src/meshticulum/contracts/SPEC.json",
+      "source_sha256": "23f589e149f805089e55014576ecff7c1941db6ea55448bddbb7e70c07847069",
+      "extraction_sha256": "23f589e149f805089e55014576ecff7c1941db6ea55448bddbb7e70c07847069",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_contracts/__init__.py",
+      "destination": "src/meshticulum/contracts/__init__.py",
+      "source_sha256": "190c2109d675c5391bcfb21a06208c9bf08a7ec70d4d6186605503945ebc5c86",
+      "extraction_sha256": "190c2109d675c5391bcfb21a06208c9bf08a7ec70d4d6186605503945ebc5c86",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_contracts/carrier.py",
+      "destination": "src/meshticulum/contracts/carrier.py",
+      "source_sha256": "931351a5344bc8b8c3ba9e9fab2bf6bc253aba1305fb17f9afebdb1a0147d42a",
+      "extraction_sha256": "931351a5344bc8b8c3ba9e9fab2bf6bc253aba1305fb17f9afebdb1a0147d42a",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_contracts/errors.py",
+      "destination": "src/meshticulum/contracts/errors.py",
+      "source_sha256": "dc14b2a50911bf766cb4ed9486c264fa2fc2b6e267784af8dd144068962ecd98",
+      "extraction_sha256": "dc14b2a50911bf766cb4ed9486c264fa2fc2b6e267784af8dd144068962ecd98",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_contracts/identity.py",
+      "destination": "src/meshticulum/contracts/identity.py",
+      "source_sha256": "9275756b5d4b6c7d3de644341febbf2d2e848701b03588d9a47f744dbb6909f3",
+      "extraction_sha256": "9275756b5d4b6c7d3de644341febbf2d2e848701b03588d9a47f744dbb6909f3",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_contracts/negotiation.py",
+      "destination": "src/meshticulum/contracts/negotiation.py",
+      "source_sha256": "a594c091de8d2ddb5ff1f22bb7504479c3e944bff1c9b97bfed945bbeacd5fec",
+      "extraction_sha256": "a594c091de8d2ddb5ff1f22bb7504479c3e944bff1c9b97bfed945bbeacd5fec",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_scheduler/SPEC.json",
+      "destination": "src/meshticulum/scheduler/SPEC.json",
+      "source_sha256": "99c2616ff71a5984441281c9e906c2a771efaafe092ed443d37bfc6452f5e338",
+      "extraction_sha256": "99c2616ff71a5984441281c9e906c2a771efaafe092ed443d37bfc6452f5e338",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_scheduler/__init__.py",
+      "destination": "src/meshticulum/scheduler/__init__.py",
+      "source_sha256": "7b9908012ff986a2e3768d849ae5b150e9b30b5789d7b60b813fabe1f35a913d",
+      "extraction_sha256": "7b9908012ff986a2e3768d849ae5b150e9b30b5789d7b60b813fabe1f35a913d",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_scheduler/budget.py",
+      "destination": "src/meshticulum/scheduler/budget.py",
+      "source_sha256": "38ef29431c08e90e182f30d154d4f4b12f5e4e4e111405ee7d02c7e6f80e1c37",
+      "extraction_sha256": "360a21bfc8b29afd19b851b250d661e56c9b3d06878408ca031b60c8ef6588b0",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/experiments/meshticulum_scheduler/flow_attempt.py",
+      "destination": "src/meshticulum/scheduler/flow_attempt.py",
+      "source_sha256": "38ef5b192fd8edd9f2592404ccd74bacbb5485c421d1c79ebde7b95044f40fba",
+      "extraction_sha256": "6602c70a92ea73543883da7e858f5770dd3e08c42c98134021582f9b13c3561a",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/experiments/meshticulum_scheduler/scheduler.py",
+      "destination": "src/meshticulum/scheduler/scheduler.py",
+      "source_sha256": "bf1361c28f902c2bf2195bb45fb868e590b9dbf1cd52e16f18a674b035acbc21",
+      "extraction_sha256": "565a701f5430863d925ce6aed08c9de1c27baa8c73db031a8a5424592aa4c6ed",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/SPEC.json",
+      "destination": "src/meshticulum/bench/SPEC.json",
+      "source_sha256": "1e4257b50b07934407a28ad4e5590336559941b1053881e55418373f9b05a39c",
+      "extraction_sha256": "1e4257b50b07934407a28ad4e5590336559941b1053881e55418373f9b05a39c",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/__init__.py",
+      "destination": "src/meshticulum/bench/__init__.py",
+      "source_sha256": "0cce20c9d56fd9d420fd6fd28c5e6e0a807fa0218160b94c5cd0bd85dc622802",
+      "extraction_sha256": "0cce20c9d56fd9d420fd6fd28c5e6e0a807fa0218160b94c5cd0bd85dc622802",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/attempts.py",
+      "destination": "src/meshticulum/bench/attempts.py",
+      "source_sha256": "be6293b7dd55a8b55056688f7664838a74c714665395c8b91245e5cc534a4680",
+      "extraction_sha256": "be6293b7dd55a8b55056688f7664838a74c714665395c8b91245e5cc534a4680",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/authority.py",
+      "destination": "src/meshticulum/bench/authority.py",
+      "source_sha256": "ca4c0842157cdf7299d056408a0782ae8075b5a3ae629586d43cd1a09c5dc34c",
+      "extraction_sha256": "cc3e3a08ea72b9562bf68a8a84eeb6bf383615a2e44d50346a46b7d37910ed93",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/flash_app.py",
+      "destination": "src/meshticulum/bench/flash_app.py",
+      "source_sha256": "4d4814a975b15b3bda48e9bec3c33ebb17370d714c611994cc573c23d403a0cb",
+      "extraction_sha256": "4d4814a975b15b3bda48e9bec3c33ebb17370d714c611994cc573c23d403a0cb",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/flow_runtime.py",
+      "destination": "src/meshticulum/bench/flow_runtime.py",
+      "source_sha256": "b741d0e9ef90cc27aaa40cdebd04e9cbe49771194ce6f71fe37fe379c9a956b9",
+      "extraction_sha256": "fe40096719dfaa14109792eb96b053b8c0752d3752771b02e2168b0715b571e6",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/hat_probe.py",
+      "destination": "src/meshticulum/bench/hat_probe.py",
+      "source_sha256": "6c0656154a6581b34c0d3a0e56315bf8144551d109af0b7cf3631c6b280f21c4",
+      "extraction_sha256": "6c0656154a6581b34c0d3a0e56315bf8144551d109af0b7cf3631c6b280f21c4",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/hat_worker.py",
+      "destination": "src/meshticulum/bench/hat_worker.py",
+      "source_sha256": "27efca640de04e06b926ecab00903f3f3c0a9da167cccc26b3a5094d582bcb64",
+      "extraction_sha256": "27efca640de04e06b926ecab00903f3f3c0a9da167cccc26b3a5094d582bcb64",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/linux_hat.py",
+      "destination": "src/meshticulum/bench/linux_hat.py",
+      "source_sha256": "05b7b2e4f929afa708f29299d334728f156b36a4783a5eceaa13a61e92d14f80",
+      "extraction_sha256": "05b7b2e4f929afa708f29299d334728f156b36a4783a5eceaa13a61e92d14f80",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/node.py",
+      "destination": "src/meshticulum/bench/node.py",
+      "source_sha256": "aeab87b05ff2c5de3f3b8e08ccca0dd052b78a1e30f0eec803147ba741208a87",
+      "extraction_sha256": "90af3b5aa529b098546307478f69c348c30f0aba81f45bd3d5b4309a6ecaf7eb",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/objects.py",
+      "destination": "src/meshticulum/bench/objects.py",
+      "source_sha256": "3ea78e7be8063f1b6b963e550ac588997a76dae49ede1183cac227a598dba2f0",
+      "extraction_sha256": "3ea78e7be8063f1b6b963e550ac588997a76dae49ede1183cac227a598dba2f0",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/profiles.py",
+      "destination": "src/meshticulum/bench/profiles.py",
+      "source_sha256": "14cd33774ea14e91d6661275329294d7ba9e0b43daf2e110d77369b16c8c387f",
+      "extraction_sha256": "14cd33774ea14e91d6661275329294d7ba9e0b43daf2e110d77369b16c8c387f",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/serial_port.py",
+      "destination": "src/meshticulum/bench/serial_port.py",
+      "source_sha256": "d896b3f41d2643eaa5a82a3b66a2ff432593af5b2a880089ec92537dfc0c8f90",
+      "extraction_sha256": "d896b3f41d2643eaa5a82a3b66a2ff432593af5b2a880089ec92537dfc0c8f90",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/serial_protocol.py",
+      "destination": "src/meshticulum/bench/serial_protocol.py",
+      "source_sha256": "8124300055c87ed2569232bcb9f9fba7f717e74c553264937d786b60d7c96410",
+      "extraction_sha256": "8124300055c87ed2569232bcb9f9fba7f717e74c553264937d786b60d7c96410",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/serial_worker.py",
+      "destination": "src/meshticulum/bench/serial_worker.py",
+      "source_sha256": "db6f8e7be39bec100e5592078cb895679152c44929681343cc494c5c1d20a082",
+      "extraction_sha256": "db6f8e7be39bec100e5592078cb895679152c44929681343cc494c5c1d20a082",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/service_node.py",
+      "destination": "src/meshticulum/bench/service_node.py",
+      "source_sha256": "02c7e61bd49d49bbfcc720ebbc8b54138086aa7b136894fae26a741c959d089c",
+      "extraction_sha256": "02c7e61bd49d49bbfcc720ebbc8b54138086aa7b136894fae26a741c959d089c",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/service_runner.py",
+      "destination": "src/meshticulum/bench/service_runner.py",
+      "source_sha256": "dc6992240237360ff0bcf8b5383dfe178bd4c8bb626a031b7d4dc43305d8899e",
+      "extraction_sha256": "7544c2e3c681342435c3905f94c2ed0470a162ca2e1607f1c4cd850debeabb64",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/services.py",
+      "destination": "src/meshticulum/bench/services.py",
+      "source_sha256": "55c4f0a7a176a2c87807eeb7d7e7906527275b13ff7aafd8c28e5124cc814949",
+      "extraction_sha256": "b70e335fdd1c838f8fae09476bb7a1eddad6209371dc14c2b9cb7196b89c774e",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/state.py",
+      "destination": "src/meshticulum/bench/state.py",
+      "source_sha256": "6a7e7c156cc9f5adf20231587b2c19ebfb74d79cf758a90aa8a67c907e5ef296",
+      "extraction_sha256": "6a7e7c156cc9f5adf20231587b2c19ebfb74d79cf758a90aa8a67c907e5ef296",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/sx1262.py",
+      "destination": "src/meshticulum/bench/sx1262.py",
+      "source_sha256": "d91fc6d8be1fbf1d53fd740b875be6ed4821e0dc12ab6a7a0675274f6f1b7937",
+      "extraction_sha256": "d91fc6d8be1fbf1d53fd740b875be6ed4821e0dc12ab6a7a0675274f6f1b7937",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum_bench/wire.py",
+      "destination": "src/meshticulum/bench/wire.py",
+      "source_sha256": "51db640c975ce789646cf23891e79a52517419853ea01720dba902a3a37cb039",
+      "extraction_sha256": "84d93e464eb7409a2f589369b1b12e6a7e92322bf2bd3d77b9c098d5e53028f0",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/experiments/meshticulum-flow-ember/README.md",
+      "destination": "src/meshticulum/flow/README.md",
+      "source_sha256": "dd826141753ce684bb2cfda5ef412033a0b9428079f0ba726756820cf4117bab",
+      "extraction_sha256": "dd826141753ce684bb2cfda5ef412033a0b9428079f0ba726756820cf4117bab",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum-flow-ember/__init__.py",
+      "destination": "src/meshticulum/flow/__init__.py",
+      "source_sha256": "a6a4e9f56b8aac0bee138bf4d2a9c29fa4594b9929e3ace9bec16973311cf71f",
+      "extraction_sha256": "a6a4e9f56b8aac0bee138bf4d2a9c29fa4594b9929e3ace9bec16973311cf71f",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum-flow-ember/carrier.py",
+      "destination": "src/meshticulum/flow/carrier.py",
+      "source_sha256": "08b5d79fcbadb460fa8a8b4b29a48e217aa0c20a82d77bc7aa0fe4b59136550b",
+      "extraction_sha256": "08b5d79fcbadb460fa8a8b4b29a48e217aa0c20a82d77bc7aa0fe4b59136550b",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum-flow-ember/flow.py",
+      "destination": "src/meshticulum/flow/flow.py",
+      "source_sha256": "9a8d4bb3bea2f69581d80ecd31fda7692c2435fe1363be53564d5281485cb857",
+      "extraction_sha256": "9a8d4bb3bea2f69581d80ecd31fda7692c2435fe1363be53564d5281485cb857",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum-flow-ember/flow_port.py",
+      "destination": "src/meshticulum/flow/flow_port.py",
+      "source_sha256": "57596421d916f0c49d61599653b5ab75154d64e5bc806ba1444fa5905ad025ca",
+      "extraction_sha256": "57596421d916f0c49d61599653b5ab75154d64e5bc806ba1444fa5905ad025ca",
+      "changes": "none"
+    },
+    {
+      "source": "software/experiments/meshticulum-flow-ember/mux.py",
+      "destination": "src/meshticulum/flow/mux.py",
+      "source_sha256": "38b03c5daad9afb679cd3c671efeb50efbd9c6fd94ecaa7b6cb1291e993d693a",
+      "extraction_sha256": "38b03c5daad9afb679cd3c671efeb50efbd9c6fd94ecaa7b6cb1291e993d693a",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/lantern/meshticulum_resource.py",
+      "destination": "src/meshticulum/resources/resource.py",
+      "source_sha256": "87d278d144bb568e6b244027f8f9dc7eaa15f94a7ff8e951bbafdc140eab2b21",
+      "extraction_sha256": "87d278d144bb568e6b244027f8f9dc7eaa15f94a7ff8e951bbafdc140eab2b21",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/lantern/meshticulum_swarm.py",
+      "destination": "src/meshticulum/resources/swarm.py",
+      "source_sha256": "6b4f76b66c61702432855785a013f72809efe79de3743f3b682754fb00f09ad1",
+      "extraction_sha256": "6b4f76b66c61702432855785a013f72809efe79de3743f3b682754fb00f09ad1",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/lantern/lamplighter.py",
+      "destination": "src/meshticulum/resources/lamplighter.py",
+      "source_sha256": "9b0613b38939938933a7211a9bca3a8187e85a8bc02c2f52cc1389c8bb1fec9d",
+      "extraction_sha256": "727d62ea9cfe248468f72d872b15a1569d8d42a34e91c95829eda76fb4311810",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/lantern/knowledge_pack.py",
+      "destination": "src/meshticulum/resources/knowledge_pack.py",
+      "source_sha256": "4b7bd005582455db87d1fd2fd79461a3237f0b12c0530e5f8294e9b4f9b54163",
+      "extraction_sha256": "4b7bd005582455db87d1fd2fd79461a3237f0b12c0530e5f8294e9b4f9b54163",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/mesh_envelope.py",
+      "destination": "src/meshticulum/privacy/mesh_envelope.py",
+      "source_sha256": "2338708ef91873956ee4dc559e79fbff4044e525b8bb9dbe965eb050decc738a",
+      "extraction_sha256": "8e70d9005510f9801f2ef61029b06263c25a106dad7d8472a4c8eb77a06502a5",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/mesh_binary_envelope.py",
+      "destination": "src/meshticulum/privacy/mesh_binary_envelope.py",
+      "source_sha256": "4dcc21ca0fa3a5d703c9f77274028122b3a5711b62c1cb89dc7e02582b91cca6",
+      "extraction_sha256": "4dcc21ca0fa3a5d703c9f77274028122b3a5711b62c1cb89dc7e02582b91cca6",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/airtime_budget.py",
+      "destination": "src/meshticulum/integrations/sage/airtime_budget.py",
+      "source_sha256": "5ab9f81ff072b271491c44f42c06401d977a4fd24a61e5a3146d2834b7e8c31b",
+      "extraction_sha256": "5ab9f81ff072b271491c44f42c06401d977a4fd24a61e5a3146d2834b7e8c31b",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/community_messaging.py",
+      "destination": "src/meshticulum/integrations/sage/community_messaging.py",
+      "source_sha256": "9e1dd3e8a12b805ac4b8f99c856a0a7d63e930d81f225149726f7a7a13fd30f2",
+      "extraction_sha256": "9e1dd3e8a12b805ac4b8f99c856a0a7d63e930d81f225149726f7a7a13fd30f2",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/mesh_binary_capture.py",
+      "destination": "src/meshticulum/integrations/sage/mesh_binary_capture.py",
+      "source_sha256": "c0c2a3c4e6f6f10712392ab8ab53ef3ad9fe53b132da0d639998b122217f00d0",
+      "extraction_sha256": "fc3ce1e2fc5c65f0c8197a0ab039be907ae94d86c3b34c97aeefd74d57e9876a",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/mesh_contacts.py",
+      "destination": "src/meshticulum/integrations/sage/mesh_contacts.py",
+      "source_sha256": "967d71344c706e5f818ccb2abb46efe4d324d451937b09a4f7314051d4f075a1",
+      "extraction_sha256": "967d71344c706e5f818ccb2abb46efe4d324d451937b09a4f7314051d4f075a1",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/mesh_custody.py",
+      "destination": "src/meshticulum/integrations/sage/mesh_custody.py",
+      "source_sha256": "692897ae7f21cda039fc58e90dc7a7a72d11200e1fd06d35ed14d495b2209e72",
+      "extraction_sha256": "692897ae7f21cda039fc58e90dc7a7a72d11200e1fd06d35ed14d495b2209e72",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/mesh_fragments.py",
+      "destination": "src/meshticulum/integrations/sage/mesh_fragments.py",
+      "source_sha256": "917eb57f49e50d17c1ab7e2871985cadbde13275b2c37d1c2e6a41ddba2fecbc",
+      "extraction_sha256": "917eb57f49e50d17c1ab7e2871985cadbde13275b2c37d1c2e6a41ddba2fecbc",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/mesh_inbox.py",
+      "destination": "src/meshticulum/integrations/sage/mesh_inbox.py",
+      "source_sha256": "9a9f448df402f81e9ed2822eff797396f30ef390f2d19c63564ba0d01f1b88e3",
+      "extraction_sha256": "e6a3831ab43ec5019c3c4c7b9e8b611b49e52da3efd0201bf8e6f12b95752f43",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/mesh_receiver.py",
+      "destination": "src/meshticulum/integrations/sage/mesh_receiver.py",
+      "source_sha256": "a505c4b5175261c83f318bd4cfb4b7898c933e1aa43e058b4d07da7b2b8959d9",
+      "extraction_sha256": "a505c4b5175261c83f318bd4cfb4b7898c933e1aa43e058b4d07da7b2b8959d9",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/meshcore_contacts.py",
+      "destination": "src/meshticulum/integrations/sage/meshcore_contacts.py",
+      "source_sha256": "a8d4aa3dc180decefe18146234a8ad727652f9fed721d1e1feea632ba4e1b426",
+      "extraction_sha256": "a8d4aa3dc180decefe18146234a8ad727652f9fed721d1e1feea632ba4e1b426",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/meshcore_transport.py",
+      "destination": "src/meshticulum/integrations/sage/meshcore_transport.py",
+      "source_sha256": "9c88ce112f2d228f290abeb9cdcca25fcde59ad0539a66c2eec95468fa4f1f9a",
+      "extraction_sha256": "9c88ce112f2d228f290abeb9cdcca25fcde59ad0539a66c2eec95468fa4f1f9a",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/message_contacts.py",
+      "destination": "src/meshticulum/integrations/sage/message_contacts.py",
+      "source_sha256": "aeb31f5096fef7a19311ec8e4822212f163fc84fbdd0edde3d73d7ba92bedfe2",
+      "extraction_sha256": "aeb31f5096fef7a19311ec8e4822212f163fc84fbdd0edde3d73d7ba92bedfe2",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/message_storage.py",
+      "destination": "src/meshticulum/integrations/sage/message_storage.py",
+      "source_sha256": "17d24105a711c6de863bcd4bfab937a94669f2b5be19ec5ffa24224a7730c221",
+      "extraction_sha256": "17d24105a711c6de863bcd4bfab937a94669f2b5be19ec5ffa24224a7730c221",
+      "changes": "none"
+    },
+    {
+      "source": "software/runtime/src/sage_lantern/workflow_store.py",
+      "destination": "src/meshticulum/integrations/sage/workflow_store.py",
+      "source_sha256": "2ee65780d8ee76622e4d33c9b0f15e391caadbad9736babaa1bfdcbbc46c92a4",
+      "extraction_sha256": "2ee65780d8ee76622e4d33c9b0f15e391caadbad9736babaa1bfdcbbc46c92a4",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/ab_bootstrap.py",
+      "destination": "firmware/meshticulum-bench/ab_bootstrap.py",
+      "source_sha256": "06074d84b8c4345eb084c702e2e35b0cc6533fba6e6b2171426faba012e05d25",
+      "extraction_sha256": "06074d84b8c4345eb084c702e2e35b0cc6533fba6e6b2171426faba012e05d25",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/analyze_runs.py",
+      "destination": "firmware/meshticulum-bench/analyze_runs.py",
+      "source_sha256": "5e2c1c7bd7c72f3d08d3412e12191e15252098a7b66ef4d08b527b62264eb2eb",
+      "extraction_sha256": "5e2c1c7bd7c72f3d08d3412e12191e15252098a7b66ef4d08b527b62264eb2eb",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/bench_node.py",
+      "destination": "firmware/meshticulum-bench/bench_node.py",
+      "source_sha256": "4e0f33ae12a84c6f256685985ca6e7ddd891e9d2ae1de4867be3bfa43a19bddf",
+      "extraction_sha256": "6b36e990c145e94dc70afae1ba7dc1979d775114fbbfc51508ffc93a0bdcfdf9",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "firmware/meshticulum-bench/build_ab_bundle.py",
+      "destination": "firmware/meshticulum-bench/build_ab_bundle.py",
+      "source_sha256": "667c2b08364f23e00bd1182a2e5fcdf7da54b823bbf15679275937a4e297d2a5",
+      "extraction_sha256": "696b364598aac435fb083146f68d51527b91ca3435ca03f7dc3ef65e72e7b7d4",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "firmware/meshticulum-bench/build_runtime.py",
+      "destination": "firmware/meshticulum-bench/build_runtime.py",
+      "source_sha256": "b55ac2fc3cc760a2dd31d559bb676c092fa8d00ab103f77b3d61ff526359adc3",
+      "extraction_sha256": "d468804d75a4f8835ec01fb62a7070b0f3e9d78f6ae059d1022a663e65edc3c2",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "firmware/meshticulum-bench/check_hat_config.py",
+      "destination": "firmware/meshticulum-bench/check_hat_config.py",
+      "source_sha256": "4182e253a0fd7e385e1dcd34e028716a274ce9fb875dea38ed2eb7d8ef0cff5a",
+      "extraction_sha256": "4182e253a0fd7e385e1dcd34e028716a274ce9fb875dea38ed2eb7d8ef0cff5a",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/check_hat_receive_timeout.py",
+      "destination": "firmware/meshticulum-bench/check_hat_receive_timeout.py",
+      "source_sha256": "4294c99e6fc38c8f868c0fa9e6f5fa5336e0f66b918122f15703453fa8b80bd4",
+      "extraction_sha256": "12a941a7f7dd90d3ef1dc8456186c6ffa16781d3c0d7d56a2defea6a7937733a",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "firmware/meshticulum-bench/check_linux_abi.c",
+      "destination": "firmware/meshticulum-bench/check_linux_abi.c",
+      "source_sha256": "cc5315446b15c5f19b79516db7436e48466302204cf1adf871a3705c597e732f",
+      "extraction_sha256": "cc5315446b15c5f19b79516db7436e48466302204cf1adf871a3705c597e732f",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/check_serial_ingress.py",
+      "destination": "firmware/meshticulum-bench/check_serial_ingress.py",
+      "source_sha256": "61446fe66698aa66bf5cdb58c4de6509e1e4ec8378a672bed6e5cb4a08139851",
+      "extraction_sha256": "50e19ab90d424b8af60079b90d429ed3311e5e6ff2933179f7effbd557f882f3",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "firmware/meshticulum-bench/collect_run.py",
+      "destination": "firmware/meshticulum-bench/collect_run.py",
+      "source_sha256": "11bc4db33ef80e4fb19556bad8ab363841cfcc2eef24b650fb3a348df35b8c95",
+      "extraction_sha256": "11bc4db33ef80e4fb19556bad8ab363841cfcc2eef24b650fb3a348df35b8c95",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/exercise_rollback.py",
+      "destination": "firmware/meshticulum-bench/exercise_rollback.py",
+      "source_sha256": "7e49130392d91bec4e3410e63a19be7473929cba98b792508de7f4206db4e6af",
+      "extraction_sha256": "7e49130392d91bec4e3410e63a19be7473929cba98b792508de7f4206db4e6af",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/grant_bootstrap.py",
+      "destination": "firmware/meshticulum-bench/grant_bootstrap.py",
+      "source_sha256": "2bbb3ab503cfaeae4d46295414a70515e326c6f4e07a4adb883ca6fb796f0fbe",
+      "extraction_sha256": "45c755f5a14d168cdbc08832316a7fdb65696a4ce611ecfe7001c679c6e3c626",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "firmware/meshticulum-bench/hat_overlay.py",
+      "destination": "firmware/meshticulum-bench/hat_overlay.py",
+      "source_sha256": "3de33ad17dfc5103eac94d263075868cac4c05c1046e7f11914e48eadbfb4085",
+      "extraction_sha256": "3de33ad17dfc5103eac94d263075868cac4c05c1046e7f11914e48eadbfb4085",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/install_ab.py",
+      "destination": "firmware/meshticulum-bench/install_ab.py",
+      "source_sha256": "67695315881076a9294d12af043521c3a8d262549bfc4fd97af36cf6d2a56483",
+      "extraction_sha256": "67695315881076a9294d12af043521c3a8d262549bfc4fd97af36cf6d2a56483",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/main.cpp",
+      "destination": "firmware/meshticulum-bench/main.cpp",
+      "source_sha256": "908ddaeeab3df3e042524233ffa66656060693f959a8dc95a165cf507d874ac9",
+      "extraction_sha256": "908ddaeeab3df3e042524233ffa66656060693f959a8dc95a165cf507d874ac9",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/make_object.py",
+      "destination": "firmware/meshticulum-bench/make_object.py",
+      "source_sha256": "2625b8fb8ae548294e7e1b5144dc7f4b595505a50a95cc3d861db80519f92077",
+      "extraction_sha256": "2625b8fb8ae548294e7e1b5144dc7f4b595505a50a95cc3d861db80519f92077",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/orangepi5plus-sx1262-hat.dts",
+      "destination": "firmware/meshticulum-bench/orangepi5plus-sx1262-hat.dts",
+      "source_sha256": "51da823fc649872e0061997573329ffcec3b5f9b5a3ff880757da63134335469",
+      "extraction_sha256": "51da823fc649872e0061997573329ffcec3b5f9b5a3ff880757da63134335469",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/prepare_build.py",
+      "destination": "firmware/meshticulum-bench/prepare_build.py",
+      "source_sha256": "26c240faa464e91b92ff453f602e662e09434a9a8928d60d6d82896f643db724",
+      "extraction_sha256": "26c240faa464e91b92ff453f602e662e09434a9a8928d60d6d82896f643db724",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/prepare_run.py",
+      "destination": "firmware/meshticulum-bench/prepare_run.py",
+      "source_sha256": "583f678e0ecd405da368b2364f5bf6949dc4e5efbdee46c355c5f8166d3c8c77",
+      "extraction_sha256": "826361bc2c2e0dd5cfcbec36e7d2a010d00e2cf7699a61f380162fb158a70396",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "firmware/meshticulum-bench/protocol.hpp",
+      "destination": "firmware/meshticulum-bench/protocol.hpp",
+      "source_sha256": "2e2596e8f8968869d1e0d5469ad9bc2b181f2880eee450ed1a72e17367fdf56a",
+      "extraction_sha256": "2e2596e8f8968869d1e0d5469ad9bc2b181f2880eee450ed1a72e17367fdf56a",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/reset_serial_radio.py",
+      "destination": "firmware/meshticulum-bench/reset_serial_radio.py",
+      "source_sha256": "95624e9072c8db8d12b124ba704661c8a2cfcc0b46a483bb27e52acf33e69280",
+      "extraction_sha256": "39df4b798787f27e288426c77323be54f4a16061950180360ee368db15599788",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "firmware/meshticulum-bench/run_build.py",
+      "destination": "firmware/meshticulum-bench/run_build.py",
+      "source_sha256": "caa29cd5abae0e6fc4a9933a4da4dfe3dc1abee5755ed8e400f053e0f249c809",
+      "extraction_sha256": "caa29cd5abae0e6fc4a9933a4da4dfe3dc1abee5755ed8e400f053e0f249c809",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/run_matrix.py",
+      "destination": "firmware/meshticulum-bench/run_matrix.py",
+      "source_sha256": "1ca731fd3d9896314057e5a885d4e7338b901908e185dfdd1bbadd417ba343a8",
+      "extraction_sha256": "1ca731fd3d9896314057e5a885d4e7338b901908e185dfdd1bbadd417ba343a8",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/runtime_bootstrap.py",
+      "destination": "firmware/meshticulum-bench/runtime_bootstrap.py",
+      "source_sha256": "4769e8df31b39f0b5f658b7e24f6dd091c851e7a28009742383e5a15b07ad6e4",
+      "extraction_sha256": "4769e8df31b39f0b5f658b7e24f6dd091c851e7a28009742383e5a15b07ad6e4",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/stage_ab_bundle.py",
+      "destination": "firmware/meshticulum-bench/stage_ab_bundle.py",
+      "source_sha256": "2353b878528e9cd0a0b1c1b608b53dfdb7404e25f12a7ad10e89bb0471aff0c2",
+      "extraction_sha256": "2353b878528e9cd0a0b1c1b608b53dfdb7404e25f12a7ad10e89bb0471aff0c2",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/stage_c_config.py",
+      "destination": "firmware/meshticulum-bench/stage_c_config.py",
+      "source_sha256": "69cdf1814745d476a12b14f64055b4915d1a943e1c2e842a87a612b32ba77a0c",
+      "extraction_sha256": "456297fd94d1d5c9e3227eee91d2bfea81ecac5438b493370af6255de4f4194f",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "firmware/meshticulum-bench/stage_runtime.py",
+      "destination": "firmware/meshticulum-bench/stage_runtime.py",
+      "source_sha256": "ddeec8f21661157cd8b906892f7bc451e78536f72f5a9eac3a5e618970e6458a",
+      "extraction_sha256": "ddeec8f21661157cd8b906892f7bc451e78536f72f5a9eac3a5e618970e6458a",
+      "changes": "none"
+    },
+    {
+      "source": "firmware/meshticulum-bench/test_custom_runner.py",
+      "destination": "firmware/meshticulum-bench/test_custom_runner.py",
+      "source_sha256": "6c49b3806c861aa55462dce31c06a90f8acd72874499a39a3babeb8cd98187d6",
+      "extraction_sha256": "6c49b3806c861aa55462dce31c06a90f8acd72874499a39a3babeb8cd98187d6",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/tests/meshticulum_bench_native/Arduino.h",
+      "destination": "tests/meshticulum_bench_native/Arduino.h",
+      "source_sha256": "ee3012f3009738d98fd4613c26cac992a90fb96a27900b969b722677a308ed82",
+      "extraction_sha256": "ee3012f3009738d98fd4613c26cac992a90fb96a27900b969b722677a308ed82",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/tests/meshticulum_bench_native/Preferences.h",
+      "destination": "tests/meshticulum_bench_native/Preferences.h",
+      "source_sha256": "8b7a24864652e03c590b25ca15973ca63f7e59b475fb22ac75e76bd2c3ecde76",
+      "extraction_sha256": "8b7a24864652e03c590b25ca15973ca63f7e59b475fb22ac75e76bd2c3ecde76",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/tests/meshticulum_bench_native/esp_timer.h",
+      "destination": "tests/meshticulum_bench_native/esp_timer.h",
+      "source_sha256": "ed3ce24f73c8b155e913745e361492019190b23eab8ad8600399dbef4caf8d78",
+      "extraction_sha256": "ed3ce24f73c8b155e913745e361492019190b23eab8ad8600399dbef4caf8d78",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/tests/meshticulum_bench_native/harness.cpp",
+      "destination": "tests/meshticulum_bench_native/harness.cpp",
+      "source_sha256": "f00fb508980b51030b446bf0d92d80f1c092de2a76b2cc042c1233c0593d5193",
+      "extraction_sha256": "e4548f5ef19909041f9a8bae2eba1f06299093a10917dec69d23d3c0766278bd",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/meshticulum_bench_native/mbedtls/sha256.h",
+      "destination": "tests/meshticulum_bench_native/mbedtls/sha256.h",
+      "source_sha256": "d2d323eff6286697fad2edb4a1da8cce909975a2e05e039769dc4ce44fa57ad8",
+      "extraction_sha256": "d2d323eff6286697fad2edb4a1da8cce909975a2e05e039769dc4ce44fa57ad8",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/tests/meshticulum_bench_native/target.h",
+      "destination": "tests/meshticulum_bench_native/target.h",
+      "source_sha256": "cf1bf1d3f4f02b3a5089b0c81ae8e320c7cf3fc0abe74e8d4d2dbd8fa531399d",
+      "extraction_sha256": "cf1bf1d3f4f02b3a5089b0c81ae8e320c7cf3fc0abe74e8d4d2dbd8fa531399d",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/lantern/benchmarks/meshticulum_baseline.py",
+      "destination": "scripts/lantern/benchmarks/meshticulum_baseline.py",
+      "source_sha256": "6687fe93e4ecfdb2a41c778c09181dcf058c8cb3ffcb817a37419e9fb498c0d6",
+      "extraction_sha256": "6687fe93e4ecfdb2a41c778c09181dcf058c8cb3ffcb817a37419e9fb498c0d6",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/lantern/benchmarks/meshticulum_path_report.py",
+      "destination": "scripts/lantern/benchmarks/meshticulum_path_report.py",
+      "source_sha256": "85a9709ab5aeec1e5fc47ad304c126750225aba7c89adc15ceca4d7e7882326d",
+      "extraction_sha256": "85a9709ab5aeec1e5fc47ad304c126750225aba7c89adc15ceca4d7e7882326d",
+      "changes": "none"
+    },
+    {
+      "source": "scripts/tests/test_ember_meshticulum_flow.py",
+      "destination": "tests/test_ember_meshticulum_flow.py",
+      "source_sha256": "b3cdae2210586b6996e924dbebbc79a60f70ef8c03687ad93b28f391803799dd",
+      "extraction_sha256": "9628e99264430a64c7ab4d3e9ae65ec2b935746e2d89ef35c759b0b9035a9ebd",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_ember_meshticulum_flow_port.py",
+      "destination": "tests/test_ember_meshticulum_flow_port.py",
+      "source_sha256": "559b3cbc467ef0c6e31e70d87779fcc82d8dc43a7f398c6f5352374809d8e987",
+      "extraction_sha256": "3ddb8027574866feb37209bb4610e8cb5f6de25d2c4adbe5db3c0dff7a58c90e",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_flash.py",
+      "destination": "tests/test_meshticulum_bench_flash.py",
+      "source_sha256": "2dc0cf06ec439236d9c7e6522573991af5ae7da158bef2486a320feef504d991",
+      "extraction_sha256": "9f1910b4731ea3a297e65cf2806d07889d68be19fd4a91999b093541f860bc35",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_hat.py",
+      "destination": "tests/test_meshticulum_bench_hat.py",
+      "source_sha256": "88830705524e4eabe829b2e2603fff8ed1cd342739f0857106c98faa1b8f9c85",
+      "extraction_sha256": "3759f2857a2993ecb6d3ddd412669b1906a4e5fb16ebc1c872b0109d57a6e158",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_matrix.py",
+      "destination": "tests/test_meshticulum_bench_matrix.py",
+      "source_sha256": "3bfba949cb7a52a75feb6805332aeb6f1ee4aa8bb101a20b14c6c36116411cbd",
+      "extraction_sha256": "8789c1c972dba97f28c02d395643f6ca45a23e3717349857c1d5a3b5dfd953a8",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_operator.py",
+      "destination": "tests/test_meshticulum_bench_operator.py",
+      "source_sha256": "b56d0431a274ac9a0bd9388549443da29ed3da2a957ed4ad998e709d6b4c6754",
+      "extraction_sha256": "1a7cefcd6c80acdb8be8b8e6e59f5734eef3d26a8116f3a0b190610e1d476bd5",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_rollback_cycle.py",
+      "destination": "tests/test_meshticulum_bench_rollback_cycle.py",
+      "source_sha256": "bf36f984f230909c9f3d7ca0f4e4d9451cdb7fd88da521e4eeab6a4adfeef7b4",
+      "extraction_sha256": "6ecc292215ae4201e19c374df2ec9b752ffee21061dc5e76a4a8185e778db281",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_runtime.py",
+      "destination": "tests/test_meshticulum_bench_runtime.py",
+      "source_sha256": "31e24b0e99ef8f056833e176f7325b730f638bc7e2a4f96a4303f27540bdbcbf",
+      "extraction_sha256": "30d38bf5ea26070e3d4283c4459032229d2d4c36003540abf005b7047b51badb",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_serial.py",
+      "destination": "tests/test_meshticulum_bench_serial.py",
+      "source_sha256": "1b734ee281aa4e4161ad5e6a345df72cedd624dbe14cfdd4e3a23e46020dd991",
+      "extraction_sha256": "980a047da9b11352c901cc32166733550de6d5177a6741adecc50d96551fcc77",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_serial_ingress.py",
+      "destination": "tests/test_meshticulum_bench_serial_ingress.py",
+      "source_sha256": "5a2d2d178c81bd4c80c2cbd5fcac21777a48c06156fb82acbcc73a38ab21f851",
+      "extraction_sha256": "d32d28d8a31bbbbd8038fb5d2d926c12f7120515cf58f0ef430aa269e43d75c7",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_sx1262.py",
+      "destination": "tests/test_meshticulum_bench_sx1262.py",
+      "source_sha256": "62df50ed01172ccaa4a110e863759f88b86617ae39260e5bd55bf73127f5e1c6",
+      "extraction_sha256": "79cb87da3be5a3d1a5ba0133629b484f5477b06d30a952253210f6c46c90fd02",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_wire.py",
+      "destination": "tests/test_meshticulum_bench_wire.py",
+      "source_sha256": "4d3c5dd8affb136f0e8d4817c4e2a69dcb81cea457ecef2b80a1866c5807feb9",
+      "extraction_sha256": "9eda564e111fae140bd0fb8cb067da3af00a4507838adf2a6458b458e6438e59",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_bench_worker.py",
+      "destination": "tests/test_meshticulum_bench_worker.py",
+      "source_sha256": "aff66b028cdafc3b412b63964289e94185f78021c71e8249d6b59b0e06714a92",
+      "extraction_sha256": "8439b680a7fd934471e3acf9102467eedfe7f60e105c08d4545a0fa8000cf5b3",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_carrier_contract.py",
+      "destination": "tests/test_meshticulum_carrier_contract.py",
+      "source_sha256": "bdc68ed988fd992b57acf71d2c24654418df23e9c49ae89eb9abb11f295a644a",
+      "extraction_sha256": "3b6802e2de3d248216a373720f751e57b22f1e047b4198e67300e72ef272abf1",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_flow_attempt.py",
+      "destination": "tests/test_meshticulum_flow_attempt.py",
+      "source_sha256": "a5a995863b5cc7126cd1ffe0d9f5004e1fcc54c9ebfbdd38b0e02bc61c4fc413",
+      "extraction_sha256": "c3ecb8e876c8b677074758c3548415a4dfa39488a87048ae15671342d69f2d58",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_flow_scheduler_integration.py",
+      "destination": "tests/test_meshticulum_flow_scheduler_integration.py",
+      "source_sha256": "f9e32d62bd4b4c6d5d79deb536a3bcf8592f0ffe67a5a347ae59506533e5f389",
+      "extraction_sha256": "b406a63bfd664ada9da32644f54ed8703a3abff955c4e329d0f8db39294a51e5",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_identity_contract.py",
+      "destination": "tests/test_meshticulum_identity_contract.py",
+      "source_sha256": "d414c01ec9fa97954310c910829f08b37c930f429b05f316a1b264e802db85c2",
+      "extraction_sha256": "d77faff8f7574ddd08e7abd8720d4bf9f26088df59f55645848bba79d14b3f66",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_integration_carrier.py",
+      "destination": "tests/test_meshticulum_integration_carrier.py",
+      "source_sha256": "5b5ac13f74a682e68c1aee910d1bb41072ab746017a13b2f59d805c065b45da1",
+      "extraction_sha256": "fe6ff84873cc574843f897fc02a2a103a3f82e26c57a4c63520153076e5df3ae",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_negotiation_contract.py",
+      "destination": "tests/test_meshticulum_negotiation_contract.py",
+      "source_sha256": "5ae436e396bcd88a090512e9cb0bb41b2485b67a48d0b319485bc5a2395ad954",
+      "extraction_sha256": "b1c6c178373195009ea6413b5282ff771c17eaff8b183a1a9074fd9e91770889",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_path_report.py",
+      "destination": "tests/test_meshticulum_path_report.py",
+      "source_sha256": "ea9ac32a5e1195f16358b38121138db10dac22ec4400df2d36bb7477f6991563",
+      "extraction_sha256": "53e2ee9f39645494302bf76cbe1cc6689ec602bcf500a51c0da28cac59868d47",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_private_carrier.py",
+      "destination": "tests/test_meshticulum_private_carrier.py",
+      "source_sha256": "ac1fa01155905efc598782cb9aff232cfdadcdc14ecb18fbd75833c1ed64935c",
+      "extraction_sha256": "4a39569228f63bd86f4ddcfad75eaddcfdfa0f147864de5f15526abbde4ea24a",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_resources.py",
+      "destination": "tests/test_meshticulum_resources.py",
+      "source_sha256": "5786481080082f7a16ebab2fad4ce69716029a9b4b3d01d26766ba58fcc0ddcf",
+      "extraction_sha256": "303280494c775fc3bcc95f892517f6e652fa7b73bd6e3dfa34b7a79ed5e1da2a",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_scheduler_budget.py",
+      "destination": "tests/test_meshticulum_scheduler_budget.py",
+      "source_sha256": "e838646469d1988acb6792eb44986905d1f44074c6fe7d1cd684e1d2087c8586",
+      "extraction_sha256": "dad19c85ec8c4703c507a414efd7eaeda8cb9d0fe622551023186f1afe2ef771",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_scheduler_carrier.py",
+      "destination": "tests/test_meshticulum_scheduler_carrier.py",
+      "source_sha256": "92e7d9fea169b667c8d5364871973c52cce5b189a83c02de24da57ed3d6365dc",
+      "extraction_sha256": "6605341df4214fff20ca1d315b71cef1f1499ed3d7064df3489f275e0aecec5f",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_scheduler_transactions.py",
+      "destination": "tests/test_meshticulum_scheduler_transactions.py",
+      "source_sha256": "1cbc00f2060e22e81bdaa2ab409ac68526a29a6d4404addc3d79255329fc10c0",
+      "extraction_sha256": "a16f2c9ec0f5d0058415494c61e5ef498eb7df204404c1391e95708d8239aa64",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_service_node.py",
+      "destination": "tests/test_meshticulum_service_node.py",
+      "source_sha256": "c2f34fb541bdaaec37e6edbfd74f0553ad0220ea5ad41e7f1f5ce9f9d3ca1201",
+      "extraction_sha256": "3fd53ea0d15b374f4a61b49e1dcc1c33e0e2a3caa32e8b7fd98440370adcdced",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_service_runner.py",
+      "destination": "tests/integrations/sage/test_meshticulum_service_runner.py",
+      "source_sha256": "a84c0c9e9d99aaad2026232dc4a74efbdb4f7e6f75f37c6a8553fc0958354bc2",
+      "extraction_sha256": "87b655dd2ace6367023ff8c9928073d7558cb8c7916204044d7a1357b3b92505",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_services.py",
+      "destination": "tests/integrations/sage/test_meshticulum_services.py",
+      "source_sha256": "b33849111a4d0a9bd6c2f75c4a2d3d3fdc9f93278f50191d32c5e6b63279b03d",
+      "extraction_sha256": "99618097e595a4759f08693bd630a9e56b244111d8b610746a74ca3fa13bf05d",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "scripts/tests/test_meshticulum_swarm.py",
+      "destination": "tests/test_meshticulum_swarm.py",
+      "source_sha256": "3df58f2309b43daccd48ad37e8ea44755dd91837f0357d5d8579158a1a3340c6",
+      "extraction_sha256": "26b19eddb7d3cf3cbb4a47c4c5efb68e5389f86e3604659fb005ebe4110df3eb",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/tests/test_mesh_envelope.py",
+      "destination": "tests/test_mesh_envelope.py",
+      "source_sha256": "8f1925ec3976ea443511011282e5e8abe497bb9360e9cf8541d41ccf13fdaff6",
+      "extraction_sha256": "0049e2528e2a00cfe03b164fad560c78f675b06fbdf94b715401c327610a336b",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/tests/test_mesh_binary_envelope.py",
+      "destination": "tests/test_mesh_binary_envelope.py",
+      "source_sha256": "287967dfa7948daacb42941dd2c3f3c6627ce89c3ce4fe28d997f8d04017ad38",
+      "extraction_sha256": "15ad1917384582e91ef998cfac62a4e54f619fef83e0e330b3e5c9016c4ef623",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/tests/test_mesh_inbox.py",
+      "destination": "tests/integrations/sage/test_mesh_inbox.py",
+      "source_sha256": "d80153ba654f380e4b217a266078154c4e37d96997637a7bb623093676463f80",
+      "extraction_sha256": "935f0939187491de0c2cc2584d8da79f515f8db13a9b309b1ff7e999b14cfd71",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/tests/test_mesh_binary_inbox.py",
+      "destination": "tests/integrations/sage/test_mesh_binary_inbox.py",
+      "source_sha256": "80fe1da77fc6e259fbbd7be7bfc97acbeca9f4ed177cf64cc533239e5c906ef7",
+      "extraction_sha256": "625bfdada4bd212552d118e6084bf3b288e28ef7488e237f2a07cb84d3644ad4",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/tests/test_mesh_binary_capture.py",
+      "destination": "tests/integrations/sage/test_mesh_binary_capture.py",
+      "source_sha256": "f9d8e8cbf3b6b395c998c9a62f825a74169629486b8b933d778c98f6546e20cd",
+      "extraction_sha256": "f0f99d57954fdcce9d6e0fb5aa39f0db6ef2fbbad32696c835456c71abb2a0f5",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/tests/test_mesh_custody.py",
+      "destination": "tests/test_mesh_custody.py",
+      "source_sha256": "a9ad33602cf7784ecf4aa0863b722d6f0c3c7f8d48eb353d39fa8855f55a11d5",
+      "extraction_sha256": "84063cd586c5162c4bd2445afd7a17330e6114bcbd63e7d4371ce9593daf7d74",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/tests/test_mesh_fragments.py",
+      "destination": "tests/test_mesh_fragments.py",
+      "source_sha256": "9dc67609940b3843394549807decfcaabdc78691a39acc46901ec908abb464ca",
+      "extraction_sha256": "7c769f54c9b6e8ba933b337ee28672f332984931f7edabc8ddcc7f949ec6ad0c",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "software/runtime/tests/test_workflow_store.py",
+      "destination": "tests/integrations/sage/test_workflow_store.py",
+      "source_sha256": "49ed71eacd81272e5d2603d4975e39db5e0aede1d8ce3dd01d309a01e77d1504",
+      "extraction_sha256": "1c8ceb28088ce2a6b761090a013df0c8e9fcb443d47186b5fb6651227189259a",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    },
+    {
+      "source": "LICENSE",
+      "destination": "LICENSE",
+      "source_sha256": "ba61a1c596f3e771e379455f68124f793985196b84be0a6a41d2c489050facef",
+      "extraction_sha256": "ba61a1c596f3e771e379455f68124f793985196b84be0a6a41d2c489050facef",
+      "changes": "none"
+    },
+    {
+      "source": "NOTICE",
+      "destination": "NOTICE",
+      "source_sha256": "8e0f0d89ec11ee9a42f5fda4fa9f4cb5fa30e7bcdb9c4b345678dba529e8c2f4",
+      "extraction_sha256": "1167961f41e1c870769a76185d7cdf037413e5e8f44d8e7303415d6d87520525",
+      "changes": "namespace/path/test adaptation and standalone packaging; see docs/EXTRACTION.md"
+    }
+  ]
+}

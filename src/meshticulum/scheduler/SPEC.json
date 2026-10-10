@@ -1,0 +1,76 @@
+{
+  "schema": "meshticulum.mt04.scheduler-specification.v2",
+  "status": "isolated_flow_owned_reservation_increment; production_flow_adapter_runtime_wire_drain_and_physical_acceptance_pending",
+  "task": "e6e1e00f-fe2f-4eb2-889c-a8864d28866f",
+  "scope": "A deterministic single-owner host scheduling model consuming the frozen first MT03 contracts. No production broker, permission store, socket, serial owner, wire authentication or radio adapter is implemented.",
+  "units": {
+    "airtime_and_monotonic_clock": "integer microseconds; exact nonboolean bounded counts",
+    "authority_epoch": "finite epoch seconds; existing DeadlineSet semantics",
+    "cost": "ceil each full-frame forward, firmware-ACK and reverse-control component to microseconds; own_tx=forward, shared_medium=sum",
+    "measurement": "Profile basis, digest, costs, samples and epochs are trusted caller assertions in this model. Physical provenance and shared-medium topology remain unverified. The sole cumulative counter observes own-radio TX, including firmware work the host did not schedule."
+  },
+  "queues": {
+    "identities": "Full FlowKey, SessionKey, RouteBinding and exact local participant/remote peer; compact references never authorize.",
+    "data_class": "Local service mapping: Internet/SAGE/protected-message interactive, knowledge bulk; no remote priority field.",
+    "control": "Host-only role input, independently included in both fresh service and broker grant requests. Strict local control queue byte/frame limits, negotiated logical-record byte ceiling and airtime token bucket. Parsing a remote control label is not permission.",
+    "admission": "Opaque queues remain for deterministic scheduler fixtures. Optional trusted FlowAttemptPort registration enables atomic prepare(flow)->Reservation|None and enqueue_from_flow. An owned flow denies raw enqueue and permits at most one queued live handle. Port/record types establish neither authentication nor production ownership.",
+    "defaults": {
+      "flows": 8,
+      "flows_per_peer": 2,
+      "registrations_per_epoch": 256,
+      "queued_frames": 256,
+      "queued_bytes": 1048576,
+      "peer_queued_bytes": 262144,
+      "flow_queued_frames": 64,
+      "control_frames": 16,
+      "control_bytes": 4096
+    },
+    "lifecycle": "Close/expiry drops payloads and retires the full flow identity in a bounded table. Scheduler.close retires all host queues, refuses future mutations/dispatch and leaves diagnostics available; this does not prove carrier drain. Once registration capacity is exhausted, new flows refuse. No live-flow restore API or route mutator exists. A new scheduler starts empty, but the actual host must persist/fence prior session retirement and reject stale-session re-registration across scheduler epochs; constructors do not prove non-reuse. Owned close/expiry obtains a reconciliation lease and returns the exact known unsent handle once, even when send eligibility has expired or been cancelled. Missing leases, ambiguous commits/invalid returns or exits fence the flow and retain a bounded opaque unresolved handle/port record; no repeat completion, refund, automatic retry or resurrection follows. Fenced identities cannot enqueue. Retirement and unresolved records must be persisted/fenced by a future host adapter across epochs. Interruptions/cancellation escaping a held flow lease also fence even after a successful completion return, while propagating the interruption. Such a fence reports lifecycle uncertainty, not a second unspent candidate.",
+    "retry": "Exactly one carrier invocation per dispatch. Owned handles receive one CommitRequest under their flow lease for every refusal/accepted/unknown result. All owned outcomes remove the host queue entry, including budget refusal; the owner alone may prepare a later candidate, allocate sequence/credit and derive retry timing. Opaque budget pressure retains its queue entry for compatibility. Clean owner ineligibility returns None; a prepare exception may have allocated and therefore fences the flow."
+  },
+  "fairness": {
+    "classes": "Airtime deficit round robin, control:interactive:bulk weights1:4:1; bounded quantum and maximum frame cost.",
+    "peers": "Each class uses airtime deficit accounting aggregated across a peer's flows. A peer with more admitted flows does not obtain more class airtime merely from its flow count.",
+    "flows": "Round robin within each peer. A costly head stays in place while it earns deficit; cheap siblings cannot skip it forever. Equal airtime per flow is not promised.",
+    "refusals": "Pre-send scheduler/carrier refusals yield both peer and class without spending airtime; denied control floods and unaffordable peers cannot retain the selection cursor.",
+    "limits": "Progress and latency evidence apply only to admitted eligible work in the deterministic harness with fresh counters, granted authority and available budgets. No physical tail latency or legal duty-cycle guarantee follows."
+  },
+  "dispatch": {
+    "request": [
+      "scheduler epoch",
+      "expected broker epoch",
+      "fresh nonce",
+      "full flow/session/route/service",
+      "nonreused local frame ID",
+      "payload byte count and SHA256",
+      "local role and class",
+      "exact full profile and conservative cost",
+      "original three deadlines",
+      "exact flow-owned reservation object including owner/reservation identity and revision, stable frame ID, 16-bit sequence, attempt ordinal, retry eligibility, original deadlines and admitted contract"
+    ],
+    "leases": "Owned dispatch first holds a current FlowDispatchLease yielding itself, then exact nonce-bound SERVICE and BROKER leases through one send. Owner.validate returns the exact binding object and checks current known handle/cancel/route/profile/session state after authority callbacks and at final pre-send. Policy lease exits precede airtime settlement and one flow completion while the flow lease remains held. Equal copied reservations in grants deny.",
+    "checks": "Nonregressing supplied monotonic/epoch clocks, original and grant-tightened deadlines and profile age at entry, after each callback and immediately before send. Ledger reservation validation repeats sample freshness/fence checks at the final pre-send boundary.",
+    "outcomes": "Typed MT03 CommitOutcome. Missing/truthy/cached/mismatched grants deny. Accepted and attempted_unknown spend the full reservation once. Exceptions or invalid carrier outcomes after invocation become unknown. A confirmed carrier pre-send refusal refunds. Failure before invocation refunds. Failure after invocation cannot refund a spent outcome or initiate another send.",
+    "post_send_checks_passed": "Only records successful deadline/clock checks and clean lease exits after an invocation. It is not current authority after unlocking or evidence of delivery/admission/drain.",
+    "reentry": "Host callbacks cannot reenter Scheduler mutation or diagnostics while the dispatch transaction is active. The production host must additionally serialize ledger/sample ownership and bounded callbacks.",
+    "control_proof": "Callback result types are inert contract records. The actual host must authenticate/enroll peers, read current service policy, verify control provenance and hold the exclusive broker generation; none of those adapters is supplied here. FlowAttemptPort likewise has no production implementation here; its ABC and inert reservation values are a trusted-host seam, not cryptographic proof.",
+    "completion": "Airtime settlement and flow completion are separate irreversible operations. ACCEPTED/UNKNOWN retains conservative full debt even if completion fails. The owner commit is attempted at most once and must return exactly None; ambiguity fences and retains the handle without inferring unspent credit. Expired post-send deadlines never prevent accounting; they continue to fence future sends. Aggregate flow_committed reports a clean commit return, not receipt/delivery; flow_fenced reports host stop state."
+  },
+  "budget": {
+    "model": "Integer-microsecond fixed-window own-TX and estimated shared-medium pacing with full quantization margin, bounded reservations and exact live-instance tokens.",
+    "sample": "Fresh matching carrier epoch, no backwards clocks/counters. Repeating an exact cached sample does not reconcile charges; changing a same-time sample fences the ledger. Own-counter excess includes firmware traffic that was not scheduled by the host.",
+    "uncertainty": "ACCEPTED and UNKNOWN settle exactly once into persistent uncertainty debt. New samples, elapsed windows and restore cannot erase it. This safe first model has no drain-proof/reclamation adapter: total carrier-admitted work is limited to the remaining debt budget for the ledger lifetime, even across windows. Budget restoration for autonomous measured firmware usage does not restore this uncertainty capacity.",
+    "restart": "Bounded inert checkpoints do not authenticate their own provenance. Restored instances retire prior handles and need a fresh matching-epoch counter plus conservative recovery. Live TCP/flow sessions are never restored.",
+    "limitations": "Shared remote firmware ACK/reverse work is an estimate, not measured here. Host pacing cannot control firmware autonomy or remove firmware ACK serialization. Fixed windows do not prove sliding-window compliance. No actual persistence adapter or counter/broker generation binding exists."
+  },
+  "dependencies_and_gates": [
+    "MT02 physical path/counter/RTT/profile provenance and full endpoint cost measurements.",
+    "Unfinished MT03 authenticated bootstrap/frame/control wire, reference lifecycle and production admission/demux.",
+    "Production broker integration above its bounded FIFO with exclusive owner, generation fencing and honest timeout/drain semantics.",
+    "A separately reviewed carrier-completion/drain-proof reconciliation adapter to reclaim uncertainty debt. A new timestamp, counter sample, quiet interval or process restart alone is insufficient.",
+    "SAGE raw streams remain Authenticated=false and retain pinned TLS plus signed request authorization; overlay retries cannot extend the current five-second local query authorization ceiling.",
+    "Real HTTPS, authenticated SAGE exchange and verified knowledge chunk together over LoRa sharing the scheduler; all pending.",
+    "Ember MT05 R4 has been delivered for independent review. Its finite-transfer engine still needs the separately agreed live incremental/half-close semantics and an actual FlowAttemptPort implementation; this host seam does not replace it.",
+    "Actual SerialScheduler/USB/firmware APIs lack an exact RF completion watermark. A host fence, tx_queue=0, new counter or ACK observation cannot reclaim accepted/unknown debt."
+  ]
+}

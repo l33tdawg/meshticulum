@@ -1,0 +1,8 @@
+include LICENSE NOTICE README.md AGENTS.md
+recursive-include docs *.md
+recursive-include provenance *.json
+recursive-include tools *.py
+recursive-include firmware *.py *.cpp *.hpp *.c *.dts
+recursive-include scripts *.py
+recursive-include tests *.py *.h *.cpp
+global-exclude __pycache__ *.py[cod] .DS_Store

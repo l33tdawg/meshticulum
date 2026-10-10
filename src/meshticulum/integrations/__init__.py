@@ -1,0 +1,1 @@
+"""Optional application-specific adapters."""

@@ -1,0 +1,174 @@
+{
+  "schema": "meshticulum.mt03.contract-specification.v1",
+  "status": "isolated_first_increment_candidate; final_authenticated_wire_and_production_adapter_pending",
+  "task": "07530455-d8c0-4217-8430-a2753ef6aa24",
+  "scope": "Inert typed identities, strict carrier arithmetic/untrusted text codec, capability metadata, and current host authentication/service-policy lease interfaces. No runtime, radio, socket, TLS wrapper or permission store is implemented.",
+  "identity": {
+    "peer": [
+      "exact chain_id",
+      "full lower-case64hex agent signing key"
+    ],
+    "service": [
+      "provider PeerID",
+      "ServiceKind"
+    ],
+    "session": [
+      "initiator PeerID",
+      "responder PeerID",
+      "session_id16bytes",
+      "session_generation16bytes"
+    ],
+    "flow": [
+      "full SessionKey",
+      "initiating PeerID",
+      "nonzero uint64flow_id"
+    ],
+    "route": [
+      "SessionKey",
+      "ServiceID",
+      "canonical carrier instance UUID",
+      "full carrier binding digest32",
+      "profile digest32",
+      "nonzero uint64 route_generation"
+    ],
+    "lifetime": "Constructors validate shape only. Authenticated fresh nonce creation, flow allocation without reuse, nonce retirement, broker epochs and continuity are mandatory adapter responsibilities, not established by these records."
+  },
+  "units": {
+    "clock": "monotonic_seconds",
+    "authority": "checked_epoch_seconds_plus_original_derived_monotonic_deadline",
+    "credit": "bytes",
+    "costs": [
+      "forward_seconds",
+      "firmware_ack_seconds",
+      "reverse_control_seconds"
+    ]
+  },
+  "carrier": {
+    "text_limit_utf8_bytes": 128,
+    "binary_local_max_bytes": 4096,
+    "candidate_discriminator": "MT1:",
+    "legacy_discriminators": [
+      "SL1:",
+      "LP1:",
+      "LC1:"
+    ],
+    "text_encoding": "strict ASCII prefix + canonical padded Base64; decode returns UntrustedCarrierPayload",
+    "maximum_text_decoded_bytes": 93,
+    "application_capacity": "((mtu_bytes-4)//4)*3-header_bytes-authentication_bytes; all integer inputs explicit and capacity>=1",
+    "binary_capacity": "mtu_bytes-header_bytes-authentication_bytes",
+    "compatibility": "No legacy fallback. Actual runtime dispatch must precede the existing public gateway early-return branch; this candidate does not add that handler.",
+    "profile": "All values validated exact/finite; basis is a caller assertion, not measurement provenance. Observation age and non-backward supplied clocks checked on negotiation; physical path provenance remains MT02/MT12."
+  },
+  "metadata": {
+    "schema": "sage.meshticulum.capabilities.v1",
+    "maximum_bytes": 4096,
+    "encoding": "exact ASCII canonical JSON, sorted keys and service/feature lists; duplicate/missing/extra keys and nonfinite/bool integer values rejected",
+    "fields": [
+      "schema",
+      "versions",
+      "services",
+      "features",
+      "limits"
+    ],
+    "implemented_contract_versions": [
+      1
+    ],
+    "service_kinds": [
+      "internet",
+      "sage_federation",
+      "knowledge",
+      "protected_message"
+    ],
+    "features": [
+      "byte_credit",
+      "selective_ack_32",
+      "incremental_stream",
+      "half_close",
+      "verified_object_resume",
+      "protected_message_v2"
+    ],
+    "required": {
+      "all": [
+        "byte_credit",
+        "selective_ack_32"
+      ],
+      "internet_and_sage": [
+        "incremental_stream",
+        "half_close"
+      ],
+      "knowledge": [
+        "verified_object_resume"
+      ],
+      "protected_message": [
+        "protected_message_v2"
+      ]
+    },
+    "live_vs_finite": "A finite one-send candidate that lacks incremental_stream/half_close must refuse Internet/SAGE negotiation. Capability claims require trusted local adapter provenance and authenticated remote transcript; these records do not implement those features."
+  },
+  "limits": {
+    "local_policy_maxima": {
+      "max_payload_bytes": 4096,
+      "window_bytes": 65536,
+      "max_unconsumed_bytes": 65536,
+      "initial_credit_bytes": 65536,
+      "max_reassembly_frames": 32,
+      "max_queued_bytes": 262144,
+      "max_retry_attempts": 64,
+      "max_flows": 8,
+      "max_flows_per_peer": 2,
+      "max_total_frames": 65535,
+      "max_control_bytes": 4096,
+      "sack_bits": 32
+    },
+    "rules": [
+      "Exact nonboolean integer counts; no infinity, modulo, masking or silent widened wire field.",
+      "payload<=window,unconsumed andqueuedbytes; initialcredit<=window andunconsumed; window<=unconsumed and reassemblyframes*payload; peerflows<=globalflows.",
+      "Intersection uses minima, then carrier payload capacity, then reduces window/frame coverage and initial credit.",
+      "max_control_bytes bounds one logical control record, not one physical frame; bootstrap fragmentation/control wire layout pending.",
+      "Actual flow must enforce both frame-count and byte limits and charge retained reorder/unconsumed/duplicate bytes; static records do not implement memory accounting."
+    ]
+  },
+  "admission": {
+    "untrusted_parse": "parse_offer supplies zero identity or service authority.",
+    "authenticate": "Mandatory trusted host callback authenticate(exact_raw_offer,RouteBinding)->VerifiedOffer. Result must bind exact independently pinned full peer, SessionKey, route, raw SHA256 and fresh expiry. Host verifies channel_binding_digest provenance; this module implements no proof/MAC/handshake.",
+    "authorize": "Mandatory fresh per-service host read lease authorize(AdmissionRequest)->AbstractContextManager yielding AuthorityGrant for the exact nonce-bound request. Missing/truthy/cached/request-mismatched results refuse.",
+    "request_binding": [
+      "full peer",
+      "full route/service/session",
+      "authenticated raw offer digest",
+      "actual local capabilities+carrier profile policy snapshot digest",
+      "original deadlines",
+      "fresh16byte host requestnonce"
+    ],
+    "policy": "Messaging consent, reachability advertisements, valid signatures, CRC, compact IDs, successful parsing and remote class labels do not authorize backhaul. Host authorizer must check current stored service policy under its lease; local_policy_digest is a snapshot hash and not an authority proof.",
+    "clocks": "Check original deadlines/profile at entry, grant-tightened deadlines/profile/proof expiry under the policy lease, and again after lease exit. Callback time and backwards clocks cannot return an already-expired snapshot.",
+    "result": "NegotiatedContract is inert historical admission snapshot. Every future dispatch must reacquire current service and broker authority; returned dataclass never restores live session or authorizes transmission."
+  },
+  "routing": {
+    "change": "A locally admitted carrier/profile/route-generation change invalidates outstanding reservations and old compact lookups, resets retry timing from the new measured profile, and retains or tightens original application/authority deadlines. No route mutator, retry engine or reservation ledger is implemented in this increment.",
+    "priority": "Local policy maps Internet,SAGE andprotected messages tointeractive, knowledge tobulk. Remote priority/control labels are not metadata fields. Trusted receipt/control rate limits belong toMT04.",
+    "outcomes": [
+      "refused_by_scheduler_before_send",
+      "refused_by_carrier_queue_before_send",
+      "confirmed_carrier_acceptance",
+      "attempted_unknown"
+    ],
+    "outcome_scope": "Enums only; actual exactly-once reservation/charge/reconciliation remains MT04/MT05."
+  },
+  "sage": {
+    "raw_stream_authenticated": false,
+    "reason": "PeerRouteDialResult.Authenticated=true bypasses normal pinned TLS; raw Meshticulum streams must keep false.",
+    "retained": "Pinned TLS1.3 and existing signed federation authorization/admission remain mandatory.",
+    "current_query_authorization_ceiling_seconds": 5,
+    "feasibility": "Overlay RTO cannot extend current SAGE local authorization lease/context. Slow-LoRa request feasibility is unmeasured; production integration needs explicit bounded request behavior or an approved node contract."
+  },
+  "remaining": [
+    "Authenticated OPEN/bootstrap/transcript/downgrade/replay protection and final DATA/ACK wire layout.",
+    "Negotiated compact reference lifecycle and authenticated frame/control verification.",
+    "Broker service demux/admission and exclusive owner integration.",
+    "MT04 measured fair scheduler, forward/firmwareACK/reverse budgets and actual reserve/commit.",
+    "Repaired MT05 live incremental stream/half-close, credit persistence and bounded failure.",
+    "MT06 verified-object trust/resume and existing pack/root contracts.",
+    "Actual HTTPS + authenticated SAGE exchange + verified chunk overLoRa together; no source/simulation acceptance implies those gates."
+  ]
+}

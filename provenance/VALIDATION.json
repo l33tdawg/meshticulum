@@ -1,0 +1,50 @@
+{
+  "schema": "meshticulum.source-validation.v1",
+  "date": "2026-10-10",
+  "scope": "source-only extraction",
+  "results": {
+    "standalone_without_sdk": {
+      "tests": 1687,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 11,
+      "passed": 1676,
+      "report_sha256": "38a5167782e42af215a380bac06fbff223dda3b58712df4779567306730fece9"
+    },
+    "optional_sage_modeled_backend": {
+      "tests": 258,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 258,
+      "report_sha256": "133fa3f1d9fb2b3d36d61216915ca8695c576f13a2d4bf69f43e94af157ec097"
+    }
+  },
+  "wheel_smoke": {
+    "status": "passed",
+    "core_modules": 37,
+    "installed_wheel_sha256": "1cf157f5610ac2a1e46dd9a96e2e4de9b5307e001f5f5ee2568c55bf2ab85c62",
+    "sage_sdk_present": false,
+    "parent_application_present": false,
+    "console_help": "passed",
+    "frozen_flow_pins": "matched",
+    "sdist_support_files": "present"
+  },
+  "dependencies": {
+    "cryptography": "50.0.2",
+    "PyNaCl": "1.6.2",
+    "pytest": "9.1.1"
+  },
+  "optional_sdk": "11.19.10+lantern.20260906 (existing local installation)",
+  "core_has_sage_dependency": false,
+  "source_provenance_matched": true,
+  "source_parent_files_unchanged": true,
+  "rf_qualification": false,
+  "production_private_admission": false,
+  "hardware_actions": false,
+  "skips": "Five inherited profile controls and six optional SDK modules in the SDK-free run; the optional SDK run has no skips.",
+  "public_runtime": {
+    "sha256": "05630d7edaf7fa2ab3435e4bfbcb55eb8bc3b5e7482b4c8141ff8db70ccd7dba",
+    "installed": false
+  }
+}

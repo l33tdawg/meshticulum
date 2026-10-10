@@ -1,0 +1,455 @@
+# Extracted for Meshticulum; namespace/path/test adaptation. See docs/EXTRACTION.md.
+"""Local composed controls; the worker is a fault-injected radio model, not RF."""
+from collections import deque
+from dataclasses import asdict
+import hashlib
+import fcntl
+import importlib.util
+import json
+import os
+from pathlib import Path
+import secrets
+
+import pytest
+
+from meshticulum.bench.attempts import AttemptJournal
+from meshticulum.bench.authority import RunAuthority, revoke
+from meshticulum.bench.flow_runtime import BenchFlow
+from meshticulum.bench.objects import VerifiedChunks
+from meshticulum.bench.serial_protocol import RadioProfile, RawReceive
+from meshticulum.bench.serial_worker import AttemptResult
+from meshticulum.bench.profiles import MODES, profile_for
+from meshticulum.bench.state import SessionStore
+from meshticulum.bench.wire import HEADER, FrameKind, SessionCipher, WireError
+from meshticulum.scheduler.budget import BudgetPolicy, Ledger
+
+BOOT = '21f9c178-6090-40d9-9359-ecf1c7b950b1'
+PROFILE = RadioProfile(921375000, 125000, 8, 5, 0, 8, 0x42, 90000, 256, 60000000)
+
+
+class Clock:
+    epoch = 1000000000
+    mono = 100000000
+
+    def __call__(self): return self.epoch, self.mono
+    def advance(self, us): self.epoch += us; self.mono += us
+
+
+class ModelWorker:
+    def __init__(self, journal, clock):
+        self.journal, self.clock = journal, clock
+        self.fenced = False
+        self.incoming, self.sent = deque(), []
+        self.peer = None
+        self.drop_kind = None
+        self.corrupt_once = False
+        self.replay_once = False
+        self.owned = True
+
+    def transmit(self, packet):
+        request = self.journal.reserve(packet, 200000)
+        self.journal.settle(request, packet, 'RF_DONE', 'source_chip_model')
+        self.sent.append(packet)
+        kind = FrameKind(HEADER.unpack(packet[:HEADER.size])[2])
+        if kind is self.drop_kind:
+            self.drop_kind = None
+        else:
+            if self.corrupt_once:
+                self.peer.incoming.append(packet[:-1] + bytes([packet[-1] ^ 1]))
+                self.corrupt_once = False
+            else:
+                self.peer.incoming.append(packet)
+                if self.replay_once:
+                    self.peer.incoming.append(packet)
+                    self.replay_once = False
+        return AttemptResult(request, 'RF_DONE', 200000, None)
+
+    def receive(self, timeout=0):
+        if self.incoming:
+            return self.clock()[1] / 1000000, RawReceive(-70.0, 3.0, self.incoming.popleft())
+
+
+def provision(path, unit, payload, clock, profile=PROFILE):
+    path.mkdir(mode=0o700)
+    peers = [{'chain_id': 'local-bench-test', 'agent_id': x * 64} for x in ('a', 'b')]
+    value = {'schema': 'meshticulum.bench-run.v1', 'unit': unit, 'host_boot_id': BOOT,
+        'local_peer': peers[unit == 'unit-b'], 'initiator': peers[0], 'responder': peers[1],
+        'session_id': '11' * 16, 'generation': '22' * 16,
+        'issued_epoch_us': clock()[0] - 1000000, 'expires_epoch_us': clock()[0] + 180000000,
+        'profile': asdict(profile), 'sender_unit': 'unit-a', 'country': 'MY',
+        'antenna_confirmed': True, 'max_frames': 512,
+        'object': {'sha256': hashlib.sha256(payload).hexdigest(), 'bytes': len(payload),
+                   'chunk_index': 0, 'object_id': hashlib.sha256(payload).hexdigest()}}
+    for name, data in [('grant.json', json.dumps(value).encode()), ('secret.bin', b'K' * 32),
+                       ('active', b'active\n')]:
+        fd = os.open(path / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, 'wb') as f: f.write(data)
+    return value
+
+
+@pytest.fixture(params=list(MODES))
+def pair(tmp_path, request):
+    clock = Clock()
+    data = bytes(range(256)) * 4
+    opened = []
+    flows = []
+    workers = []
+    for unit in ('unit-a', 'unit-b'):
+        path = tmp_path / unit
+        provision(path, unit, data, clock, profile_for(request.param))
+        journal = AttemptJournal(path / 'attempts.db', binding=bytes(32), max_attempts=256,
+            max_airtime_us=60000000, create=True, request_clock=lambda: clock()[0])
+        worker = ModelWorker(journal, clock)
+        authority = RunAuthority(path, expected_unit=unit, host_boot_id=BOOT,
+            clock=clock, owner_probe=lambda w=worker: w.owned)
+        store = SessionStore(path / 'wire.db', authority.grant, authority.local_peer,
+                             boot_id=BOOT, clock=clock, create=True)
+        cipher = SessionCipher(authority.grant, authority.local_peer, store)
+        ledger = Ledger(BudgetPolicy(180000000, 60000000, 120000000, 1000000,
+                                     quantization_us=1), authority.ledger_epoch, clock()[1])
+        endpoint = BenchFlow(authority=authority, worker=worker, cipher=cipher,
+            journal=journal, flow_key=authority.flow_key, contract=authority.contract,
+            profile=authority.carrier_profile, ledger=ledger, scheduler_epoch=authority.scheduler_epoch,
+            broker_epoch=authority.broker_epoch, sends=unit == 'unit-a', clock=clock)
+        opened.append((endpoint, store, authority, journal))
+        flows.append(endpoint); workers.append(worker)
+    workers[0].peer, workers[1].peer = workers[1], workers[0]
+    try:
+        yield data, clock, flows, workers
+    finally:
+        for endpoint, store, authority, journal in opened:
+            endpoint.close(); store.close(); authority.close(); journal.close()
+
+
+def finish(pair):
+    data, clock, (sender, receiver), workers = pair
+    for _ in range(1600):
+        sender.step(); receiver.step()
+        clock.advance(50000)
+        if sender.flow.complete and receiver.flow.complete:
+            assert bytes(receiver.received) == data
+            return
+    raise AssertionError((sender.snapshot(), receiver.snapshot()))
+
+
+def test_real_composition_waits_for_authenticated_startup_credit(pair):
+    data, clock, (sender, receiver), workers = pair
+    sender.send(data)
+    for _ in range(5):
+        sender.step(); clock.advance(50000)
+    assert not workers[0].sent
+    finish(pair)
+    assert workers[1].sent and FrameKind(HEADER.unpack(workers[1].sent[0][:HEADER.size])[2]) is FrameKind.ACK
+    assert sender.flow.acked_frames() > 0
+    assert sender.snapshot()['complete']
+
+
+def test_consumed_delivery_uses_one_ack_before_persistence_interval(pair):
+    data, clock, (sender, receiver), workers = pair
+    sender.send(data)
+    receiver.step()  # real authenticated startup credit
+    sender.step()    # one data packet
+    clock.advance(500000)
+    receiver.step()
+    assert len(receiver.received) == 193
+    if receiver.burst_frames > 1:
+        clock.advance(receiver.burst_quiet_us + 1)
+        receiver.step()
+    sent = len(workers[1].sent)
+    assert sent == 2  # startup and one data/credit acknowledgment
+    clock.advance(450000)
+    receiver.step()  # no new data, loss, expiry or persistence event
+    assert len(workers[1].sent) == sent
+
+
+def test_ack_progress_ends_reverse_wait_but_corrupt_ack_cannot(pair):
+    data, clock, (sender, receiver), workers = pair
+    if sender.burst_frames > 1:
+        pytest.skip('Per-packet reverse wait is only used by the baseline profile')
+    sender.send(data)
+    receiver.step()
+    # ModelWorker has zero transmission duration. Advance the receiver out of
+    # its startup ACK guard before modeling arrival of the first DATA.
+    clock.advance(receiver.receive_gap_us + 20000)
+    sender.step()
+    gap_end = sender.next_send_us
+    clock.advance(20000)
+    receiver.step()
+    assert workers[0].incoming
+    ack = workers[0].incoming.popleft()
+    workers[0].incoming.append(ack[:-1] + bytes([ack[-1] ^ 1]))
+    sender.step()
+    assert sender.next_send_us == gap_end
+    workers[0].incoming.append(ack)
+    sender.step()
+    # Successful ACK admits the next frame inside the old conservative wait.
+    assert sender.flow.acked_frames() == 1 and len(workers[0].sent) == 2
+    assert clock()[1] < gap_end
+
+
+def test_fast_burst_is_bounded_by_credit_and_gets_one_current_ack(pair):
+    data, clock, (sender, receiver), workers = pair
+    if sender.burst_frames == 1:
+        pytest.skip('Burst policy is only enabled on explicitly faster profiles')
+    sender.send(data); receiver.step(); clock.advance(20000)
+    for index in range(4):
+        sender.step(); receiver.step(); clock.advance(20000)
+        assert len(workers[1].sent) == (2 if index == 3 else 1)
+    assert len(workers[0].sent) == 4
+    # Hold the ACK at the receiver boundary: the sender cannot spend a fifth
+    # frame until that actual authenticated credit/receipt reaches it.
+    ack = workers[0].incoming.popleft()
+    sender.step()
+    assert len(workers[0].sent) == 4
+    workers[0].incoming.append(ack); clock.advance(2000); sender.step()
+    assert sender.flow.acked_frames() == 4 and len(workers[0].sent) == 5
+    clock.advance(20000)
+    finish(pair)
+
+
+def test_lost_frame_in_fast_burst_gets_bounded_partial_ack_and_recovers(pair):
+    data, clock, (sender, receiver), workers = pair
+    if sender.burst_frames == 1:
+        pytest.skip('Burst policy is only enabled on explicitly faster profiles')
+    sender.send(data); receiver.step(); clock.advance(2000); workers[0].drop_kind = FrameKind.DATA
+    for _ in range(4):
+        sender.step(); receiver.step(); clock.advance(2000)
+    assert len(workers[1].sent) == 1
+    clock.advance(receiver.burst_quiet_us + 1); receiver.step()
+    assert len(workers[1].sent) == 2  # partial SACK instead of deadlock
+    clock.advance(20000)
+    finish(pair)
+    assert sender.flow.retransmits >= 1
+
+
+def test_revocation_during_held_burst_ack_prevents_transmission(pair):
+    data, clock, (sender, receiver), workers = pair
+    if sender.burst_frames == 1:
+        pytest.skip('Burst policy is only enabled on explicitly faster profiles')
+    sender.send(data); receiver.step(); clock.advance(2000); sender.step(); receiver.step()
+    assert receiver.burst_received == 1 and len(workers[1].sent) == 1
+    revoke(receiver.authority.path)
+    clock.advance(receiver.burst_quiet_us + 1)
+    with pytest.raises(WireError, match='authority_not_live'):
+        receiver.step()
+    assert len(workers[1].sent) == 1
+
+
+@pytest.mark.parametrize('mode', list(MODES))
+def test_directional_costs_use_real_packet_bounds_and_reject_unlisted_modes(tmp_path, mode):
+    from meshticulum.bench.serial_worker import estimated_airtime_us
+    clock = Clock(); path = tmp_path / 'admitted'
+    profile = profile_for(mode)
+    provision(path, 'unit-a', b'payload', clock, profile)
+    authority = RunAuthority(path, expected_unit='unit-a', host_boot_id=BOOT,
+                             clock=clock, owner_probe=lambda: True)
+    try:
+        cost = authority.carrier_profile
+        assert cost.forward_seconds >= estimated_airtime_us(profile, 255) / 1e6
+        assert cost.reverse_control_seconds >= estimated_airtime_us(profile, 70) / 1e6
+        assert cost.reverse_control_seconds < cost.forward_seconds
+        assert 0 < cost.min_rto_seconds <= cost.initial_rto_seconds <= cost.max_rto_seconds
+    finally:
+        authority.close()
+    bad = tmp_path / 'unlisted'; plan = provision(bad, 'unit-a', b'payload', clock)
+    plan['profile']['bandwidth_hz'] = 62500
+    (bad / 'grant.json').write_text(json.dumps(plan))
+    with pytest.raises(WireError, match='unsupported_initial_bench_profile'):
+        RunAuthority(bad, expected_unit='unit-a', host_boot_id=BOOT, clock=clock, owner_probe=lambda: True)
+    assert not (bad / 'started').exists()
+
+
+@pytest.mark.parametrize('failure', ['lost_startup_ack', 'corrupt_data', 'replay_data'])
+def test_composed_authenticated_loss_and_replay_recovery(pair, failure):
+    data, clock, (sender, receiver), workers = pair
+    if failure == 'lost_startup_ack': workers[1].drop_kind = FrameKind.ACK
+    if failure == 'corrupt_data': workers[0].corrupt_once = True
+    if failure == 'replay_data': workers[0].replay_once = True
+    sender.send(data)
+    finish(pair)
+    if failure != 'lost_startup_ack':
+        assert receiver.counts['rx_refused'] >= 1
+
+
+def test_provisioned_revocation_stops_every_lane_before_worker_io(pair):
+    data, clock, (sender, receiver), workers = pair
+    sender.send(data)
+    revoke(receiver.authority.path)
+    with pytest.raises(WireError, match='authority_not_live'):
+        receiver.step()
+    assert not workers[1].sent
+
+
+def test_missing_actual_broker_owner_cannot_dispatch_startup_ack(pair):
+    data, clock, (sender, receiver), workers = pair
+    workers[1].owned = False
+    receiver.step()
+    assert not workers[1].sent
+    assert receiver.link.last_result.reason == 'broker_authority_refused'
+
+
+def test_used_grant_cannot_reinitialize_nonce_or_attempt_state(pair):
+    authority = pair[2][0].authority
+    with pytest.raises(FileExistsError):
+        RunAuthority(authority.path, expected_unit='unit-a', host_boot_id=BOOT,
+                     clock=pair[1], owner_probe=lambda: True)
+
+
+def test_changed_policy_invalidates_authority_without_widening_expiry(pair):
+    authority = pair[2][0].authority
+    path = authority.path / 'grant.json'
+    plan = json.loads(path.read_text()); plan['expires_epoch_us'] += 1000000
+    path.write_text(json.dumps(plan))
+    assert not authority.live()
+
+
+def test_boot_and_unconfirmed_antenna_refusals_do_not_consume_grant(tmp_path):
+    clock = Clock(); directory = tmp_path / 'run'
+    plan = provision(directory, 'unit-a', b'payload', clock)
+    with pytest.raises(WireError, match='wrong_bench_host'):
+        RunAuthority(directory, expected_unit='unit-a', host_boot_id='11' * 16,
+                     clock=clock, owner_probe=lambda: True)
+    plan['antenna_confirmed'] = False
+    (directory / 'grant.json').write_text(json.dumps(plan))
+    with pytest.raises(WireError, match='antenna_unconfirmed'):
+        RunAuthority(directory, expected_unit='unit-a', host_boot_id=BOOT,
+                     clock=clock, owner_probe=lambda: True)
+    assert not (directory / 'started').exists()
+
+
+def test_expiry_and_clock_rollback_refuse_more_work(pair):
+    clock, authority = pair[1], pair[2][0].authority
+    clock.epoch -= 1
+    assert not authority.live()
+    clock.epoch += 1
+    clock.advance(181000000)
+    assert not authority.live()
+
+
+def test_all_sealed_frames_fit_radio_mtu_and_include_positive_restart_safe_counters(pair):
+    data, clock, flows, workers = pair
+    flows[0].send(data); finish(pair)
+    for worker in workers:
+        counters = [HEADER.unpack(packet[:HEADER.size])[-2] for packet in worker.sent]
+        assert counters == list(range(1, len(counters) + 1))
+        assert all(len(packet) <= 255 for packet in worker.sent)
+    assert max(map(len, workers[0].sent)) == 255
+    json.dumps(flows[0].snapshot())
+
+
+def test_verified_chunks_resume_without_old_session_and_check_whole_object(tmp_path):
+    data = b'public synthetic chunk one' + b'public synthetic chunk two'
+    object_id = hashlib.sha256(data).hexdigest()
+    chunks = [data[:26], data[26:]]
+    descriptors = [{'object_id': object_id, 'chunk_index': i, 'bytes': len(chunk),
+                    'sha256': hashlib.sha256(chunk).hexdigest()} for i, chunk in enumerate(chunks)]
+    store = VerifiedChunks(tmp_path / 'objects')
+    assert store.commit(descriptors[0], chunks[0])
+    del store
+    recovered = VerifiedChunks(tmp_path / 'objects')
+    assert recovered.get(descriptors[0]) == chunks[0]
+    assert recovered.get(descriptors[1]) is None
+    assert not recovered.commit(descriptors[0], chunks[0])
+    with pytest.raises(WireError, match='object_incomplete'):
+        recovered.assemble(descriptors)
+    recovered.commit(descriptors[1], chunks[1])
+    assert recovered.assemble(descriptors) == data
+    with pytest.raises(WireError, match='object_order'):
+        recovered.assemble(list(reversed(descriptors)))
+    (tmp_path / 'objects' / object_id / '0.bin').write_bytes(b'corrupted')
+    with pytest.raises(WireError, match='stored_chunk_corrupt'):
+        recovered.get(descriptors[0])
+
+
+def test_partial_unverified_chunk_does_not_become_a_resume_receipt(tmp_path):
+    data = b'synthetic payload'
+    descriptor = {'object_id': hashlib.sha256(data).hexdigest(), 'chunk_index': 0,
+                  'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)}
+    store = VerifiedChunks(tmp_path / 'objects')
+    assert store.get(descriptor) is None
+    orphan = tmp_path / 'objects' / descriptor['object_id'] / '0.bin'
+    orphan.write_bytes(data); orphan.chmod(0o600)
+    assert store.get(descriptor) is None
+    assert store.commit(descriptor, data)
+    assert store.get(descriptor) == data
+    bad = dict(descriptor, sha256='a' * 64)
+    with pytest.raises(WireError, match='received_chunk_mismatch'):
+        store.commit(bad, data)
+
+
+def test_dispatch_holds_real_revocation_lock_until_worker_returns(pair):
+    receiver = pair[2][1]
+    worker = pair[3][1]
+    original = worker.transmit
+    checked = []
+    def while_held(packet):
+        fd = os.open(receiver.authority.path / 'active', os.O_RDWR)
+        try:
+            with pytest.raises(BlockingIOError):
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            checked.append(True)
+        finally:
+            os.close(fd)
+        return original(packet)
+    worker.transmit = while_held
+    receiver.step()
+    assert checked
+    revoke(receiver.authority.path)
+    assert not receiver.authority.live()
+
+
+def test_settled_handle_objects_are_retained_within_explicit_run_bound(pair):
+    data, clock, (sender, receiver), workers = pair
+    sender.send(data); finish(pair)
+    for flow in (sender, receiver):
+        handles = flow.owner.retained
+        assert len(handles) == len(flow.owner._settled_handles)
+        assert {id(handle) for handle in handles} == flow.owner._settled_handles
+        assert len(handles) < 1024
+
+
+def helper(name):
+    path = Path(__file__).resolve().parents[1] / 'firmware/meshticulum-bench' / (name + '.py')
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+
+def test_fresh_management_packages_never_put_application_payload_on_receiver(tmp_path):
+    prep = helper('prepare_run')
+    clock = Clock()
+    peers = {u: {'chain_id': 'bench-test', 'agent_id': c * 64} for u, c in [('unit-a', 'a'), ('unit-b', 'b')]}
+    kwargs = dict(now_us=clock()[0], boot_ids={u: BOOT for u in peers}, peers=peers, payload=b'synthetic')
+    one, packages = prep.packages('unit-a', 'unit-b', **kwargs)
+    two, fresh = prep.packages('unit-a', 'unit-b', **kwargs)
+    assert one != two and packages['unit-a']['secret'] != fresh['unit-a']['secret']
+    assert packages['unit-a']['secret'] == packages['unit-b']['secret']
+    assert packages['unit-b']['payload'] is None
+    assert packages['unit-b']['reuse_verified_chunk'] is False
+    authorities = []
+    import base64
+    try:
+        for unit, package in packages.items():
+            root = tmp_path / unit; root.mkdir(mode=0o700)
+            for name, data in [('grant.json', json.dumps(package['grant']).encode()),
+                ('secret.bin', base64.b64decode(package['secret'])), ('active', b'active\n')]:
+                (root / name).write_bytes(data); (root / name).chmod(0o600)
+            authorities.append(RunAuthority(root, expected_unit=unit, host_boot_id=BOOT,
+                                            clock=clock, owner_probe=lambda: True))
+        assert authorities[0].grant.digest == authorities[1].grant.digest
+    finally:
+        for authority in authorities: authority.close()
+
+
+def test_runtime_archive_parser_refuses_bad_hash_and_link_member():
+    import io, tarfile
+    bootstrap = helper('runtime_bootstrap')
+    output = io.BytesIO()
+    with tarfile.open(fileobj=output, mode='w:gz') as archive:
+        entry = tarfile.TarInfo('bench_node.py'); entry.type = tarfile.SYMTYPE
+        entry.linkname = '/etc/passwd'; archive.addfile(entry)
+    data = output.getvalue()
+    with pytest.raises(RuntimeError, match='hash_mismatch'):
+        bootstrap.members(data, '0' * 64)
+    with pytest.raises(RuntimeError, match='archive_member'):
+        bootstrap.members(data, hashlib.sha256(data).hexdigest())

@@ -1,0 +1,36 @@
+{
+  "schema": "meshticulum.native-bench-wire.v1",
+  "status": "experimental_source_only",
+  "activation": "No imports from runtime, no device opening, no service installation and no default keys.",
+  "scope": "Explicitly provisioned pairwise sessions for bounded synthetic/public bench transfers; ordinary SAGE/HTTPS authentication is not bypassed.",
+  "bootstrap": "Each endpoint receives the exact full peer identities, one fresh session/incarnation, route/profile binding digest, fixed expiry, limits and an independent secret through pinned management. Unknown sessions and versions are refused. No remote peer can enroll itself or choose a grant.",
+  "wire": {
+    "byte_order": "network",
+    "header": ["magic:2=MT", "version:u8=1", "kind:u8", "direction:u8", "session_id:16", "counter:u64", "plaintext_length:u16"],
+    "header_bytes": 31,
+    "authentication_tag_bytes": 16,
+    "maximum_frame_bytes": 255,
+    "maximum_plaintext_bytes": 208,
+    "authentication": "ChaCha20-Poly1305, 96-bit nonce = zero32 || monotonic_counter64. HKDF-SHA256 derives separate direction keys from the pairwise secret, session incarnation and complete canonical grant. AAD binds domain, complete grant digest and exact header.",
+    "compact_identity": "On-air session ID only selects an already provisioned full chain-qualified identity binding. It conveys no independent authority.",
+    "reliability": "Outer nonce/replay counter is independent of the inner reliable-flow sequence. Each retry is newly sealed. Replay admission does not establish application consumption, SAGE commit or human read."
+  },
+  "persistence": {
+    "nonce": "Commit the next counter with SQLite synchronous=FULL before encrypting or returning bytes; abandoned reservations remain spent.",
+    "receive": "Authenticate before advancing the durable 256-packet replay window; commit admission before returning plaintext. A crash before inner delivery is recovered by an inner-flow retry with a fresh outer counter.",
+    "restart": "Reopen requires original grant, endpoint, boot and original absolute epoch/monotonic expiry. Missing state never implicitly creates a new session. Reboot or retirement requires fresh provisioning; durable object resume is a separate layer.",
+    "authority": "Caller-provided live authority is checked at reservation/admission and again after decryption. Actual service/broker worker grant integration remains open.",
+    "storage": "Metadata only in an owner-private directory and regular single-link 0600 file. Secret and payload are not written. Deployment must protect state from deletion/rollback; ordinary SQLite is not hardware rollback protection."
+  },
+  "required_next": [
+    "Independent adversarial source review and exact focused test evidence",
+    "Provisioning/retirement adapter that creates unique run keys and protects state without private SAGE access",
+    "Bounded native firmware/host binary carrier, exact radio identity, exclusive owner and outcome accounting",
+    "Integration with accepted flow scheduler and durable verified object resume",
+    "Real A/B/C deployment and radio benchmarks"
+  ],
+  "references": [
+    "https://cryptography.io/en/latest/hazmat/primitives/aead/",
+    "https://cryptography.io/en/latest/hazmat/primitives/key-derivation-functions/"
+  ]
+}
