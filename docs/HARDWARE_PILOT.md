@@ -17,6 +17,9 @@ Use synthetic signed public resources and independent adjacent-link keys. Privat
 | [`pilot_resource_node.py`](../src/meshticulum/bench/pilot_resource_node.py) | Verify against the original sent request and the recipient's own campaign, manifest and trust material; opens no socket or radio |
 | [`pilot_job.py`](../src/meshticulum/bench/pilot_job.py) | Record the admitted public process, recheck its actual Linux process identity through a pidfd, and stop only that held handle |
 | [`pilot_controller.py`](../src/meshticulum/bench/pilot_controller.py) | Prepare and sequence the four public hops through an explicitly supplied management operator, preserving source provenance, original deadlines and cleanup evidence |
+| [`pilot_ssh.py`](../src/meshticulum/bench/pilot_ssh.py) | Execute bounded pinned SSH management, preserving actual child handles and terminal-only sudo credentials |
+| [`pilot_seed.py`](../src/meshticulum/bench/pilot_seed.py) | Verify and install the signed public source at B or manifest/trust material at C; recipient chunks are refused |
+| [`run_public_pilot.py`](../firmware/meshticulum-bench/run_public_pilot.py) | Run one explicitly confirmed finite mixed request/reply pilot and retain its outcome and cleanup metadata |
 | [`bench_node.py`](../firmware/meshticulum-bench/bench_node.py) | Hash-verified native actions for finite radio/TCP runs, `pilot-verify` and explicit child revocation |
 
 The provisioner creates protected, create-only child files, including `grant.json`, `secret.bin`, `active`, `provision.json` and a sender body only when applicable. It does not claim the child, open a listener, arm a radio, start a transfer or create a worker journal. Receivers receive no management-supplied payload. The public runtime manifest keeps private services disabled.
@@ -25,9 +28,10 @@ The pending controller must connect these stages, preserve their actual process 
 
 The source `Controller` now implements the four-hop request/reply sequence. Its
 management operator must supply real child handles, native status, preparation,
-collection, recipient verification and retirement. The concrete management
-adapter and loss/resume runner remain pending. Modeled records in controller
-tests do not establish an executed device route.
+collection, recipient verification and retirement. The concrete SSH adapter and
+one-piece mixed runner are now source-prepared; the native loss/resume driver
+remains pending. Modeled records in controller tests do not establish an
+executed device route.
 
 Public jobs create `job.json` after admission and payload validation. Radio jobs
 publish `radio-ready.json` only after ARM and flow startup; TCP receivers retain
@@ -50,6 +54,48 @@ the native grant may have persisted before its reply was lost. Controller
 cleanup therefore attempts retirement for every attempted child, including one
 whose preparation did not return success. It retains retirement/stop errors and
 never upgrades those errors to a clean handoff.
+
+## Concrete management operator
+
+The runner consumes a protected `meshticulum.finite-ssh-pilot.v1` config. It binds
+the runtime archive, manifest and two bootstrap hashes; a finite handoff end;
+an explicit TCP port range; and exactly A, B and C. Each target supplies its
+existing SSH argv, Python path, sudo mode, current host boot and literal IP
+address. Host checking and batch SSH authentication are mandatory; duplicate
+or unsupported SSH overrides are refused. The caller must independently obtain
+the current device handoff. A config or confirmation flag alone is not RF
+authority.
+
+Use `--help` to inspect the complete interface:
+
+```sh
+python firmware/meshticulum-bench/run_public_pilot.py --help
+```
+
+`--ask-sudo` reads each required password in the local terminal, keeps it in
+memory, sends it only once to that host's recognized sudo prompt and clears it
+on exit. Repeated prompts, echoed credentials, excess output and command timeouts
+refuse the operation. Grant packages travel on a separate channel without a
+PTY; only their digest and private staging path appear in management arguments.
+
+`--install-runtime` is an explicit optional step. The installer checks the pinned
+archive and current host boot before writing, then inspects A/B firmware status.
+C's installation inspection checks its OS role and boot without opening SPI;
+actual C radio state still requires the separately admitted worker. Installation
+is an action that belongs inside the coordinated window. No
+firmware flash or production-service commissioning is implied.
+
+Before the resource clock starts, the runner installs a locally verified public
+source pack at B and only its signed manifest and trust root at C. It refuses
+management-supplied recipient chunks. The native bootstrap rechecks actual
+service lifetimes after preparation or seed installation. Each new logical
+resource then gets one original context; no later route extends its deadline.
+
+The result retains per-hop outcomes, failed/uncertain management, retirement and
+stop evidence, and before/after service lifetimes. The runner reports failure
+when transfer, lifecycle or retirement checks fail. Unknown physical airtime,
+energy and EIRP remain null. It is a pilot tool, not a matched throughput
+benchmark or private SAGE activation.
 
 ## Original resource permission
 

@@ -56,8 +56,14 @@ def main():
              'runtime_source_changed')
     sys.path.insert(0, str(bundle))
     from meshticulum.ip.node import _facts, clock
-    from meshticulum.bench.pilot_provision import provision
-    result = provision(package, state='/var/lib/meshticulum-bench', facts=_facts(unit), clock=clock)
+    facts = _facts(unit)
+    if package.get('schema') == 'meshticulum.pilot-public-seed.v1':
+        from meshticulum.bench.pilot_seed import install
+        result = install(package, state='/var/lib/meshticulum-bench', facts=facts)
+    else:
+        from meshticulum.bench.pilot_provision import provision
+        result = provision(package, state='/var/lib/meshticulum-bench', facts=facts, clock=clock)
+    need(_facts(unit) == facts, 'native_pilot_lifecycle_changed')
     result['package_sha256'] = digest
     result['bundle_manifest_sha256'] = manifest_digest
     print(json.dumps(result, sort_keys=True))

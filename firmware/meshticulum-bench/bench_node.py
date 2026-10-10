@@ -29,7 +29,7 @@ def trusted(path, limit=2000000):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('inspect', 'run', 'service-run', 'ip-service-run', 'pilot-status', 'pilot-stop', 'pilot-retire', 'pilot-verify', 'revoke', 'ip-revoke'))
+    parser.add_argument('action', choices=('inspect', 'run', 'service-run', 'ip-service-run', 'pilot-facts', 'pilot-result', 'pilot-status', 'pilot-stop', 'pilot-retire', 'pilot-verify', 'revoke', 'ip-revoke'))
     parser.add_argument('unit', choices=('unit-a', 'unit-b', 'unit-c'))
     parser.add_argument('--run-id')
     parser.add_argument('--campaign-id')
@@ -51,12 +51,19 @@ def main():
     from meshticulum.bench import node, authority
     if args.action == 'inspect':
         result = node.inspect(args.unit)
+        result['schema'] = 'meshticulum.native-bench-inspection.v1'
+    elif args.action == 'pilot-facts':
+        from meshticulum.bench.pilot_manage import facts
+        result = facts(args.unit)
     else:
         if args.run_id is None or not re.fullmatch(r'[0-9a-f]{32}', args.run_id):
             raise RuntimeError('invalid_run_id')
         root = Path('/var/lib/meshticulum-bench')
         directory = root / 'runs' / args.run_id
-        if args.action in ('pilot-status', 'pilot-stop', 'pilot-retire'):
+        if args.action == 'pilot-result':
+            from meshticulum.bench.pilot_manage import result as collect_result
+            result = collect_result(args.unit, args.run_id)
+        elif args.action in ('pilot-status', 'pilot-stop', 'pilot-retire'):
             import platform
             if platform.system() != 'Linux': raise RuntimeError('requires_linux_root')
             from meshticulum.bench.pilot_job import inspect, retire
