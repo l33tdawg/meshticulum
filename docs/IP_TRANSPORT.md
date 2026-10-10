@@ -8,7 +8,7 @@ This is source integration. Current device forwarding, full C→A LoRa→B IP, p
 
 [`IpGrant`](../src/meshticulum/ip/wire.py) binds complete peers, independent session/incarnation values, the TCP endpoint pair, service format, exact object size/digest, route binding, epoch expiries and finite limits. Its separate `meshticulum.ip.v1` key/authentication context avoids interpreting TCP as the radio protocol. Pairwise secrets are provisioned independently; this PSK mode does not supply forward secrecy or identity enrollment.
 
-[`IpAuthority`](../src/meshticulum/ip/authority.py) reads a private local grant, secret and active marker, checks their original identities and contents, and makes a durable single-use claim. The host supplies its boot identity and native epoch/monotonic clocks independently of peer input. A dispatch lease holds the revocation lock, checks current ownership and belongs to its acquiring thread. Original application deadlines are supplied by the native provisioner, may only tighten, and cannot be rebound on replay-store reopen.
+[`IpAuthority`](../src/meshticulum/ip/authority.py) reads a private local grant, secret and active marker, checks their original identities and contents, and makes a durable single-use claim. The host supplies its boot identity and native epoch/monotonic clocks independently of peer input. A dispatch lease holds the revocation lock, checks current ownership and belongs to its acquiring thread. Closing from another thread waits for that lease to end; closing from inside the lease is refused. Original application deadlines are supplied by the native provisioner, may only tighten, and cannot be rebound on replay-store reopen.
 
 [`TcpWorker`](../src/meshticulum/ip/worker.py) adopts an already connected IP stream socket by detaching the descriptor from its caller. It validates the actual local/remote endpoints and the journal owner before use. The host must separately authorize socket setup and protect this process and its descriptors; a Python record or file hash is not proof of native authority. The worker creates no connection and performs no radio operation.
 
@@ -22,7 +22,7 @@ The [IP session store](../src/meshticulum/ip/state.py) adapts the existing durab
 
 ## Byte accounting and uncertainty
 
-[`IpJournal`](../src/meshticulum/ip/journal.py) owns a separate SQLite/WAL journal under an exclusive file lock. It reserves the whole framed packet before a socket write. DATA, ACKs and retransmissions all consume the same finite lifetime transmit-byte budget. Known partial kernel writes are recorded; errors, interruption or an unresolved process-recovery reservation remain UNKNOWN and fence new dispatch. Closing or cancelling a flow does not refund the reservation.
+[`IpJournal`](../src/meshticulum/ip/journal.py) owns a separate SQLite/WAL journal under an exclusive file lock. It checks the live lock descriptor as well as the journal and owner-file identities before every transaction. Losing or replacing that descriptor permanently refuses further use of the instance; reopening a file does not repair its ownership. Closing from another thread waits for an active transaction, and closing inside that transaction is refused. Cleanup avoids closing an unrelated descriptor that has reused the old descriptor number. It reserves the whole framed packet before a socket write. DATA, ACKs and retransmissions all consume the same finite lifetime transmit-byte budget. Known partial kernel writes are recorded; errors, interruption or an unresolved process-recovery reservation remain UNKNOWN and fence new dispatch. Closing or cancelling a flow does not refund the reservation.
 
 A read intention also commits before `recv`. Known reads settle their actual count; a recovered unresolved read charges its possible bytes and fences the run. Reads stay within the remaining receive allowance. Packet lengths, receive buffers, object memory, attempts and lifetime bytes are bounded.
 
@@ -38,6 +38,18 @@ Private IP dispatch still requires the existing exact-grant native `PrivatePolic
 
 ## Controls and remaining work
 
-Run the carrier controls with `python -m pytest tests/test_ip_transport.py`. They use actual loopback TCP and synthetic provisioned peers, not real LoRa or production identities. Run the standalone and optional SAGE suites for service-registration regressions.
+Run the carrier and lifecycle controls with:
+
+```sh
+python -m pytest tests/test_ip_transport.py tests/test_ip_ownership.py tests/test_mixed_carriers.py tests/test_mixed_resume.py
+```
+
+These controls use actual loopback TCP, synthetic provisioned peers and modeled radio workers. They cover:
+
+- Lost and reused owner descriptors, concurrent close, same-thread close refusal and retained unresolved reservations.
+- C→A modeled radio→B actual TCP request/reply, preserving A's bridge identity, signed-pack verification, original expiry and each carrier's separate costs. TCP loss stops the exchange before a radio reply.
+- Verified chunks retained across TCP loss, fresh radio request/reply admissions, a new IP route generation and return to the faster locally verified TCP source. Every block uses independent sessions; failed attempts keep their debt, and verified pieces are not fetched again. Deliberate model-radio pump pacing makes this scheduler control repeatable. Its timings are not physical throughput measurements.
+
+Run the standalone and optional SAGE suites for service-registration regressions.
 
 The next qualification must cover current host/device ownership, actual C→A radio forwarding into A→B IP, connection loss, fresh LoRa admission with verified-piece resume, and return to the measured faster IP path. Native lifecycle and backend tests are additionally required for private messages. Version-bound, matched MeshCore/Reticulum benchmarks remain separate. See [the roadmap](ROADMAP.md).

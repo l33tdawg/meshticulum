@@ -37,10 +37,10 @@ def connected():
 
 
 @contextmanager
-def pair(tmp_path,payload,format='MR1.request',limits=None,*,initiator=A,responder=B,session_id=b'i'*16,generation=b'g'*16,expires=None,deadline_us=None):
+def pair(tmp_path,payload,format='MR1.request',limits=None,*,initiator=A,responder=B,session_id=b'i'*16,generation=b'g'*16,expires=None,deadline_us=None,route_binding_digest=b'r'*32):
     tmp_path.mkdir(mode=0o700)
     left,right=connected();clock=Clock();epoch,mono=clock()
-    spec=IpGrant(SessionKey(initiator,responder,session_id,generation),format,len(payload),hashlib.sha256(payload).digest(),b'r'*32,
+    spec=IpGrant(SessionKey(initiator,responder,session_id,generation),format,len(payload),hashlib.sha256(payload).digest(),route_binding_digest,
       epoch-1000000,(expires or epoch+60000000)+30000000,expires or epoch+60000000,left.getsockname(),right.getsockname(),limits or IpLimits(),b's'*32)
     with ExitStack() as stack:
         stack.callback(left.close);stack.callback(right.close)

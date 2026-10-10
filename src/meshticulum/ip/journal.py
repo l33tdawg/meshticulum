@@ -27,6 +27,7 @@ class IpJournal:
         require(type(grant) is IpGrant,'invalid_ip_journal_grant')
         self.grant,self.binding,self.lock_fd,self.db=grant,grant.digest,None,None
         self._lock=threading.RLock();self.closed=True
+        self._in_transaction=False;self._ownership_failed=False;self.lock_identity=None
         self.path=Path(path).absolute();private(self.path.parent.lstat(),True)
         if create:
             fd=os.open(self.path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
@@ -34,8 +35,9 @@ class IpJournal:
         info=self.path.lstat();private(info)
         try:
             self.lock_fd=os.open(str(self.path)+'.owner',os.O_CREAT|os.O_RDWR|os.O_NOFOLLOW|os.O_CLOEXEC,0o600)
-            private(os.fstat(self.lock_fd));fcntl.flock(self.lock_fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
-            self.lock_identity=(os.fstat(self.lock_fd).st_dev,os.fstat(self.lock_fd).st_ino)
+            held=os.fstat(self.lock_fd)
+            self.lock_identity=(held.st_dev,held.st_ino)
+            private(held);fcntl.flock(self.lock_fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
             self.identity=(info.st_dev,info.st_ino)
             require((self.path.lstat().st_dev,self.path.lstat().st_ino)==self.identity,'ip_journal_replaced')
             self.db=sqlite3.connect(self.path.as_uri()+'?mode=rw',uri=True,isolation_level=None,timeout=2,check_same_thread=False)
@@ -64,11 +66,16 @@ class IpJournal:
     @contextmanager
     def transaction(self):
         with self._lock:
+            require(not self._in_transaction and self.db is not None, 'ip_journal_not_available')
+            self._check_owner_files()
             self.db.execute('BEGIN IMMEDIATE')
+            self._in_transaction=True
             try:
                 yield;self.db.execute('COMMIT')
             except BaseException:
                 self.db.execute('ROLLBACK');raise
+            finally:
+                self._in_transaction=False
 
     def _owner(self,allow_fenced=False):
         row=self.db.execute('SELECT binding,rx,fenced FROM owner WHERE id=1').fetchone()
@@ -79,13 +86,26 @@ class IpJournal:
         require(allow_fenced or row[2]==0,'ip_journal_fenced')
         return row
 
-    def owned(self):
-        if self.closed:return False
+    def _check_owner_files(self):
+        require(not self._ownership_failed, 'ip_journal_ownership_lost')
         try:
-            info=self.path.lstat();lock=Path(str(self.path)+'.owner').lstat();private(info);private(lock)
-            require((info.st_dev,info.st_ino)==self.identity and (lock.st_dev,lock.st_ino)==self.lock_identity,'ip_journal_replaced')
-            self._owner();return True
-        except (OSError,ValueError,sqlite3.Error):return False
+            info=self.path.lstat();lock=Path(str(self.path)+'.owner').lstat()
+            held=os.fstat(self.lock_fd)
+            private(info);private(lock);private(held)
+            require((info.st_dev,info.st_ino)==self.identity
+              and (lock.st_dev,lock.st_ino)==self.lock_identity
+              and (held.st_dev,held.st_ino)==self.lock_identity,'ip_journal_replaced_or_owner_closed')
+        except (OSError,TypeError,ValueError):
+            # Never repair this instance by reacquiring or replacing a handle.
+            self._ownership_failed=True
+            raise
+
+    def owned(self):
+        with self._lock:
+            if self.closed or self.db is None:return False
+            try:
+                self._check_owner_files();self._owner();return True
+            except (OSError,TypeError,ValueError,sqlite3.Error):return False
 
     def reserve(self,packet,lane):
         require(type(packet) is bytes and 1<=len(packet)<=4100 and lane in ('DATA','ACK'),'invalid_ip_attempt')
@@ -148,6 +168,16 @@ class IpJournal:
               measured_airtime_us=None,kernel_retransmission_bytes=None,peer_receipt_established=False)
 
     def close(self):
-        self.closed=True
-        if self.db is not None:self.db.close();self.db=None
-        if self.lock_fd is not None:os.close(self.lock_fd);self.lock_fd=None
+        with self._lock:
+            require(not self._in_transaction, 'cannot_close_active_ip_transaction')
+            self.closed=True
+            if self.db is not None:self.db.close();self.db=None
+            if self.lock_fd is not None:
+                # A native-close bug may have freed and reused this number.
+                # Dispose only the descriptor this journal originally owned.
+                try:
+                    held=os.fstat(self.lock_fd)
+                    if (held.st_dev,held.st_ino)==self.lock_identity:os.close(self.lock_fd)
+                except OSError:
+                    pass
+                self.lock_fd=None

@@ -94,9 +94,13 @@ class IpAuthority:
     def require_dispatch(self):require(self.held and self.held_thread==threading.get_ident() and self.live(),'ip_dispatch_lease_not_held')
 
     def close(self):
-        self.closed=True
-        for fd in self.fds.values():os.close(fd)
-        self.fds.clear()
+        # Close joins another thread's lease. Same-thread close is refused so
+        # the context manager retains its original revocation descriptor.
+        with self._lock:
+            require(not self.held, 'cannot_close_held_ip_authority')
+            self.closed=True
+            for fd in self.fds.values():os.close(fd)
+            self.fds.clear()
 
 
 def revoke(directory):

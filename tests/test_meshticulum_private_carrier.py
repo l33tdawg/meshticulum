@@ -58,6 +58,9 @@ def carrier_pair(path, payload, clock, sender_unit, receiver_unit, session_numbe
     peers = [{"chain_id": "private-carrier-test", "agent_id": unit[-1] * 64}
              for unit in (sender_unit, receiver_unit)]
     digest = hashlib.sha256(payload).hexdigest()
+    # Both endpoints authenticate the same original provisioning timestamps.
+    # Sampling a ticking clock separately would create two different keys.
+    original_epoch = clock()[0]
     flows, workers = [], []
     with ExitStack() as stack:
         for index, unit in enumerate((sender_unit, receiver_unit)):
@@ -67,7 +70,7 @@ def carrier_pair(path, payload, clock, sender_unit, receiver_unit, session_numbe
                 local_peer=peers[index], initiator=peers[0], responder=peers[1],
                 session_id=bytes([session_number] * 16).hex(),
                 generation=bytes([session_number + 10] * 16).hex(),
-                issued_epoch_us=clock()[0] - 1000000, expires_epoch_us=clock()[0] + 180000000,
+                issued_epoch_us=original_epoch - 1000000, expires_epoch_us=original_epoch + 180000000,
                 profile=asdict(profile), sender_unit=sender_unit, country="MY",
                 antenna_confirmed=True, max_frames=512,
                 object=dict(sha256=digest, bytes=len(payload), chunk_index=0, object_id=digest))
