@@ -1,5 +1,7 @@
 # Optional SAGE integration
 
+This adapter belongs to the [SAGE project family](PROJECT_FAMILY.md). The main SAGE code is in [l33tdawg/sage](https://github.com/l33tdawg/sage/). Lantern-specific product apps, device orchestration and integrations will live in a separate planned repository; the existing adapter is retained here during that transition.
+
 The transport, signed public-resource and offline envelope modules require no SAGE service or SDK. The optional adapter contains the protected inbox, durable sealed capture and WorkflowStore interface.
 
 Its source controls were developed against `sage-agent-sdk==11.19.10+lantern.20260906`. That Lantern SDK build must be supplied as a separately built, compatible local wheel. Do not substitute an unrelated public SDK version and treat it as qualified.

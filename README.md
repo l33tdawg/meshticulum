@@ -2,9 +2,21 @@
 
 **Secure messages and verified resources across small radios and faster networks.**
 
+A [SAGE Foundation](https://sage-foundation.net/) project, created and maintained by [Dhillon Andrew Kannabhiran (@l33tdawg)](https://github.com/l33tdawg). Part of the broader [SAGE project](https://github.com/l33tdawg/sage/).
+
 Meshticulum is an experimental transport and resource system for networks that mix LoRa and IP. We are building it to close the gap between practical embedded radio meshes and richer, secure networking across different transports—and to move more useful encrypted data through the radio time we have.
 
 It began in SAGE Lantern and now lives as a standalone project. The transport, public-resource and offline envelope code work without SAGE. SAGE remains an optional application integration.
+
+## SAGE project family
+
+| Project | Repository and scope |
+| --- | --- |
+| **SAGE** | [Main SAGE repository](https://github.com/l33tdawg/sage/) — agent memory, governance and core infrastructure. |
+| **Meshticulum** | [This repository](https://github.com/l33tdawg/meshticulum) — reusable transport, reliable flow, radio/IP carrier work and verified resource protocols. |
+| **Lantern** | **A separate Lantern-specific repository is planned** for the product apps/UI, device provisioning, runtime orchestration and device integrations. Its link will be added when that repository is ready. |
+
+The planned Lantern repository will consume Meshticulum as an independent transport dependency. Historical Lantern lab helpers and optional integration adapters remain here during the transition; the product split is not yet complete. See [attribution and repository boundaries](docs/PROJECT_FAMILY.md).
 
 ## Why build this?
 

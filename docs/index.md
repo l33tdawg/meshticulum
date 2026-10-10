@@ -6,6 +6,7 @@ Meshticulum brings bounded radio transfers, authenticated service boundaries and
 
 | Guide | What it explains |
 | --- | --- |
+| [Attribution and project family](PROJECT_FAMILY.md) | SAGE Foundation stewardship, the main SAGE repository and the planned separate Lantern product repository |
 | [Why Meshticulum](WHY.md) | The gap we are trying to close and the priorities drawn from embedded radio meshes and secure networking |
 | [Architecture](ARCHITECTURE.md) | Component diagrams, service separation, a transfer's lifecycle and the intended mixed-path topology |
 | [MeshCore and Reticulum comparison](COMPARISON.md) | The upstream designs, their strengths, and what Meshticulum implements differently |
