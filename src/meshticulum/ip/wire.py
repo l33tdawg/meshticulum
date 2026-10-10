@@ -24,7 +24,7 @@ HEADER=struct.Struct('!2sBBB16sQH')
 PREFIX=struct.Struct('!I')
 TAG_BYTES=16
 MAX_PACKET=4096
-FORMATS={'MR1.request':ServiceKind.KNOWLEDGE,'MR1.response':ServiceKind.KNOWLEDGE,'LME.binary':ServiceKind.MESSAGE}
+FORMATS={'MR1.request':ServiceKind.KNOWLEDGE,'MR1.response':ServiceKind.KNOWLEDGE,'LME.binary':ServiceKind.MESSAGE,'MPF2.record':ServiceKind.MESSAGE}
 
 
 class IpError(WireError):

@@ -34,6 +34,7 @@ SERVICE_FORMATS = {
     'MR1.request': ServiceKind.KNOWLEDGE,
     'MR1.response': ServiceKind.KNOWLEDGE,
     'LME.binary': ServiceKind.MESSAGE,
+    'MPF2.record': ServiceKind.MESSAGE,
 }
 
 

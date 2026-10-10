@@ -22,6 +22,9 @@ def _shape(payload, format):
     if format == 'LME.binary':
         from meshticulum.privacy.mesh_binary_envelope import to_text
         to_text(payload)  # Shape only. Recipient signature/expiry checks follow.
+    elif format == 'MPF2.record':
+        from meshticulum.privacy.forward_session import inspect_record
+        inspect_record(payload)  # Shape only; endpoint crypto/native policy is external.
     elif format == 'MR1.request':
         resource.decode_request(payload)
     else:

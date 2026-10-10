@@ -52,6 +52,26 @@ def require(condition):
         raise ForwardSessionError()
 
 
+def inspect_record(packet):
+    """Bounded MPF2 record shape, NOT authentication or private admission.
+
+    Service grants still bind exact bytes/hash; endpoints must verify the full
+    exchange/context/pins and commit DATA through their protected application.
+    No decrypted bytes or caller authority are returned by this inspection.
+    """
+    require(type(packet) is bytes and HEADER.size + 16 <= len(packet) <= MAX_PACKET_BYTES)
+    magic, kind, session_id, counter = HEADER.unpack_from(packet)
+    require(magic == MAGIC and any(session_id))
+    if kind in (H1, H2):
+        require(counter == 0 and len(packet) == HEADER.size + 48)
+    elif kind in (CONFIRM_I, CONFIRM_R):
+        require(counter == 1 and len(packet) == HEADER.size + 112)
+    else:
+        require(kind == DATA and 2 <= counter <= 4096
+                and len(packet) > HEADER.size + 16 + 51)
+    return kind, session_id, counter
+
+
 def hkdf(chaining_key, material):
     key = hmac.digest(chaining_key, material, 'sha256')
     one = hmac.digest(key, b'\x01', 'sha256')
