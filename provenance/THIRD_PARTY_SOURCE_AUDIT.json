@@ -1,0 +1,2435 @@
+{
+  "audited_on": "2026-10-10",
+  "firmware_build_components": [
+    {
+      "metadata": [
+        {
+          "declared_license": "LGPL-2.1-or-later",
+          "file": {
+            "bytes": 414,
+            "file": "retained/framework/package.json",
+            "present": true,
+            "sha256": "f35415c75f6f43755df92bbbf7ef10c9e65c2edb2569d512636a0477be64d5bf"
+          },
+          "repository": {
+            "type": "git",
+            "url": "https://github.com/espressif/arduino-esp32"
+          },
+          "version": "3.20017.241212+sha.dcc1105b"
+        },
+        {
+          "declared_license": null,
+          "file": {
+            "bytes": 218,
+            "file": "retained/framework/.piopm",
+            "present": true,
+            "sha256": "e413903767348a4c955aaeebaa04a40076f5bd6045dd8f083d42c113a9cb9bbd"
+          },
+          "repository": null,
+          "version": "3.20017.241212+sha.dcc1105b"
+        }
+      ],
+      "name": "framework-arduinoespressif32",
+      "precompiled_sdk_linkage_and_license_closure": "not_reviewed",
+      "reviewed_source_grant": "LGPL-2.1-or-later in Arduino.h; root license text absent from local package",
+      "scope": "firmware_build_component",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_grant_evidence": {
+        "bytes": 8111,
+        "file": "retained/framework/cores/esp32/Arduino.h",
+        "present": true,
+        "sha256": "e4e915bc49684ea58383eed7fcb0970ab7f713cfae0f03448aac03da9c09ae90"
+      },
+      "top_level_license_files": [],
+      "upstream_license_url": "https://github.com/espressif/arduino-esp32/blob/2.0.17/LICENSE.md"
+    },
+    {
+      "metadata": [
+        {
+          "declared_license": "Apache-2.0",
+          "file": {
+            "bytes": 4033,
+            "file": "retained/platform/platform.json",
+            "present": true,
+            "sha256": "d23f59c7b1945e863e703ea21e660b95d06323bf90900ef5fa9d3544b0da392a"
+          },
+          "repository": {
+            "type": "git",
+            "url": "https://github.com/platformio/platform-espressif32.git"
+          },
+          "version": "6.11.0"
+        },
+        {
+          "declared_license": null,
+          "file": {
+            "bytes": 167,
+            "file": "retained/platform/.piopm",
+            "present": true,
+            "sha256": "1efdec6fbbcfff64944edf25e23bbb9d98c90b8f35b37966cc13c5bf560301c8"
+          },
+          "repository": null,
+          "version": "6.11.0"
+        }
+      ],
+      "name": "espressif32",
+      "scope": "firmware_build_component",
+      "shipped_in_current_meshticulum_repository": false,
+      "top_level_license_files": [
+        {
+          "bytes": 9343,
+          "file": "retained/platform/LICENSE",
+          "present": true,
+          "sha256": "8e3f23fbc2701d897a1cddca5e72f2636e1711ab3d693c8918aca23468f428d6"
+        }
+      ]
+    },
+    {
+      "metadata": [
+        {
+          "declared_license": "GPL-2.0-or-later",
+          "file": {
+            "bytes": 384,
+            "file": "retained/tool-esptoolpy/package.json",
+            "present": true,
+            "sha256": "092bd61c2583d5ae523070e2935a10c3954ffa3eb9e5149e54e061cb602d2a3f"
+          },
+          "repository": {
+            "type": "git",
+            "url": "https://github.com/espressif/esptool"
+          },
+          "version": "1.40501.0"
+        },
+        {
+          "declared_license": null,
+          "file": {
+            "bytes": 172,
+            "file": "retained/tool-esptoolpy/.piopm",
+            "present": true,
+            "sha256": "d9021f880a3c0a3cc9ede6a157001153ecbf2f94a7d54042f6f625df00520e2c"
+          },
+          "repository": null,
+          "version": "1.40501.0"
+        }
+      ],
+      "name": "tool-esptoolpy",
+      "scope": "firmware_build_component",
+      "shipped_in_current_meshticulum_repository": false,
+      "top_level_license_files": [
+        {
+          "bytes": 18092,
+          "file": "retained/tool-esptoolpy/LICENSE",
+          "present": true,
+          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+        }
+      ]
+    },
+    {
+      "metadata": [
+        {
+          "declared_license": "GPL-2.0-or-later",
+          "file": {
+            "bytes": 500,
+            "file": "retained/toolchain-riscv/package.json",
+            "present": true,
+            "sha256": "25f9cab3e7e13b496195cfc9611a7870143de55b55412fb2d6fb12168c139fae"
+          },
+          "repository": {
+            "type": "git",
+            "url": "https://github.com/espressif/crosstool-NG"
+          },
+          "version": "8.4.0+2021r2-patch5"
+        },
+        {
+          "declared_license": null,
+          "file": {
+            "bytes": 196,
+            "file": "retained/toolchain-riscv/.piopm",
+            "present": true,
+            "sha256": "71c42585f7f468005bc1ef9188f4adb594f48e76d9311c996f125756b8fa686e"
+          },
+          "repository": null,
+          "version": "8.4.0+2021r2-patch5"
+        }
+      ],
+      "name": "toolchain-riscv32-esp",
+      "nested_license_files": [
+        {
+          "bytes": 17987,
+          "file": "retained/toolchain-riscv/share/licenses/automake/COPYING",
+          "present": true,
+          "sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/automake/lib/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 25291,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/COPYING.LIB",
+          "present": true,
+          "sha256": "56bdea73b6145ef6ac5259b3da390b981d840c24cb03b8e1cbc678de7ecfa18d"
+        },
+        {
+          "bytes": 17076,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/COPYING.LIBGLOSS",
+          "present": true,
+          "sha256": "fd3190e942375b5a15d5a3f34759361921cac05afb33f90b79d0cb132971676e"
+        },
+        {
+          "bytes": 46316,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/COPYING.NEWLIB",
+          "present": true,
+          "sha256": "19a3d496c944575951ca048e1fc0c974f030618586059732fa9def2281873f88"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/COPYING3.LIB",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/bfd/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/gas/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/gdb/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/include/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/include/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 26440,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/libiberty/COPYING.LIB",
+          "present": true,
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/readline/readline/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/sim/arm/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/sim/ppc/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 25265,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/sim/ppc/COPYING.LIB",
+          "present": true,
+          "sha256": "94b03f1a60a7fd5007149530626a895a6ef5a8b9342abfd56860c5f3956f5d23"
+        },
+        {
+          "bytes": 1359,
+          "file": "retained/toolchain-riscv/share/licenses/binutils/zlib/contrib/dotzlib/LICENSE_1_0.txt",
+          "present": true,
+          "sha256": "36266a8fd073568394cb81cdb2b124f7fdae2c64c1a7ed09db34b4d22efa2951"
+        },
+        {
+          "bytes": 2517,
+          "file": "retained/toolchain-riscv/share/licenses/crosstool-ng/COPYING",
+          "present": true,
+          "sha256": "07bc0ccd386469c748c4cf6c8faca5667fbf8c4400386714287fa233acfd68ba"
+        },
+        {
+          "bytes": 2517,
+          "file": "retained/toolchain-riscv/share/licenses/crosstool-ng/LICENSE",
+          "present": true,
+          "sha256": "07bc0ccd386469c748c4cf6c8faca5667fbf8c4400386714287fa233acfd68ba"
+        },
+        {
+          "bytes": 1144,
+          "file": "retained/toolchain-riscv/share/licenses/expat/COPYING",
+          "present": true,
+          "sha256": "8c6b5b6de8fae20b317f4992729abc0e520bfba4c7606cd1e9eeb87418eebdec"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 26527,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/COPYING.LIB",
+          "present": true,
+          "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861"
+        },
+        {
+          "bytes": 3324,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/COPYING.RUNTIME",
+          "present": true,
+          "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/COPYING3.LIB",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/gcc/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 26440,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/gcc/COPYING.LIB",
+          "present": true,
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/gcc/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/gcc/COPYING3.LIB",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 1479,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/gcc/go/gofrontend/LICENSE",
+          "present": true,
+          "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067"
+        },
+        {
+          "bytes": 1901,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/gcc/testsuite/gcc.dg/params/LICENSE",
+          "present": true,
+          "sha256": "4919cfb14a73cd64fcef67b107613970cf1659a09aa675dba31314f373bc7204"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/include/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/include/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 1132,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/libffi/LICENSE",
+          "present": true,
+          "sha256": "0f4d7a0bfb83c37465d42dc305f124189196cc0cc2cc8d6f8461103682aebbc5"
+        },
+        {
+          "bytes": 1479,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/libgo/LICENSE",
+          "present": true,
+          "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067"
+        },
+        {
+          "bytes": 26440,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/libiberty/COPYING.LIB",
+          "present": true,
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        },
+        {
+          "bytes": 26440,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/libquadmath/COPYING.LIB",
+          "present": true,
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        },
+        {
+          "bytes": 4506,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/libsanitizer/LICENSE.TXT",
+          "present": true,
+          "sha256": "74c2b24539a53c34abddb559266d89cb653b0198cd2faf9c04763d3223db7f6d"
+        },
+        {
+          "bytes": 1359,
+          "file": "retained/toolchain-riscv/share/licenses/gcc/zlib/contrib/dotzlib/LICENSE_1_0.txt",
+          "present": true,
+          "sha256": "36266a8fd073568394cb81cdb2b124f7fdae2c64c1a7ed09db34b4d22efa2951"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 25291,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/COPYING.LIB",
+          "present": true,
+          "sha256": "56bdea73b6145ef6ac5259b3da390b981d840c24cb03b8e1cbc678de7ecfa18d"
+        },
+        {
+          "bytes": 17076,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/COPYING.LIBGLOSS",
+          "present": true,
+          "sha256": "fd3190e942375b5a15d5a3f34759361921cac05afb33f90b79d0cb132971676e"
+        },
+        {
+          "bytes": 46316,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/COPYING.NEWLIB",
+          "present": true,
+          "sha256": "19a3d496c944575951ca048e1fc0c974f030618586059732fa9def2281873f88"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/COPYING3.LIB",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/bfd/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/gas/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/gdb/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/include/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/include/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 26440,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/libiberty/COPYING.LIB",
+          "present": true,
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/readline/readline/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/sim/arm/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/sim/ppc/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 25265,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/sim/ppc/COPYING.LIB",
+          "present": true,
+          "sha256": "94b03f1a60a7fd5007149530626a895a6ef5a8b9342abfd56860c5f3956f5d23"
+        },
+        {
+          "bytes": 1359,
+          "file": "retained/toolchain-riscv/share/licenses/gdb/zlib/contrib/dotzlib/LICENSE_1_0.txt",
+          "present": true,
+          "sha256": "36266a8fd073568394cb81cdb2b124f7fdae2c64c1a7ed09db34b4d22efa2951"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/gmp/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-riscv/share/licenses/gmp/COPYING.LESSERv3",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 18092,
+          "file": "retained/toolchain-riscv/share/licenses/gmp/COPYINGv2",
+          "present": true,
+          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+        },
+        {
+          "bytes": 35150,
+          "file": "retained/toolchain-riscv/share/licenses/gmp/COPYINGv3",
+          "present": true,
+          "sha256": "e6037104443f9a7829b2aa7c5370d0789a7bda3ca65a0b904cdc0c2e285d9195"
+        },
+        {
+          "bytes": 1042,
+          "file": "retained/toolchain-riscv/share/licenses/isl/LICENSE",
+          "present": true,
+          "sha256": "3a2c398103f6bca0f50a9a9465deca9230b370b0212af5fdf31ed88a36215c30"
+        },
+        {
+          "bytes": 7651,
+          "file": "retained/toolchain-riscv/share/licenses/mpc/COPYING.LESSER",
+          "present": true,
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+        },
+        {
+          "bytes": 35149,
+          "file": "retained/toolchain-riscv/share/licenses/mpfr/COPYING",
+          "present": true,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "bytes": 7652,
+          "file": "retained/toolchain-riscv/share/licenses/mpfr/COPYING.LESSER",
+          "present": true,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118"
+        },
+        {
+          "bytes": 1446,
+          "file": "retained/toolchain-riscv/share/licenses/ncurses/COPYING",
+          "present": true,
+          "sha256": "8d8caaec335cbd1da15d5e9c12cd559f6d0d5566273077cc6f651684092606b5"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 26527,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/COPYING.LIB",
+          "present": true,
+          "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861"
+        },
+        {
+          "bytes": 22261,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/COPYING.LIBGLOSS",
+          "present": true,
+          "sha256": "334f3446894be102933b75f3fea18690dd967c2e9c2782f24f4f944ec1ad7496"
+        },
+        {
+          "bytes": 59777,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/COPYING.NEWLIB",
+          "present": true,
+          "sha256": "dec5d419a7a4b27c064c8367a21e5d7b58aefc162719dc169bc4f82a88994859"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/COPYING3.LIB",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/include/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/include/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 2657,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/newlib/libc/posix/COPYRIGHT",
+          "present": true,
+          "sha256": "b4f217294d6910b752eb4d85c1bf1540c475911efaf4b6f86227149d2bc69efe"
+        },
+        {
+          "bytes": 26809,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/newlib/libc/sys/linux/linuxthreads/LICENSE",
+          "present": true,
+          "sha256": "68abe9bfe674135fff539fb4d49a9252fa443f4643dc1da665c07f7e50b490a0"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/winsup/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7651,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/winsup/COPYING.LIB",
+          "present": true,
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+        },
+        {
+          "bytes": 2657,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/winsup/cygwin/regex/COPYRIGHT",
+          "present": true,
+          "sha256": "b4f217294d6910b752eb4d85c1bf1540c475911efaf4b6f86227149d2bc69efe"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-riscv/share/licenses/newlib/winsup/utils/COPYING.dumper",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 1359,
+          "file": "retained/toolchain-riscv/share/licenses/zlib/contrib/dotzlib/LICENSE_1_0.txt",
+          "present": true,
+          "sha256": "36266a8fd073568394cb81cdb2b124f7fdae2c64c1a7ed09db34b4d22efa2951"
+        }
+      ],
+      "output_linkage_license_closure": "not_reviewed",
+      "runtime_exception_reviewed": false,
+      "scope": "firmware_build_component",
+      "shipped_in_current_meshticulum_repository": false,
+      "top_level_license_files": []
+    },
+    {
+      "metadata": [
+        {
+          "declared_license": "GPL-2.0-or-later",
+          "file": {
+            "bytes": 454,
+            "file": "retained/toolchain-xtensa/package.json",
+            "present": true,
+            "sha256": "dca31a5b026fbe3849ccf2b6068d7389c93845116760894109bbe7280a3ee3c5"
+          },
+          "repository": {
+            "type": "git",
+            "url": "https://github.com/espressif/crosstool-NG"
+          },
+          "version": "8.4.0+2021r2-patch5"
+        }
+      ],
+      "name": "toolchain-xtensa-esp32s3",
+      "nested_license_files": [
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 25291,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/COPYING.LIB",
+          "present": true,
+          "sha256": "56bdea73b6145ef6ac5259b3da390b981d840c24cb03b8e1cbc678de7ecfa18d"
+        },
+        {
+          "bytes": 17076,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/COPYING.LIBGLOSS",
+          "present": true,
+          "sha256": "fd3190e942375b5a15d5a3f34759361921cac05afb33f90b79d0cb132971676e"
+        },
+        {
+          "bytes": 46316,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/COPYING.NEWLIB",
+          "present": true,
+          "sha256": "19a3d496c944575951ca048e1fc0c974f030618586059732fa9def2281873f88"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/COPYING3.LIB",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/bfd/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/gas/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/gdb/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/include/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/include/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 26440,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/libiberty/COPYING.LIB",
+          "present": true,
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/readline/readline/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/sim/arm/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/sim/ppc/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 25265,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/sim/ppc/COPYING.LIB",
+          "present": true,
+          "sha256": "94b03f1a60a7fd5007149530626a895a6ef5a8b9342abfd56860c5f3956f5d23"
+        },
+        {
+          "bytes": 1359,
+          "file": "retained/toolchain-xtensa/share/licenses/binutils/zlib/contrib/dotzlib/LICENSE_1_0.txt",
+          "present": true,
+          "sha256": "36266a8fd073568394cb81cdb2b124f7fdae2c64c1a7ed09db34b4d22efa2951"
+        },
+        {
+          "bytes": 2517,
+          "file": "retained/toolchain-xtensa/share/licenses/crosstool-ng/COPYING",
+          "present": true,
+          "sha256": "07bc0ccd386469c748c4cf6c8faca5667fbf8c4400386714287fa233acfd68ba"
+        },
+        {
+          "bytes": 2517,
+          "file": "retained/toolchain-xtensa/share/licenses/crosstool-ng/LICENSE",
+          "present": true,
+          "sha256": "07bc0ccd386469c748c4cf6c8faca5667fbf8c4400386714287fa233acfd68ba"
+        },
+        {
+          "bytes": 1144,
+          "file": "retained/toolchain-xtensa/share/licenses/expat/COPYING",
+          "present": true,
+          "sha256": "8c6b5b6de8fae20b317f4992729abc0e520bfba4c7606cd1e9eeb87418eebdec"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 26527,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/COPYING.LIB",
+          "present": true,
+          "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861"
+        },
+        {
+          "bytes": 3324,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/COPYING.RUNTIME",
+          "present": true,
+          "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/COPYING3.LIB",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/gcc/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 26440,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/gcc/COPYING.LIB",
+          "present": true,
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/gcc/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/gcc/COPYING3.LIB",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 1479,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/gcc/go/gofrontend/LICENSE",
+          "present": true,
+          "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067"
+        },
+        {
+          "bytes": 1901,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/gcc/testsuite/gcc.dg/params/LICENSE",
+          "present": true,
+          "sha256": "4919cfb14a73cd64fcef67b107613970cf1659a09aa675dba31314f373bc7204"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/include/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/include/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 1132,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/libffi/LICENSE",
+          "present": true,
+          "sha256": "0f4d7a0bfb83c37465d42dc305f124189196cc0cc2cc8d6f8461103682aebbc5"
+        },
+        {
+          "bytes": 1479,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/libgo/LICENSE",
+          "present": true,
+          "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067"
+        },
+        {
+          "bytes": 26440,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/libiberty/COPYING.LIB",
+          "present": true,
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        },
+        {
+          "bytes": 26440,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/libquadmath/COPYING.LIB",
+          "present": true,
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        },
+        {
+          "bytes": 4506,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/libsanitizer/LICENSE.TXT",
+          "present": true,
+          "sha256": "74c2b24539a53c34abddb559266d89cb653b0198cd2faf9c04763d3223db7f6d"
+        },
+        {
+          "bytes": 1359,
+          "file": "retained/toolchain-xtensa/share/licenses/gcc/zlib/contrib/dotzlib/LICENSE_1_0.txt",
+          "present": true,
+          "sha256": "36266a8fd073568394cb81cdb2b124f7fdae2c64c1a7ed09db34b4d22efa2951"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 25291,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/COPYING.LIB",
+          "present": true,
+          "sha256": "56bdea73b6145ef6ac5259b3da390b981d840c24cb03b8e1cbc678de7ecfa18d"
+        },
+        {
+          "bytes": 17076,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/COPYING.LIBGLOSS",
+          "present": true,
+          "sha256": "fd3190e942375b5a15d5a3f34759361921cac05afb33f90b79d0cb132971676e"
+        },
+        {
+          "bytes": 46316,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/COPYING.NEWLIB",
+          "present": true,
+          "sha256": "19a3d496c944575951ca048e1fc0c974f030618586059732fa9def2281873f88"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/COPYING3.LIB",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/bfd/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/gas/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/gdb/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/include/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/include/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 26440,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/libiberty/COPYING.LIB",
+          "present": true,
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/readline/readline/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/sim/arm/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/sim/ppc/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 25265,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/sim/ppc/COPYING.LIB",
+          "present": true,
+          "sha256": "94b03f1a60a7fd5007149530626a895a6ef5a8b9342abfd56860c5f3956f5d23"
+        },
+        {
+          "bytes": 1359,
+          "file": "retained/toolchain-xtensa/share/licenses/gdb/zlib/contrib/dotzlib/LICENSE_1_0.txt",
+          "present": true,
+          "sha256": "36266a8fd073568394cb81cdb2b124f7fdae2c64c1a7ed09db34b4d22efa2951"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/gmp/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-xtensa/share/licenses/gmp/COPYING.LESSERv3",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 18092,
+          "file": "retained/toolchain-xtensa/share/licenses/gmp/COPYINGv2",
+          "present": true,
+          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+        },
+        {
+          "bytes": 35150,
+          "file": "retained/toolchain-xtensa/share/licenses/gmp/COPYINGv3",
+          "present": true,
+          "sha256": "e6037104443f9a7829b2aa7c5370d0789a7bda3ca65a0b904cdc0c2e285d9195"
+        },
+        {
+          "bytes": 1042,
+          "file": "retained/toolchain-xtensa/share/licenses/isl/LICENSE",
+          "present": true,
+          "sha256": "3a2c398103f6bca0f50a9a9465deca9230b370b0212af5fdf31ed88a36215c30"
+        },
+        {
+          "bytes": 35149,
+          "file": "retained/toolchain-xtensa/share/licenses/m4/COPYING",
+          "present": true,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "bytes": 379,
+          "file": "retained/toolchain-xtensa/share/licenses/m4/examples/COPYING",
+          "present": true,
+          "sha256": "d8e7f2f3bb0008142a615fa26a84ce293c59c0b969dcb2636836bda33d66dcd7"
+        },
+        {
+          "bytes": 7651,
+          "file": "retained/toolchain-xtensa/share/licenses/mpc/COPYING.LESSER",
+          "present": true,
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+        },
+        {
+          "bytes": 35149,
+          "file": "retained/toolchain-xtensa/share/licenses/mpfr/COPYING",
+          "present": true,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "bytes": 7652,
+          "file": "retained/toolchain-xtensa/share/licenses/mpfr/COPYING.LESSER",
+          "present": true,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118"
+        },
+        {
+          "bytes": 1446,
+          "file": "retained/toolchain-xtensa/share/licenses/ncurses/COPYING",
+          "present": true,
+          "sha256": "8d8caaec335cbd1da15d5e9c12cd559f6d0d5566273077cc6f651684092606b5"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 26527,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/COPYING.LIB",
+          "present": true,
+          "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861"
+        },
+        {
+          "bytes": 22261,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/COPYING.LIBGLOSS",
+          "present": true,
+          "sha256": "334f3446894be102933b75f3fea18690dd967c2e9c2782f24f4f944ec1ad7496"
+        },
+        {
+          "bytes": 59777,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/COPYING.NEWLIB",
+          "present": true,
+          "sha256": "dec5d419a7a4b27c064c8367a21e5d7b58aefc162719dc169bc4f82a88994859"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7639,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/COPYING3.LIB",
+          "present": true,
+          "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/include/COPYING",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/include/COPYING3",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 2657,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/newlib/libc/posix/COPYRIGHT",
+          "present": true,
+          "sha256": "b4f217294d6910b752eb4d85c1bf1540c475911efaf4b6f86227149d2bc69efe"
+        },
+        {
+          "bytes": 26809,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/newlib/libc/sys/linux/linuxthreads/LICENSE",
+          "present": true,
+          "sha256": "68abe9bfe674135fff539fb4d49a9252fa443f4643dc1da665c07f7e50b490a0"
+        },
+        {
+          "bytes": 35147,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/winsup/COPYING",
+          "present": true,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "bytes": 7651,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/winsup/COPYING.LIB",
+          "present": true,
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+        },
+        {
+          "bytes": 2657,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/winsup/cygwin/regex/COPYRIGHT",
+          "present": true,
+          "sha256": "b4f217294d6910b752eb4d85c1bf1540c475911efaf4b6f86227149d2bc69efe"
+        },
+        {
+          "bytes": 18002,
+          "file": "retained/toolchain-xtensa/share/licenses/newlib/winsup/utils/COPYING.dumper",
+          "present": true,
+          "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+        },
+        {
+          "bytes": 1359,
+          "file": "retained/toolchain-xtensa/share/licenses/zlib/contrib/dotzlib/LICENSE_1_0.txt",
+          "present": true,
+          "sha256": "36266a8fd073568394cb81cdb2b124f7fdae2c64c1a7ed09db34b4d22efa2951"
+        }
+      ],
+      "output_linkage_license_closure": "not_reviewed",
+      "runtime_exception_reviewed": false,
+      "scope": "firmware_build_component",
+      "shipped_in_current_meshticulum_repository": false,
+      "top_level_license_files": []
+    },
+    {
+      "metadata": [
+        {
+          "declared_license": "MIT",
+          "file": {
+            "bytes": 647,
+            "file": "host/tool-scons/package.json",
+            "present": true,
+            "sha256": "e4c25069254659e84a0d150348e7b08b215577fad7a9d8843c58f64ad22ddbbf"
+          },
+          "repository": {
+            "type": "git",
+            "url": "https://github.com/SCons/scons.git"
+          },
+          "version": "4.41101.0"
+        },
+        {
+          "declared_license": null,
+          "file": {
+            "bytes": 164,
+            "file": "host/tool-scons/.piopm",
+            "present": true,
+            "sha256": "845dad065f7883f5edff026e88a74fe1216b71fd6928b7b0134a6f2f9fc68f0a"
+          },
+          "repository": null,
+          "version": "4.41101.0"
+        }
+      ],
+      "name": "tool-scons",
+      "reviewed_license_text": false,
+      "scope": "firmware_build_component",
+      "selected_by_helper": "unversioned copy from host home; observed metadata is not a recipe pin",
+      "shipped_in_current_meshticulum_repository": false,
+      "top_level_license_files": []
+    },
+    {
+      "declared_license": "Apache Software License",
+      "helper_executable_binding_verified": false,
+      "license_files": [
+        {
+          "bytes": 9169,
+          "file": "retained/pio-venv/platformio-6.1.19.dist-info/licenses/LICENSE",
+          "present": true,
+          "sha256": "aa53ae6e1f414b3f3041b66b7394ac86f740cb86cfb096ad89495ab74efcfd05"
+        }
+      ],
+      "name": "platformio",
+      "observed_version": "6.1.19",
+      "scope": "host_build_tool_observation",
+      "shipped_in_current_meshticulum_repository": false
+    }
+  ],
+  "firmware_donor": {
+    "claimed_source_basis": "retained reconstructed MeshCore-derived r7 source with local patches",
+    "claimed_upstream_ref": "d92964352441e53b93e8667b802e04f6e072b39e",
+    "firmware_linkage_reviewed": false,
+    "license": "MIT",
+    "license_file": {
+      "bytes": 1087,
+      "file": "retained/firmware-source/license.txt",
+      "present": true,
+      "sha256": "3426328fb2c024c0374ec18e6f587bf0f35782bf04c5d3e90b52d282b156489d"
+    },
+    "license_matches_pinned_upstream_bytes": true,
+    "nested_ed25519_license": {
+      "bytes": 874,
+      "file": "retained/firmware-source/lib/ed25519/license.txt",
+      "present": true,
+      "sha256": "f68d76b9c1c2271422e55134ea94cf71f2ac3fc3ed6a7ec6b83a1a0538753214"
+    },
+    "nested_ed25519_license_finding": "zlib-style three-condition notice; Copyright 2015 Orson Peters",
+    "pristine_upstream_equivalence": "not_asserted_not_verified",
+    "shipped_in_current_meshticulum_repository": false,
+    "source_equivalence_reviewed": false,
+    "upstream_commit_date": "2026-08-14T12:19:19Z",
+    "upstream_license_url": "https://github.com/meshcore-dev/MeshCore/blob/d92964352441e53b93e8667b802e04f6e072b39e/license.txt",
+    "upstream_ref_verified_by_github_api": true
+  },
+  "firmware_library_snapshot": [
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1512,
+          "file": "retained/libdeps/Adafruit AHTX0/license.txt",
+          "present": true,
+          "sha256": "39dfc394bfd96f038e4629076ecf0a094275473fac1cafe45b25420978d4a320"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit AHTX0",
+      "platformio_metadata": {
+        "bytes": 169,
+        "file": "retained/libdeps/Adafruit AHTX0/.piopm",
+        "present": true,
+        "sha256": "eb60f662b2783d1ca1f828b0dea5c949741e04e4032a07af69e5905f3c530b36"
+      },
+      "platformio_origin": {
+        "id": 7142,
+        "name": "Adafruit AHTX0",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "2.0.6",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "2.0.6",
+      "source_url": "https://github.com/adafruit/Adafruit_AHTX0"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1557,
+          "file": "retained/libdeps/Adafruit BME280 Library/LICENSE",
+          "present": true,
+          "sha256": "13674a96d196c176979b16fac26c1740da570270bf691119f67d00c699507a90"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit BME280 Library",
+      "platformio_metadata": {
+        "bytes": 186,
+        "file": "retained/libdeps/Adafruit BME280 Library/.piopm",
+        "present": true,
+        "sha256": "6ac21a55dcf82c8d57e82d1becd44642fe19169ed276c7125d635f8040ffd42d"
+      },
+      "platformio_origin": {
+        "id": 166,
+        "name": "Adafruit BME280 Library",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "2.3.0",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "2.3.0",
+      "source_url": "https://github.com/adafruit/Adafruit_BME280_Library"
+    },
+    {
+      "additional_notice_evidence": [
+        {
+          "bytes": 4372,
+          "file": "retained/libdeps/Adafruit BME680 Library/Adafruit_BME680.h",
+          "present": true,
+          "sha256": "62627cdf8e7068c96be9595d740c41d9a0a7110038540d8f29b4440b0a7bf423"
+        },
+        {
+          "bytes": 24412,
+          "file": "retained/libdeps/Adafruit BME680 Library/bme68x_defs.h",
+          "present": true,
+          "sha256": "a753be61fbd0d2b0a6bc6ce9ab7d64902b25368c68554393807faab232976972"
+        }
+      ],
+      "license_files": [],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit BME680 Library",
+      "platformio_metadata": {
+        "bytes": 187,
+        "file": "retained/libdeps/Adafruit BME680 Library/.piopm",
+        "present": true,
+        "sha256": "04924379fedb390b72f8f94811816edfda6716a4663dfd40aadefa9956f7be15"
+      },
+      "platformio_origin": {
+        "id": 1922,
+        "name": "Adafruit BME680 Library",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "2.0.6",
+      "reviewed_license_finding": "Adafruit wrapper BSD notice plus Bosch BSD-3-Clause source; no top-level license file",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "2.0.6",
+      "source_url": "https://github.com/adafruit/Adafruit_BME680"
+    },
+    {
+      "additional_notice_evidence": [
+        {
+          "bytes": 3827,
+          "file": "retained/libdeps/Adafruit BMP085 Library/Adafruit_BMP085.h",
+          "present": true,
+          "sha256": "93abb4157fdb1e88b2eca3a17502b17bbad17428a69848370f1575fe8fbfa6d0"
+        }
+      ],
+      "license_files": [],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit BMP085 Library",
+      "platformio_metadata": {
+        "bytes": 186,
+        "file": "retained/libdeps/Adafruit BMP085 Library/.piopm",
+        "present": true,
+        "sha256": "08d27a2a9c3c5c449bf03219b8cf793c2e3cf6ad4fa069d2432b41c771207a3e"
+      },
+      "platformio_origin": {
+        "id": 525,
+        "name": "Adafruit BMP085 Library",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.2.4",
+      "reviewed_license_finding": "BSD source-header notice; no top-level license file",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.2.4",
+      "source_url": "https://github.com/adafruit/Adafruit-BMP085-Library"
+    },
+    {
+      "additional_notice_evidence": [
+        {
+          "bytes": 8084,
+          "file": "retained/libdeps/Adafruit BMP280 Library/Adafruit_BMP280.h",
+          "present": true,
+          "sha256": "fde36d4b0510f3676dcc9c2996cd0e44b4ca0eb8d84fb79f488c432fa2dfd88d"
+        }
+      ],
+      "license_files": [],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit BMP280 Library",
+      "platformio_metadata": {
+        "bytes": 186,
+        "file": "retained/libdeps/Adafruit BMP280 Library/.piopm",
+        "present": true,
+        "sha256": "c6fed0d8a79394f32c3af8bad56e79b773eef26fd5db4d65b4b8848f2808f907"
+      },
+      "platformio_origin": {
+        "id": 528,
+        "name": "Adafruit BMP280 Library",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "2.6.8",
+      "reviewed_license_finding": "BSD source-header notice; no top-level license file",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "2.6.8",
+      "source_url": "https://github.com/adafruit/Adafruit_BMP280_Library"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1085,
+          "file": "retained/libdeps/Adafruit BusIO/LICENSE",
+          "present": true,
+          "sha256": "86e9fafdb50d2a85d8fef369b4635b5a1b89160603e5b1f95484df0804b49508"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit BusIO",
+      "platformio_metadata": {
+        "bytes": 170,
+        "file": "retained/libdeps/Adafruit BusIO/.piopm",
+        "present": true,
+        "sha256": "771c328575dfedeba2d82d66b318b686bdd6b47e2c241f5a40d733e9809307ce"
+      },
+      "platformio_origin": {
+        "id": 6214,
+        "name": "Adafruit BusIO",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.17.4",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.17.4",
+      "source_url": "https://github.com/adafruit/Adafruit_BusIO"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1344,
+          "file": "retained/libdeps/Adafruit GFX Library/license.txt",
+          "present": true,
+          "sha256": "3e7bede50526352926c2283e640f2823d9f9f2165d1852044c4fb1bbac283106"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit GFX Library",
+      "platformio_metadata": {
+        "bytes": 180,
+        "file": "retained/libdeps/Adafruit GFX Library/.piopm",
+        "present": true,
+        "sha256": "f8bb427fe1e24fdd1e030afffea197fe5a5bc778a10b1eaa2956c5fd57365e35"
+      },
+      "platformio_origin": {
+        "id": 13,
+        "name": "Adafruit GFX Library",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.12.6",
+      "reviewed_license_finding": "BSD two-condition text in license.txt",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.12.6",
+      "source_url": "https://github.com/adafruit/Adafruit-GFX-Library"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1499,
+          "file": "retained/libdeps/Adafruit INA219/license.txt",
+          "present": true,
+          "sha256": "4b6bb6d827e9da638841bf575c6068b83aaaf0d9508e892d3ea27e2525b070e8"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit INA219",
+      "platformio_metadata": {
+        "bytes": 170,
+        "file": "retained/libdeps/Adafruit INA219/.piopm",
+        "present": true,
+        "sha256": "c02fb1ae0202209b7750748d4d7355107cb0d1cf556e4e678e018d87ac17ebc7"
+      },
+      "platformio_origin": {
+        "id": 160,
+        "name": "Adafruit INA219",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.2.3",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.2.3",
+      "source_url": "https://github.com/adafruit/Adafruit_INA219"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1499,
+          "file": "retained/libdeps/Adafruit INA260 Library/license.txt",
+          "present": true,
+          "sha256": "4b6bb6d827e9da638841bf575c6068b83aaaf0d9508e892d3ea27e2525b070e8"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit INA260 Library",
+      "platformio_metadata": {
+        "bytes": 187,
+        "file": "retained/libdeps/Adafruit INA260 Library/.piopm",
+        "present": true,
+        "sha256": "c68b94435e0e719d94d4d916b84a52129145f19b1979d63ca9c69fdfaea81f76"
+      },
+      "platformio_origin": {
+        "id": 6239,
+        "name": "Adafruit INA260 Library",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.5.3",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.5.3",
+      "source_url": "https://github.com/adafruit/Adafruit_INA260"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1077,
+          "file": "retained/libdeps/Adafruit INA3221 Library/license.txt",
+          "present": true,
+          "sha256": "a4762648385a9af2d645342733ac7e29f206705282375da57f515296b2ff247c"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit INA3221 Library",
+      "platformio_metadata": {
+        "bytes": 190,
+        "file": "retained/libdeps/Adafruit INA3221 Library/.piopm",
+        "present": true,
+        "sha256": "892bdbe168bf1ec438326d4d0978a47a8380bd115f7138e2573cab8c9d054132"
+      },
+      "platformio_origin": {
+        "id": 17880,
+        "name": "Adafruit INA3221 Library",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.0.1",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.0.1",
+      "source_url": "https://github.com/adafruit/Adafruit_INA3221"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1514,
+          "file": "retained/libdeps/Adafruit MLX90614 Library/license.txt",
+          "present": true,
+          "sha256": "8a44693da8703b20307a0976d79fcd107bf53ba8b3c4576a696488a7917d4d18"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit MLX90614 Library",
+      "platformio_metadata": {
+        "bytes": 190,
+        "file": "retained/libdeps/Adafruit MLX90614 Library/.piopm",
+        "present": true,
+        "sha256": "29a49d0a437b6728b2fe872ae69e80850eafa6f0f28d5d63b49833a13f7bcc90"
+      },
+      "platformio_origin": {
+        "id": 782,
+        "name": "Adafruit MLX90614 Library",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "2.1.6",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "2.1.6",
+      "source_url": "https://github.com/adafruit/Adafruit-MLX90614-Library"
+    },
+    {
+      "additional_notice_evidence": [
+        {
+          "bytes": 20311,
+          "file": "retained/libdeps/Adafruit NeoPixel/Adafruit_NeoPixel.h",
+          "present": true,
+          "sha256": "25a8279dcaa27519c92726fe3dcced0e452ec7c2786c303f3e18cc82028e59f4"
+        }
+      ],
+      "license_files": [
+        {
+          "bytes": 7651,
+          "file": "retained/libdeps/Adafruit NeoPixel/COPYING",
+          "present": true,
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit NeoPixel",
+      "platformio_metadata": {
+        "bytes": 174,
+        "file": "retained/libdeps/Adafruit NeoPixel/.piopm",
+        "present": true,
+        "sha256": "e317b28042107aa7f054014ff98d56fe15741dc7b30c264b0985a781d286ab6e"
+      },
+      "platformio_origin": {
+        "id": 28,
+        "name": "Adafruit NeoPixel",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.15.5",
+      "reviewed_license_finding": "LGPL-3.0-or-later grant in source header; COPYING includes LGPLv3 text",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.15.5",
+      "source_url": "https://github.com/adafruit/Adafruit_NeoPixel"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1498,
+          "file": "retained/libdeps/Adafruit SH110X/license.txt",
+          "present": true,
+          "sha256": "97aa18e424d9deaaec2474fa21ffa9d2eba547515a263c00c01f5fb17d2d054f"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit SH110X",
+      "platformio_metadata": {
+        "bytes": 172,
+        "file": "retained/libdeps/Adafruit SH110X/.piopm",
+        "present": true,
+        "sha256": "fd81813cb2e91cd457e842fb987eac884b860edfe957bfe1064705a1093e4ec0"
+      },
+      "platformio_origin": {
+        "id": 7444,
+        "name": "Adafruit SH110X",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "2.1.15",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "2.1.15",
+      "source_url": "https://github.com/adafruit/Adafruit_SH110X"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1499,
+          "file": "retained/libdeps/Adafruit SHTC3 Library/license.txt",
+          "present": true,
+          "sha256": "4b6bb6d827e9da638841bf575c6068b83aaaf0d9508e892d3ea27e2525b070e8"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit SHTC3 Library",
+      "platformio_metadata": {
+        "bytes": 185,
+        "file": "retained/libdeps/Adafruit SHTC3 Library/.piopm",
+        "present": true,
+        "sha256": "0a837ebdec46a78190c7fbab0ef849b51175dd94b2817012a7be633e9d4b74df"
+      },
+      "platformio_origin": {
+        "id": 7407,
+        "name": "Adafruit SHTC3 Library",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.0.2",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.0.2",
+      "source_url": "https://github.com/adafruit/Adafruit_SHTC3"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1499,
+          "file": "retained/libdeps/Adafruit SSD1306/license.txt",
+          "present": true,
+          "sha256": "4b6bb6d827e9da638841bf575c6068b83aaaf0d9508e892d3ea27e2525b070e8"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit SSD1306",
+      "platformio_metadata": {
+        "bytes": 173,
+        "file": "retained/libdeps/Adafruit SSD1306/.piopm",
+        "present": true,
+        "sha256": "b6e4f7d45ce512e6f14b88e7d979e5df98a4b7bb481eaed2b5616d55bdc21a9e"
+      },
+      "platformio_origin": {
+        "id": 135,
+        "name": "Adafruit SSD1306",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "2.5.17",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "2.5.17",
+      "source_url": "https://github.com/adafruit/Adafruit_SSD1306"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 11358,
+          "file": "retained/libdeps/Adafruit Unified Sensor/LICENSE.txt",
+          "present": true,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit Unified Sensor",
+      "platformio_metadata": {
+        "bytes": 186,
+        "file": "retained/libdeps/Adafruit Unified Sensor/.piopm",
+        "present": true,
+        "sha256": "63f696f444a50ffc2efe1232d5746c52275295e2d91b0788b174bfbefb1ed49e"
+      },
+      "platformio_origin": {
+        "id": 31,
+        "name": "Adafruit Unified Sensor",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.1.15",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.1.15",
+      "source_url": "https://github.com/adafruit/Adafruit_Sensor"
+    },
+    {
+      "additional_notice_evidence": [
+        {
+          "bytes": 914,
+          "file": "retained/libdeps/Adafruit_VL53L0X/README.md",
+          "present": true,
+          "sha256": "9b7597be6637faacb53d7b334c4fa022ce4b4781fe8d49bc52e2a43c0a4b5b71"
+        },
+        {
+          "bytes": 6345,
+          "file": "retained/libdeps/Adafruit_VL53L0X/src/Adafruit_VL53L0X.h",
+          "present": true,
+          "sha256": "ce794579bb4c8c0ff0657fdcd22c65b6aeab14b0c632763a87ff190505b059e9"
+        },
+        {
+          "bytes": 4248,
+          "file": "retained/libdeps/Adafruit_VL53L0X/src/vl53l0x_types.h",
+          "present": true,
+          "sha256": "68d88fa822460ee1e43fae9f28308d16899535a0f79ae1292070f9032c59ecb4"
+        }
+      ],
+      "license_files": [],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Adafruit_VL53L0X",
+      "platformio_metadata": {
+        "bytes": 173,
+        "file": "retained/libdeps/Adafruit_VL53L0X/.piopm",
+        "present": true,
+        "sha256": "8ed5457a32d1cad47a63766e35253475e1b955973d0d9b7081cb62107b18a576"
+      },
+      "platformio_origin": {
+        "id": 1494,
+        "name": "Adafruit_VL53L0X",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.2.5",
+      "reviewed_license_finding": "README says MIT; Adafruit wrapper says BSD; ST source has its own conditions; do not collapse to one license",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.2.5",
+      "source_url": "https://github.com/adafruit/Adafruit_VL53L0X"
+    },
+    {
+      "additional_notice_evidence": [],
+      "declared_license": null,
+      "license_files": [
+        {
+          "bytes": 1117,
+          "file": "retained/libdeps/ArduinoJson/LICENSE.txt",
+          "present": true,
+          "sha256": "4a7ee9c96b28cbf30c5bf7c2d211a0ef57179f0328e68ad7b7fa7d754b7da1a2"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "ArduinoJson",
+      "platformio_metadata": {
+        "bytes": 162,
+        "file": "retained/libdeps/ArduinoJson/.piopm",
+        "present": true,
+        "sha256": "2417613390afbcbafc8af6c116f6f6d9a42e3ebdd3864d3dc9e044da328f4b20"
+      },
+      "platformio_origin": {
+        "id": 64,
+        "name": "ArduinoJson",
+        "owner": "bblanchon",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "7.4.3",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/bblanchon/ArduinoJson.git"
+      },
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "7.4.3",
+      "source_url": "https://arduinojson.org/?utm_source=meta&utm_medium=library.properties"
+    },
+    {
+      "additional_notice_evidence": [
+        {
+          "bytes": 1487,
+          "file": "retained/libdeps/Arduino_LPS22HB/src/BARO.h",
+          "present": true,
+          "sha256": "1729aa6ec987151b3690b26d00786c047bd1f006a621adebfba13c6f19af07c4"
+        }
+      ],
+      "license_files": [
+        {
+          "bytes": 26526,
+          "file": "retained/libdeps/Arduino_LPS22HB/LICENSE.txt",
+          "present": true,
+          "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Arduino_LPS22HB",
+      "platformio_metadata": {
+        "bytes": 180,
+        "file": "retained/libdeps/Arduino_LPS22HB/.piopm",
+        "present": true,
+        "sha256": "94b21879b1a4e94798fcf639624a4d5b44dc38b9b271d6b1397c316b5c89731b"
+      },
+      "platformio_origin": {
+        "id": 6591,
+        "name": "Arduino_LPS22HB",
+        "owner": "arduino-libraries",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.0.3",
+      "reviewed_license_finding": "LGPL-2.1-or-later grant in src/BARO.h; LICENSE.txt includes LGPLv2.1 text",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.0.3",
+      "source_url": "http://github.com/arduino-libraries/Arduino_LPS22HB"
+    },
+    {
+      "additional_notice_evidence": [],
+      "declared_license": "MIT",
+      "license_files": [
+        {
+          "bytes": 1046,
+          "file": "retained/libdeps/CayenneLPP/LICENSE.md",
+          "present": true,
+          "sha256": "c0fc02a86ae2b179c4729694c523bbf42da674e5136ed8e12e3cb2f26556ea9f"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "CayenneLPP",
+      "platformio_metadata": {
+        "bytes": 167,
+        "file": "retained/libdeps/CayenneLPP/.piopm",
+        "present": true,
+        "sha256": "28042cd6530b274bfb4d61052e79577088ef2edcb7c97c3c292dfca311caaf5b"
+      },
+      "platformio_origin": {
+        "id": 1767,
+        "name": "CayenneLPP",
+        "owner": "electroniccats",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.6.1",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/ElectronicCats/CayenneLPP.git"
+      },
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.6.1",
+      "source_url": "https://github.com/ElectronicCats/CayenneLPP"
+    },
+    {
+      "additional_notice_evidence": [
+        {
+          "bytes": 2864,
+          "file": "retained/libdeps/Crypto/utility/LimbUtil.h",
+          "present": true,
+          "sha256": "6360e30ed0168411cd84c58bba71ab918b5541317d51ecbd50eb1ef7e1a50f11"
+        }
+      ],
+      "declared_license": null,
+      "license_files": [],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Crypto",
+      "platformio_metadata": {
+        "bytes": 153,
+        "file": "retained/libdeps/Crypto/.piopm",
+        "present": true,
+        "sha256": "ae7b7f030b92d337ef9ac7378feefbf1e4ce7b02eb1d6105d2b8585bcf1bc468"
+      },
+      "platformio_origin": {
+        "id": 1168,
+        "name": "Crypto",
+        "owner": "rweather",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "0.4.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/rweather/arduinolibs.git"
+      },
+      "reviewed_license_finding": "MIT grant reviewed in utility/LimbUtil.h; no top-level license file; not a complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false
+    },
+    {
+      "additional_notice_evidence": [],
+      "declared_license": "MIT",
+      "license_files": [
+        {
+          "bytes": 1095,
+          "file": "retained/libdeps/INA226/LICENSE",
+          "present": true,
+          "sha256": "1272d825500a38882f4a2957852d4e122993e3672111e571273a4b046fd10e4d"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "INA226",
+      "platformio_metadata": {
+        "bytes": 157,
+        "file": "retained/libdeps/INA226/.piopm",
+        "present": true,
+        "sha256": "237893f4bd6bcd4e3a06f63bfc875ee8c7bf335b8011169b2cc710bdddf35be2"
+      },
+      "platformio_origin": {
+        "id": 12232,
+        "name": "INA226",
+        "owner": "robtillaart",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "0.6.6",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/RobTillaart/INA226.git"
+      },
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "0.6.6",
+      "source_url": "https://github.com/RobTillaart/INA226"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1065,
+          "file": "retained/libdeps/Melopero RV3028/LICENSE",
+          "present": true,
+          "sha256": "55b1eee8c9a5891048b3111a481131adb0b53ddb7e9d136f3fa494cfa903bdc0"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Melopero RV3028",
+      "platformio_metadata": {
+        "bytes": 172,
+        "file": "retained/libdeps/Melopero RV3028/.piopm",
+        "present": true,
+        "sha256": "4f63ba353398c73ce998db575ed4cdccb83eb3e0958eddf4868baf413483494b"
+      },
+      "platformio_origin": {
+        "id": 11317,
+        "name": "Melopero RV3028",
+        "owner": "melopero",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.2.0",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.2.0",
+      "source_url": "https://github.com/melopero/Melopero_RV-3028_Arduino_Library"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 26462,
+          "file": "retained/libdeps/MicroNMEA/LICENSE",
+          "present": true,
+          "sha256": "5525fbd0911b8dcbdc6f0c081ac27fd55b75d6d261c62fa05b9bdc0b72b481f6"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "MicroNMEA",
+      "platformio_metadata": {
+        "bytes": 161,
+        "file": "retained/libdeps/MicroNMEA/.piopm",
+        "present": true,
+        "sha256": "90d41eed2830a39a3280df362f2763e46652cf705c244754c33ad41c4ad02ca9"
+      },
+      "platformio_origin": {
+        "id": 625,
+        "name": "MicroNMEA",
+        "owner": "stevemarple",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "2.0.6",
+      "reviewed_license_finding": "LGPLv2.1 text in LICENSE; no exact version-or-later grant verified by this audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "2.0.6",
+      "source_url": "https://github.com/stevemarple/MicroNMEA"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1076,
+          "file": "retained/libdeps/RTClib/license.txt",
+          "present": true,
+          "sha256": "6d594832648bfe9a8b0aa69ee21ce2c72f696170fcd3c21b82c3284174cd2c19"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "RTClib",
+      "platformio_metadata": {
+        "bytes": 151,
+        "file": "retained/libdeps/RTClib/.piopm",
+        "present": true,
+        "sha256": "267008d57f2a43171292ebebe85b39c07c394cd888215f124b1dce11fb77d2f5"
+      },
+      "platformio_origin": {
+        "id": 83,
+        "name": "RTClib",
+        "owner": "adafruit",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "2.1.4",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "2.1.4",
+      "source_url": "https://github.com/adafruit/RTClib"
+    },
+    {
+      "additional_notice_evidence": [],
+      "configured_upstream_ref": "6d8934836678d8894e3d556550475b37dce3e2b6",
+      "declared_license": "MIT",
+      "license_files": [
+        {
+          "bytes": 1068,
+          "file": "retained/libdeps/RadioLib/license.txt",
+          "present": true,
+          "sha256": "025378110a5679f82e8a59c19cf91b8ed760dc8752e5504596ef0c0592b8a3e8"
+        }
+      ],
+      "license_matches_pinned_upstream_bytes": true,
+      "linked_into_selected_firmware": "not_verified",
+      "name": "RadioLib",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/jgromes/RadioLib.git"
+      },
+      "reviewed_license_finding": "MIT; exact license bytes match configured upstream commit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "7.7.1",
+      "source_url": "https://github.com/jgromes/RadioLib",
+      "upstream_license_url": "https://github.com/jgromes/RadioLib/blob/6d8934836678d8894e3d556550475b37dce3e2b6/license.txt"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1520,
+          "file": "retained/libdeps/Sensirion Core/LICENSE",
+          "present": true,
+          "sha256": "31798f5239d372e8a80a6928714a52d6c6dda74f01390178a70f386f7c5f0805"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Sensirion Core",
+      "platformio_metadata": {
+        "bytes": 171,
+        "file": "retained/libdeps/Sensirion Core/.piopm",
+        "present": true,
+        "sha256": "f6ace8568108afa0887c11ca228751360b581111514eaa28d5350466a5dc27e3"
+      },
+      "platformio_origin": {
+        "id": 11744,
+        "name": "Sensirion Core",
+        "owner": "sensirion",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "0.7.3",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "0.7.3",
+      "source_url": "https://github.com/Sensirion/arduino-core/"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1520,
+          "file": "retained/libdeps/Sensirion I2C SHT4x/LICENSE",
+          "present": true,
+          "sha256": "51d9fcd3c5373d561b852b66f43c1cc867276528061eff9395ae7390f9f9d8fb"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "Sensirion I2C SHT4x",
+      "platformio_metadata": {
+        "bytes": 181,
+        "file": "retained/libdeps/Sensirion I2C SHT4x/.piopm",
+        "present": true,
+        "sha256": "6eef9a8fbb7165bcdd40d5d1666cc3b3af9dfea27a7eb1dc4fd278ff9e9903f6"
+      },
+      "platformio_origin": {
+        "id": 12994,
+        "name": "Sensirion I2C SHT4x",
+        "owner": "sensirion",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.1.2",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.1.2",
+      "source_url": "https://github.com/Sensirion/arduino-i2c-sht4x"
+    },
+    {
+      "additional_notice_evidence": [],
+      "license_files": [
+        {
+          "bytes": 1076,
+          "file": "retained/libdeps/base64/LICENSE",
+          "present": true,
+          "sha256": "dce584239dbb753c429f0caf7f536096c73cb06e0a6222fc9c4d15c51d236b48"
+        }
+      ],
+      "linked_into_selected_firmware": "not_verified",
+      "name": "base64",
+      "platformio_metadata": {
+        "bytes": 153,
+        "file": "retained/libdeps/base64/.piopm",
+        "present": true,
+        "sha256": "3931dfe2eebccf41c5d8e248ae4adf61a66285add55d55f5a1061193b9cd9775"
+      },
+      "platformio_origin": {
+        "id": 758,
+        "name": "base64",
+        "owner": "densaugeo",
+        "requirements": null,
+        "uri": null
+      },
+      "platformio_version": "1.4.0",
+      "reviewed_license_finding": "Top-level license text retained and hashed; no complete per-file audit",
+      "scope": "observed_build_library_snapshot",
+      "shipped_in_current_meshticulum_repository": false,
+      "source_declared_version": "1.4.0",
+      "source_url": "https://github.com/Densaugeo/base64_arduino"
+    }
+  ],
+  "intended_release": "future 1.0.0-alpha; no tag or publication authorized",
+  "limitations": [
+    "Installed Python versions are observations from the parent development environment, not release dependency pins.",
+    "A license file in a build directory does not establish whether that component is linked into a firmware image.",
+    "Package metadata license expressions are distinguished from reviewed license text and source-file notices.",
+    "No code, wheel, toolchain, firmware binary, donor tree, grant, key or payload is redistributed by this audit.",
+    "No clean standalone firmware rebuild, linker-map closure or combined runtime wheel closure was performed."
+  ],
+  "python_observed": [
+    {
+      "declared_license": null,
+      "declared_license_expression": "Apache-2.0 OR BSD-3-Clause",
+      "license_files": [
+        {
+          "bytes": 197,
+          "file": "cryptography-50.0.2.dist-info/licenses/LICENSE",
+          "present": true,
+          "sha256": "3e0c7c091a948b82533ba98fd7cbb40432d6f1a9acbf85f5922d2f99a93ae6bb"
+        },
+        {
+          "bytes": 11360,
+          "file": "cryptography-50.0.2.dist-info/licenses/LICENSE.APACHE",
+          "present": true,
+          "sha256": "aac73b3148f6d1d7111dbca32099f68d26c644c6813ae1e4f05f6579aa2663fe"
+        },
+        {
+          "bytes": 1532,
+          "file": "cryptography-50.0.2.dist-info/licenses/LICENSE.BSD",
+          "present": true,
+          "sha256": "602c4c7482de6479dd2e9793cda275e5e63d773dacd1eca689232ab7008fb4fb"
+        }
+      ],
+      "name": "cryptography",
+      "observed_version": "50.0.2",
+      "requires_dist": [
+        "cffi>=2.0.0 ; platform_python_implementation != 'PyPy'",
+        "typing-extensions>=4.13.2 ; python_full_version < '3.11'",
+        "bcrypt>=3.1.5 ; extra == 'ssh'"
+      ],
+      "scope": "core_dependency_closure",
+      "shipped_as_dependency_wheel_in_source_package": false,
+      "shipped_in_public_runtime_archive": false
+    },
+    {
+      "declared_license": "Apache-2.0",
+      "declared_license_expression": null,
+      "license_files": [
+        {
+          "bytes": 9694,
+          "file": "pynacl-1.6.2.dist-info/licenses/LICENSE",
+          "present": true,
+          "sha256": "d3174ad63e721d4c9dccb8ad4320848992d314369bc46319720b5802c9153fe9"
+        },
+        {
+          "bytes": 823,
+          "file": "pynacl-1.6.2.dist-info/licenses/licenses/LICENSE.libsodium.txt",
+          "present": true,
+          "sha256": "508a76d186356c0dd807a670ef510964f8724557024796a2c426c6c0e19ab683"
+        }
+      ],
+      "name": "PyNaCl",
+      "observed_version": "1.6.2",
+      "requires_dist": [
+        "cffi>=1.4.1; platform_python_implementation != \"PyPy\" and python_version < \"3.9\"",
+        "cffi>=2.0.0; platform_python_implementation != \"PyPy\" and python_version >= \"3.9\"",
+        "pytest>=7.4.0; extra == \"tests\"",
+        "pytest-cov>=2.10.1; extra == \"tests\"",
+        "pytest-xdist>=3.5.0; extra == \"tests\"",
+        "hypothesis>=3.27.0; extra == \"tests\"",
+        "sphinx<7; extra == \"docs\"",
+        "sphinx_rtd_theme; extra == \"docs\""
+      ],
+      "scope": "core_dependency_closure",
+      "shipped_as_dependency_wheel_in_source_package": false,
+      "shipped_in_public_runtime_archive": false
+    },
+    {
+      "declared_license": null,
+      "declared_license_expression": "MIT-0",
+      "license_files": [
+        {
+          "bytes": 1123,
+          "file": "cffi-2.1.1.dist-info/licenses/LICENSE",
+          "present": true,
+          "sha256": "5ba24ddc57067f9249add644c3afc41a5d6dc37e23433ef759d95df370b0af63"
+        }
+      ],
+      "name": "cffi",
+      "observed_version": "2.1.1",
+      "requires_dist": [
+        "pycparser; implementation_name != \"PyPy\""
+      ],
+      "scope": "core_dependency_closure",
+      "shipped_as_dependency_wheel_in_source_package": false,
+      "shipped_in_public_runtime_archive": false
+    },
+    {
+      "declared_license": null,
+      "declared_license_expression": "BSD-3-Clause",
+      "license_files": [
+        {
+          "bytes": 1543,
+          "file": "pycparser-3.0.dist-info/licenses/LICENSE",
+          "present": true,
+          "sha256": "0c846399369ea76ddd7b5c44fe6d16497415fcf015f5cbb508c24bf98b81c5b1"
+        }
+      ],
+      "name": "pycparser",
+      "observed_version": "3.0",
+      "requires_dist": null,
+      "scope": "core_dependency_closure",
+      "shipped_as_dependency_wheel_in_source_package": false,
+      "shipped_in_public_runtime_archive": false
+    },
+    {
+      "declared_license": null,
+      "declared_license_expression": "Apache-2.0",
+      "license_files": [],
+      "name": "sage-agent-sdk",
+      "observed_version": "11.19.10+lantern.20260906",
+      "requires_dist": [
+        "httpx>=0.25.0",
+        "pydantic>=2.0.0",
+        "PyNaCl>=1.5.0",
+        "pytest>=7.0; extra == \"dev\"",
+        "pytest-asyncio>=0.21; extra == \"dev\"",
+        "respx>=0.21; extra == \"dev\""
+      ],
+      "scope": "optional_sage",
+      "shipped_as_dependency_wheel_in_source_package": false,
+      "shipped_in_public_runtime_archive": false
+    },
+    {
+      "declared_license": "BSD-3-Clause",
+      "declared_license_expression": null,
+      "license_files": [
+        {
+          "bytes": 1508,
+          "file": "httpx-0.28.1.dist-info/licenses/LICENSE.md",
+          "present": true,
+          "sha256": "4ec59d544f12b5f539a3a716fd321ac58ccd8030b465221f2c880200cdf28d8d"
+        }
+      ],
+      "name": "httpx",
+      "observed_version": "0.28.1",
+      "requires_dist": [
+        "anyio",
+        "certifi",
+        "httpcore==1.*",
+        "idna",
+        "brotli; (platform_python_implementation == 'CPython') and extra == 'brotli'",
+        "brotlicffi; (platform_python_implementation != 'CPython') and extra == 'brotli'",
+        "click==8.*; extra == 'cli'",
+        "pygments==2.*; extra == 'cli'",
+        "rich<14,>=10; extra == 'cli'",
+        "h2<5,>=3; extra == 'http2'",
+        "socksio==1.*; extra == 'socks'",
+        "zstandard>=0.18.0; extra == 'zstd'"
+      ],
+      "scope": "optional_sage",
+      "shipped_as_dependency_wheel_in_source_package": false,
+      "shipped_in_public_runtime_archive": false
+    }
+  ],
+  "repository_source": {
+    "LICENSE": {
+      "bytes": 10778,
+      "file": "LICENSE",
+      "present": true,
+      "sha256": "ba61a1c596f3e771e379455f68124f793985196b84be0a6a41d2c489050facef"
+    },
+    "NOTICE": {
+      "bytes": 974,
+      "file": "NOTICE",
+      "present": true,
+      "sha256": "387c1c228cbaf7a40b6729ae692603402387ac7308810709524bbde44d86e26c"
+    },
+    "firmware/meshticulum-bench/build_runtime.py": {
+      "bytes": 5395,
+      "file": "firmware/meshticulum-bench/build_runtime.py",
+      "present": true,
+      "sha256": "bd3997a63b00f06efe9dace1f34abd9e362ada26e20cd3911f902a36c3c878ae"
+    },
+    "firmware/meshticulum-bench/prepare_build.py": {
+      "bytes": 5017,
+      "file": "firmware/meshticulum-bench/prepare_build.py",
+      "present": true,
+      "sha256": "26c240faa464e91b92ff453f602e662e09434a9a8928d60d6d82896f643db724"
+    },
+    "firmware/meshticulum-bench/run_build.py": {
+      "bytes": 3982,
+      "file": "firmware/meshticulum-bench/run_build.py",
+      "present": true,
+      "sha256": "caa29cd5abae0e6fc4a9933a4da4dfe3dc1abee5755ed8e400f053e0f249c809"
+    },
+    "provenance/UPSTREAM_SOURCE.json": {
+      "bytes": 51873,
+      "file": "provenance/UPSTREAM_SOURCE.json",
+      "present": true,
+      "sha256": "12e54be289da67cd81363f9870d60c177c584c6da40af0e7f2fff6db662fa8bc"
+    },
+    "pyproject.toml": {
+      "bytes": 1398,
+      "file": "pyproject.toml",
+      "present": true,
+      "sha256": "cd89aca502abef105b3236da05b27de1d38617a6d4e6196dbd55f59fd5e1db28"
+    }
+  },
+  "schema": "meshticulum.third-party-source-audit.v1",
+  "status": "observed_source_and_local_environment_not_release_clearance"
+}

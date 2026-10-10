@@ -1,0 +1,32 @@
+sequenceDiagram
+    participant App as App
+    participant Flow as Flow owner
+    participant S as Scheduler
+    participant A as Authority
+    participant C as Cipher/store
+    participant W as Worker/journal
+    participant P as Peer
+
+    Note over Flow,P: Authenticated startup ACK<br/>establishes receiver credit
+    App->>Flow: Queue admitted bytes
+    Flow->>S: Prepare bound handle
+    S->>A: Hold service + broker leases
+    A-->>S: Check request, owner<br/>and original deadline
+    S->>C: Seal bound DATA frame
+    C->>C: Persist fresh counter
+    C-->>S: ChaCha20-Poly1305 packet
+    S->>W: Transmit exact packet
+    W->>W: Reserve attempt + airtime<br/>before device write
+    W->>P: RF transmission
+    W->>W: Match driver evidence<br/>to boot, request, packet
+    W-->>S: RF_DONE, REFUSED, NOT_SENT or UNKNOWN
+    S->>A: Release policy leases
+    Note over Flow,S: Flow-owner lease held<br/>through settlement
+    S-->>Flow: Settle handle once
+
+    P->>P: Authenticate + persist replay<br/>apply flow and consume
+    P-->>C: Authenticated ACK<br/>via peer's admitted worker
+    C->>C: Verify ACK + persist replay
+    C-->>Flow: Apply receipt + credit
+    Flow-->>App: Required receipt complete
+    Note over App,P: Application acceptance<br/>requires separate checks

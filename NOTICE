@@ -1,0 +1,19 @@
+SAGE Commons
+Copyright 2026 SAGE Commons contributors
+
+This product includes software developed by SAGE Commons contributors and is
+licensed under the Apache License, Version 2.0. See LICENSE.
+
+Third-party software, models, voices, fonts, datasets, radio firmware and other
+artifacts retain their respective upstream licenses. Their inclusion in a build,
+bundle or resource pack does not
+relicense them under Apache-2.0. Distribution artifacts must retain applicable
+upstream notices and carry an inventory tied to their actual contents.
+See docs/THIRD_PARTY.md for dependency boundaries and the current source audit.
+
+Meshticulum
+A SAGE Foundation project, created and maintained by Dhillon Andrew Kannabhiran (@l33tdawg).
+SAGE Foundation: https://sage-foundation.net/
+Main SAGE repository: https://github.com/l33tdawg/sage/
+Extracted from SAGE Commons/Lantern in October 2026.
+See docs/EXTRACTION.md and provenance/UPSTREAM_SOURCE.json for source attribution and changes.

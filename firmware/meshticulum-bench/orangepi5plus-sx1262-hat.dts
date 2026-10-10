@@ -1,0 +1,33 @@
+/dts-v1/;
+/plugin/;
+
+/* Draft for the Waveshare SX1262 XXXM LoRaWAN/GNSS HAT on a straight
+ * Orange Pi 5 Plus 40-pin connection. Confirm the fitted board first.
+ * The HAT's NSS is physical pin 40, NOT SPI0's native CS0 on pin 24.
+ * SPI0_M2 supplies pins 19/21/23; gpio3_A3 supplies pin 40 as kernel CS.
+ * No GPIOs for reset, RF switch, IRQ or GNSS are driven by this overlay.
+ * It does not initialize the radio or enable any transmission.
+ */
+/ {
+    compatible = "rockchip,rk3588-orangepi-5-plus", "rockchip,rk3588";
+
+    fragment@0 {
+        target = <&spi0>;
+        __overlay__ {
+            status = "okay";
+            #address-cells = <1>;
+            #size-cells = <0>;
+            pinctrl-names = "default";
+            pinctrl-0 = <&spi0m2_pins>;
+            cs-gpios = <&gpio3 3 1>; /* GPIO_ACTIVE_LOW, physical pin 40 */
+            num-cs = <1>;
+
+            spidev@0 {
+                compatible = "rockchip,spidev";
+                status = "okay";
+                reg = <0>;
+                spi-max-frequency = <1000000>;
+            };
+        };
+    };
+};

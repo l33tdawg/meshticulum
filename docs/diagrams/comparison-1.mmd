@@ -1,0 +1,13 @@
+flowchart TB
+    subgraph Influences["Design influences"]
+        MC["MeshCore<br/>embedded radio operation<br/>compact packets and learned paths"]
+        RNS["Reticulum<br/>secure networking abstractions<br/>reliable transfers across media"]
+    end
+    subgraph Meshticulum["Meshticulum's own implementation"]
+        S["Separate services<br/>sealed private messages<br/>signed public resources"]
+        F["Bounded reliable flow<br/>credit, selective ACKs and retries"]
+        W["Explicit carrier ownership<br/>peer/session bindings<br/>deadlines and medium budgets"]
+        S --> F --> W
+    end
+    MC -.->|operational inspiration| W
+    RNS -.->|networking inspiration| S

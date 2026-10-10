@@ -1,0 +1,10 @@
+include LICENSE NOTICE README.md AGENTS.md CHANGELOG.md
+recursive-include docs *.md *.mmd *.svg *.json
+recursive-include provenance *.json
+recursive-include tools *.py
+recursive-include firmware *.py *.cpp *.hpp *.c *.dts *.json *.txt *.patch *.md LICENSE.*
+recursive-include tests *.py *.h *.hpp *.cpp *.c *.json
+global-exclude __pycache__ *.py[cod] .DS_Store
+recursive-include benchmarks *.json
+include .github/workflows/tests.yml
+recursive-include firmware/meshticulum-bench/notices *

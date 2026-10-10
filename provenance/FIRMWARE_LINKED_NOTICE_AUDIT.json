@@ -1,0 +1,1739 @@
+{
+  "schema": "meshticulum.linked-firmware-components.v1",
+  "basis": "Final reproduction build05 at core0e240641d04b373402267c68cdf261a516a5156e. Nonzero object rows wholly inside allocated ELF sections; handles .o/.obj and excludes discarded/debug-only rows. Explicit NOBITS contributions are memory allocation, not image bytes.",
+  "idf_macros": "4.4.7",
+  "idf_binary_version_strings": [
+    "esp-idf: v4.4.7 38eeba213a",
+    "v4.4.7-dirty"
+  ],
+  "targets": [
+    {
+      "target": "mtbench_heltec_v4",
+      "elf_sha256": "a25fbd9c9affc904dec872d08c82b654553dd95a314b2ad383cddc430fa815ca",
+      "map_sha256": "831999391d340991bc3a9e6aa45eab2bb5d35887cf4ff6cb1c4a7349fe318f7c",
+      "allocated_rows": 4381,
+      "archives": [
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/qio_qspi/libesp_hw_support.a",
+          "sha256": "b9b412df462a8eed8a4bd5e4ed6bf13c0c0271cec5fed97ff08bf9a0bf922308",
+          "archive": "libesp_hw_support.a",
+          "members": [
+            "chip_info.c.obj",
+            "clk_ctrl_os.c.obj",
+            "compare_set.c.obj",
+            "cpu_util.c.obj",
+            "dport_access.c.obj",
+            "esp_clk.c.obj",
+            "esp_crypto_lock.c.obj",
+            "hw_random.c.obj",
+            "intr_alloc.c.obj",
+            "mac_addr.c.obj",
+            "regi2c_ctrl.c.obj",
+            "rtc_clk.c.obj",
+            "rtc_init.c.obj",
+            "rtc_sleep.c.obj",
+            "rtc_time.c.obj",
+            "sar_periph_ctrl.c.obj",
+            "sleep_console.c.obj",
+            "sleep_gpio.c.obj",
+            "sleep_modes.c.obj",
+            "sleep_retention.c.obj",
+            "spiram.c.obj",
+            "spiram_psram.c.obj"
+          ],
+          "retained_bytes": 21153,
+          "retained_nobits_bytes": 77
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/qio_qspi/libfreertos.a",
+          "sha256": "258c4cc7c1d878cfb2a0a5a76344e4b4e8db326da95b4471f99430c8557c82f8",
+          "archive": "libfreertos.a",
+          "members": [
+            "FreeRTOS-openocd.c.obj",
+            "list.c.obj",
+            "port.c.obj",
+            "port_common.c.obj",
+            "port_systick.c.obj",
+            "portasm.S.obj",
+            "queue.c.obj",
+            "task_snapshot.c.obj",
+            "tasks.c.obj",
+            "xtensa_context.S.obj",
+            "xtensa_vector_defaults.S.obj",
+            "xtensa_vectors.S.obj"
+          ],
+          "retained_bytes": 23716,
+          "retained_nobits_bytes": 749
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/libFrameworkArduino.a",
+          "sha256": "e1f9185c133360f2493fad0efc4980dace5fcf83a59ad0c9e169c5812ff1b53c",
+          "archive": "libFrameworkArduino.a",
+          "members": [
+            "Esp.cpp.o",
+            "FunctionalInterrupt.cpp.o",
+            "HWCDC.cpp.o",
+            "MD5Builder.cpp.o",
+            "Print.cpp.o",
+            "Stream.cpp.o",
+            "WMath.cpp.o",
+            "WString.cpp.o",
+            "esp32-hal-adc.c.o",
+            "esp32-hal-bt.c.o",
+            "esp32-hal-cpu.c.o",
+            "esp32-hal-gpio.c.o",
+            "esp32-hal-i2c-slave.c.o",
+            "esp32-hal-i2c.c.o",
+            "esp32-hal-ledc.c.o",
+            "esp32-hal-matrix.c.o",
+            "esp32-hal-misc.c.o",
+            "esp32-hal-psram.c.o",
+            "esp32-hal-spi.c.o",
+            "esp32-hal-uart.c.o",
+            "main.cpp.o",
+            "wiring_pulse.c.o"
+          ],
+          "retained_bytes": 20746,
+          "retained_nobits_bytes": 1093
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libdriver.a",
+          "sha256": "b8ab992d477263dba3306c057af7cb08f2808a22bc6aeec668c3a0d20e189773",
+          "archive": "libdriver.a",
+          "members": [
+            "adc.c.obj",
+            "adc_common.c.obj",
+            "gdma.c.obj",
+            "gpio.c.obj",
+            "i2c.c.obj",
+            "ledc.c.obj",
+            "periph_ctrl.c.obj",
+            "rtc_io.c.obj",
+            "rtc_module.c.obj",
+            "rtc_tempsensor.c.obj",
+            "spi_bus_lock.c.obj",
+            "uart.c.obj"
+          ],
+          "retained_bytes": 29491,
+          "retained_nobits_bytes": 126
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libapp_update.a",
+          "sha256": "63b0e765f044b9c4f58e8b4c5643daa902bb243210747e8b1df88c67c4520f9d",
+          "archive": "libapp_update.a",
+          "members": [
+            "esp_app_desc.c.obj",
+            "esp_ota_ops.c.obj"
+          ],
+          "retained_bytes": 1903,
+          "retained_nobits_bytes": 12
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/qio_qspi/libbootloader_support.a",
+          "sha256": "569a073995d954de64877037de9f211c9f711d3bbe4755b316f8bcf6aab3fc6d",
+          "archive": "libbootloader_support.a",
+          "members": [
+            "bootloader_common_loader.c.obj",
+            "bootloader_flash.c.obj",
+            "bootloader_flash_config_esp32s3.c.obj",
+            "bootloader_mem.c.obj",
+            "bootloader_sha.c.obj",
+            "bootloader_utility.c.obj",
+            "esp_image_format.c.obj"
+          ],
+          "retained_bytes": 4153,
+          "retained_nobits_bytes": 4
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/qio_qspi/libspi_flash.a",
+          "sha256": "82287e5db87de68cd2fac77d144607cf0af5a871f3c4a9c80865b7a1c98d5666",
+          "archive": "libspi_flash.a",
+          "members": [
+            "cache_utils.c.obj",
+            "esp_flash_api.c.obj",
+            "esp_flash_spi_init.c.obj",
+            "flash_mmap.c.obj",
+            "flash_ops.c.obj",
+            "memspi_host_driver.c.obj",
+            "partition.c.obj",
+            "spi_flash_chip_boya.c.obj",
+            "spi_flash_chip_drivers.c.obj",
+            "spi_flash_chip_gd.c.obj",
+            "spi_flash_chip_generic.c.obj",
+            "spi_flash_chip_issi.c.obj",
+            "spi_flash_chip_mxic.c.obj",
+            "spi_flash_chip_mxic_opi.c.obj",
+            "spi_flash_chip_th.c.obj",
+            "spi_flash_chip_winbond.c.obj",
+            "spi_flash_hpm_enable.c.obj",
+            "spi_flash_os_func_app.c.obj",
+            "spi_flash_os_func_noos.c.obj",
+            "spi_flash_timing_tuning.c.obj",
+            "spi_timing_config.c.obj"
+          ],
+          "retained_bytes": 17240,
+          "retained_nobits_bytes": 550
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libpthread.a",
+          "sha256": "c99c47275fdf44c290e154b83b16cc0a62427a82d2875409e0eafe2945088ab1",
+          "archive": "libpthread.a",
+          "members": [
+            "pthread.c.obj",
+            "pthread_cond_var.c.obj",
+            "pthread_local_storage.c.obj",
+            "pthread_rwlock.c.obj"
+          ],
+          "retained_bytes": 1573,
+          "retained_nobits_bytes": 12
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/qio_qspi/libesp_system.a",
+          "sha256": "2a58caf364f9417c0c81ed0509fc21b3db4a23b6bd75940937de8d10dc8d048a",
+          "archive": "libesp_system.a",
+          "members": [
+            "apb_backup_dma.c.obj",
+            "brownout.c.obj",
+            "cache_err_int.c.obj",
+            "clk.c.obj",
+            "cpu_start.c.obj",
+            "crosscore_int.c.obj",
+            "debug_helpers.c.obj",
+            "debug_helpers_asm.S.obj",
+            "esp_err.c.obj",
+            "esp_system.c.obj",
+            "freertos_hooks.c.obj",
+            "highint_hdl.S.obj",
+            "int_wdt.c.obj",
+            "panic.c.obj",
+            "panic_arch.c.obj",
+            "panic_handler.c.obj",
+            "panic_handler_asm.S.obj",
+            "reset_reason.c.obj",
+            "stack_check.c.obj",
+            "startup.c.obj",
+            "system_internal.c.obj",
+            "task_wdt.c.obj",
+            "ubsan.c.obj"
+          ],
+          "retained_bytes": 13299,
+          "retained_nobits_bytes": 259
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_rom.a",
+          "sha256": "fd3ad8b4552687a2722288fdf8069e43ab01440196dbf3cd6c77cb994be2fbd6",
+          "archive": "libesp_rom.a",
+          "members": [
+            "esp_rom_cache.c.obj",
+            "esp_rom_cache_writeback_esp32s3.S.obj",
+            "esp_rom_mmap.c.obj",
+            "esp_rom_sys.c.obj",
+            "esp_rom_uart.c.obj"
+          ],
+          "retained_bytes": 675,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libhal.a",
+          "sha256": "ba8f1f141062b0b567029d0bf21ed4981426870f8ae2d33ba1bfd91d32bf5fc7",
+          "archive": "libhal.a",
+          "members": [
+            "adc_hal.c.obj",
+            "brownout_hal.c.obj",
+            "cpu_hal.c.obj",
+            "efuse_hal.c.obj",
+            "gdma_hal.c.obj",
+            "gpio_hal.c.obj",
+            "i2c_hal.c.obj",
+            "i2c_hal_iram.c.obj",
+            "interrupt_controller_hal.c.obj",
+            "interrupt_descriptor_table.c.obj",
+            "ledc_hal.c.obj",
+            "ledc_hal_iram.c.obj",
+            "mpu_hal.c.obj",
+            "rtc_cntl_hal.c.obj",
+            "rtc_io_hal.c.obj",
+            "sha_hal.c.obj",
+            "soc_hal.c.obj",
+            "spi_flash_encrypt_hal_iram.c.obj",
+            "spi_flash_hal.c.obj",
+            "spi_flash_hal_gpspi.c.obj",
+            "spi_flash_hal_iram.c.obj",
+            "systimer_hal.c.obj",
+            "touch_sensor_hal.c.obj",
+            "uart_hal.c.obj",
+            "uart_hal_iram.c.obj",
+            "wdt_hal_iram.c.obj"
+          ],
+          "retained_bytes": 14783,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_wifi.a",
+          "sha256": "cb06edb694b149bed9b9691be7942281549868e5e59624036da4ccaeb7d72175",
+          "archive": "libesp_wifi.a",
+          "members": [
+            "esp_adapter.c.obj",
+            "wifi_init.c.obj"
+          ],
+          "retained_bytes": 382,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libheap.a",
+          "sha256": "8108f23266178230dc27c03ac62b538a990a2a90d638503e3a1f3c482ea41513",
+          "archive": "libheap.a",
+          "members": [
+            "heap_caps.c.obj",
+            "heap_caps_init.c.obj",
+            "heap_tlsf.c.obj",
+            "memory_layout.c.obj",
+            "memory_layout_utils.c.obj",
+            "multi_heap.c.obj",
+            "multi_heap_poisoning.c.obj"
+          ],
+          "retained_bytes": 10764,
+          "retained_nobits_bytes": 8
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libxtensa.a",
+          "sha256": "42eda0b774a63e71e4b3b4ea983aa2a45374779eae270786272d93cfc30f1293",
+          "archive": "libxtensa.a",
+          "members": [
+            "xtensa_intr.c.obj",
+            "xtensa_intr_asm.S.obj"
+          ],
+          "retained_bytes": 1250,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_timer.a",
+          "sha256": "b09bd4231f011c0dc6f09900aa05f6df48f237d34b78965c746f777f5e9fc7bc",
+          "archive": "libesp_timer.a",
+          "members": [
+            "esp_timer.c.obj",
+            "esp_timer_impl_systimer.c.obj",
+            "system_time.c.obj"
+          ],
+          "retained_bytes": 1371,
+          "retained_nobits_bytes": 28
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libnewlib.a",
+          "sha256": "dbac7546c93c387a82f3a83cf6985468ad0c26177c391251bde37dac7725511f",
+          "archive": "libnewlib.a",
+          "members": [
+            "abort.c.obj",
+            "assert.c.obj",
+            "esp_time_impl.c.obj",
+            "heap.c.obj",
+            "locks.c.obj",
+            "newlib_init.c.obj",
+            "pthread.c.obj",
+            "reent_init.c.obj",
+            "syscalls.c.obj",
+            "time.c.obj"
+          ],
+          "retained_bytes": 3054,
+          "retained_nobits_bytes": 440
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_ipc.a",
+          "sha256": "2bdbbe5e2669143738b2bbd89203eda25476960b5d4f6ce15c512513ae36fcc5",
+          "archive": "libesp_ipc.a",
+          "members": [
+            "esp_ipc.c.obj",
+            "esp_ipc_isr.c.obj",
+            "esp_ipc_isr_handler.S.obj",
+            "esp_ipc_isr_routines.S.obj"
+          ],
+          "retained_bytes": 1413,
+          "retained_nobits_bytes": 88
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_event.a",
+          "sha256": "32b0bdae4f59c6f09fab85c221cd459b4a44567ca4ad753807f9f7172eac70b2",
+          "archive": "libesp_event.a",
+          "members": [
+            "esp_event.c.obj"
+          ],
+          "retained_bytes": 596,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_ringbuf.a",
+          "sha256": "71dedf0f14aa64031c973b73279a88f9c4ec83ccfef331fe01e3532183cafc8c",
+          "archive": "libesp_ringbuf.a",
+          "members": [
+            "ringbuf.c.obj"
+          ],
+          "retained_bytes": 6175,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/liblog.a",
+          "sha256": "6ebbc908c98f6dca8a03533e95877d217b21a8a7777bfe0cded98dc228f4a2fc",
+          "archive": "liblog.a",
+          "members": [
+            "log.c.obj",
+            "log_freertos.c.obj"
+          ],
+          "retained_bytes": 1030,
+          "retained_nobits_bytes": 272
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/lib6db/librtc.a",
+          "sha256": "477216e3a11085eaf2438fe7bf43ab57ec4e14ba96e7cde9ecde9f2b18d10739",
+          "archive": "librtc.a",
+          "members": [
+            "RTC_DS3231.cpp.o",
+            "RTC_PCF8563.cpp.o",
+            "RTClib.cpp.o"
+          ],
+          "retained_bytes": 2484,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_phy.a",
+          "sha256": "b63a6ce02ad6490c3351964f2d901c2d468f3865a7d64187a287ae66eba7b3e1",
+          "archive": "libesp_phy.a",
+          "members": [
+            "lib_printf.c.obj",
+            "phy_init.c.obj",
+            "phy_override.c.obj"
+          ],
+          "retained_bytes": 218,
+          "retained_nobits_bytes": 2
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libespcoredump.a",
+          "sha256": "8f8b9e9d1e7853232b113cff78c0e62f8939fc4026abd190512134d985695392",
+          "archive": "libespcoredump.a",
+          "members": [
+            "core_dump_checksum.c.obj",
+            "core_dump_common.c.obj",
+            "core_dump_elf.c.obj",
+            "core_dump_flash.c.obj",
+            "core_dump_port.c.obj"
+          ],
+          "retained_bytes": 11373,
+          "retained_nobits_bytes": 2116
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/ld/libphy.a",
+          "sha256": "c8f6c6821c7e8e28c97f3a797e322d9987a0f3fd5f5da5e971ab0111ba513160",
+          "archive": "libphy.a",
+          "members": [
+            "phy_api.o",
+            "phy_hw_freq.o",
+            "phy_i2c.o",
+            "phy_init.o",
+            "phy_reg.o",
+            "phy_rfpll.o"
+          ],
+          "retained_bytes": 7026,
+          "retained_nobits_bytes": 4
+        },
+        {
+          "path": "packages/compiler/lib/gcc/xtensa-esp32s3-elf/8.4.0/no-rtti/libgcc.a",
+          "sha256": "c07c00fdc56ce449f8051f3bbaa4e5b870e7dea7bf433b67609e0d06edaa6150",
+          "archive": "libgcc.a",
+          "members": [
+            "_divdi3.o",
+            "_moddi3.o",
+            "_udivdi3.o",
+            "_umoddi3.o",
+            "lib2funcs.o",
+            "unwind-dw2-fde.o",
+            "unwind-dw2-xtensa.o"
+          ],
+          "retained_bytes": 6410,
+          "retained_nobits_bytes": 12
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libxt_hal.a",
+          "sha256": "4823e6c657199a6726f3163f15e1222edb85a8a33eeaafd2aad0cc06150cc4ec",
+          "archive": "libxt_hal.a",
+          "members": [
+            "interrupts--intlevel.o",
+            "state_asm--restore_extra_nw.o",
+            "state_asm--save_extra_nw.o",
+            "windowspill_asm.o"
+          ],
+          "retained_bytes": 437,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/lib98a/libPreferences.a",
+          "sha256": "dc160d9f9e5d1dd3971fea99a5092c54fe235cc5b5adac861509e835288b9a34",
+          "archive": "libPreferences.a",
+          "members": [
+            "Preferences.cpp.o"
+          ],
+          "retained_bytes": 2171,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/lib631/libradiolib.a",
+          "sha256": "0315eb803a0b7f5727e03954ce42b635c23ed6b97d46ae11ea947e07c5315cdb",
+          "archive": "libradiolib.a",
+          "members": [
+            "ArduinoHal.cpp.o",
+            "CRC.cpp.o",
+            "ConvCode.cpp.o",
+            "Hal.cpp.o",
+            "Module.cpp.o",
+            "PhysicalLayer.cpp.o",
+            "SX1262.cpp.o",
+            "SX126x.cpp.o",
+            "SX126x_LR_FHSS.cpp.o",
+            "SX126x_commands.cpp.o",
+            "SX126x_config.cpp.o",
+            "Utils.cpp.o"
+          ],
+          "retained_bytes": 24978,
+          "retained_nobits_bytes": 26
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libvfs.a",
+          "sha256": "b70865ab418f4f4cc516e234e0011e975164f70b3282df197fd325b061308ed9",
+          "archive": "libvfs.a",
+          "members": [
+            "vfs.c.obj",
+            "vfs_console.c.obj",
+            "vfs_uart.c.obj",
+            "vfs_usb_serial_jtag.c.obj"
+          ],
+          "retained_bytes": 7470,
+          "retained_nobits_bytes": 64
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libefuse.a",
+          "sha256": "c65c8266bfa4170e534f9e3a9c744566f09f1f8e71da6bdf60ce9488be5a1ff2",
+          "archive": "libefuse.a",
+          "members": [
+            "esp_efuse_api.c.obj",
+            "esp_efuse_rtc_calib.c.obj",
+            "esp_efuse_table.c.obj",
+            "esp_efuse_utility.c.obj"
+          ],
+          "retained_bytes": 2527,
+          "retained_nobits_bytes": 4
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libcoexist.a",
+          "sha256": "0c61713a461511973e0d4270bcf6c75587fb5da361f0636c8346c960516ef05a",
+          "archive": "libcoexist.a",
+          "members": [
+            "coexist_api.o",
+            "coexist_core.o",
+            "coexist_param.o",
+            "coexist_scheme.o"
+          ],
+          "retained_bytes": 1242,
+          "retained_nobits_bytes": 33
+        },
+        {
+          "path": "packages/compiler/xtensa-esp32s3-elf/lib/no-rtti/libstdc++.a",
+          "sha256": "46cbd877255439cee2b048b42b1fda0612e54180d88ede86f489e61a5cec103c",
+          "archive": "libstdc++.a",
+          "members": [
+            "bad_alloc.o",
+            "class_type_info.o",
+            "del_op.o",
+            "del_ops.o",
+            "del_opv.o",
+            "del_opvnt.o",
+            "eh_alloc.o",
+            "eh_aux_runtime.o",
+            "eh_call.o",
+            "eh_catch.o",
+            "eh_exception.o",
+            "eh_globals.o",
+            "eh_personality.o",
+            "eh_term_handler.o",
+            "eh_terminate.o",
+            "eh_throw.o",
+            "eh_unex_handler.o",
+            "new_handler.o",
+            "new_op.o",
+            "new_opnt.o",
+            "new_opv.o",
+            "new_opvnt.o",
+            "pure.o",
+            "si_class_type_info.o",
+            "tinfo.o"
+          ],
+          "retained_bytes": 5779,
+          "retained_nobits_bytes": 36
+        },
+        {
+          "path": "packages/compiler/xtensa-esp32s3-elf/lib/no-rtti/libc.a",
+          "sha256": "b8b1e4a6c23f42c32bbf48dbc50b35cbd8e7d62afdcbb497096280b2c6826d58",
+          "archive": "libc.a",
+          "members": [
+            "lib_a-ctype_.o",
+            "lib_a-dtoa.o",
+            "lib_a-environ.o",
+            "lib_a-envlock.o",
+            "lib_a-errno.o",
+            "lib_a-fclose.o",
+            "lib_a-fflush.o",
+            "lib_a-findfp.o",
+            "lib_a-flags.o",
+            "lib_a-fopen.o",
+            "lib_a-fseek.o",
+            "lib_a-fseeko.o",
+            "lib_a-ftello.o",
+            "lib_a-fvwrite.o",
+            "lib_a-fwalk.o",
+            "lib_a-getenv_r.o",
+            "lib_a-gettzinfo.o",
+            "lib_a-gmtime.o",
+            "lib_a-gmtime_r.o",
+            "lib_a-iswspace.o",
+            "lib_a-iswspace_l.o",
+            "lib_a-locale.o",
+            "lib_a-localeconv.o",
+            "lib_a-makebuf.o",
+            "lib_a-mbrtowc.o",
+            "lib_a-mbtowc_r.o",
+            "lib_a-mktime.o",
+            "lib_a-month_lengths.o",
+            "lib_a-mprec.o",
+            "lib_a-printf.o",
+            "lib_a-puts.o",
+            "lib_a-reent.o",
+            "lib_a-refill.o",
+            "lib_a-s_frexp.o",
+            "lib_a-sccl.o",
+            "lib_a-siscanf.o",
+            "lib_a-snprintf.o",
+            "lib_a-stdio.o",
+            "lib_a-strtol.o",
+            "lib_a-strtoll.o",
+            "lib_a-strtoul.o",
+            "lib_a-strtoull.o",
+            "lib_a-svfiprintf.o",
+            "lib_a-svfiscanf.o",
+            "lib_a-svfprintf.o",
+            "lib_a-sysgettod.o",
+            "lib_a-time.o",
+            "lib_a-tzcalc_limits.o",
+            "lib_a-tzlock.o",
+            "lib_a-tzset.o",
+            "lib_a-tzset_r.o",
+            "lib_a-tzvars.o",
+            "lib_a-ungetc.o",
+            "lib_a-vfiprintf.o",
+            "lib_a-vfprintf.o",
+            "lib_a-vprintf.o",
+            "lib_a-vsnprintf.o",
+            "lib_a-wctomb_r.o",
+            "lib_a-wsetup.o"
+          ],
+          "retained_bytes": 78657,
+          "retained_nobits_bytes": 38
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libbt.a",
+          "sha256": "48fe8a1427a6476e2a8671bc893bd0e346d1658f3714b97d25ca091487748365",
+          "archive": "libbt.a",
+          "members": [
+            "bt.c.obj"
+          ],
+          "retained_bytes": 367,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libmbedcrypto.a",
+          "sha256": "abdaf759ee17aa697468427b55a86c6c0082ac4cdeb643a63d8b3ac2df324633",
+          "archive": "libmbedcrypto.a",
+          "members": [
+            "esp_crypto_shared_gdma.c.obj",
+            "esp_sha256.c.obj",
+            "esp_sha_gdma_impl.c.obj",
+            "sha.c.obj",
+            "sha256.c.obj"
+          ],
+          "retained_bytes": 2130,
+          "retained_nobits_bytes": 8
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/lib3dd/libcrypto.a",
+          "sha256": "c240b7f25757a591b33d942f29f1c8159e880974dadfd209f15e73f24f575177",
+          "archive": "libcrypto.a",
+          "members": [
+            "AESEsp32.cpp.o",
+            "ChaCha.cpp.o",
+            "Crypto.cpp.o",
+            "Curve25519.cpp.o",
+            "Ed25519.cpp.o",
+            "Hash.cpp.o",
+            "RNG.cpp.o",
+            "SHA256.cpp.o",
+            "SHA512.cpp.o"
+          ],
+          "retained_bytes": 1852,
+          "retained_nobits_bytes": 160
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/lib5a1/libWire.a",
+          "sha256": "27da3113f1f5fb156640b5b2fec41ef0a1811e9b2acae0af99abcf209afe8c33",
+          "archive": "libWire.a",
+          "members": [
+            "Wire.cpp.o"
+          ],
+          "retained_bytes": 4667,
+          "retained_nobits_bytes": 152
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/lib211/libSPI.a",
+          "sha256": "f9dd27ca6d1da9b6e3c3808c788d274cce6058d513391d23e09428f5378728ec",
+          "archive": "libSPI.a",
+          "members": [
+            "SPI.cpp.o"
+          ],
+          "retained_bytes": 1370,
+          "retained_nobits_bytes": 32
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libnvs_flash.a",
+          "sha256": "f4163a6e3bb66867d06c5e7f33226f1941f123b77f358cc02e30021b1a2bf983",
+          "archive": "libnvs_flash.a",
+          "members": [
+            "nvs_api.cpp.obj",
+            "nvs_handle_simple.cpp.obj",
+            "nvs_item_hash_list.cpp.obj",
+            "nvs_page.cpp.obj",
+            "nvs_pagemanager.cpp.obj",
+            "nvs_partition.cpp.obj",
+            "nvs_partition_lookup.cpp.obj",
+            "nvs_partition_manager.cpp.obj",
+            "nvs_storage.cpp.obj",
+            "nvs_types.cpp.obj"
+          ],
+          "retained_bytes": 15821,
+          "retained_nobits_bytes": 24
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_diagnostics.a",
+          "sha256": "69f28fb584e5a44cab0739d53679e78304e45d42ebd76f3e12eb8cf5d973007a",
+          "archive": "libesp_diagnostics.a",
+          "members": [
+            "esp_diagnostics_log_hook.c.obj",
+            "esp_diagnostics_utils.c.obj"
+          ],
+          "retained_bytes": 2077,
+          "retained_nobits_bytes": 16
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_pm.a",
+          "sha256": "60529aeaf1cd94b41983383ceec240d1f43256f86faf8d9357f9e7d6050d9191",
+          "archive": "libesp_pm.a",
+          "members": [
+            "pm_impl.c.obj"
+          ],
+          "retained_bytes": 30,
+          "retained_nobits_bytes": 4
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/lib3ec/libcayenne.a",
+          "sha256": "3fd2787071b9d6ee99fb780b5f156c914536c045cbac68a95e0b521510f3e191",
+          "archive": "libcayenne.a",
+          "members": [
+            "CayenneLPP.cpp.o"
+          ],
+          "retained_bytes": 607,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_common.a",
+          "sha256": "aa3b7a5f964bc7c7bfae623e64b15b695db268dd704b1fa7f967dad519f67b5f",
+          "archive": "libesp_common.a",
+          "members": [
+            "esp_err_to_name.c.obj"
+          ],
+          "retained_bytes": 7512,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/compiler/xtensa-esp32s3-elf/lib/no-rtti/libm.a",
+          "sha256": "64ced61f0cb9cd94f60f6a2bf307284e6e6a1de0dd99a4e18c579dd645dba178",
+          "archive": "libm.a",
+          "members": [
+            "lib_a-sf_ceil.o",
+            "lib_a-sf_floor.o"
+          ],
+          "retained_bytes": 322,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/lib8df/libbusio.a",
+          "sha256": "045a0a3a544473ea2e2815218fb72f1788ee71f46bf41900050a22dd60f03217",
+          "archive": "libbusio.a",
+          "members": [
+            "Adafruit_I2CDevice.cpp.o"
+          ],
+          "retained_bytes": 537,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/lib996/librv3028.a",
+          "sha256": "815f4280981856dcccc155a80652ab645716cd28a5dc18934b37dc1986b2f115",
+          "archive": "librv3028.a",
+          "members": [
+            "Melopero_RV3028.cpp.o"
+          ],
+          "retained_bytes": 1710,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libcxx.a",
+          "sha256": "295951e87b7152a7364d45f5435ac24408a80dbe32fedf326e97edda8fc60412",
+          "archive": "libcxx.a",
+          "members": [
+            "cxx_guards.cpp.obj"
+          ],
+          "retained_bytes": 117,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libsoc.a",
+          "sha256": "a484ab659effaaecbd5fe75d20d4ef293e1a54de5034f10add071d597c7fae45",
+          "archive": "libsoc.a",
+          "members": [
+            "adc_periph.c.obj",
+            "gdma_periph.c.obj",
+            "gpio_periph.c.obj",
+            "i2c_periph.c.obj",
+            "ledc_periph.c.obj",
+            "rtc_io_periph.c.obj",
+            "touch_sensor_periph.c.obj"
+          ],
+          "retained_bytes": 1833,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "project/.pio/build/mtbench_heltec_v4/lib064/libFS.a",
+          "sha256": "a6837192a1574aaff1b8a9a7a1c44375cc8793af308b2b09d82921978c33f03c",
+          "archive": "libFS.a",
+          "members": [
+            "FS.cpp.o"
+          ],
+          "retained_bytes": 880,
+          "retained_nobits_bytes": 0
+        }
+      ]
+    },
+    {
+      "target": "mtbench_xiao_s3_wio",
+      "elf_sha256": "3a25cb9d5e12b1698433e2cc13f9690ab886a61337da6b1dc9a824970b01a184",
+      "map_sha256": "99702fa6565f0a3566a82ea8b3f662fd32cb7dac98127af005297badd636f003",
+      "allocated_rows": 4266,
+      "archives": [
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/qio_opi/libesp_hw_support.a",
+          "sha256": "a350af1d93e08a84d7b48dffc48e10cd39a884953b60f349951aed0b0a43f3e8",
+          "archive": "libesp_hw_support.a",
+          "members": [
+            "chip_info.c.obj",
+            "clk_ctrl_os.c.obj",
+            "compare_set.c.obj",
+            "cpu_util.c.obj",
+            "dport_access.c.obj",
+            "esp_clk.c.obj",
+            "esp_crypto_lock.c.obj",
+            "hw_random.c.obj",
+            "intr_alloc.c.obj",
+            "mac_addr.c.obj",
+            "opiram_psram.c.obj",
+            "regi2c_ctrl.c.obj",
+            "rtc_clk.c.obj",
+            "rtc_init.c.obj",
+            "rtc_sleep.c.obj",
+            "rtc_time.c.obj",
+            "sar_periph_ctrl.c.obj",
+            "sleep_console.c.obj",
+            "sleep_gpio.c.obj",
+            "sleep_modes.c.obj",
+            "sleep_retention.c.obj",
+            "spiram.c.obj"
+          ],
+          "retained_bytes": 20277,
+          "retained_nobits_bytes": 79
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/qio_opi/libfreertos.a",
+          "sha256": "258c4cc7c1d878cfb2a0a5a76344e4b4e8db326da95b4471f99430c8557c82f8",
+          "archive": "libfreertos.a",
+          "members": [
+            "FreeRTOS-openocd.c.obj",
+            "list.c.obj",
+            "port.c.obj",
+            "port_common.c.obj",
+            "port_systick.c.obj",
+            "portasm.S.obj",
+            "queue.c.obj",
+            "task_snapshot.c.obj",
+            "tasks.c.obj",
+            "xtensa_context.S.obj",
+            "xtensa_vector_defaults.S.obj",
+            "xtensa_vectors.S.obj"
+          ],
+          "retained_bytes": 23811,
+          "retained_nobits_bytes": 749
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/libFrameworkArduino.a",
+          "sha256": "eb6e3e06e21bcc90b1dc52971c6592822ba85cd0cb3e5eca05a9becb34c02531",
+          "archive": "libFrameworkArduino.a",
+          "members": [
+            "Esp.cpp.o",
+            "FunctionalInterrupt.cpp.o",
+            "HWCDC.cpp.o",
+            "MD5Builder.cpp.o",
+            "Print.cpp.o",
+            "Stream.cpp.o",
+            "WMath.cpp.o",
+            "WString.cpp.o",
+            "esp32-hal-bt.c.o",
+            "esp32-hal-cpu.c.o",
+            "esp32-hal-gpio.c.o",
+            "esp32-hal-i2c-slave.c.o",
+            "esp32-hal-i2c.c.o",
+            "esp32-hal-ledc.c.o",
+            "esp32-hal-matrix.c.o",
+            "esp32-hal-misc.c.o",
+            "esp32-hal-psram.c.o",
+            "esp32-hal-spi.c.o",
+            "esp32-hal-uart.c.o",
+            "main.cpp.o",
+            "wiring_pulse.c.o"
+          ],
+          "retained_bytes": 19025,
+          "retained_nobits_bytes": 895
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libdriver.a",
+          "sha256": "b8ab992d477263dba3306c057af7cb08f2808a22bc6aeec668c3a0d20e189773",
+          "archive": "libdriver.a",
+          "members": [
+            "gdma.c.obj",
+            "gpio.c.obj",
+            "i2c.c.obj",
+            "ledc.c.obj",
+            "periph_ctrl.c.obj",
+            "rtc_io.c.obj",
+            "rtc_module.c.obj",
+            "rtc_tempsensor.c.obj",
+            "spi_bus_lock.c.obj",
+            "uart.c.obj"
+          ],
+          "retained_bytes": 26703,
+          "retained_nobits_bytes": 106
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libapp_update.a",
+          "sha256": "63b0e765f044b9c4f58e8b4c5643daa902bb243210747e8b1df88c67c4520f9d",
+          "archive": "libapp_update.a",
+          "members": [
+            "esp_app_desc.c.obj",
+            "esp_ota_ops.c.obj"
+          ],
+          "retained_bytes": 1903,
+          "retained_nobits_bytes": 12
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/qio_opi/libbootloader_support.a",
+          "sha256": "569a073995d954de64877037de9f211c9f711d3bbe4755b316f8bcf6aab3fc6d",
+          "archive": "libbootloader_support.a",
+          "members": [
+            "bootloader_common_loader.c.obj",
+            "bootloader_flash.c.obj",
+            "bootloader_flash_config_esp32s3.c.obj",
+            "bootloader_mem.c.obj",
+            "bootloader_sha.c.obj",
+            "bootloader_utility.c.obj",
+            "esp_image_format.c.obj"
+          ],
+          "retained_bytes": 4153,
+          "retained_nobits_bytes": 4
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/qio_opi/libspi_flash.a",
+          "sha256": "5a03c3a60664351698feaa706dd690a3894ff01f714443a3cdb2950e4f8cf623",
+          "archive": "libspi_flash.a",
+          "members": [
+            "cache_utils.c.obj",
+            "esp_flash_api.c.obj",
+            "esp_flash_spi_init.c.obj",
+            "flash_mmap.c.obj",
+            "flash_ops.c.obj",
+            "memspi_host_driver.c.obj",
+            "partition.c.obj",
+            "spi_flash_chip_boya.c.obj",
+            "spi_flash_chip_drivers.c.obj",
+            "spi_flash_chip_gd.c.obj",
+            "spi_flash_chip_generic.c.obj",
+            "spi_flash_chip_issi.c.obj",
+            "spi_flash_chip_mxic.c.obj",
+            "spi_flash_chip_mxic_opi.c.obj",
+            "spi_flash_chip_th.c.obj",
+            "spi_flash_chip_winbond.c.obj",
+            "spi_flash_hpm_enable.c.obj",
+            "spi_flash_os_func_app.c.obj",
+            "spi_flash_os_func_noos.c.obj",
+            "spi_flash_timing_tuning.c.obj",
+            "spi_timing_config.c.obj"
+          ],
+          "retained_bytes": 18876,
+          "retained_nobits_bytes": 553
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libpthread.a",
+          "sha256": "c99c47275fdf44c290e154b83b16cc0a62427a82d2875409e0eafe2945088ab1",
+          "archive": "libpthread.a",
+          "members": [
+            "pthread.c.obj",
+            "pthread_cond_var.c.obj",
+            "pthread_local_storage.c.obj",
+            "pthread_rwlock.c.obj"
+          ],
+          "retained_bytes": 1573,
+          "retained_nobits_bytes": 12
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/qio_opi/libesp_system.a",
+          "sha256": "e618e0fc82ba95afd3d556cd9d76e8e4c2e3159f257947a7810ff7076afd92bb",
+          "archive": "libesp_system.a",
+          "members": [
+            "apb_backup_dma.c.obj",
+            "brownout.c.obj",
+            "cache_err_int.c.obj",
+            "clk.c.obj",
+            "cpu_start.c.obj",
+            "crosscore_int.c.obj",
+            "debug_helpers.c.obj",
+            "debug_helpers_asm.S.obj",
+            "esp_err.c.obj",
+            "esp_system.c.obj",
+            "freertos_hooks.c.obj",
+            "highint_hdl.S.obj",
+            "int_wdt.c.obj",
+            "panic.c.obj",
+            "panic_arch.c.obj",
+            "panic_handler.c.obj",
+            "panic_handler_asm.S.obj",
+            "reset_reason.c.obj",
+            "stack_check.c.obj",
+            "startup.c.obj",
+            "system_internal.c.obj",
+            "task_wdt.c.obj",
+            "ubsan.c.obj"
+          ],
+          "retained_bytes": 13391,
+          "retained_nobits_bytes": 259
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_rom.a",
+          "sha256": "fd3ad8b4552687a2722288fdf8069e43ab01440196dbf3cd6c77cb994be2fbd6",
+          "archive": "libesp_rom.a",
+          "members": [
+            "esp_rom_cache.c.obj",
+            "esp_rom_cache_writeback_esp32s3.S.obj",
+            "esp_rom_mmap.c.obj",
+            "esp_rom_sys.c.obj",
+            "esp_rom_uart.c.obj"
+          ],
+          "retained_bytes": 675,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libhal.a",
+          "sha256": "ba8f1f141062b0b567029d0bf21ed4981426870f8ae2d33ba1bfd91d32bf5fc7",
+          "archive": "libhal.a",
+          "members": [
+            "brownout_hal.c.obj",
+            "cpu_hal.c.obj",
+            "efuse_hal.c.obj",
+            "gdma_hal.c.obj",
+            "gpio_hal.c.obj",
+            "i2c_hal.c.obj",
+            "i2c_hal_iram.c.obj",
+            "interrupt_controller_hal.c.obj",
+            "interrupt_descriptor_table.c.obj",
+            "ledc_hal.c.obj",
+            "ledc_hal_iram.c.obj",
+            "mpu_hal.c.obj",
+            "rtc_cntl_hal.c.obj",
+            "sha_hal.c.obj",
+            "soc_hal.c.obj",
+            "spi_flash_encrypt_hal_iram.c.obj",
+            "spi_flash_hal.c.obj",
+            "spi_flash_hal_gpspi.c.obj",
+            "spi_flash_hal_iram.c.obj",
+            "systimer_hal.c.obj",
+            "touch_sensor_hal.c.obj",
+            "uart_hal.c.obj",
+            "uart_hal_iram.c.obj",
+            "wdt_hal_iram.c.obj"
+          ],
+          "retained_bytes": 12750,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_wifi.a",
+          "sha256": "cb06edb694b149bed9b9691be7942281549868e5e59624036da4ccaeb7d72175",
+          "archive": "libesp_wifi.a",
+          "members": [
+            "esp_adapter.c.obj",
+            "wifi_init.c.obj"
+          ],
+          "retained_bytes": 382,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libheap.a",
+          "sha256": "8108f23266178230dc27c03ac62b538a990a2a90d638503e3a1f3c482ea41513",
+          "archive": "libheap.a",
+          "members": [
+            "heap_caps.c.obj",
+            "heap_caps_init.c.obj",
+            "heap_tlsf.c.obj",
+            "memory_layout.c.obj",
+            "memory_layout_utils.c.obj",
+            "multi_heap.c.obj",
+            "multi_heap_poisoning.c.obj"
+          ],
+          "retained_bytes": 10764,
+          "retained_nobits_bytes": 8
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libxtensa.a",
+          "sha256": "42eda0b774a63e71e4b3b4ea983aa2a45374779eae270786272d93cfc30f1293",
+          "archive": "libxtensa.a",
+          "members": [
+            "xtensa_intr.c.obj",
+            "xtensa_intr_asm.S.obj"
+          ],
+          "retained_bytes": 1250,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_timer.a",
+          "sha256": "b09bd4231f011c0dc6f09900aa05f6df48f237d34b78965c746f777f5e9fc7bc",
+          "archive": "libesp_timer.a",
+          "members": [
+            "esp_timer.c.obj",
+            "esp_timer_impl_systimer.c.obj",
+            "system_time.c.obj"
+          ],
+          "retained_bytes": 1371,
+          "retained_nobits_bytes": 28
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libnewlib.a",
+          "sha256": "dbac7546c93c387a82f3a83cf6985468ad0c26177c391251bde37dac7725511f",
+          "archive": "libnewlib.a",
+          "members": [
+            "abort.c.obj",
+            "assert.c.obj",
+            "esp_time_impl.c.obj",
+            "heap.c.obj",
+            "locks.c.obj",
+            "newlib_init.c.obj",
+            "pthread.c.obj",
+            "reent_init.c.obj",
+            "syscalls.c.obj",
+            "time.c.obj"
+          ],
+          "retained_bytes": 3054,
+          "retained_nobits_bytes": 440
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_ipc.a",
+          "sha256": "2bdbbe5e2669143738b2bbd89203eda25476960b5d4f6ce15c512513ae36fcc5",
+          "archive": "libesp_ipc.a",
+          "members": [
+            "esp_ipc.c.obj",
+            "esp_ipc_isr.c.obj",
+            "esp_ipc_isr_handler.S.obj",
+            "esp_ipc_isr_routines.S.obj"
+          ],
+          "retained_bytes": 1409,
+          "retained_nobits_bytes": 88
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_event.a",
+          "sha256": "32b0bdae4f59c6f09fab85c221cd459b4a44567ca4ad753807f9f7172eac70b2",
+          "archive": "libesp_event.a",
+          "members": [
+            "esp_event.c.obj"
+          ],
+          "retained_bytes": 596,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_ringbuf.a",
+          "sha256": "71dedf0f14aa64031c973b73279a88f9c4ec83ccfef331fe01e3532183cafc8c",
+          "archive": "libesp_ringbuf.a",
+          "members": [
+            "ringbuf.c.obj"
+          ],
+          "retained_bytes": 6175,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/liblog.a",
+          "sha256": "6ebbc908c98f6dca8a03533e95877d217b21a8a7777bfe0cded98dc228f4a2fc",
+          "archive": "liblog.a",
+          "members": [
+            "log.c.obj",
+            "log_freertos.c.obj"
+          ],
+          "retained_bytes": 1030,
+          "retained_nobits_bytes": 272
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/lib6db/librtc.a",
+          "sha256": "5a13c79f9c84b829097d4d6a4ed7ba8ff5a4077b12e0b753ee1f007461b9b6e4",
+          "archive": "librtc.a",
+          "members": [
+            "RTC_DS3231.cpp.o",
+            "RTC_PCF8563.cpp.o",
+            "RTClib.cpp.o"
+          ],
+          "retained_bytes": 2484,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_phy.a",
+          "sha256": "b63a6ce02ad6490c3351964f2d901c2d468f3865a7d64187a287ae66eba7b3e1",
+          "archive": "libesp_phy.a",
+          "members": [
+            "lib_printf.c.obj",
+            "phy_init.c.obj",
+            "phy_override.c.obj"
+          ],
+          "retained_bytes": 218,
+          "retained_nobits_bytes": 2
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libespcoredump.a",
+          "sha256": "8f8b9e9d1e7853232b113cff78c0e62f8939fc4026abd190512134d985695392",
+          "archive": "libespcoredump.a",
+          "members": [
+            "core_dump_checksum.c.obj",
+            "core_dump_common.c.obj",
+            "core_dump_elf.c.obj",
+            "core_dump_flash.c.obj",
+            "core_dump_port.c.obj"
+          ],
+          "retained_bytes": 11373,
+          "retained_nobits_bytes": 2116
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/ld/libphy.a",
+          "sha256": "c8f6c6821c7e8e28c97f3a797e322d9987a0f3fd5f5da5e971ab0111ba513160",
+          "archive": "libphy.a",
+          "members": [
+            "phy_api.o",
+            "phy_hw_freq.o",
+            "phy_i2c.o",
+            "phy_init.o",
+            "phy_reg.o",
+            "phy_rfpll.o"
+          ],
+          "retained_bytes": 7022,
+          "retained_nobits_bytes": 4
+        },
+        {
+          "path": "packages/compiler/lib/gcc/xtensa-esp32s3-elf/8.4.0/no-rtti/libgcc.a",
+          "sha256": "c07c00fdc56ce449f8051f3bbaa4e5b870e7dea7bf433b67609e0d06edaa6150",
+          "archive": "libgcc.a",
+          "members": [
+            "_divdi3.o",
+            "_moddi3.o",
+            "_udivdi3.o",
+            "_umoddi3.o",
+            "lib2funcs.o",
+            "unwind-dw2-fde.o",
+            "unwind-dw2-xtensa.o"
+          ],
+          "retained_bytes": 6410,
+          "retained_nobits_bytes": 12
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libxt_hal.a",
+          "sha256": "4823e6c657199a6726f3163f15e1222edb85a8a33eeaafd2aad0cc06150cc4ec",
+          "archive": "libxt_hal.a",
+          "members": [
+            "interrupts--intlevel.o",
+            "state_asm--restore_extra_nw.o",
+            "state_asm--save_extra_nw.o",
+            "windowspill_asm.o"
+          ],
+          "retained_bytes": 437,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/lib98a/libPreferences.a",
+          "sha256": "c6192931c4a986f6057114da7f698482f8131475347a51f0e19370696b966dfa",
+          "archive": "libPreferences.a",
+          "members": [
+            "Preferences.cpp.o"
+          ],
+          "retained_bytes": 2171,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/lib631/libradiolib.a",
+          "sha256": "33abafb33bc82957bf3d70718a2fc2cbf5559c7148f86dde67fed86d1f09222c",
+          "archive": "libradiolib.a",
+          "members": [
+            "ArduinoHal.cpp.o",
+            "CRC.cpp.o",
+            "ConvCode.cpp.o",
+            "Hal.cpp.o",
+            "Module.cpp.o",
+            "PhysicalLayer.cpp.o",
+            "SX1262.cpp.o",
+            "SX126x.cpp.o",
+            "SX126x_LR_FHSS.cpp.o",
+            "SX126x_commands.cpp.o",
+            "SX126x_config.cpp.o",
+            "Utils.cpp.o"
+          ],
+          "retained_bytes": 25224,
+          "retained_nobits_bytes": 34
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libvfs.a",
+          "sha256": "b70865ab418f4f4cc516e234e0011e975164f70b3282df197fd325b061308ed9",
+          "archive": "libvfs.a",
+          "members": [
+            "vfs.c.obj",
+            "vfs_console.c.obj",
+            "vfs_uart.c.obj",
+            "vfs_usb_serial_jtag.c.obj"
+          ],
+          "retained_bytes": 7470,
+          "retained_nobits_bytes": 64
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libcxx.a",
+          "sha256": "295951e87b7152a7364d45f5435ac24408a80dbe32fedf326e97edda8fc60412",
+          "archive": "libcxx.a",
+          "members": [
+            "cxx_guards.cpp.obj"
+          ],
+          "retained_bytes": 871,
+          "retained_nobits_bytes": 16
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libefuse.a",
+          "sha256": "c65c8266bfa4170e534f9e3a9c744566f09f1f8e71da6bdf60ce9488be5a1ff2",
+          "archive": "libefuse.a",
+          "members": [
+            "esp_efuse_api.c.obj",
+            "esp_efuse_rtc_calib.c.obj",
+            "esp_efuse_table.c.obj",
+            "esp_efuse_utility.c.obj"
+          ],
+          "retained_bytes": 1991,
+          "retained_nobits_bytes": 4
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libcoexist.a",
+          "sha256": "0c61713a461511973e0d4270bcf6c75587fb5da361f0636c8346c960516ef05a",
+          "archive": "libcoexist.a",
+          "members": [
+            "coexist_api.o",
+            "coexist_core.o",
+            "coexist_param.o",
+            "coexist_scheme.o"
+          ],
+          "retained_bytes": 1242,
+          "retained_nobits_bytes": 33
+        },
+        {
+          "path": "packages/compiler/xtensa-esp32s3-elf/lib/no-rtti/libstdc++.a",
+          "sha256": "46cbd877255439cee2b048b42b1fda0612e54180d88ede86f489e61a5cec103c",
+          "archive": "libstdc++.a",
+          "members": [
+            "bad_alloc.o",
+            "class_type_info.o",
+            "del_op.o",
+            "del_ops.o",
+            "del_opv.o",
+            "del_opvnt.o",
+            "eh_alloc.o",
+            "eh_aux_runtime.o",
+            "eh_call.o",
+            "eh_catch.o",
+            "eh_exception.o",
+            "eh_globals.o",
+            "eh_personality.o",
+            "eh_term_handler.o",
+            "eh_terminate.o",
+            "eh_throw.o",
+            "eh_unex_handler.o",
+            "new_handler.o",
+            "new_op.o",
+            "new_opnt.o",
+            "new_opv.o",
+            "new_opvnt.o",
+            "pure.o",
+            "si_class_type_info.o",
+            "tinfo.o"
+          ],
+          "retained_bytes": 5779,
+          "retained_nobits_bytes": 36
+        },
+        {
+          "path": "packages/compiler/xtensa-esp32s3-elf/lib/no-rtti/libc.a",
+          "sha256": "b8b1e4a6c23f42c32bbf48dbc50b35cbd8e7d62afdcbb497096280b2c6826d58",
+          "archive": "libc.a",
+          "members": [
+            "lib_a-ctype_.o",
+            "lib_a-dtoa.o",
+            "lib_a-environ.o",
+            "lib_a-envlock.o",
+            "lib_a-errno.o",
+            "lib_a-fclose.o",
+            "lib_a-fflush.o",
+            "lib_a-findfp.o",
+            "lib_a-flags.o",
+            "lib_a-fopen.o",
+            "lib_a-fseek.o",
+            "lib_a-fseeko.o",
+            "lib_a-ftello.o",
+            "lib_a-fvwrite.o",
+            "lib_a-fwalk.o",
+            "lib_a-getenv_r.o",
+            "lib_a-gettzinfo.o",
+            "lib_a-gmtime.o",
+            "lib_a-gmtime_r.o",
+            "lib_a-iswspace.o",
+            "lib_a-iswspace_l.o",
+            "lib_a-locale.o",
+            "lib_a-localeconv.o",
+            "lib_a-makebuf.o",
+            "lib_a-mbrtowc.o",
+            "lib_a-mbtowc_r.o",
+            "lib_a-mktime.o",
+            "lib_a-month_lengths.o",
+            "lib_a-mprec.o",
+            "lib_a-printf.o",
+            "lib_a-puts.o",
+            "lib_a-reent.o",
+            "lib_a-refill.o",
+            "lib_a-s_frexp.o",
+            "lib_a-sccl.o",
+            "lib_a-siscanf.o",
+            "lib_a-snprintf.o",
+            "lib_a-stdio.o",
+            "lib_a-strtol.o",
+            "lib_a-strtoll.o",
+            "lib_a-strtoul.o",
+            "lib_a-strtoull.o",
+            "lib_a-svfiprintf.o",
+            "lib_a-svfiscanf.o",
+            "lib_a-svfprintf.o",
+            "lib_a-sysgettod.o",
+            "lib_a-time.o",
+            "lib_a-tzcalc_limits.o",
+            "lib_a-tzlock.o",
+            "lib_a-tzset.o",
+            "lib_a-tzset_r.o",
+            "lib_a-tzvars.o",
+            "lib_a-ungetc.o",
+            "lib_a-vfiprintf.o",
+            "lib_a-vfprintf.o",
+            "lib_a-vprintf.o",
+            "lib_a-vsnprintf.o",
+            "lib_a-wctomb_r.o",
+            "lib_a-wsetup.o"
+          ],
+          "retained_bytes": 78661,
+          "retained_nobits_bytes": 38
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libbt.a",
+          "sha256": "48fe8a1427a6476e2a8671bc893bd0e346d1658f3714b97d25ca091487748365",
+          "archive": "libbt.a",
+          "members": [
+            "bt.c.obj"
+          ],
+          "retained_bytes": 367,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libmbedcrypto.a",
+          "sha256": "abdaf759ee17aa697468427b55a86c6c0082ac4cdeb643a63d8b3ac2df324633",
+          "archive": "libmbedcrypto.a",
+          "members": [
+            "esp_crypto_shared_gdma.c.obj",
+            "esp_sha256.c.obj",
+            "esp_sha_gdma_impl.c.obj",
+            "sha.c.obj",
+            "sha256.c.obj"
+          ],
+          "retained_bytes": 2130,
+          "retained_nobits_bytes": 8
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/lib3dd/libcrypto.a",
+          "sha256": "988f6f4980b1b39375b473d0768bc99596a379a42517bdb376b07a11e01effa9",
+          "archive": "libcrypto.a",
+          "members": [
+            "AESEsp32.cpp.o",
+            "ChaCha.cpp.o",
+            "Crypto.cpp.o",
+            "Curve25519.cpp.o",
+            "Ed25519.cpp.o",
+            "Hash.cpp.o",
+            "RNG.cpp.o",
+            "SHA256.cpp.o",
+            "SHA512.cpp.o"
+          ],
+          "retained_bytes": 1852,
+          "retained_nobits_bytes": 160
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/lib5a1/libWire.a",
+          "sha256": "810581e8e86259df1a8b194e143c2d8e5f87618bce8981192a954e0eff1703be",
+          "archive": "libWire.a",
+          "members": [
+            "Wire.cpp.o"
+          ],
+          "retained_bytes": 4667,
+          "retained_nobits_bytes": 152
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/lib211/libSPI.a",
+          "sha256": "cdbace5ab4c13ec49d0d7163ba57735982e14d099c83aeac17ccd3933eea7026",
+          "archive": "libSPI.a",
+          "members": [
+            "SPI.cpp.o"
+          ],
+          "retained_bytes": 1370,
+          "retained_nobits_bytes": 32
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libnvs_flash.a",
+          "sha256": "f4163a6e3bb66867d06c5e7f33226f1941f123b77f358cc02e30021b1a2bf983",
+          "archive": "libnvs_flash.a",
+          "members": [
+            "nvs_api.cpp.obj",
+            "nvs_handle_simple.cpp.obj",
+            "nvs_item_hash_list.cpp.obj",
+            "nvs_page.cpp.obj",
+            "nvs_pagemanager.cpp.obj",
+            "nvs_partition.cpp.obj",
+            "nvs_partition_lookup.cpp.obj",
+            "nvs_partition_manager.cpp.obj",
+            "nvs_storage.cpp.obj",
+            "nvs_types.cpp.obj"
+          ],
+          "retained_bytes": 15821,
+          "retained_nobits_bytes": 24
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_diagnostics.a",
+          "sha256": "69f28fb584e5a44cab0739d53679e78304e45d42ebd76f3e12eb8cf5d973007a",
+          "archive": "libesp_diagnostics.a",
+          "members": [
+            "esp_diagnostics_log_hook.c.obj",
+            "esp_diagnostics_utils.c.obj"
+          ],
+          "retained_bytes": 2077,
+          "retained_nobits_bytes": 16
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_pm.a",
+          "sha256": "60529aeaf1cd94b41983383ceec240d1f43256f86faf8d9357f9e7d6050d9191",
+          "archive": "libesp_pm.a",
+          "members": [
+            "pm_impl.c.obj"
+          ],
+          "retained_bytes": 30,
+          "retained_nobits_bytes": 4
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/lib3ec/libcayenne.a",
+          "sha256": "fa17e6a246d02d107c482e78460b337049760d9cea0ded234bca6cd315c178d6",
+          "archive": "libcayenne.a",
+          "members": [
+            "CayenneLPP.cpp.o"
+          ],
+          "retained_bytes": 607,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libesp_common.a",
+          "sha256": "aa3b7a5f964bc7c7bfae623e64b15b695db268dd704b1fa7f967dad519f67b5f",
+          "archive": "libesp_common.a",
+          "members": [
+            "esp_err_to_name.c.obj"
+          ],
+          "retained_bytes": 7512,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/compiler/xtensa-esp32s3-elf/lib/no-rtti/libm.a",
+          "sha256": "64ced61f0cb9cd94f60f6a2bf307284e6e6a1de0dd99a4e18c579dd645dba178",
+          "archive": "libm.a",
+          "members": [
+            "lib_a-sf_ceil.o",
+            "lib_a-sf_floor.o"
+          ],
+          "retained_bytes": 322,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/lib8df/libbusio.a",
+          "sha256": "0201a0a51a060503604b62007e66c4cff54d8a8558e73f8159be76e8c1810fb7",
+          "archive": "libbusio.a",
+          "members": [
+            "Adafruit_I2CDevice.cpp.o"
+          ],
+          "retained_bytes": 537,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/lib996/librv3028.a",
+          "sha256": "7101972c29bfd1ecf0afc604e2541f99a896a87f279988f22ca7bd3be60769ba",
+          "archive": "librv3028.a",
+          "members": [
+            "Melopero_RV3028.cpp.o"
+          ],
+          "retained_bytes": 1710,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "packages/framework/tools/sdk/esp32s3/lib/libsoc.a",
+          "sha256": "a484ab659effaaecbd5fe75d20d4ef293e1a54de5034f10add071d597c7fae45",
+          "archive": "libsoc.a",
+          "members": [
+            "gdma_periph.c.obj",
+            "gpio_periph.c.obj",
+            "i2c_periph.c.obj",
+            "ledc_periph.c.obj",
+            "rtc_io_periph.c.obj"
+          ],
+          "retained_bytes": 1693,
+          "retained_nobits_bytes": 0
+        },
+        {
+          "path": "project/.pio/build/mtbench_xiao_s3_wio/lib064/libFS.a",
+          "sha256": "8773a91f716d97e9c9bfd3fb977164f7eb9d516d22188135a00068ea68a9012c",
+          "archive": "libFS.a",
+          "members": [
+            "FS.cpp.o"
+          ],
+          "retained_bytes": 880,
+          "retained_nobits_bytes": 0
+        }
+      ]
+    }
+  ],
+  "full_notice_closure": false,
+  "cross_host": false,
+  "rf_qualified": false,
+  "primary_blob_notice_evidence": {
+    "primary_blob_matches": [
+      {
+        "archive": "libcoexist.a",
+        "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libcoexist.a",
+        "packaged_sha256": "0c61713a461511973e0d4270bcf6c75587fb5da361f0636c8346c960516ef05a",
+        "repo": "espressif/esp32-wifi-lib",
+        "commit": "f2aae4d44ec7908013066e69d29b9948846c335c",
+        "upstream_path": "esp32s3/libcoexist.a",
+        "upstream_blob_sha1": "6960f1da37edd39927c5c0cf965f6bdce1b418d5",
+        "packaged_blob_sha1": "6960f1da37edd39927c5c0cf965f6bdce1b418d5",
+        "exact_blob_match": true
+      },
+      {
+        "archive": "libphy.a",
+        "packaged_path": "packages/framework/tools/sdk/esp32s3/ld/libphy.a",
+        "packaged_sha256": "c8f6c6821c7e8e28c97f3a797e322d9987a0f3fd5f5da5e971ab0111ba513160",
+        "repo": "espressif/esp-phy-lib",
+        "commit": "dcfdccf6cc2fc02d0886624b7998c890d1a19b28",
+        "upstream_path": "esp32s3/libphy.a",
+        "upstream_blob_sha1": "3456589ba86f6093f818ac186894d01d488acfdf",
+        "packaged_blob_sha1": "3456589ba86f6093f818ac186894d01d488acfdf",
+        "exact_blob_match": true
+      }
+    ],
+    "upstream_notices": [
+      {
+        "repo": "espressif/mbedtls",
+        "commit": "2b8e772fc1cb0732cda3bae7d1e9d6f4cfaf63d9",
+        "url": "https://raw.githubusercontent.com/espressif/mbedtls/2b8e772fc1cb0732cda3bae7d1e9d6f4cfaf63d9/LICENSE",
+        "filename": "mbedtls-LICENSE",
+        "sha256": "9b405ef4c89342f5eae1dd828882f931747f71001cfba7d114801039b52ad09b",
+        "bytes": 29852
+      },
+      {
+        "repo": "espressif/esp32-wifi-lib",
+        "commit": "f2aae4d44ec7908013066e69d29b9948846c335c",
+        "url": "https://raw.githubusercontent.com/espressif/esp32-wifi-lib/f2aae4d44ec7908013066e69d29b9948846c335c/LICENSE",
+        "filename": "esp32-wifi-lib-LICENSE",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "bytes": 11358
+      },
+      {
+        "repo": "espressif/esp32c3-bt-lib",
+        "commit": "e5c0f7256ecf5b5f8eb28c1793051a6b88f95124",
+        "url": "https://raw.githubusercontent.com/espressif/esp32c3-bt-lib/e5c0f7256ecf5b5f8eb28c1793051a6b88f95124/LICENSE",
+        "filename": "esp32c3-bt-lib-LICENSE",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "bytes": 11358
+      },
+      {
+        "repo": "espressif/esp-phy-lib",
+        "commit": "dcfdccf6cc2fc02d0886624b7998c890d1a19b28",
+        "url": "https://raw.githubusercontent.com/espressif/esp-phy-lib/dcfdccf6cc2fc02d0886624b7998c890d1a19b28/LICENSE",
+        "filename": "esp-phy-lib-LICENSE",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "bytes": 11358
+      }
+    ],
+    "notice_closure": false
+  },
+  "toolchain_notice_evidence": [
+    {
+      "path": "gcc/COPYING.RUNTIME",
+      "bundled_notice": "toolchain-gcc-COPYING.RUNTIME",
+      "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+      "scope": "Exact pinned compiler archive notice; applicability to each linked runtime member still requires review."
+    },
+    {
+      "path": "gcc/COPYING3",
+      "bundled_notice": "toolchain-gcc-COPYING3",
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "scope": "Exact pinned compiler archive notice; applicability to each linked runtime member still requires review."
+    },
+    {
+      "path": "gcc/COPYING3.LIB",
+      "bundled_notice": "toolchain-gcc-COPYING3.LIB",
+      "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c",
+      "scope": "Exact pinned compiler archive notice; applicability to each linked runtime member still requires review."
+    },
+    {
+      "path": "newlib/COPYING.NEWLIB",
+      "bundled_notice": "toolchain-newlib-COPYING.NEWLIB",
+      "sha256": "dec5d419a7a4b27c064c8367a21e5d7b58aefc162719dc169bc4f82a88994859",
+      "scope": "Exact pinned compiler archive notice; applicability to each linked runtime member still requires review."
+    }
+  ],
+  "unresolved": [
+    "SDK reports v4.4.7-dirty; complete build-source mapping is unproved",
+    "All49 archive/member and per-file licenses must be reconciled; supplied notice texts are not blanket grants",
+    "GNU runtime-exception and newlib mixed notices need actual-member review",
+    "Framework corresponding source and relinking requirements for the intended distribution remain open",
+    "Object contribution inventory does not prove service activation, RF behaviour or native application qualification"
+  ]
+}

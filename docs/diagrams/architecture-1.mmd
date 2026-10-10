@@ -1,0 +1,39 @@
+flowchart TB
+    subgraph Application[Application and resource layer]
+        Resources["Public packs and verified chunks"]
+        Envelopes["Private signed recipient-encrypted envelopes"]
+        Policy["Local resource path policy"]
+    end
+
+    subgraph Service[Finite service adapters]
+        Transfer["ServiceTransfer and ServiceRunner"]
+        Blocks["PreparedBlockExchange<br/>MR1 request and response"]
+        Capture["Optional protected capture and inbox"]
+    end
+
+    subgraph Transport[Authenticated radio composition]
+        Flow["Frozen MT05 ReliableFlow"]
+        Port["Flow owner and attempt port"]
+        Scheduler["Scheduler and airtime ledger"]
+        Wire["SessionCipher: authenticated DATA and ACK"]
+        Worker["Exclusive serial or SX1262 worker"]
+        Radio["Raw LoRa radio / test coprocessor"]
+    end
+
+    Authority["RunAuthority<br/>peers, service, object<br/>and original deadlines"]
+    Replay["SessionStore<br/>durable counters<br/>and replay window"]
+    Attempts["AttemptJournal<br/>reservations and<br/>outcome evidence"]
+    HTTP["Existing bounded<br/>HTTP resource reader"]
+    IP["TCP source prototype<br/>hardware qualification pending"]
+
+    Resources --> Blocks --> Transfer
+    Envelopes --> Transfer
+    Transfer --> Flow --> Port --> Scheduler --> Wire --> Worker --> Radio
+    Transfer -->|private only| Capture
+    Policy -. selects admitted resource readers .-> Blocks
+    Policy -. selects resource readers .-> HTTP
+    Policy -. future reader .-> IP
+    Authority -. current leases .-> Scheduler
+    Authority -. application lease .-> Transfer
+    Wire -. commits before exposure .-> Replay
+    Worker -. reserves before device write .-> Attempts

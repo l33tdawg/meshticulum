@@ -1,0 +1,430 @@
+{
+  "schema": "sage.meshticulum-repository-boundary.v1",
+  "source_revision": "cc486a80b483476a31b180f4681b3bf422181855",
+  "moves": [
+    {
+      "source": "src/meshticulum/bench/node.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/node.py",
+      "original_sha256": "62b564fb66c66517e13958f25a5ad1f9bd32fc7e47b017a4a8b684c1b5a55894"
+    },
+    {
+      "source": "src/meshticulum/bench/pilot_context.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/pilot_context.py",
+      "original_sha256": "2bccd7ff92700348c0568cea8325cb13f05f2141b06e82d4dc9102f136bc6410"
+    },
+    {
+      "source": "src/meshticulum/bench/pilot_controller.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/pilot_controller.py",
+      "original_sha256": "ce568b92976f4fd98e219bea98d176b1f6b00d5875a28b491d31ff887fbb569d"
+    },
+    {
+      "source": "src/meshticulum/bench/pilot_job.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/pilot_job.py",
+      "original_sha256": "687472d870f1787fc15a0d027f29c2011f13d62bf1194dd09baf0e7334ee4969"
+    },
+    {
+      "source": "src/meshticulum/bench/pilot_manage.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/pilot_manage.py",
+      "original_sha256": "ea7501e6fd7a374e497be2f48202c0a7f6afdbca320b1e91a98e041cf4b268f9"
+    },
+    {
+      "source": "src/meshticulum/bench/pilot_provision.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/pilot_provision.py",
+      "original_sha256": "a1d4ae2d288bd8c7995cebe337f8e04701ef630b048e2186353d0be4ae76bc71"
+    },
+    {
+      "source": "src/meshticulum/bench/pilot_resource_node.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/pilot_resource_node.py",
+      "original_sha256": "c66daa9366bbd1972be94438e995e2875cc7e7b992fc96a417956d87e2e5f409"
+    },
+    {
+      "source": "src/meshticulum/bench/pilot_resources.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/pilot_resources.py",
+      "original_sha256": "37b8b8402c28c785a6b6c063a9fc77ef85d74392c253eebc67b3ac8cbaf14ec3"
+    },
+    {
+      "source": "src/meshticulum/bench/pilot_seed.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/pilot_seed.py",
+      "original_sha256": "f8fd68ee0e7da20f6977a379335143bf76c07f0f5a793c68a5f5b911bd9a29f8"
+    },
+    {
+      "source": "src/meshticulum/bench/pilot_ssh.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/pilot_ssh.py",
+      "original_sha256": "083eab76186bfaf31a40f3e1052620cefd6eea68ed314ae33cd8f5e92db62ed1"
+    },
+    {
+      "source": "src/meshticulum/bench/service_node.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/service_node.py",
+      "original_sha256": "02c7e61bd49d49bbfcc720ebbc8b54138086aa7b136894fae26a741c959d089c"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/__init__.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/__init__.py",
+      "original_sha256": "26e0ae362eec2c45deb2f053c0bc22fcdc4c0dacfa3114f80b66a59da9adb3e3"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/airtime_budget.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/airtime_budget.py",
+      "original_sha256": "5ab9f81ff072b271491c44f42c06401d977a4fd24a61e5a3146d2834b7e8c31b"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/community_messaging.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/community_messaging.py",
+      "original_sha256": "9e1dd3e8a12b805ac4b8f99c856a0a7d63e930d81f225149726f7a7a13fd30f2"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/mesh_binary_capture.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/mesh_binary_capture.py",
+      "original_sha256": "fc3ce1e2fc5c65f0c8197a0ab039be907ae94d86c3b34c97aeefd74d57e9876a"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/mesh_contacts.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/mesh_contacts.py",
+      "original_sha256": "967d71344c706e5f818ccb2abb46efe4d324d451937b09a4f7314051d4f075a1"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/mesh_custody.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/mesh_custody.py",
+      "original_sha256": "692897ae7f21cda039fc58e90dc7a7a72d11200e1fd06d35ed14d495b2209e72"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/mesh_fragments.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/mesh_fragments.py",
+      "original_sha256": "917eb57f49e50d17c1ab7e2871985cadbde13275b2c37d1c2e6a41ddba2fecbc"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/mesh_inbox.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/mesh_inbox.py",
+      "original_sha256": "e6a3831ab43ec5019c3c4c7b9e8b611b49e52da3efd0201bf8e6f12b95752f43"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/mesh_receiver.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/mesh_receiver.py",
+      "original_sha256": "a505c4b5175261c83f318bd4cfb4b7898c933e1aa43e058b4d07da7b2b8959d9"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/meshcore_contacts.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/meshcore_contacts.py",
+      "original_sha256": "a8d4aa3dc180decefe18146234a8ad727652f9fed721d1e1feea632ba4e1b426"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/meshcore_transport.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/meshcore_transport.py",
+      "original_sha256": "9c88ce112f2d228f290abeb9cdcca25fcde59ad0539a66c2eec95468fa4f1f9a"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/message_contacts.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/message_contacts.py",
+      "original_sha256": "aeb31f5096fef7a19311ec8e4822212f163fc84fbdd0edde3d73d7ba92bedfe2"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/message_storage.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/message_storage.py",
+      "original_sha256": "17d24105a711c6de863bcd4bfab937a94669f2b5be19ec5ffa24224a7730c221"
+    },
+    {
+      "source": "src/meshticulum/integrations/sage/workflow_store.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/workflow_store.py",
+      "original_sha256": "2ee65780d8ee76622e4d33c9b0f15e391caadbad9736babaa1bfdcbbc46c92a4"
+    },
+    {
+      "source": "src/meshticulum/ip/node.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/ip/node.py",
+      "original_sha256": "ff5b7f7728ad302546c650089974267858a110b2486200b5d7db6d6756d126f2"
+    },
+    {
+      "source": "firmware/meshticulum-bench/ab_bootstrap.py",
+      "destination": "firmware/meshticulum-bench/ab_bootstrap.py",
+      "original_sha256": "06074d84b8c4345eb084c702e2e35b0cc6533fba6e6b2171426faba012e05d25"
+    },
+    {
+      "source": "firmware/meshticulum-bench/analyze_runs.py",
+      "destination": "firmware/meshticulum-bench/analyze_runs.py",
+      "original_sha256": "5e2c1c7bd7c72f3d08d3412e12191e15252098a7b66ef4d08b527b62264eb2eb"
+    },
+    {
+      "source": "firmware/meshticulum-bench/bench_node.py",
+      "destination": "firmware/meshticulum-bench/bench_node.py",
+      "original_sha256": "8554956819c0a882c41d5b9e1fdb5a7809e6105f651b573e40946f715dabc681"
+    },
+    {
+      "source": "firmware/meshticulum-bench/build_ab_bundle.py",
+      "destination": "firmware/meshticulum-bench/build_ab_bundle.py",
+      "original_sha256": "696b364598aac435fb083146f68d51527b91ca3435ca03f7dc3ef65e72e7b7d4"
+    },
+    {
+      "source": "firmware/meshticulum-bench/build_runtime.py",
+      "destination": "firmware/meshticulum-bench/build_runtime.py",
+      "original_sha256": "bd3997a63b00f06efe9dace1f34abd9e362ada26e20cd3911f902a36c3c878ae"
+    },
+    {
+      "source": "firmware/meshticulum-bench/check_hat_config.py",
+      "destination": "firmware/meshticulum-bench/check_hat_config.py",
+      "original_sha256": "4182e253a0fd7e385e1dcd34e028716a274ce9fb875dea38ed2eb7d8ef0cff5a"
+    },
+    {
+      "source": "firmware/meshticulum-bench/check_hat_receive_timeout.py",
+      "destination": "firmware/meshticulum-bench/check_hat_receive_timeout.py",
+      "original_sha256": "12a941a7f7dd90d3ef1dc8456186c6ffa16781d3c0d7d56a2defea6a7937733a"
+    },
+    {
+      "source": "firmware/meshticulum-bench/check_serial_ingress.py",
+      "destination": "firmware/meshticulum-bench/check_serial_ingress.py",
+      "original_sha256": "50e19ab90d424b8af60079b90d429ed3311e5e6ff2933179f7effbd557f882f3"
+    },
+    {
+      "source": "firmware/meshticulum-bench/collect_run.py",
+      "destination": "firmware/meshticulum-bench/collect_run.py",
+      "original_sha256": "11bc4db33ef80e4fb19556bad8ab363841cfcc2eef24b650fb3a348df35b8c95"
+    },
+    {
+      "source": "firmware/meshticulum-bench/exercise_rollback.py",
+      "destination": "firmware/meshticulum-bench/exercise_rollback.py",
+      "original_sha256": "7e49130392d91bec4e3410e63a19be7473929cba98b792508de7f4206db4e6af"
+    },
+    {
+      "source": "firmware/meshticulum-bench/grant_bootstrap.py",
+      "destination": "firmware/meshticulum-bench/grant_bootstrap.py",
+      "original_sha256": "45c755f5a14d168cdbc08832316a7fdb65696a4ce611ecfe7001c679c6e3c626"
+    },
+    {
+      "source": "firmware/meshticulum-bench/hat_overlay.py",
+      "destination": "firmware/meshticulum-bench/hat_overlay.py",
+      "original_sha256": "3de33ad17dfc5103eac94d263075868cac4c05c1046e7f11914e48eadbfb4085"
+    },
+    {
+      "source": "firmware/meshticulum-bench/install_ab.py",
+      "destination": "firmware/meshticulum-bench/install_ab.py",
+      "original_sha256": "67695315881076a9294d12af043521c3a8d262549bfc4fd97af36cf6d2a56483"
+    },
+    {
+      "source": "firmware/meshticulum-bench/make_object.py",
+      "destination": "firmware/meshticulum-bench/make_object.py",
+      "original_sha256": "2625b8fb8ae548294e7e1b5144dc7f4b595505a50a95cc3d861db80519f92077"
+    },
+    {
+      "source": "firmware/meshticulum-bench/pilot_grant_bootstrap.py",
+      "destination": "firmware/meshticulum-bench/pilot_grant_bootstrap.py",
+      "original_sha256": "d7c466353053aeffb1728982de9216cd079619558c19e1c9fb75f0c3b3e6c8da"
+    },
+    {
+      "source": "firmware/meshticulum-bench/prepare_build.py",
+      "destination": "firmware/meshticulum-bench/prepare_build.py",
+      "original_sha256": "26c240faa464e91b92ff453f602e662e09434a9a8928d60d6d82896f643db724"
+    },
+    {
+      "source": "firmware/meshticulum-bench/prepare_run.py",
+      "destination": "firmware/meshticulum-bench/prepare_run.py",
+      "original_sha256": "826361bc2c2e0dd5cfcbec36e7d2a010d00e2cf7699a61f380162fb158a70396"
+    },
+    {
+      "source": "firmware/meshticulum-bench/reset_serial_radio.py",
+      "destination": "firmware/meshticulum-bench/reset_serial_radio.py",
+      "original_sha256": "39df4b798787f27e288426c77323be54f4a16061950180360ee368db15599788"
+    },
+    {
+      "source": "firmware/meshticulum-bench/run_build.py",
+      "destination": "firmware/meshticulum-bench/run_build.py",
+      "original_sha256": "caa29cd5abae0e6fc4a9933a4da4dfe3dc1abee5755ed8e400f053e0f249c809"
+    },
+    {
+      "source": "firmware/meshticulum-bench/run_matrix.py",
+      "destination": "firmware/meshticulum-bench/run_matrix.py",
+      "original_sha256": "1ca731fd3d9896314057e5a885d4e7338b901908e185dfdd1bbadd417ba343a8"
+    },
+    {
+      "source": "firmware/meshticulum-bench/run_public_pilot.py",
+      "destination": "firmware/meshticulum-bench/run_public_pilot.py",
+      "original_sha256": "854195781b0316a51da188534d388add6bf26dd5b78f77c4195cf99094d84592"
+    },
+    {
+      "source": "firmware/meshticulum-bench/runtime_bootstrap.py",
+      "destination": "firmware/meshticulum-bench/runtime_bootstrap.py",
+      "original_sha256": "4769e8df31b39f0b5f658b7e24f6dd091c851e7a28009742383e5a15b07ad6e4"
+    },
+    {
+      "source": "firmware/meshticulum-bench/stage_ab_bundle.py",
+      "destination": "firmware/meshticulum-bench/stage_ab_bundle.py",
+      "original_sha256": "2353b878528e9cd0a0b1c1b608b53dfdb7404e25f12a7ad10e89bb0471aff0c2"
+    },
+    {
+      "source": "firmware/meshticulum-bench/stage_c_config.py",
+      "destination": "firmware/meshticulum-bench/stage_c_config.py",
+      "original_sha256": "456297fd94d1d5c9e3227eee91d2bfea81ecac5438b493370af6255de4f4194f"
+    },
+    {
+      "source": "firmware/meshticulum-bench/stage_runtime.py",
+      "destination": "firmware/meshticulum-bench/stage_runtime.py",
+      "original_sha256": "ddeec8f21661157cd8b906892f7bc451e78536f72f5a9eac3a5e618970e6458a"
+    },
+    {
+      "source": "firmware/meshticulum-bench/test_custom_runner.py",
+      "destination": "firmware/meshticulum-bench/test_custom_runner.py",
+      "original_sha256": "6c49b3806c861aa55462dce31c06a90f8acd72874499a39a3babeb8cd98187d6"
+    },
+    {
+      "source": "scripts/lantern/benchmarks/meshticulum_baseline.py",
+      "destination": "scripts/lantern/benchmarks/meshticulum_baseline.py",
+      "original_sha256": "6687fe93e4ecfdb2a41c778c09181dcf058c8cb3ffcb817a37419e9fb498c0d6"
+    },
+    {
+      "source": "tests/test_mesh_custody.py",
+      "destination": "software/meshticulum-integration/tests/test_mesh_custody.py",
+      "original_sha256": "84063cd586c5162c4bd2445afd7a17330e6114bcbd63e7d4371ce9593daf7d74"
+    },
+    {
+      "source": "tests/test_mesh_fragments.py",
+      "destination": "software/meshticulum-integration/tests/test_mesh_fragments.py",
+      "original_sha256": "7c769f54c9b6e8ba933b337ee28672f332984931f7edabc8ddcc7f949ec6ad0c"
+    },
+    {
+      "source": "tests/test_ip_node.py",
+      "destination": "software/meshticulum-integration/tests/test_ip_node.py",
+      "original_sha256": "2f35368eab7346e94187558c01001261c4f6ba6dfea371dfaa7c3b8be42f81ed"
+    },
+    {
+      "source": "tests/test_meshticulum_service_node.py",
+      "destination": "software/meshticulum-integration/tests/test_meshticulum_service_node.py",
+      "original_sha256": "9807d7d560230da67bf9ad080bd7d2f09b250866dd3cb68ea78eeeb6dd581ea2"
+    },
+    {
+      "source": "tests/test_meshticulum_bench_operator.py",
+      "destination": "software/meshticulum-integration/tests/test_meshticulum_bench_operator.py",
+      "original_sha256": "1a7cefcd6c80acdb8be8b8e6e59f5734eef3d26a8116f3a0b190610e1d476bd5"
+    },
+    {
+      "source": "tests/test_meshticulum_bench_matrix.py",
+      "destination": "software/meshticulum-integration/tests/test_meshticulum_bench_matrix.py",
+      "original_sha256": "8789c1c972dba97f28c02d395643f6ca45a23e3717349857c1d5a3b5dfd953a8"
+    },
+    {
+      "source": "tests/test_meshticulum_bench_flash.py",
+      "destination": "software/meshticulum-integration/tests/test_meshticulum_bench_flash.py",
+      "original_sha256": "9f1910b4731ea3a297e65cf2806d07889d68be19fd4a91999b093541f860bc35"
+    },
+    {
+      "source": "tests/test_meshticulum_bench_rollback_cycle.py",
+      "destination": "software/meshticulum-integration/tests/test_meshticulum_bench_rollback_cycle.py",
+      "original_sha256": "6ecc292215ae4201e19c374df2ec9b752ffee21061dc5e76a4a8185e778db281"
+    },
+    {
+      "source": "tests/test_public_pilot_entry.py",
+      "destination": "software/meshticulum-integration/tests/test_public_pilot_entry.py",
+      "original_sha256": "f69aa71975bf1c79957b9aefea52a576c148450ff3f55d620d94f91246ead1cd"
+    },
+    {
+      "source": "tests/test_pilot_context.py",
+      "destination": "software/meshticulum-integration/tests/test_pilot_context.py",
+      "original_sha256": "c070e05c8a172f0a6e928ccf08c40ef66698ccde49d521fe942795deda20c2f0"
+    },
+    {
+      "source": "tests/test_pilot_seed.py",
+      "destination": "software/meshticulum-integration/tests/test_pilot_seed.py",
+      "original_sha256": "948d7370f9cd2cca58c5e29eb42f2b2d94d8a0b4996c2a79fd0c74974b1cb1a0"
+    },
+    {
+      "source": "tests/test_pilot_provision.py",
+      "destination": "software/meshticulum-integration/tests/test_pilot_provision.py",
+      "original_sha256": "0e90e3a0701e07b673b7e077b1b4108e1622f2dd365b1f8993b579e64baf385a"
+    },
+    {
+      "source": "tests/test_pilot_resources.py",
+      "destination": "software/meshticulum-integration/tests/test_pilot_resources.py",
+      "original_sha256": "51f80fff6832ce44a5c51cf2433a28f77798ef15257467b83dd1dec57eec7d4e"
+    },
+    {
+      "source": "tests/test_pilot_ssh.py",
+      "destination": "software/meshticulum-integration/tests/test_pilot_ssh.py",
+      "original_sha256": "d99c693bfbea0eb87088880391d393b39668dcaebea3af816e85ef5504032219"
+    },
+    {
+      "source": "tests/test_pilot_controller.py",
+      "destination": "software/meshticulum-integration/tests/test_pilot_controller.py",
+      "original_sha256": "12f5a48288eca601cbc35078d32d5ca61fd87e9c518507bba4c63f27a611c181"
+    },
+    {
+      "source": "tests/test_pilot_resume.py",
+      "destination": "software/meshticulum-integration/tests/test_pilot_resume.py",
+      "original_sha256": "e60f13fb4726f2ef0afa9439031478addbf7cb1aa47bf34fc3f6982445a633fc"
+    },
+    {
+      "source": "tests/test_pilot_job.py",
+      "destination": "software/meshticulum-integration/tests/test_pilot_job.py",
+      "original_sha256": "64455ebbdeca40630c4e61ed7e1cde1cdcaf050e1e2d227064ce146fa7bac7de"
+    },
+    {
+      "source": "tests/test_pilot_resource_node.py",
+      "destination": "software/meshticulum-integration/tests/test_pilot_resource_node.py",
+      "original_sha256": "fdaeb4830a6571ad9f01b4805bbcba526215b5327f3b509a4ddcc8847c184024"
+    },
+    {
+      "source": "tests/integrations/__init__.py",
+      "destination": "software/meshticulum-integration/tests/integrations/__init__.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "tests/integrations/sage/__init__.py",
+      "destination": "software/meshticulum-integration/tests/integrations/sage/__init__.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "tests/integrations/sage/test_mesh_binary_capture.py",
+      "destination": "software/meshticulum-integration/tests/integrations/sage/test_mesh_binary_capture.py",
+      "original_sha256": "f0f99d57954fdcce9d6e0fb5aa39f0db6ef2fbbad32696c835456c71abb2a0f5"
+    },
+    {
+      "source": "tests/integrations/sage/test_mesh_binary_inbox.py",
+      "destination": "software/meshticulum-integration/tests/integrations/sage/test_mesh_binary_inbox.py",
+      "original_sha256": "625bfdada4bd212552d118e6084bf3b288e28ef7488e237f2a07cb84d3644ad4"
+    },
+    {
+      "source": "tests/integrations/sage/test_mesh_inbox.py",
+      "destination": "software/meshticulum-integration/tests/integrations/sage/test_mesh_inbox.py",
+      "original_sha256": "935f0939187491de0c2cc2584d8da79f515f8db13a9b309b1ff7e999b14cfd71"
+    },
+    {
+      "source": "tests/integrations/sage/test_meshticulum_service_runner.py",
+      "destination": "software/meshticulum-integration/tests/integrations/sage/test_meshticulum_service_runner.py",
+      "original_sha256": "87b655dd2ace6367023ff8c9928073d7558cb8c7916204044d7a1357b3b92505"
+    },
+    {
+      "source": "tests/integrations/sage/test_meshticulum_services.py",
+      "destination": "software/meshticulum-integration/tests/integrations/sage/test_meshticulum_services.py",
+      "original_sha256": "99618097e595a4759f08693bd630a9e56b244111d8b610746a74ca3fa13bf05d"
+    },
+    {
+      "source": "tests/integrations/sage/test_workflow_store.py",
+      "destination": "software/meshticulum-integration/tests/integrations/sage/test_workflow_store.py",
+      "original_sha256": "1c8ceb28088ce2a6b761090a013df0c8e9fcb443d47186b5fb6651227189259a"
+    }
+  ],
+  "policy": "Lantern application, native admission and fleet tooling depend on Meshticulum; core imports no Lantern or SAGE SDK.",
+  "additional_moves": [
+    {
+      "source": "src/meshticulum/bench/profiles.py",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/bench/profiles.py",
+      "scope": "Original MY/A/B/C lab waveform policy now enforced by Lantern; core requires explicit RadioAdmission."
+    },
+    {
+      "source": "src/meshticulum/bench/services.py:ServiceTransfer.deliver_private",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/services.py:deliver_private"
+    },
+    {
+      "source": "src/meshticulum/bench/service_runner.py:PrivatePolicy/PrivateCaptureSink",
+      "destination": "software/meshticulum-integration/src/lantern_meshticulum/sage/service_runner.py"
+    },
+    {
+      "source": "scripts/lantern/benchmarks/meshticulum_path_report.py",
+      "destination": "tools/benchmarks/meshticulum_path_report.py",
+      "repository": "meshticulum"
+    }
+  ],
+  "compatibility": {
+    "frozen_flow_unchanged": true,
+    "envelope_wire_and_signature_domains_unchanged": true,
+    "bench_wire_domain_unchanged": true,
+    "legacy_lantern_envelope_module": "Compatibility bridge to meshticulum.privacy.mesh_envelope; not a second implementation."
+  },
+  "qualification": "Repository/source migration only; no device deployment, physical pilot, private backend qualification or release.",
+  "publication_history": "The private development history predates separation and still contains earlier extracted Lantern code. Publish only an approved Meshticulum-only initial history; changing visibility of the unreviewed historical repository would expose those old implementations."
+}

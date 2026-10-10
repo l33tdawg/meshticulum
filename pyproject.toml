@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=80.9,<81", "wheel==0.45.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "meshticulum"
+version = "1.0.0a1"
+description = "Bounded authenticated transport and verified resources for mixed radio and IP networks"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{name = "SAGE Foundation"}, {name = "Dhillon Andrew Kannabhiran"}, {name = "Meshticulum contributors"}]
+maintainers = [{name = "SAGE Foundation"}, {name = "Dhillon Andrew Kannabhiran"}]
+dependencies = ["cryptography>=46.0.3,<51", "PyNaCl>=1.6.2,<2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.urls]
+Repository = "https://github.com/l33tdawg/meshticulum"
+"SAGE Foundation" = "https://sage-foundation.net/"
+"Main SAGE repository" = "https://github.com/l33tdawg/sage/"
+
+[project.scripts]
+meshticulum-seed = "meshticulum.resources.lamplighter:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["meshticulum", "meshticulum.*"]
+exclude = ["meshticulum.integrations*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"meshticulum.contracts" = ["SPEC.json"]
+"meshticulum.scheduler" = ["SPEC.json"]
+"meshticulum.bench" = ["SPEC.json"]
+"meshticulum.flow" = ["README.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"
