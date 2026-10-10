@@ -1,0 +1,7 @@
+flowchart TB
+    APP["Private messages<br/>Public resources"] --> SVC["Separate service adapters"]
+    SVC --> FLOW["Bounded reliable flow<br/>Credit, ACKs and retries"]
+    FLOW --> AUTH["Authenticated session<br/>Peer, expiry and replay bindings"]
+    AUTH --> WORKER["Exclusive radio worker<br/>Attempt and airtime journals"]
+    WORKER --> RF["LoRa peers<br/>Serial radio or SX1262 HAT"]
+    AUTH -. "Authenticated IP adapter pending" .-> IP["IP peers"]

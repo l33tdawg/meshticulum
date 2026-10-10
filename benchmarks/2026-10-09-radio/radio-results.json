@@ -1,0 +1,694 @@
+{
+  "schema": "meshticulum.published-radio-bench.v1",
+  "date": "2026-10-09",
+  "scope": "Historical finite single-radio physical bench, operator-captured metadata replayed offline",
+  "runtime_archive_sha256": "8739037c030c39241253f2721ef3fa23d698dc951be014a0b9b153aa5341fe7b",
+  "runtime_manifest_sha256": "b7b2386de6e619712c817e41ced4d56fc4231f7a1ffb2f918436d51d83791bb2",
+  "firmware": "mtb1-9816f92488 on A/B; custom raw SX1262 SPI host driver on C",
+  "radios_per_device": 1,
+  "profile": {
+    "frequency_hz": 921375000,
+    "bandwidth_hz": 500000,
+    "spreading_factor": 7,
+    "coding_rate": 5,
+    "chip_power_dbm": 0,
+    "preamble": 8,
+    "sync_word": 66,
+    "lease_ms": 90000,
+    "max_boot_attempts": 256,
+    "max_boot_estimated_airtime_us": 60000000
+  },
+  "payload_bytes": 8192,
+  "payload_kind": "Synthetic incompressible bytes authenticated/encrypted by session wire; independently hash-verified by receiver",
+  "measurement": "payload_bytes / (sender flow-ACK monotonic time - sender start monotonic time)",
+  "units": "B/s, decimal bytes per second; divide by 1000 for kB/s, multiply by 8/1000 for kb/s",
+  "run_conditions": "All units together; distance, antenna orientation/gain and RF EIRP were not measured.",
+  "directions": {
+    "ca": {
+      "direction": "C\u2192A",
+      "recorded_runs": 10,
+      "completed_runs": 10,
+      "goodput_Bps": {
+        "n": 10,
+        "min": 1113.87510104351,
+        "median": 1211.0989218440507,
+        "p95_nearest_rank": 1248.1653477790594,
+        "max": 1248.1653477790594
+      },
+      "sender_start_to_flow_ack_seconds": {
+        "n": 10,
+        "min": 6.563233,
+        "median": 6.7641089999999995,
+        "p95_nearest_rank": 7.354505,
+        "max": 7.354505
+      },
+      "sender_data_retransmissions_total": 0,
+      "source_summary_sha256": "fe2b0b3303ef45332b9708518e57d3b82cdf57b4e2032ad1c4e6b6cf815854f3",
+      "samples": [
+        {
+          "run_id": "562e57b800e2e27ecf070f3c1773c75e",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.758763,
+          "sender_acknowledged_goodput_Bps": 1212.0561114511634,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "d1c8289e9e2187544963f335bdb27b877d53176bcd27f64467df3911f79cc133",
+            "sender_collection": "3628cab799ad90c1bf45eef60791ec95dfa6d3ad6c54c57cee2ae054f5e79145",
+            "receiver_collection": "2efeba92c07940a49b9987642c062c3d7399662e1af755fc41d2e276926482bf"
+          }
+        },
+        {
+          "run_id": "21f497338762d348543de3e2faa06a5e",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.79142,
+          "sender_acknowledged_goodput_Bps": 1206.227858091533,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "d10a23443a86746c62ee5aebfb263b66fddf0e9bb61311a7545d6aaa8b8009ac",
+            "sender_collection": "77c9c922bb54201cd47c6ce688cce2d836418821c160a9676dc2f94585e2e243",
+            "receiver_collection": "61a4980185fc204f25949f8ef4e0f7cbc09e5c56f63208925a0ddf51888b5075"
+          }
+        },
+        {
+          "run_id": "7343de0cc2b0b5976e37f3edf8bb47c8",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.667026,
+          "sender_acknowledged_goodput_Bps": 1228.7337712497297,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "e020f8b80ea11dd5da66b6035be2015b76a5d3ec3b7a10c3186afc3a7f198e35",
+            "sender_collection": "c55d517b4641739ad7832172fe25026871d6fb3ae1a00ffa3f64c9f3dc744b38",
+            "receiver_collection": "d0ecfa3d6a9c455fc8642c0972b4774ce98dd4a7ca7c84f0f4797a63a4a06af0"
+          }
+        },
+        {
+          "run_id": "0d3c7171c80ade6992de0731b00d6bb1",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 7.354505,
+          "sender_acknowledged_goodput_Bps": 1113.87510104351,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 14,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 507794,
+          "capture_sha256": {
+            "run_plan": "2dc312dabe53b23fbb75ba900bc2f5543b9dca01f721827d97467008fd7562c2",
+            "sender_collection": "dfa769ec21c4b0997f50d1c940b95265c7942da0ca6306e112721853ebe82d3b",
+            "receiver_collection": "9b82c33d813d6e28e60bd1fb7146a26ebf9e23d57b5dd7b317070e8c25876100"
+          }
+        },
+        {
+          "run_id": "01f18afbe25a8de3e3b093fea87acde6",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.592972,
+          "sender_acknowledged_goodput_Bps": 1242.5352329723228,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "834204e8835ba387bfe33892b3a8ac77726ccffa94996fddc29920a3e52455bc",
+            "sender_collection": "c4c3bcbc1d935e0b9abde925c7ebb0ef5f3f92b7502d3b2b90fa62731248383a",
+            "receiver_collection": "cd8ca5989afacb860f4293d5959826652acc1d2c7deff723c6daf5e0643a0193"
+          }
+        },
+        {
+          "run_id": "0bdb321ae5c044789c8c1420c871ba6e",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.676541,
+          "sender_acknowledged_goodput_Bps": 1226.9826546410784,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 12,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 435252,
+          "capture_sha256": {
+            "run_plan": "e0cfbe52a8734bea69ed3996b6c2c46cf7c71ef5e898fde66678f81a926ebc8d",
+            "sender_collection": "4661b579ba8252708a3392f37319eeb9b3444d11d7d66f2fdbb1030e3246e2a9",
+            "receiver_collection": "5cd3707dbcb1b05c23d9d6abc885acbffd5ac287f62fe66316afd24004654a9c"
+          }
+        },
+        {
+          "run_id": "99b406e10141527240462587bb13c3ed",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.769455,
+          "sender_acknowledged_goodput_Bps": 1210.141732236938,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "11d564eff147f98c1430646e63152224486c9a38c4b799459857f0f478265ece",
+            "sender_collection": "3a03f8bf663a1222e782c1ead10753d15101f756decba27855b01c9d3c1f3ec5",
+            "receiver_collection": "2423ccdf5c4aa6335da051fde7b3f2ac56bc824c6de91b4fc773cdddedc5eff8"
+          }
+        },
+        {
+          "run_id": "031b7f0dca7b21355aa2a640c9661cd2",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.563233,
+          "sender_acknowledged_goodput_Bps": 1248.1653477790594,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 12,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 435252,
+          "capture_sha256": {
+            "run_plan": "927baa8d0facaf85298fab833cb3f2f75bef689b0437f7e04a2533a87732d3b0",
+            "sender_collection": "7754b0d675f83c0533a0d7eb641b1c6e49436bdbf9f02f3200220f2f47e45707",
+            "receiver_collection": "353a91db6bcf054f9a56665800d30e6f9457bc3a41f4711251ca9af669148f8e"
+          }
+        },
+        {
+          "run_id": "8eaf86402fe2c2176ba49e88d7ceff0f",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.826059,
+          "sender_acknowledged_goodput_Bps": 1200.106825915217,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "cfab40121cb0cc23ddfac1d0112811f137dcb99bb930775a1cecb857b05387f5",
+            "sender_collection": "898ef7805469fdbdfb43792088d63e75b9772f085fcd484ce7ca985b12649e36",
+            "receiver_collection": "3dfa8fafef849fd9bd1b51bdd979145f70d376cab0a5c5c4878fbce105aba8f6"
+          }
+        },
+        {
+          "run_id": "a0a53b0a80739fe117b48f79ae6b91c4",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.78716,
+          "sender_acknowledged_goodput_Bps": 1206.9849539424442,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "8d8c2cc6c96952cca4a6b0b8c4c1e2bafff333751cd9127b3fe35e15c2fe8809",
+            "sender_collection": "bfe3fa4cb841f170a92a79f0e931dbaf06bc16a691f0f91160641bb843e4d97d",
+            "receiver_collection": "0dc38be22d5761f2e86d439a045245c8492e930cccdca226fc3369ccdddf2af7"
+          }
+        }
+      ]
+    },
+    "cb": {
+      "direction": "C\u2192B",
+      "recorded_runs": 10,
+      "completed_runs": 10,
+      "goodput_Bps": {
+        "n": 10,
+        "min": 1182.5726440574715,
+        "median": 1231.0849029195203,
+        "p95_nearest_rank": 1273.0598347446498,
+        "max": 1273.0598347446498
+      },
+      "sender_start_to_flow_ack_seconds": {
+        "n": 10,
+        "min": 6.43489,
+        "median": 6.6543054999999995,
+        "p95_nearest_rank": 6.92727,
+        "max": 6.92727
+      },
+      "sender_data_retransmissions_total": 0,
+      "source_summary_sha256": "033c4aa4897d32f25a3acccfa1a828048b2f716ff6e60b9763b0e6b2a156172b",
+      "samples": [
+        {
+          "run_id": "8ca29f96cfb1bafd377d9120f1f80e16",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.761693,
+          "sender_acknowledged_goodput_Bps": 1211.5308991402005,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "648a26c816a003277bbdcf7beb1f659d06816dc04865ea78863d98b095159ae1",
+            "sender_collection": "94860670ef8ef8ca0f2eb1aae76463dcd2fe70b67d924168f1b2efba497edfed",
+            "receiver_collection": "a6a29c3869c70c4f344671e0833c9601257d8a59b46a4ef6343b7d880c89b612"
+          }
+        },
+        {
+          "run_id": "fa31ea98e098ba5545e17d537ba4f36a",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.49245,
+          "sender_acknowledged_goodput_Bps": 1261.7732905143666,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "5f45f640de2016f325ca16a8feb1ce9ff8995c7cc939b081b3c3bb5ba38b1719",
+            "sender_collection": "eb7a321b8c6d9078e021cae7d43bc75dc52a6533ecbccb8aec279f78dbfd89df",
+            "receiver_collection": "f37b8dd4e6d0681a4e25eb56748b0deda042acabbee1ab26ca033c856ca56ba7"
+          }
+        },
+        {
+          "run_id": "bd28b54d6d17c30c91b647271fd45112",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.829391,
+          "sender_acknowledged_goodput_Bps": 1199.5213043154213,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "00890a2fc31544318aa64150122c663e2c3577b3e5afddbd02db94b01106a9d2",
+            "sender_collection": "246e5d566a7437bf0727a78ca0873336fafab01bc36bc97e7c9e6096b56f4e8b",
+            "receiver_collection": "401c7223f8f24d042ce61bb703e05f6d226fe60a7782f46ddba1cfdd103af4e3"
+          }
+        },
+        {
+          "run_id": "75e89666e69bbfbbe8a1a5df9ae7bf00",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.782566,
+          "sender_acknowledged_goodput_Bps": 1207.802474756604,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "4f96a427bcfc6d2c8facd38457448716a02dd17a850c74587764eadf4785a35c",
+            "sender_collection": "37dfcbf0dd469df1fcec2d98364d5cb23ebb4260c751ead4bc26d47342dfa738",
+            "receiver_collection": "c6875c608008211b4df0bcf942dc2dcfcd6638243e1cacb051ded2fcfbfa76d2"
+          }
+        },
+        {
+          "run_id": "8f5d1ee7263c57cdf19d573cc2cd047f",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.663322,
+          "sender_acknowledged_goodput_Bps": 1229.4167984077612,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "ffbbb555e26800c6f023d9bd2907c59b31aed39dcf5e66e0e3f1b91d80061aac",
+            "sender_collection": "3e344dd8931428ea55db6262b74814448c2c17fe49e8a5bc97c17d8ce2a2dcf7",
+            "receiver_collection": "19c1e559b03f1efd74a027b2c6b7f24369ad63ba2f0944583964e0d1124b0c25"
+          }
+        },
+        {
+          "run_id": "c72d3dcb434087b9b3f44f06256f3479",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.535305,
+          "sender_acknowledged_goodput_Bps": 1253.4992628500124,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "009ef9d6d78a9954a3f56687fafb8307f4663ee8f34ff88e50d3228228badab8",
+            "sender_collection": "727a97efd4c12ff3b1008644d64187bd9799ce9ea86de43fe00d2c33dcd42c67",
+            "receiver_collection": "2c0df631f10d4fd389f9873feaae51ba999eb9f3de8ade36a1656febf9b4d7c3"
+          }
+        },
+        {
+          "run_id": "4c0d2684b331fa683b1d1bfb52474131",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.43489,
+          "sender_acknowledged_goodput_Bps": 1273.0598347446498,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "4156d974d31c2e3505c4d8990ded88ce607a0a3109f89acaf8c44f226cb2f903",
+            "sender_collection": "8bfed7fc148bb09949fd3830cd436ea493fccd1a725a687e46b105109721f8d4",
+            "receiver_collection": "98d3bcdd4674cc99037442eb614620a9bb1bd37811519e55ba63fa54029727c5"
+          }
+        },
+        {
+          "run_id": "49d463903c5426853353e571713cc571",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.645289,
+          "sender_acknowledged_goodput_Bps": 1232.7530074312795,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "e38b1ea10079b590faeafa1011cafc96ecca9186aba6ff8b695c66c4aa570cae",
+            "sender_collection": "c774d55f3a565ccd1d64012636518a39f500af450bd506066ad819caa7413e13",
+            "receiver_collection": "a6698a1df175a62212a30247fdce8f5194896208ddd9e0407d9c16645a16c135"
+          }
+        },
+        {
+          "run_id": "c347b2eae49f81e8d46712eddfc61775",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.561668,
+          "sender_acknowledged_goodput_Bps": 1248.463043238396,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 12,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 435252,
+          "capture_sha256": {
+            "run_plan": "aedfbfba897563a0e516be2248a4f18225c4ac86b0102e14987185cc13946ae4",
+            "sender_collection": "7a69983427be7a7e9700c2fd4720845740c5f3be6f1e8db03071078333f304fe",
+            "receiver_collection": "2d7b9b6139c5ff7ffda7475345a022be391407320db8c41a3dc435c5c1f01298"
+          }
+        },
+        {
+          "run_id": "33bd535c150170cd85e4c5325c49db68",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.92727,
+          "sender_acknowledged_goodput_Bps": 1182.5726440574715,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 14,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 507794,
+          "capture_sha256": {
+            "run_plan": "b2c2fbdd4db2fcd1e537a1e9668ebff16e17bc0c26840745ded792dfbdec7f90",
+            "sender_collection": "ca25622afea9199b2e813d7d648b17b02147fff625d39d4050e5954439f48322",
+            "receiver_collection": "c0bf392e6367d1561088000e8b4e2fc73c5bf97924dc1deeb752d0a87f322185"
+          }
+        }
+      ]
+    },
+    "ab": {
+      "direction": "A\u2192B",
+      "recorded_runs": 10,
+      "completed_runs": 10,
+      "goodput_Bps": {
+        "n": 10,
+        "min": 688.5480142887161,
+        "median": 1188.20759012916,
+        "p95_nearest_rank": 1232.0371776843658,
+        "max": 1232.0371776843658
+      },
+      "sender_start_to_flow_ack_seconds": {
+        "n": 10,
+        "min": 6.64915,
+        "median": 6.894468,
+        "p95_nearest_rank": 11.8975,
+        "max": 11.8975
+      },
+      "sender_data_retransmissions_total": 4,
+      "source_summary_sha256": "d43e0f457b0272fbb76413998de72069b8fdb443a9f7f00e8e3a0450d77e9cc0",
+      "samples": [
+        {
+          "run_id": "b5ecc1219adb7b10ce71261d7a6698ea",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.982789,
+          "sender_acknowledged_goodput_Bps": 1173.170204627406,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "d057ece672cb9d73f894e8055469a06da1558dc34deaaa6af54c1077605bdc2f",
+            "sender_collection": "324162cc62dfb463ab7af3b8aff442cd6a756eec4430890cbb9ea08450060125",
+            "receiver_collection": "69550cfb7212efda9b6a8201e51a50df99a94592106dc4edf82601ade52e4885"
+          }
+        },
+        {
+          "run_id": "3f67a960cfd1be3ebc60c59551d6416a",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.791932,
+          "sender_acknowledged_goodput_Bps": 1206.1369283438055,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 12,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 435252,
+          "capture_sha256": {
+            "run_plan": "ddeb52951808224979fbb8ffeee6ee19e5436c03d3565170677702227d4fe9c2",
+            "sender_collection": "c8a06e7044c2b272a7366d810c5f8bd8beb804ac071fa2d21833a1b915a3278c",
+            "receiver_collection": "69bcb2fba3fbd88ee6ac0cb2d500432679f0bced62f310c7b9de8690dcc7f679"
+          }
+        },
+        {
+          "run_id": "8c294e300fad9fb2fe3e0330490151fc",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.744399,
+          "sender_acknowledged_goodput_Bps": 1214.6375088425225,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "27af529e402e420853a1f22616889d4c80bdaeee54e6e0c0b1d52dd229f5eb82",
+            "sender_collection": "9063c9fdeacc7e9b90d1fc846a512d9326278038fd415fff777c1765d33af3b2",
+            "receiver_collection": "7c9ad491dfd8a4e635b90f0a9235a34c7e34627e6bb551704bd08f98d9b35332"
+          }
+        },
+        {
+          "run_id": "f07804f0eb2ba828ea8ff1e7d9eae1f3",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.913003,
+          "sender_acknowledged_goodput_Bps": 1185.013227970536,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 12,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 435252,
+          "capture_sha256": {
+            "run_plan": "3bec3ab79a7ca949500c495d28ebf071044838dc646840039a443ef8b3e262ff",
+            "sender_collection": "2e8432d811e277650acaff22c6023c49311322c0b3f0dace892ab9b6470cfcdd",
+            "receiver_collection": "ee5cdbaf09d526b4a5565817f7b8ec6a73a956629f4d1a862027a9fbfcacd02b"
+          }
+        },
+        {
+          "run_id": "3dbe00184ff86c791afbb6a517d44e28",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.800506,
+          "sender_acknowledged_goodput_Bps": 1204.6162447323773,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "78c5cd9183b2a2978bb8324815a592c7cbf3d466211627aca3859fd02dbee7b6",
+            "sender_collection": "02f18ee2ea1b26a8ab1de08d1bdb614cb8914c3c8a172e01e3cabfe6440bde48",
+            "receiver_collection": "82031f31d9c5973accdc77ddd8d6bc4427dad01dfddce9d8a3ca04c2c216ea46"
+          }
+        },
+        {
+          "run_id": "5c513218d9c5ffaa8d377167a466044a",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 7.152008,
+          "sender_acknowledged_goodput_Bps": 1145.4125890239495,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 14,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 507794,
+          "capture_sha256": {
+            "run_plan": "524fd6fd4ab28ea2712bd8b8c992e1d5a68ef4a549b9770f21f70160c4ed41d1",
+            "sender_collection": "93f5f9e291f5c8bd4c17ba30309ac0549e2ee8e630e49a252c1894d73fb6cc7e",
+            "receiver_collection": "3e84c94cb97476dde99a5ee98d0d81f0b50bf1c951e2a59bd75a77cde895559b"
+          }
+        },
+        {
+          "run_id": "9a515533b3e381d1d434baeaad5edaf5",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.875933,
+          "sender_acknowledged_goodput_Bps": 1191.401952287784,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 12,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 435252,
+          "capture_sha256": {
+            "run_plan": "200ac8651ee80850aa184a18a4b77e6827795aa99a153bd0dcf470118bc36a99",
+            "sender_collection": "6f11fa13af3dc56a313ab8231d1936fa3bb05ab03e66c110b76337cc005635fe",
+            "receiver_collection": "5d7296dd41f5639928e2fa55239ee01758949b91fa2bd4689e17e5ae39d78b75"
+          }
+        },
+        {
+          "run_id": "1fef438bc5cac6281d2e918f86cc758c",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 6.64915,
+          "sender_acknowledged_goodput_Bps": 1232.0371776843658,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 12,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 435252,
+          "capture_sha256": {
+            "run_plan": "62599b021b0c56e07b5367482365882c503bb5d2051d6e3d754c56a58774881b",
+            "sender_collection": "48193a56fcc8c7da2a6ed4da5113d0992c24f7850397e969d5863da87245d775",
+            "receiver_collection": "d499932fa1e758ecb960720c8d4c89f78237a0ec8e7a00ac3e3aa5d7df20a227"
+          }
+        },
+        {
+          "run_id": "e579be6248fd0aefbc3b852f26b5f951",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 11.8975,
+          "sender_acknowledged_goodput_Bps": 688.5480142887161,
+          "sender_data_retransmissions": 4,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 20,
+          "sender_rf_done_attempts": 47,
+          "receiver_rf_done_attempts": 24,
+          "sender_reserved_estimated_airtime_us": 5168417,
+          "receiver_reserved_estimated_airtime_us": 870504,
+          "capture_sha256": {
+            "run_plan": "f1e93d911ffbac5ac433516a97265af334bb759a7543a944abc42e591bedd75c",
+            "sender_collection": "4ec39412a361174867e53b7b184906cca2b6acc3944d03c5fe6276c5c03624da",
+            "receiver_collection": "7fadb4d8d31a040f127cdeb3040cf118542f7c864fabf9c7665319ab062f4530"
+          }
+        },
+        {
+          "run_id": "c4f15d23a1db0cc9544a80fb02a643e2",
+          "status": "completed",
+          "payload_bytes": 8192,
+          "sender_start_to_flow_ack_seconds": 7.18586,
+          "sender_acknowledged_goodput_Bps": 1140.0166437976804,
+          "sender_data_retransmissions": 0,
+          "matched_data_rf_packets": 43,
+          "matched_ack_rf_packets": 12,
+          "sender_rf_done_attempts": 43,
+          "receiver_rf_done_attempts": 13,
+          "sender_reserved_estimated_airtime_us": 4724837,
+          "receiver_reserved_estimated_airtime_us": 471523,
+          "capture_sha256": {
+            "run_plan": "2ec22168972a54b687118c78a2433389d17732e01019e0b672059e935269b723",
+            "sender_collection": "d0a8452ebcf80039ca57652bb96300c0ce74e1ffc2e301a02b72f8837ca5ff2d",
+            "receiver_collection": "8a17bd1027c377a183c0e05c47285a2a59ee967ed0ef2e11ea527e907904bd0a"
+          }
+        }
+      ]
+    }
+  },
+  "managed_session_attempts": 31,
+  "setup_failures": 1,
+  "rf_samples_completed": 30,
+  "samples_at_or_above_1000_Bps": 29,
+  "data_retransmissions_total": 4,
+  "matched_meshcore_samples": null,
+  "matched_reticulum_samples": null,
+  "measured_airtime_seconds": null,
+  "measured_energy_joules": null,
+  "one_way_latency_seconds": null,
+  "measured_eirp_dbm": null,
+  "target_goodput_Bps": 1500,
+  "target_met_in_repeated_samples": false,
+  "provenance": {
+    "source_report_sha256": "5ce9ba7295f80918b882d97e54dd9e3b8d9f52feb2861ca73a4b0542f992556f",
+    "source_report_path": "work/meshticulum-abc-deployment-20261009/BENCHMARK_REPORT.json",
+    "analysis_source_sha256": "5e2c1c7bd7c72f3d08d3412e12191e15252098a7b66ef4d08b527b62264eb2eb",
+    "analysis": "Replayed all 30 retained RUN.json + paired collected records with canonical analyzer.one(); per-direction summaries matched retained report.",
+    "raw_captures_location": "Retained lab workspace; only allowlisted aggregate/per-run measurement metadata is published. No grants, secrets, addresses, boot IDs, payloads or private stores."
+  },
+  "setup_failure": {
+    "status": "SSH provisioning failure before RF",
+    "count": 1,
+    "capture_sha256": "589c3a2b7a7df2a2571a9ecc5d76daead60fb54863fc62e81d01af6cb679be43",
+    "preserved_in_managed_attempts_denominator": true,
+    "rf_sample": false
+  }
+}
