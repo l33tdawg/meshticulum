@@ -11,5 +11,8 @@ artifacts MUST include the generated attribution and licence inventory described
 in docs/OPEN_SOURCE_POLICY.md.
 
 Meshticulum
+A SAGE Foundation project, created and maintained by Dhillon Andrew Kannabhiran (@l33tdawg).
+SAGE Foundation: https://sage-foundation.net/
+Main SAGE repository: https://github.com/l33tdawg/sage/
 Extracted from SAGE Commons/Lantern in October 2026.
 See docs/EXTRACTION.md and provenance/UPSTREAM_SOURCE.json for source attribution and changes.

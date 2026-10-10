@@ -1,5 +1,7 @@
 # Source extraction
 
+Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project created and maintained by [Dhillon Andrew Kannabhiran (@l33tdawg)](https://github.com/l33tdawg). The [main SAGE repository](https://github.com/l33tdawg/sage/) and planned separate Lantern product repository have distinct responsibilities; see [project family](PROJECT_FAMILY.md).
+
 This repository starts from a reviewed working-tree snapshot of the Meshticulum sources in SAGE Lantern on 2026-10-10. It does not contain the entire SAGE application or its Git history. The parent checkout and its unrelated work were preserved.
 
 `provenance/UPSTREAM_SOURCE.json` records the parent repository, HEAD, dirty snapshot status, original file paths, source hashes, destination paths and hashes of the extracted files. Source attribution, Apache-2.0 LICENSE and upstream NOTICE are retained. Each changed file is identified there; changes made during extraction are namespace and repository path adaptations, test collection adaptations and standalone public-runtime packaging.
