@@ -26,7 +26,7 @@ def test_public_and_offline_imports_need_no_parent_checkout_or_sdk(tmp_path):
         'import sys; import meshticulum.contracts.identity, meshticulum.scheduler.scheduler; '
         'import meshticulum.flow.flow_port, meshticulum.bench.services; '
         'import meshticulum.bench.service_runner, meshticulum.resources.lamplighter; '
-        'import meshticulum.privacy.mesh_binary_envelope; '
+        'import meshticulum.privacy.mesh_binary_envelope, meshticulum.privacy.forward_session; '
         'assert not any(n == "sage_sdk" or n.startswith("sage_sdk.") '
         'or n == "sage_lantern" or n.startswith("sage_lantern.") '
         'or n.startswith("meshticulum.integrations.sage.") for n in sys.modules)'],

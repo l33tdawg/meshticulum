@@ -2,12 +2,13 @@
 """Experimental end-to-end session over Noise KK and private binary envelopes.
 
 No device, enrollment, key persistence, authority or application admission is
-provided. Both Ed25519 peers are independently pinned and converted to X25519.
+provided. Both Ed25519 peers and dedicated Noise X25519 public keys are pinned.
+Signing identities authenticate the separate Noise keys in final confirmations.
 Application records require the complete handshake plus bidirectional key
 confirmation. A caller-owned durable counter namespace is mandatory; restart
 requires a fresh session ID/exchange under the ORIGINAL application deadline.
 
-Noise KK handshake bytes follow the Noise specification. The MPF1 record layer
+Noise KK handshake bytes follow the Noise specification. The MPF2 record layer
 is separate: it authenticates its header as AEAD associated data and carries an
 unchanged LM1/LM2 sealed envelope. This is not NoiseSocket wire compatibility.
 Dropping Python key references does not prove forensic memory erasure.
@@ -32,8 +33,10 @@ from .mesh_envelope import Peer
 from .mesh_binary_envelope import MAX_BINARY_BYTES, to_text
 
 PROTOCOL = b'Noise_KK_25519_ChaChaPoly_SHA256'
-DOMAIN = b'meshticulum.forward-private.v1\x00'
-MAGIC = b'MPF1'
+DOMAIN = b'meshticulum.forward-private.v2\x00'
+MAGIC = b'MPF2'
+# Keep retired v1 claims fenced across this experimental wire revision.
+COUNTER_CLAIM_DOMAIN = b'meshticulum.forward-private.v1\x00counters\x00'
 HEADER = struct.Struct('!4sB16sQ')
 H1, H2, CONFIRM_I, CONFIRM_R, DATA = 1, 2, 3, 4, 5
 MAX_PACKET_BYTES = HEADER.size + MAX_BINARY_BYTES + 16
@@ -64,6 +67,12 @@ def public(key):
     return key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
 
 
+def canonical_x25519(value):
+    # Reject equivalent encodings that could disguise reuse of a pinned key.
+    return (type(value) is bytes and len(value) == 32 and any(value)
+            and int.from_bytes(value, 'little') < 2**255 - 19)
+
+
 @dataclass(frozen=True)
 class ForwardContext:
     initiator: Peer
@@ -73,6 +82,8 @@ class ForwardContext:
     issued_epoch_us: int
     expires_epoch_us: int
     max_records: int
+    initiator_noise_public_key: bytes
+    responder_noise_public_key: bytes
 
     def __post_init__(self):
         require(type(self.initiator) is Peer and type(self.responder) is Peer
@@ -84,13 +95,25 @@ class ForwardContext:
                 and 0 <= self.issued_epoch_us < self.expires_epoch_us < 2**63
                 and self.expires_epoch_us - self.issued_epoch_us <= MAX_WINDOW_SECONDS * 1000000
                 and type(self.max_records) is int and 2 <= self.max_records <= 4096)
+        require(canonical_x25519(self.initiator_noise_public_key)
+                and canonical_x25519(self.responder_noise_public_key)
+                and self.initiator_noise_public_key != self.responder_noise_public_key)
+        try:
+            legacy_keys = {bytes(VerifyKey(peer.public_key).to_curve25519_public_key())
+                           for peer in (self.initiator, self.responder)}
+            require(self.initiator_noise_public_key not in legacy_keys
+                    and self.responder_noise_public_key not in legacy_keys)
+        except Exception:
+            raise ForwardSessionError() from None
 
     @property
     def prologue(self):
         value = dict(initiator=self.initiator.to_dict(), responder=self.responder.to_dict(),
             session_id=self.session_id.hex(), binding_digest=self.binding_digest.hex(),
             issued_epoch_us=self.issued_epoch_us, expires_epoch_us=self.expires_epoch_us,
-            max_records=self.max_records)
+            max_records=self.max_records,
+            initiator_noise_public_key=self.initiator_noise_public_key.hex(),
+            responder_noise_public_key=self.responder_noise_public_key.hex())
         return DOMAIN + json.dumps(value, sort_keys=True, separators=(',', ':')).encode('ascii')
 
     @property
@@ -148,6 +171,10 @@ def _operation(method):
 class ForwardSession:
     """One non-resumable crypto incarnation with explicit caller-owned controls.
 
+    The caller must independently generate and reserve its static key for Noise.
+    Pin matching and refusal of known legacy keys do not prove that provenance.
+    Protected key storage, usage ownership and retirement remain caller duties.
+
     ``counters.claim(binding)`` must commit a unique session-ID/local-role claim and
     return True; reuse after restart must fail. ``reserve_transmit()`` commits
     a monotonically increasing counter BEFORE it returns. ``record_receive(n)``
@@ -155,7 +182,7 @@ class ForwardSession:
     of adjacent-link counters. A failed/ambiguous callback fences this session;
     already committed debt/counters are never refunded.
     """
-    def __init__(self, *, context, initiator, signing_key, counters, authorize,
+    def __init__(self, *, context, initiator, signing_key, noise_static_key, counters, authorize,
                  clock, application_deadline_monotonic_us):
         self._closed = False
         self._busy = True  # constructor callbacks cannot enter a public operation
@@ -169,27 +196,29 @@ class ForwardSession:
         self.state = 'new'
         try:
             require(type(context) is ForwardContext and type(initiator) is bool
-                    and isinstance(signing_key, SigningKey) and callable(authorize) and callable(clock)
+                    and isinstance(signing_key, SigningKey) and isinstance(noise_static_key, X25519PrivateKey)
+                    and callable(authorize) and callable(clock)
                     and type(application_deadline_monotonic_us) is int
                     and application_deadline_monotonic_us > 0
                     and all(callable(getattr(counters, name, None)) for name in
                             ('claim', 'reserve_transmit', 'record_receive')))
             own = context.initiator if initiator else context.responder
-            peer = context.responder if initiator else context.initiator
+            own_noise = context.initiator_noise_public_key if initiator else context.responder_noise_public_key
+            peer_noise = context.responder_noise_public_key if initiator else context.initiator_noise_public_key
             require(bytes(signing_key.verify_key) == own.public_key)
+            require(public(noise_static_key) == own_noise)
             self.context, self.initiator, self.counters = context, initiator, counters
             self._signer = signing_key
             self.authorize, self.clock = authorize, clock
             self.deadline = application_deadline_monotonic_us
             self._live()
-            binding = hashlib.sha256(DOMAIN + b'counters\0' + context.session_id + bytes([initiator])).digest()
+            binding = hashlib.sha256(COUNTER_CLAIM_DOMAIN + context.session_id + bytes([initiator])).digest()
             require(counters.claim(binding) is True)
             self._live()
-            self._s = X25519PrivateKey.from_private_bytes(bytes(signing_key.to_curve25519_private_key()))
-            self._rs = X25519PublicKey.from_public_bytes(bytes(VerifyKey(peer.public_key).to_curve25519_public_key()))
-            si = bytes(VerifyKey(context.initiator.public_key).to_curve25519_public_key())
-            sr = bytes(VerifyKey(context.responder.public_key).to_curve25519_public_key())
-            self._sym = _Symmetric(context.prologue, si, sr)
+            self._s = noise_static_key
+            self._rs = X25519PublicKey.from_public_bytes(peer_noise)
+            self._sym = _Symmetric(context.prologue, context.initiator_noise_public_key,
+                                   context.responder_noise_public_key)
             self._busy = False
         except BaseException:
             self._failure()

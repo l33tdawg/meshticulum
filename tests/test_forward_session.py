@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from cryptography.exceptions import InvalidTag
 
 from meshticulum.privacy.forward_session import (
-    ForwardContext, ForwardSession, ForwardSessionError, HEADER, DOMAIN, nonce)
+    ForwardContext, ForwardSession, ForwardSessionError, HEADER, DOMAIN, COUNTER_CLAIM_DOMAIN, nonce, public)
 from meshticulum.privacy.mesh_envelope import Peer, seal_message, open_envelope
 from meshticulum.privacy.mesh_binary_envelope import to_binary, to_text
 
@@ -52,16 +52,19 @@ class Counters:
     def reserved(self):return self.db.execute('SELECT tx FROM claims WHERE binding=?',(self.binding,)).fetchone()[0]
 
 
-def pair(tmp_path, *, context=None, keys=None, name='one'):
+def pair(tmp_path, *, context=None, keys=None, noise_keys=None, name='one'):
     keys=keys or (SigningKey(bytes(range(32))),SigningKey(bytes(range(32,64))))
     peers=(Peer('fixture-i',bytes(keys[0].verify_key)),Peer('fixture-r',bytes(keys[1].verify_key)))
-    context=context or ForwardContext(*peers,uuid.uuid4().bytes,b'a'*32,10000000,100000000,64)
+    noise_keys=noise_keys or tuple(X25519PrivateKey.from_private_bytes(hashlib.sha256(label).digest())
+        for label in (b'public test initiator dedicated Noise static v2',b'public test responder dedicated Noise static v2'))
+    context=context or ForwardContext(*peers,uuid.uuid4().bytes,b'a'*32,10000000,100000000,64,
+                                     public(noise_keys[0]),public(noise_keys[1]))
     clock={'epoch':20000000,'mono':1000000,'live':True}
     stores=(Counters(tmp_path/(name+'-i.sqlite')),Counters(tmp_path/(name+'-r.sqlite')))
-    def build(role,index):return ForwardSession(context=context,initiator=role,signing_key=keys[index],
+    def build(role,index):return ForwardSession(context=context,initiator=role,signing_key=keys[index],noise_static_key=noise_keys[index],
         counters=stores[index],authorize=lambda:clock['live'],clock=lambda:(clock['epoch'],clock['mono']),
         application_deadline_monotonic_us=81000000)
-    return build(True,0),build(False,1),context,keys,peers,stores,clock
+    return build(True,0),build(False,1),context,keys,peers,stores,clock,noise_keys
 
 
 def ready(p):
@@ -114,6 +117,7 @@ def test_restart_cannot_reclaim_the_same_context_or_reset_nonce_state(tmp_path):
     p=pair(tmp_path);ready(p);p[0].seal(envelope(p));p[0].close()
     store=Counters(tmp_path/'one-i.sqlite')
     with pytest.raises(ForwardSessionError):ForwardSession(context=p[2],initiator=True,signing_key=p[3][0],
+        noise_static_key=p[7][0],
         counters=store,authorize=lambda:True,clock=lambda:(20000000,1000000),application_deadline_monotonic_us=81000000)
     assert p[5][0].reserved==2
 
@@ -146,6 +150,7 @@ def test_peer_identity_and_context_substitution_refused(tmp_path):
     p=pair(tmp_path);other=pair(tmp_path,name='other')
     with pytest.raises(ForwardSessionError):other[1].respond(p[0].start())
     with pytest.raises(ForwardSessionError):ForwardSession(context=p[2],initiator=True,signing_key=SigningKey.generate(),
+        noise_static_key=p[7][0],
         counters=Counters(tmp_path/'wrong.sqlite'),authorize=lambda:True,clock=lambda:(20000000,1000000),application_deadline_monotonic_us=81000000)
 
 
@@ -170,6 +175,7 @@ def test_same_session_id_cannot_be_reclaimed_with_extended_expiry(tmp_path):
     from dataclasses import replace
     p=pair(tmp_path);p[0].close();changed=replace(p[2],expires_epoch_us=110000000)
     with pytest.raises(ForwardSessionError):ForwardSession(context=changed,initiator=True,signing_key=p[3][0],
+        noise_static_key=p[7][0],
         counters=Counters(tmp_path/'one-i.sqlite'),authorize=lambda:True,clock=lambda:(20000000,1000000),application_deadline_monotonic_us=91000000)
 
 
@@ -308,17 +314,91 @@ def test_closure_after_replay_commit_exposes_no_opened_record(tmp_path):
     assert p[1].state=='closed' and p[5][1].db.execute('SELECT count(*) FROM received WHERE n=2').fetchone()[0]==1
 
 
+@pytest.mark.parametrize('field',['initiator_noise_public_key','responder_noise_public_key'])
+@pytest.mark.parametrize('owner',[0,1])
+def test_neither_noise_role_can_reuse_either_known_legacy_recipient_key(tmp_path,field,owner):
+    from dataclasses import replace
+    p=pair(tmp_path);legacy=bytes(p[3][owner].verify_key.to_curve25519_public_key())
+    with pytest.raises(ForwardSessionError):replace(p[2],**{field:legacy})
+
+
+@pytest.mark.parametrize('field',['initiator_noise_public_key','responder_noise_public_key'])
+@pytest.mark.parametrize('bad',['high_bit_alias','field_modulus','zero','duplicate_role'])
+def test_noncanonical_or_aliased_noise_pins_are_refused(tmp_path,field,bad):
+    from dataclasses import replace
+    p=pair(tmp_path)
+    if bad=='high_bit_alias':
+        value=bytearray(getattr(p[2],field));value[-1]|=0x80;value=bytes(value)
+    elif bad=='field_modulus':value=(2**255-19).to_bytes(32,'little')
+    elif bad=='zero':value=bytes(32)
+    else:value=getattr(p[2],'responder_noise_public_key' if field.startswith('initiator') else 'initiator_noise_public_key')
+    with pytest.raises(ForwardSessionError):replace(p[2],**{field:value})
+
+
+@pytest.mark.parametrize('bad',['missing','wrong'])
+def test_noise_private_key_must_match_pin_before_authority_or_claim(tmp_path,bad):
+    p=pair(tmp_path);store=Counters(tmp_path/'wrong-noise.sqlite');called=[]
+    value=None if bad=='missing' else X25519PrivateKey.generate()
+    with pytest.raises(ForwardSessionError):ForwardSession(context=p[2],initiator=True,signing_key=p[3][0],
+        noise_static_key=value,counters=store,authorize=lambda:called.append(True) or True,
+        clock=lambda:(20000000,1000000),application_deadline_monotonic_us=81000000)
+    assert not called and store.db.execute('SELECT count(*) FROM claims').fetchone()[0]==0
+
+
+def test_signing_private_key_is_never_converted_for_the_new_exchange(tmp_path,monkeypatch):
+    seed=pair(tmp_path,name='seed');inner=envelope(seed)
+    def forbidden(*args,**kwargs):raise AssertionError('signing private conversion forbidden')
+    monkeypatch.setattr(SigningKey,'to_curve25519_private_key',forbidden)
+    p=pair(tmp_path);ready(p)
+    assert p[1].open(p[0].seal(inner))==inner
+
+
+@pytest.mark.parametrize('role',[True,False])
+def test_upgrade_cannot_reclaim_a_retired_v1_id_role_claim(tmp_path,role):
+    p=pair(tmp_path);store=Counters(tmp_path/'retired-v1.sqlite');index=0 if role else 1
+    old_binding=hashlib.sha256(b'meshticulum.forward-private.v1\x00counters\x00'+p[2].session_id+bytes([role])).digest()
+    assert store.claim(old_binding) is True
+    with pytest.raises(ForwardSessionError):ForwardSession(context=p[2],initiator=role,signing_key=p[3][index],
+        noise_static_key=p[7][index],counters=store,authorize=lambda:True,
+        clock=lambda:(20000000,1000000),application_deadline_monotonic_us=81000000)
+    assert store.reserved==0 and store.db.execute('SELECT count(*) FROM claims').fetchone()[0]==1
+
+
+@pytest.mark.parametrize('phase',['handshake','data'])
+def test_v1_wire_magic_has_no_downgrade_fallback(tmp_path,phase):
+    p=pair(tmp_path)
+    if phase=='handshake':
+        packet=p[0].start()
+        with pytest.raises(ForwardSessionError):p[1].respond(b'MPF1'+packet[4:])
+    else:
+        ready(p);packet=p[0].seal(envelope(p))
+        with pytest.raises(ForwardSessionError):p[1].open(b'MPF1'+packet[4:])
+    assert p[1].state=='closed'
+
+
+def test_changed_responder_noise_pin_cannot_complete_the_original_exchange(tmp_path):
+    from dataclasses import replace
+    p=pair(tmp_path);changed=X25519PrivateKey.generate()
+    context=replace(p[2],responder_noise_public_key=public(changed))
+    q=pair(tmp_path,context=context,noise_keys=(p[7][0],changed),name='substitution')
+    with pytest.raises(ForwardSessionError):q[1].respond(p[0].start())
+    assert q[1].state=='closed' and q[5][1].reserved==0
+
+
 def test_noise_kk_known_answer_from_independent_reference(tmp_path,monkeypatch):
     from meshticulum.privacy.forward_session import ForwardContext
     path=Path(__file__).parent/'fixtures/noise-kk-vector.json'
     v=json.loads(path.read_text())
     keys=(SigningKey(bytes.fromhex(v['initiator_signing_seed'])),SigningKey(bytes.fromhex(v['responder_signing_seed'])))
     peers=(Peer('fixture-i',bytes(keys[0].verify_key)),Peer('fixture-r',bytes(keys[1].verify_key)))
-    context=ForwardContext(*peers,bytes.fromhex('0102030405060708090a0b0c0d0e0f10'),b'a'*32,10000000,100000000,64)
+    noise_keys=tuple(X25519PrivateKey.from_private_bytes(bytes.fromhex(v[name])) for name in
+                     ('initiator_noise_static','responder_noise_static'))
+    context=ForwardContext(*peers,bytes.fromhex('0102030405060708090a0b0c0d0e0f10'),b'a'*32,10000000,100000000,64,
+                          public(noise_keys[0]),public(noise_keys[1]))
     assert context.prologue.hex()==v['prologue_hex']
     values=iter([v['initiator_ephemeral'],v['responder_ephemeral']])
     monkeypatch.setattr(X25519PrivateKey,'generate',staticmethod(lambda:X25519PrivateKey.from_private_bytes(bytes.fromhex(next(values)))))
-    p=pair(tmp_path,context=context,keys=keys);first=p[0].start();second=p[1].respond(first);p[0].finish(second)
+    p=pair(tmp_path,context=context,keys=keys,noise_keys=noise_keys);first=p[0].start();second=p[1].respond(first);p[0].finish(second)
     assert first[HEADER.size:].hex()==v['first_hex'] and second[HEADER.size:].hex()==v['second_hex']
     assert p[0].handshake_hash.hex()==p[1].handshake_hash.hex()==v['handshake_hash_hex']
     assert p[0]._tx.hex()==v['initiator_transmit_key_hex'] and p[0]._rx.hex()==v['initiator_receive_key_hex']

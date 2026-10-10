@@ -21,10 +21,14 @@ The candidate includes:
   resume, independent of any product's protected application storage.
 - Recipient-encrypted envelopes and a compact binary carrier preserving sealed
   content.
-- An opt-in [experimental forward-session primitive](docs/FORWARD_SECRECY.md)
-  requiring the full exchange and signed key confirmations around unchanged
-  LM1/LM2 records. It has no native/private service wiring; static-key composition,
-  native key erasure/lifecycle and performance remain open.
+- An opt-in [experimental v2 forward-session primitive](docs/FORWARD_SECRECY.md)
+  requiring caller-owned, independently generated Noise X25519 statics and pinned Ed25519
+  identities. The full exchange and signed confirmations bind both key types and
+  context around unchanged LM1/LM2 records. Known converted legacy recipient keys
+  and MPF1 are refused; retained v1 ID/role claims stay fenced. Caller key purpose,
+  protected lifecycle, full composition, native transport/key erasure and
+  performance remain unqualified, with no native/private wiring or automatic
+  legacy upgrade.
 - A strict repository boundary: Lantern owns its SAGE capture/inbox/policy,
   native resource contexts, grant preparation, Linux node/pilot entry points
   and device/fleet deployment tools. Meshticulum has no reverse dependency.

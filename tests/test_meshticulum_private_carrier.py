@@ -52,7 +52,8 @@ def sealed_message(version):
 
 
 @contextmanager
-def carrier_pair(path, payload, clock, sender_unit, receiver_unit, session_number, *, service=None):
+def carrier_pair(path, payload, clock, sender_unit, receiver_unit, session_number, *, service=None,
+                 original_expires_epoch_us=None):
     """Each hop has independent identities, keys, incarnation and durable stores."""
     path.mkdir(mode=0o700)
     profile = profile_for("sf7-500")
@@ -71,7 +72,9 @@ def carrier_pair(path, payload, clock, sender_unit, receiver_unit, session_numbe
                 local_peer=peers[index], initiator=peers[0], responder=peers[1],
                 session_id=bytes([session_number] * 16).hex(),
                 generation=bytes([session_number + 10] * 16).hex(),
-                issued_epoch_us=original_epoch - 1000000, expires_epoch_us=original_epoch + 180000000,
+                issued_epoch_us=original_epoch - 1000000,
+                expires_epoch_us=(original_epoch + 180000000 if original_expires_epoch_us is None
+                                  else original_expires_epoch_us),
                 profile=asdict(profile), sender_unit=sender_unit, country="MY",
                 antenna_confirmed=True, max_frames=512,
                 object=dict(sha256=digest, bytes=len(payload), chunk_index=0, object_id=digest))
