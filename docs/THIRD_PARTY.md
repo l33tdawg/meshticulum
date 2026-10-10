@@ -80,6 +80,8 @@ The framework's [overall LGPL-2.1-or-later text](../firmware/meshticulum-bench/p
 
 Preparation records the original archives and prepared source tree; build evidence records logs, ELF/map and output hashes. The first fully fresh attempt failed on pinned RISC-V package registration, and its failures remain retained. The [validation record](../provenance/FIRMWARE_RECIPE_VALIDATION.json) binds the final corrected producer/lock to fresh runs 05/06 for both targets on one pinned macOS-arm64 host. Per target, binary/ELF/bootloader/partitions matched; maps differed. Earlier pristine-board-support controls with copied dependencies produced different binaries and remain separate evidence. Bounded reproduction does not establish cross-host reproducibility, deployed-image equivalence, hardware acceptance or complete firmware licensing. The application's `mtb1-9816f92488` source tag is not a full-build identity. See [the recipe guide](FIRMWARE_RECIPE.md).
 
+The [linked-component notice audit](FIRMWARE_LINKED_NOTICES.md) now records 49 contributing archives per target from allocated ELF/map rows, exact archive/member inventories and collected primary/runtime texts. Two PHY/coexist blobs match recorded upstream revisions. Dirty SDK source mapping, exact member/per-file applicability, corresponding source/relinking materials and complete release review remain open; collected notices are not a distribution-wide grant.
+
 ## Work needed before distributing firmware or a combined bundle
 
 1. Define the actual artifacts and generate a linked-content inventory tied to their output hashes. The primary recipe's archive/patch pins advance input provenance; the historical source audit must not be relabeled as the final inventory.

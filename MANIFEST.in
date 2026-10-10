@@ -7,3 +7,4 @@ recursive-include tests *.py *.h *.hpp *.cpp *.c *.json
 global-exclude __pycache__ *.py[cod] .DS_Store
 recursive-include benchmarks *.json
 include .github/workflows/tests.yml
+recursive-include firmware/meshticulum-bench/notices *
