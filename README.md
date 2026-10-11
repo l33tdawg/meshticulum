@@ -59,6 +59,8 @@ Below them, admission binds each transfer to its peers, service, object and orig
 
 [Architecture](docs/ARCHITECTURE.md) follows a transfer through these boundaries and shows the intended mixed-path topology.
 
+**Post-quantum status:** the default protocols use classical cryptography. A tested hybrid prototype in [draft PR #5](https://github.com/l33tdawg/meshticulum/pull/5) combines X25519 + ML-KEM-768 and requires both Ed25519 and ML-DSA-65 signatures. It is unmerged and has no device integration yet. [The status guide](docs/POST_QUANTUM.md) explains its design, radio overhead and how to try it.
+
 ## How we aim to make it faster
 
 The goal is higher **useful encrypted goodput**: application bytes delivered under verification, rather than raw modem bitrate. In the retained radio bench, the timed interval ends at the sender's flow ACK; the receiver's durable hash is required separately. The design reduces avoidable carrier overhead through compact binary envelopes, bounded windows, selective acknowledgements and explicit receiver credit. Retry timing takes the carrier queue into account, and the request/reply adapters avoid carrying HTTP and base64 framing over the scarce radio link.

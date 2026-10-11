@@ -13,6 +13,7 @@ Meshticulum brings bounded radio transfers, authenticated service boundaries and
 | [Architecture](ARCHITECTURE.md) | Component diagrams, service separation, a transfer's lifecycle and the intended mixed-path topology |
 | [MeshCore and Reticulum comparison](COMPARISON.md) | The upstream designs, their strengths, and what Meshticulum implements differently |
 | [Performance and measurement](PERFORMANCE.md) | Useful encrypted goodput, reported results, exact units and the conditions for a fair comparison |
+| [Post-quantum status](POST_QUANTUM.md) | The classical default, hybrid prototype, radio overhead and remaining device work |
 
 The project combines design ideas in its own protocol. Existing MeshCore and Reticulum wire interoperability is not implemented. Authentication, resource verification and path scheduling each have their own responsibility; passing one boundary does not establish all the others.
 
