@@ -8,7 +8,7 @@
     "sage": "https://github.com/l33tdawg/sage/",
     "lantern": "https://github.com/l33tdawg/sage-lantern"
   },
-  "scope": "Six accepted finite public MR1 resource transfers over authenticated encrypted LoRa; aggregate metadata only.",
+  "scope": "Seven accepted finite public MR1 resource transfers over authenticated encrypted LoRa; aggregate metadata only.",
   "timing_basis": {
     "sender_ack": "One sender monotonic clock: start to reliable-flow ACK; useful block bytes exclude the 28-byte MR1 response header.",
     "request_to_verification": "One requesting recipient clock: request through publisher/content verification; includes management and receiver ACK windows.",
@@ -269,6 +269,48 @@
         "runtime_archive_sha256": "12d4d0ad8d8e088f82948d260befcdbfb05520ef1cbe91efc84910d013221408",
         "runtime_manifest_sha256": "a6dcdad600115ed1098764beacaa1bd9f0e920918b91b0f1fc888912508bc652",
         "source_result_sha256": "182e2fb2152b04c4dc4a250f3505b906d99d668bb629af03fa50870c1f52a385"
+      }
+    },
+    {
+      "direction": "C→A",
+      "useful_verified_bytes": 16356,
+      "response_bytes": 16384,
+      "sender_start_to_flow_ack_us": 15267782,
+      "useful_sender_ack_goodput_Bps": 1071.2754478679353,
+      "request_to_publisher_verification_us": 80731095,
+      "useful_request_to_verification_Bps": 202.59851547907283,
+      "acknowledged_data_frames": 85,
+      "sender_rf_done_attempts": 85,
+      "sender_data_retries": 0,
+      "receiver_data_frames": 85,
+      "receiver_duplicate_data_frames": 0,
+      "receiver_ack_rf_done_attempts": 27,
+      "fresh_signed_piece": true,
+      "publisher_verified": true,
+      "receiver_durable_response_verified": true,
+      "radio_transfer_complete": true,
+      "sample_native_jobs_terminal": true,
+      "whole_campaign_complete": true,
+      "full_transport_qualification_complete": false,
+      "sustained_goodput_qualified": false,
+      "native_private_forward_secrecy_qualified": false,
+      "rf_settings": {
+        "frequency_hz": 921375000,
+        "bandwidth_hz": 500000,
+        "spreading_factor": 7,
+        "coding_rate": 5,
+        "chip_power_dbm": 0,
+        "preamble": 8
+      },
+      "measured_energy_joules": null,
+      "measured_airtime_us": null,
+      "measured_eirp_dbm": null,
+      "pins": {
+        "core_commit": "6e722812c2efbfcdd18b56e3994588d18f9f7adc",
+        "lantern_commit": "63623ac63c25e4253ccabc62527c7dedb1a8ab37",
+        "runtime_archive_sha256": "9f90ad1911f89eff6220205f5367e16f8ad8d7605b2d7e40e6de3ac69c08e42e",
+        "runtime_manifest_sha256": "37e923d62e99b207e33556a982031ed2b41737445b28baa684f02b064b044d24",
+        "source_result_sha256": "f4cd21048c4078a3dcaea66a1c3960b6fd1afe04bc7849ddbc1f266f4310f222"
       }
     }
   ]
