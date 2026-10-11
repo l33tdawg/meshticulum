@@ -1,0 +1,35 @@
+X-Wing compatibility vector attribution
+
+This file accompanies the single vector in xwing-draft11.json. Its seed,
+public key, ciphertext and shared secret are transformed from the primary
+X-Wing-KEM-Team C implementation's test_vectors.h, not copied under an
+assumed IETF code-component license. All four byte strings match vector1
+in X-Wing draft11 Appendix C exactly.
+
+Implementation repository: https://github.com/X-Wing-KEM-Team/xwing
+Commit: 706fe95dfff656323c9bc4bbebb55342c8495c51 (06-draft branch)
+Source: src/crypto_kem/xwing/ref/test/test_vectors.h
+Source SHA256: 2ac1085a84d96bf8112855e1ecc82057a71d7c9c404091b65561605a26ada1a1
+License: Apache License, Version2.0
+License file: https://github.com/X-Wing-KEM-Team/xwing/blob/706fe95dfff656323c9bc4bbebb55342c8495c51/LICENSE
+License SHA256: 32ef17f7fc01805c789442c53dff4fd301dd514f2aa877621c8ed8abe5d23275
+The exact upstream license text is distributed alongside the vector as
+XWING_LICENSE.txt, with the license SHA256 above. Its attribution is
+Copyright2024 João Diogo Duarte. The upstream header has no separate
+copyright or attribution notice.
+
+The separate full-draft conformance test reads an unmodified, locally
+fetched draft-connolly-cfrg-xwing-kem-11.txt and verifies its exact SHA256
+before parsing the three Appendix C vectors in memory. Neither the full
+draft nor transformed versions of its other vectors are redistributed here.
+Draft authors: Deirdre Connolly, Peter Schwabe, Bas Westerbaan.
+Draft copyright: Copyright(c)2026 IETF Trust and the identified authors.
+Draft source: https://www.ietf.org/archive/id/draft-connolly-cfrg-xwing-kem-11.txt
+Draft SHA256: 1353f61f0d706199d86b6802eab83cabbb5195b2d99fb35bca20f5e4f83db786
+The draft is an Independent Submission; this notice asserts no automatic
+Section4 BSD grant for that stream. See its copyright notice and the
+IETF Trust Legal Provisions for unmodified-document terms.
+
+The values are public cryptographic test fixtures, not user/device secrets.
+Meshticulum implements no copied X-Wing arithmetic; primitives use the
+cryptography/OpenSSL backend, with a separately authored draft11 adapter.

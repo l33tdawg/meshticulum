@@ -76,6 +76,8 @@ The opt-in [experimental v2 forward-session primitive](docs/FORWARD_SECRECY.md) 
 
 Below them, admission binds each transfer to its peers, service, object and original expiry. Receiver credit bounds what can enter the flow. The scheduler and exclusive worker account for DATA, ACKs, retries and shared-medium costs. Local RF completion, peer receipt and application acceptance remain separate observations.
 
+Current protocols use classical cryptography. An opt-in [post-quantum source prototype](docs/POST_QUANTUM_PROTOTYPE.md) combines X25519 and ML-KEM-768 through X-Wing draft 11, with both Ed25519 and ML-DSA-65 signatures required. It includes a runnable exchange and measured packet sizes; radio integration, native key lifecycle and independent cryptographic review remain open.
+
 [Architecture](docs/ARCHITECTURE.md) follows a transfer through these boundaries and shows the intended mixed-path topology.
 
 **Post-quantum status:** the default protocols use classical cryptography. A tested hybrid prototype in [draft PR #5](https://github.com/l33tdawg/meshticulum/pull/5) combines X25519 + ML-KEM-768 and requires both Ed25519 and ML-DSA-65 signatures. It is unmerged and has no device integration yet. This is future feasibility research, not an alpha dependency. [The status guide](docs/POST_QUANTUM.md) explains its design, radio overhead and how to try it.
