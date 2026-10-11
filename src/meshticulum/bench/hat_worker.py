@@ -8,12 +8,19 @@ through a newly provisioned outer session, never by replaying an old RF attempt.
 import hashlib
 import json
 import math
+import os
+import threading
+import time
+from types import BuiltinFunctionType, MethodType
 import uuid
 
-from .linux_hat import HardwareError, require
+from .linux_hat import LinuxHAT, HardwareError, require
 from .serial_protocol import Outcome, RadioProfile
 from .serial_worker import AttemptResult, estimated_airtime_us
 from .sx1262 import SX1262
+
+
+_NATIVE_MONOTONIC = time.monotonic
 
 
 def journal_binding(context_digest, host_boot_id, profile):
@@ -25,8 +32,21 @@ def journal_binding(context_digest, host_boot_id, profile):
 
 
 class HATWorker:
+    __slots__ = ('__dispatch', '__dict__')
+
+    def __setattr__(self, name, value):
+        if name == '_HATWorker__dispatch' and hasattr(self, name):
+            raise HardwareError('hat_owner_guard_changed')
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name):
+        if name == '_HATWorker__dispatch':
+            raise HardwareError('hat_owner_guard_changed')
+        object.__delattr__(self, name)
+
     def __init__(self, transport, *, journal, profile, context_digest, authorize,
-                 authority_deadline, antenna_confirmed):
+                 authority_deadline, antenna_confirmed, monotonic=None,
+                 time_basis='host-monotonic'):
         require(type(profile) is RadioProfile and callable(authorize), 'invalid_hat_authority')
         require(type(antenna_confirmed) is bool, 'invalid_antenna_confirmation')
         require(type(authority_deadline) in (int, float) and math.isfinite(authority_deadline),
@@ -41,26 +61,107 @@ class HATWorker:
         self.io, self.journal, self.profile = transport, journal, profile
         self.authorize, self.deadline = authorize, authority_deadline
         self.antenna_confirmed, self.fenced = antenna_confirmed, False
-        self.radio = SX1262(transport)
-        self.lease_deadline = min(authority_deadline, transport.monotonic() + profile.lease_ms / 1000)
+        # Native deadlines come directly from Node/RunAuthority's host monotonic
+        # epoch. Never translate an arbitrary caller clock into a fresh lease.
+        if time_basis == 'host-monotonic':
+            require(type(transport) is LinuxHAT and monotonic is None
+                    and type(_NATIVE_MONOTONIC) is BuiltinFunctionType
+                    and _NATIVE_MONOTONIC.__module__ == 'time'
+                    and _NATIVE_MONOTONIC.__name__ == 'monotonic'
+                    and transport.monotonic is _NATIVE_MONOTONIC, 'hat_clock_basis_unverified')
+            native_clock = _NATIVE_MONOTONIC
+        else:
+            require(time_basis == 'model-monotonic' and not isinstance(transport, LinuxHAT)
+                    and callable(monotonic), 'hat_clock_basis_unverified')
+            native_clock = monotonic
+        self._clock, self.time_basis = native_clock, time_basis
+        self.radio = SX1262(transport, monotonic=native_clock)
+        self.lease_deadline = min(authority_deadline, native_clock() + profile.lease_ms / 1000)
+        original_end = min(authority_deadline, self.lease_deadline)
+        pid, thread = os.getpid(), threading.get_ident()
+        original_radio = self.radio
+        original_boot = transport.boot_id
+        transport_clock = transport.monotonic
+        def same_transport_clock():
+            current = transport.monotonic
+            return (type(current) is MethodType and type(transport_clock) is MethodType
+                    and current.__self__ is transport_clock.__self__
+                    and current.__func__ is transport_clock.__func__) or current is transport_clock
+        driver_clock = original_radio._now
+        failed = False
+        def owned(*, contain=False, disarm=False):
+            nonlocal failed
+            if contain or disarm:
+                failed = True
+                valid_owner = (os.getpid() == pid and threading.get_ident() == thread
+                               and original_radio.io is transport)
+                if disarm:
+                    require(valid_owner, 'hat_cleanup_owner_changed')
+                    original_radio.close()
+                elif valid_owner:
+                    original_radio.contain()
+                return
+            require(not failed and not self.fenced and not original_radio.fenced
+                    and os.getpid() == pid and threading.get_ident() == thread
+                    and self.io is transport and self.radio is original_radio
+                    and original_radio.io is transport and transport.boot_id == original_boot
+                    and self.journal is journal and self.profile is profile
+                    and self.authorize is authorize
+                    and self._clock is native_clock and self.time_basis == time_basis
+                    and same_transport_clock()
+                    and original_radio._now is driver_clock, 'hat_owner_or_clock_changed')
+            require(type(self.deadline) in (int, float) and math.isfinite(self.deadline)
+                    and type(self.lease_deadline) in (int, float)
+                    and math.isfinite(self.lease_deadline), 'invalid_hat_deadline')
+            return min(original_end, self.deadline, self.lease_deadline)
+        self._owned = owned
+        def dispatch(*, contain=False, disarm=False):
+            # This closure retains original ownership independently of the mutable
+            # public worker fields, including replacements between operations.
+            if contain or disarm:
+                return owned(contain=contain, disarm=disarm)
+            require(self.__dispatch is dispatch and self._owned is owned,
+                    'hat_owner_guard_changed')
+            return owned()
+        self.__dispatch = dispatch
         self._live()
         self.radio.configure(profile)
 
+    @property
+    def _dispatch(self):
+        return self.__dispatch
+
     def _live(self, needed=0):
-        require(not self.fenced and self.authorize() is True, 'hat_authority_refused')
-        require(self.io.monotonic() + needed < min(self.deadline, self.lease_deadline),
-                'hat_authority_expired')
+        require(not self.fenced, 'hat_authority_refused')
+        owned, authorize = self._dispatch, self.authorize
+        owned()
+        # Any caller transport callback runs BEFORE the fresh permission check.
+        # The last lease sample uses the captured clock, never that callback.
+        self.io.monotonic()
+        require(self._dispatch is owned and self.authorize is authorize, 'hat_authority_changed')
+        owned()
+        require(not self.fenced and authorize() is True, 'hat_authority_refused')
+        require(self._dispatch is owned and self.authorize is authorize, 'hat_authority_changed')
+        end = owned()
+        now = self._clock()
+        require(type(now) in (int, float) and math.isfinite(now), 'invalid_hat_clock')
+        require(now + needed < end, 'hat_authority_expired')
+        require(self._dispatch is owned and self.authorize is authorize, 'hat_authority_changed')
+        owned()
+        return now
 
     def transmit(self, packet):
+        require(not self.fenced, 'hat_authority_refused')
         require(self.antenna_confirmed is True, 'hat_antenna_not_confirmed')
         require(type(packet) is bytes and 1 <= len(packet) <= 255, 'invalid_hat_packet')
-        estimate = estimated_airtime_us(self.profile, len(packet))
+        owned = self._dispatch
+        receive_deadline = owned()
+        radio, transport, journal, profile = self.radio, self.io, self.journal, self.profile
+        estimate = estimated_airtime_us(profile, len(packet))
         reservation = math.ceil(estimate * 1.10) + 1000
         timeout = reservation / 1000000 + 0.5
-        radio, transport = self.radio, self.io
-        receive_deadline = min(self.deadline, self.lease_deadline)
         self._live(timeout)
-        request = self.journal.reserve(packet, reservation)
+        request = journal.reserve(packet, reservation)
         outcome, evidence, driver = 'UNKNOWN', 'unsettled', None
         try:
             try:
@@ -68,12 +169,12 @@ class HATWorker:
             except HardwareError:
                 outcome, evidence = 'NOT_SENT', 'authority_changed_before_spi'
                 return AttemptResult(request, outcome, reservation, None)
-            self.radio.start_transmit(packet, authority_deadline=min(self.deadline, self.lease_deadline),
+            radio.start_transmit(packet, authority_deadline=owned(),
                                       antenna_confirmed=self.antenna_confirmed)
             while driver is None:
-                driver = self.radio.poll_transmit()
+                driver = radio.poll_transmit()
                 if driver is None:
-                    self.io.sleep(0.001)
+                    transport.sleep(0.001)
             outcome = 'RF_DONE' if driver.outcome is Outcome.RF_DONE else 'UNKNOWN'
             evidence = json.dumps({'driver_estimate_us': driver.estimated_airtime_us,
                 'host_driver_elapsed_us': driver.driver_elapsed_us, 'irq': driver.irq_flags,
@@ -84,14 +185,14 @@ class HATWorker:
             if outcome == 'UNKNOWN':
                 self.fenced = True
                 try:
-                    self.radio.contain()
+                    owned(contain=True)
                 except OSError:
                     pass
             try:
-                self.journal.settle(request, packet, outcome, evidence)
+                journal.settle(request, packet, outcome, evidence)
             except BaseException:
                 self.fenced = True
-                self.radio.contain()
+                owned(contain=True)
                 raise
         if outcome == 'RF_DONE':
             # TX evidence is already durably settled. Listen before returning
@@ -106,36 +207,48 @@ class HATWorker:
             except BaseException as error:
                 self.fenced = True
                 # Never use a substituted driver's transport for containment.
-                if radio.io is transport:
-                    try:
-                        radio.contain()
-                    except Exception:
-                        pass
+                try:
+                    owned(contain=True)
+                except Exception:
+                    pass
                 if not isinstance(error, Exception):
                     raise
         return AttemptResult(request, outcome, reservation, driver)
 
     def receive(self, timeout=0.0):
-        self._live()
         require(type(timeout) in (int, float) and 0 <= timeout <= 0.1, 'invalid_receive_timeout')
-        until = min(self.io.monotonic() + timeout, self.deadline, self.lease_deadline)
+        owned = self._dispatch
         try:
+            owned()
+            radio, transport = self.radio, self.io
+            now = self._live()
+            until = min(now + timeout, owned())
             while True:
-                self._live()
-                if not self.radio.receiving:
-                    self.radio.start_receive(authority_deadline=min(self.deadline, self.lease_deadline))
-                received = self.radio.poll_receive()
-                if received is not None:
+                if not radio.receiving:
+                    radio.start_receive(authority_deadline=owned())
+                    # Configuration runs transport operations; recheck before poll.
                     self._live()
-                    return self.io.monotonic(), received
-                if self.io.monotonic() >= until:
+                # Already-listening polls follow the fresh entry check directly.
+                # Only the captured clock is called inside the driver thereafter.
+                received = radio.poll_receive()
+                if received is not None:
+                    now = self._live()
+                    return now, received
+                now = self._clock()
+                require(type(now) in (int, float) and math.isfinite(now)
+                        and now < owned(), 'hat_authority_expired')
+                if now >= until:
                     return None
-                self.io.sleep(0.001)
-        except (OSError, HardwareError):
+                transport.sleep(0.001)
+                self._live()
+        except BaseException:
             self.fenced = True
-            self.radio.contain()
+            try:
+                owned(contain=True)
+            except Exception:
+                pass
             raise
 
     def disarm(self):
         self.lease_deadline = 0
-        self.radio.close()
+        self._dispatch(disarm=True)

@@ -18,8 +18,11 @@ def rig(tmp_path):
     journal = AttemptJournal(tmp_path / 'attempts.sqlite',
         binding=journal_binding(context, chip.boot_id, PROFILE),
         max_attempts=20, max_airtime_us=10000000, create=True)
+    authorize_state = {'callback': lambda: True}
     worker = HATWorker(chip, journal=journal, profile=PROFILE, context_digest=context,
-        authorize=lambda: True, authority_deadline=200, antenna_confirmed=True)
+        authorize=lambda: authorize_state['callback'](), authority_deadline=200, antenna_confirmed=True,
+        monotonic=lambda: chip.time, time_basis='model-monotonic')
+    worker._test_authorize_state = authorize_state
     try:
         yield chip, journal, worker
     finally:
@@ -78,7 +81,7 @@ def test_failed_receive_preserves_known_done_and_fences_without_second_tx(rig, f
             if fault == 'radio_io': original_radio.io = foreign.io
             if fault == 'contain_failure': return False
         return True
-    worker.authorize = authorize
+    worker._test_authorize_state['callback'] = authorize
     transfer = chip.transfer
     def rx_failure(command):
         if command[0] == 0x82: raise OSError('partial RX command')
@@ -113,7 +116,7 @@ def test_receive_cannot_extend_original_lease_or_authority(rig):
     def receive(*, authority_deadline):
         deadlines.append(authority_deadline)
         return start_receive(authority_deadline=authority_deadline)
-    worker.authorize, worker.radio.start_receive = authorize, receive
+    worker._test_authorize_state['callback'], worker.radio.start_receive = authorize, receive
     result = worker.transmit(b'encrypted packet')
     assert_done(chip, journal, result)
     assert deadlines == [original_end]
@@ -127,7 +130,7 @@ def test_refused_or_not_sent_never_starts_receive(rig, phase):
         nonlocal calls
         calls += 1
         return calls != (1 if phase == 'pre_reserve' else 2)
-    worker.authorize = authorize
+    worker._test_authorize_state['callback'] = authorize
     if phase == 'pre_reserve':
         with pytest.raises(HardwareError, match='hat_authority_refused'):
             worker.transmit(b'encrypted packet')
@@ -175,7 +178,7 @@ def test_post_settlement_interrupt_contains_and_preserves_done(rig):
         calls += 1
         if calls == 3: raise KeyboardInterrupt()
         return True
-    worker.authorize = authorize
+    worker._test_authorize_state['callback'] = authorize
     with pytest.raises(KeyboardInterrupt):
         worker.transmit(b'encrypted packet')
     assert row(journal)[0][0] == 'RF_DONE' and worker.fenced and chip.tx_calls == 1

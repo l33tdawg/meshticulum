@@ -259,7 +259,8 @@ def test_spi_worker_reserves_before_set_tx_and_records_unknown_on_failure(tmp_pa
         max_airtime_us=10000000, create=True)
     try:
         worker = HATWorker(chip, journal=journal, profile=PROFILE, context_digest=context,
-            authorize=lambda: True, authority_deadline=200, antenna_confirmed=True)
+            authorize=lambda: True, authority_deadline=200, antenna_confirmed=True,
+        monotonic=lambda: chip.time, time_basis='model-monotonic')
         original = chip.transfer
         def checked_transfer(command):
             if command[0] == 0x83:

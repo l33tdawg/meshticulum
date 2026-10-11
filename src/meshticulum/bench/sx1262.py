@@ -23,8 +23,19 @@ BW_CODES = {62500: 3, 125000: 4, 250000: 5, 500000: 6}
 
 
 class SX1262:
-    def __init__(self, transport):
+    def __init__(self, transport, *, monotonic=None):
         self.io = transport
+        clock = transport.monotonic if monotonic is None else monotonic
+        require(callable(clock), 'invalid_sx1262_clock')
+        # HATWorker supplies its captured host clock. Direct driver model users
+        # retain their explicit transport time basis; this layer grants no authority.
+        def now():
+            require(self.io is transport, 'sx1262_transport_changed')
+            value = clock()
+            require(type(value) in (int, float) and math.isfinite(value), 'invalid_sx1262_clock')
+            require(self.io is transport, 'sx1262_transport_changed')
+            return value
+        self._now = now
         self.profile = None
         self.fenced = False
         self.receiving = self.transmitting = False
@@ -33,9 +44,9 @@ class SX1262:
         self.tx_estimate = self.tx_started = self.tx_deadline = 0
 
     def _ready(self):
-        end = self.io.monotonic() + 0.150
+        end = self._now() + 0.150
         while self.io.busy():
-            require(self.io.monotonic() < end, 'sx1262_busy_timeout')
+            require(self._now() < end, 'sx1262_busy_timeout')
             self.io.sleep(0.0002)
 
     def _transfer(self, packet):
@@ -158,7 +169,7 @@ class SX1262:
 
     def _room(self, deadline, seconds):
         require(type(deadline) in (int, float) and math.isfinite(deadline)
-                and self.io.monotonic() + seconds < deadline, 'sx1262_authority_deadline')
+                and self._now() + seconds < deadline, 'sx1262_authority_deadline')
 
     def start_transmit(self, packet, *, authority_deadline, antenna_confirmed):
         require(antenna_confirmed is True, 'sx1262_antenna_not_confirmed')
@@ -173,7 +184,7 @@ class SX1262:
                 'sx1262_attempt_budget')
         self.attempts += 1
         self.reserved_us += estimate
-        self.tx_estimate, self.tx_started = estimate, self.io.monotonic()
+        self.tx_estimate, self.tx_started = estimate, self._now()
         self.transmitting = True
         try:
             self.standby()
@@ -183,7 +194,7 @@ class SX1262:
             self._write(0x08, struct.pack('!HHHH', TX_DONE | TIMEOUT, TX_DONE | TIMEOUT, 0, 0))
             self.io.receive_switch(False)
             self._room(authority_deadline, timeout_us / 1000000 + 0.05)
-            self.tx_deadline = self.io.monotonic() + timeout_us / 1000000 + 0.05
+            self.tx_deadline = self._now() + timeout_us / 1000000 + 0.05
             self._write(0x83, self._rtc_steps(timeout_us))
         except BaseException:
             self.contain()
@@ -196,16 +207,16 @@ class SX1262:
             flags = self.irq()
             require(not flags & ~(TX_DONE | TIMEOUT), 'sx1262_unexpected_tx_irq')
             if flags & TX_DONE and not flags & TIMEOUT:
-                elapsed = max(0, math.ceil((self.io.monotonic() - self.tx_started) * 1000000))
+                elapsed = max(0, math.ceil((self._now() - self.tx_started) * 1000000))
                 self.standby()
                 self._device_errors()
                 self.transmitting = False
                 return TxEvidence(Outcome.RF_DONE, self.tx_estimate, elapsed, flags, 0)
-            if flags & TIMEOUT or self.io.monotonic() >= self.tx_deadline:
+            if flags & TIMEOUT or self._now() >= self.tx_deadline:
                 raise HardwareError('sx1262_tx_timeout')
             return None
         except (OSError, HardwareError):
-            elapsed = max(0, math.ceil((self.io.monotonic() - self.tx_started) * 1000000))
+            elapsed = max(0, math.ceil((self._now() - self.tx_started) * 1000000))
             self.contain()
             return TxEvidence(Outcome.UNKNOWN, self.tx_estimate, elapsed, flags, -1)
 
@@ -219,7 +230,7 @@ class SX1262:
             self._packet(255)
             self._write(0x08, struct.pack('!HHHH', RX_MASK, RX_MASK, 0, 0))
             self.io.receive_switch(True)
-            available_us = int((authority_deadline - self.io.monotonic() - 0.01) * 1000000)
+            available_us = int((authority_deadline - self._now() - 0.01) * 1000000)
             # Allow preamble acquisition across a maximum-frame-sized gap.
             # In explicit-header LoRa mode the finite RX timer stops after a
             # valid header; reception can then extend by the bounded payload.
