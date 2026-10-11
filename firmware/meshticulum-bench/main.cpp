@@ -62,8 +62,8 @@ static bool configure(const uint8_t* body) {
     // These are bench bounds, not a regional compliance determination.
     if((bw!=62500 && bw!=125000 && bw!=250000 && bw!=500000)
         || hz<902000000u+bw/2 || hz>928000000u-bw/2
-        || sf<7 || sf>12 || cr<5 || cr>8 || power<0 || power>MESHTICULUM_MAX_CHIP_DBM
-        || preamble<8 || preamble>64 || sync==0 || duration<1000 || duration>300000
+        || sf<5 || sf>12 || cr<5 || cr>8 || power<0 || power>MESHTICULUM_MAX_CHIP_DBM
+        || preamble<(sf<7 ? 12 : 8) || preamble>64 || sync==0 || duration<1000 || duration>300000
         || count<=attempted || count>100000 || budget<=reservedUs || budget>300000000ull) return false;
     if(radio.standby()!=RADIOLIB_ERR_NONE
         || radio.setFrequency(hz/1000000.0f)!=RADIOLIB_ERR_NONE
@@ -73,6 +73,7 @@ static bool configure(const uint8_t* body) {
         || radio.setOutputPower(power)!=RADIOLIB_ERR_NONE
         || radio.setPreambleLength(preamble)!=RADIOLIB_ERR_NONE
         || radio.setSyncWord(sync)!=RADIOLIB_ERR_NONE
+        || radio.explicitHeader()!=RADIOLIB_ERR_NONE
         || radio.setCRC(1)!=RADIOLIB_ERR_NONE) return false;
     deadlineUs=nowUs()+uint64_t(duration)*1000; capCount=count; capUs=budget;
     memcpy(profile,body,30); return true;

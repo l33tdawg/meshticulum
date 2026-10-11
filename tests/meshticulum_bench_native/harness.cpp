@@ -103,6 +103,22 @@ int main(int argc,char** argv) {
         assert(memcmp(result.body,f.body,f.size)==0 && queue.freeSlots()==8);
     } else if(mode=="config_failure") {
         radio.config_error=-9; command(armRequest()); assert(!armed && !radio.starts);
+    } else if(mode=="fast_profile") {
+        for(uint8_t sf:{5,6}) {
+            for(uint16_t length:{8,11}) {
+                auto f=armRequest(); f.body[8]=sf; put16(f.body+11,length);
+                assert(!configure(f.body) && radio.explicit_headers==uint32_t(sf-5) && !radio.starts);
+            }
+            auto f=armRequest(); f.body[8]=sf; put16(f.body+11,12);
+            assert(configure(f.body) && radio.configured_sf==sf && radio.configured_preamble==12);
+            assert(radio.explicit_headers==uint32_t(sf-4) && !radio.starts && attempted==0 && reservedUs==0);
+        }
+        for(uint8_t sf:{4,13}) {
+            auto f=armRequest(); f.body[8]=sf; put16(f.body+11,12);
+            assert(!configure(f.body) && radio.explicit_headers==2 && !radio.starts);
+        }
+        auto f=armRequest(); f.body[8]=7;
+        assert(configure(f.body) && radio.configured_preamble==8 && !radio.starts);
     } else if(mode=="frequency_bounds") {
         for(uint32_t hz:{901999999u,902000000u,928000000u,928000001u}) {
             auto f=armRequest(); put32(f.body,hz); assert(!configure(f.body));

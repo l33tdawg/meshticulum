@@ -162,9 +162,10 @@ class RadioProfile:
         require(self.bandwidth_hz in (62500, 125000, 250000, 500000)
                 and 902000000 + self.bandwidth_hz // 2 <= self.frequency_hz
                 <= 928000000 - self.bandwidth_hz // 2
-                and 7 <= self.spreading_factor <= 12 and 5 <= self.coding_rate <= 8
+                and 5 <= self.spreading_factor <= 12 and 5 <= self.coding_rate <= 8
                 and 0 <= self.chip_power_dbm <= (10 if board_id == 1 else 22)
-                and 8 <= self.preamble <= 64 and 1 <= self.sync_word <= 255
+                and (12 if self.spreading_factor < 7 else 8) <= self.preamble <= 64
+                and 1 <= self.sync_word <= 255
                 and 1000 <= self.lease_ms <= 300000 and 1 <= self.max_boot_attempts <= 100000
                 and 1 <= self.max_boot_estimated_airtime_us <= 300000000, 'invalid_profile')
         return struct.pack('!IIBBbHBIIQ', self.frequency_hz, self.bandwidth_hz,

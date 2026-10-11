@@ -18,7 +18,7 @@ from .serial_protocol import (Decoder, FirmwareIdentity, Frame, Message, Outcome
 
 
 def estimated_airtime_us(profile, size):
-    """Source LoRa airtime estimate: explicit header, CRC, SF7..12.
+    """Source SX1261/2 airtime estimate: explicit header, CRC, SF5..12.
 
     Same PHY assumptions as the coprocessor; includes no measured airtime or
     host latency. Reservations add margin separately and never receive refunds.
@@ -27,9 +27,12 @@ def estimated_airtime_us(profile, size):
     require(type(size) is int and 1 <= size <= 255, 'invalid_radio_size')
     symbol_us = (1 << profile.spreading_factor) * 1000000 / profile.bandwidth_hz
     low_rate = int(symbol_us >= 16000)
-    coded = max(0, math.ceil((8 * size + 44 - 4 * profile.spreading_factor) /
+    # Semtech DS rev1.2 section6.1.4: SF5/6 use a different preamble
+    # overhead and omit the extra8 numerator bits used by SF7..12.
+    fast = profile.spreading_factor < 7
+    coded = max(0, math.ceil((8 * size + (36 if fast else 44) - 4 * profile.spreading_factor) /
                              (4 * (profile.spreading_factor - 2 * low_rate))))
-    symbols = profile.preamble + 12.25 + coded * profile.coding_rate
+    symbols = profile.preamble + (14.25 if fast else 12.25) + coded * profile.coding_rate
     return math.ceil(symbols * symbol_us)
 
 
