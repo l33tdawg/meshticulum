@@ -407,3 +407,87 @@ def test_settled_handle_objects_are_retained_within_explicit_run_bound(pair):
         assert len(handles) == len(flow.owner._settled_handles)
         assert {id(handle) for handle in handles} == flow.owner._settled_handles
         assert len(handles) < 1024
+
+
+def test_four_physical_frames_fence_same_pump_until_real_ack(pair):
+    data, clock, (sender, receiver), workers = pair
+    if sender.burst_frames == 1:
+        pytest.skip('Fast-profile arbitration only')
+    sender.send(data); receiver.step(); clock.advance(20000)
+    for _ in range(4):
+        sender.step(); clock.advance(20000)
+    assert len(workers[0].sent) == 4 and sender.owner.no_send
+    hold = sender.next_send_us
+    sender.step()
+    assert len(workers[0].sent) == 4 and sender.next_send_us == hold
+    receiver.step(); sender.step()
+    assert sender.flow.acked_frames() == 4 and len(workers[0].sent) == 5
+
+
+def test_unknown_attempt_is_charged_once_then_immediately_fences(pair):
+    data, clock, (sender, receiver), workers = pair
+    sender.send(data); receiver.step(); clock.advance(20000)
+    worker = workers[0]
+    def unknown(packet):
+        request = worker.journal.reserve(packet, 200000)
+        worker.journal.settle(request, packet, 'UNKNOWN', 'model_missing_driver_evidence')
+        worker.fenced = True
+        return AttemptResult(request, 'UNKNOWN', 200000, None)
+    worker.transmit = unknown
+    with pytest.raises(WireError, match='worker_run_fenced'):
+        sender.step()
+    assert worker.journal.snapshot()['attempts'] == 1 and sender.owner.no_send
+
+
+@pytest.mark.parametrize('fault', ['invalid_total', 'invalid_fin', 'out_of_span', 'foreign_flow', 'stale_generation'])
+def test_authenticated_refused_data_cannot_open_or_extend_ack_quiet(pair, fault):
+    from meshticulum.flow.flow import build_data_frame
+    data, clock, (sender, receiver), workers = pair
+    if receiver.burst_frames == 1:
+        pytest.skip('Fast-profile arbitration only')
+    values = dict(flow_id=receiver.flow.flow_id, generation=receiver.flow.generation,
+                  seq=0, total=2, last=False, payload=b'authentic_but_refused')
+    if fault == 'invalid_total': values['total'] = 129
+    elif fault == 'invalid_fin': values['last'] = True
+    elif fault == 'out_of_span': values.update(seq=3, total=2)
+    elif fault == 'foreign_flow': values['flow_id'] += 1
+    elif fault == 'stale_generation': values['generation'] += 1
+    packet = sender.cipher.seal(build_data_frame(**values), FrameKind.DATA,
+                                authorize=sender.authority.live)
+    workers[1].incoming.append(packet); receiver.step()
+    assert receiver.burst_received == receiver.burst_started_us == receiver.ack_due_us == 0
+
+
+def held_sender(pair):
+    data,clock,(sender,receiver),workers=pair
+    if sender.burst_frames==1:pytest.skip('Fast-profile control window only')
+    sender.send(data);receiver.step();clock.advance(20000)
+    for _ in range(4):sender.step();clock.advance(20000)
+    assert sender.owner.no_send and len(workers[0].sent)==4
+    return clock,sender,receiver,workers
+
+
+def test_cancel_during_control_hold_never_resumes_any_lane(pair):
+    clock,sender,receiver,workers=held_sender(pair)
+    sender.flow.cancel();clock.advance(sender.sender_control_hold_us+1)
+    with pytest.raises(WireError,match='reliable_flow_cancelled'):sender.step()
+    assert len(workers[0].sent)==4 and not sender.flow.complete
+
+
+def test_original_expiry_during_control_hold_refuses_before_worker_io(pair):
+    clock,sender,receiver,workers=held_sender(pair)
+    clock.advance(181000000)
+    with pytest.raises(WireError,match='authority_not_live'):sender.step()
+    assert len(workers[0].sent)==4
+
+
+def test_authenticated_nonprogress_ACK_cannot_release_control_window(pair):
+    from meshticulum.flow.flow import build_ack_frame
+    clock,sender,receiver,workers=held_sender(pair)
+    hold=sender.next_send_us
+    inner=build_ack_frame(flow_id=sender.flow.flow_id,generation=sender.flow.generation,
+        ack_seq=0,credit=4,sack=0,grant_revision=1)
+    packet=receiver.cipher.seal(inner,FrameKind.ACK,authorize=receiver.authority.live)
+    workers[0].incoming.append(packet);sender.step()
+    assert sender.next_send_us==hold and sender.flow.acked_frames()==0
+    assert len(workers[0].sent)==4

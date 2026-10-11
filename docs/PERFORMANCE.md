@@ -20,6 +20,26 @@ There were **31 management-session attempts**, including one SSH provisioning fa
 
 The allowlisted per-run data, source capture hashes and aggregate values are in [radio-results.json](../benchmarks/2026-10-09-radio/radio-results.json). All 30 original `RUN.json` files and paired collected records were replayed offline through the [operator-capture analyzer now owned by Lantern](https://github.com/l33tdawg/sage-lantern/blob/codex/meshticulum-boundary/firmware/meshticulum-bench/analyze_runs.py); their per-direction summaries matched the retained report exactly. That replay checks capture consistency. The original operator captures remain in the lab workspace; the published metadata does not independently attest the hardware or contain grants, secrets, device addresses, boot identities or payload content.
 
+## Native public resource transfers: 2026-10-11
+
+Seven later finite transfers carried fresh, signed public resource pieces through the extracted Meshticulum runtime and Lantern's native integration. Both endpoints completed each response, the recipient independently verified the publisher/content and durable response, and the sample's native jobs were terminal. These are separate accepted samples at different source/runtime pins, not a repeated distribution or sustained-capacity result.
+
+| Direction | Useful / MR1 response bytes | Sender start → flow ACK, seconds | Useful goodput, B/s | DATA frames ACKed / retries | Request → publisher verification, seconds |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| B→C | 16,356 / 16,384 | 20.910 | **782.2** | 85 / 6 | 74.899 |
+| A→C | 16,356 / 16,384 | 23.096 | **708.2** | 85 / 7 | 76.077 |
+| C→A | 16,356 / 16,384 | 16.773 | **975.1** | 85 / 4 | 69.710 |
+| C→A | 8,164 / 8,192 | 8.716 | **936.7** | 43 / 0 | 61.660 |
+| C→A | 16,356 / 16,384 | 16.410 | **996.7** | 85 / 0 | 85.323 |
+| C→A | 16,356 / 16,384 | 15.774 | **1,036.9** | 85 / 0 | 82.072 |
+| C→A | 16,356 / 16,384 | 15.268 | **1,071.3** | 85 / 0 | 80.731 |
+
+Useful goodput excludes the **28-byte MR1 response header** and divides verified block bytes by the sender's own start-to-ACK interval. Request-to-verification uses the requesting recipient's own clock and includes management and final-ACK windows; its corresponding useful rates are **218.4, 215.0, 234.6, 132.4, 191.7, 199.3 and 202.6 B/s**. Neither interval subtracts clocks across hosts. These public resources travel inside the authenticated encrypted session; they do not exercise a private inbox or native forward-secrecy exchange.
+
+The modem settings were **SF7/BW500/CR4/5, 921.375 MHz, eight-symbol preamble and 0 dBm chip setting**. Actual RF airtime, energy and EIRP remain **null**. The [sanitized success record](../benchmarks/2026-10-11-native-public/successes.json) keeps each paired Core/Lantern commit, archive/manifest and source-result hash, byte counts, timing, retries and sample/campaign status. The accepted B→C response was part of a larger campaign that did not wholly complete; the other six request/reply campaigns completed. The latest response acknowledged all **85 DATA frames with 85 RF_DONE attempts and zero DATA retries**. All four native drivers disarmed and all 21 management RPC clients completed; application start through cleanup took **136.779 seconds within the original 180-second window**. The two consecutive results of **1,036.9 and 1,071.3 B/s (1.037 and 1.071 kB/s)** meet the **1,000 B/s minimum for these finite samples**, while the preceding 996.7 B/s sample did not. Their Core transport source is unchanged; the **3.3% difference is observed run variation**. Two finite samples do not establish sustained goodput or a completion distribution. Full transport, sustained-goodput and native private forward-secrecy qualification remain open. This record leaves the earlier 30-sample report and verifier unchanged.
+
+The latest **1,071.3 B/s** useful result is numerically **2.61×** the **410 B/s** contributor result in [MeshCore issue #3404](https://github.com/meshcore-dev/MeshCore/issues/3404). That issue reports 25 individually acknowledged 128-byte frames at SF7/BW500; this sample is a bounded resource reply with windowed flow and independent publisher verification. The workloads and timing boundaries differ, so the ratio is not a general network ranking. The RNode author's [Reticulum guide](https://unsigned.io/rnode_bootstrap_console/guides/loracomms.html) reports **3.1 kb/s on-air bitrate** at SF8/BW125/CR4/5 and 7 dBm, rather than encrypted application goodput. Neither comparison establishes overall encryption or security superiority.
+
 ## Test conditions
 
 | Item | Recorded condition |
@@ -54,7 +74,7 @@ Use decimal units consistently:
 - **kB/s** means 1,000 bytes per second. The measured medians are approximately 1.19–1.23 kB/s.
 - **kb/s** means 1,000 bits per second. 1.5 kB/s equals 12 kb/s; 1.5 kb/s equals 187.5 B/s.
 
-The retained records use B/s. No retained repeated sample reviewed for this publication reaches 1,500 B/s. The **1–1.5 kB/s programme target** is tracked alongside completion, latency and retry cost, rather than reported as an achieved 1.5 kB/s result.
+The retained records use B/s. No retained repeated sample reviewed for this publication reaches 1,500 B/s. The **1–1.5 kB/s programme target** is tracked alongside completion, latency and retry cost, rather than reported as an achieved 1.5 kB/s result. The owner has also set a **4–5 kB/s useful encrypted stretch target**. At the recorded SF7/BW500/CR4/5 settings, the nominal raw PHY calculation is `(500000 / 2**7) × 7 × (4/5) / 8 = 2,734.375 B/s`, before packet, encryption and reliable-flow overhead. That ceiling cannot support the stretch target. A faster PHY needs independently verified radio/firmware capabilities, fresh bounded admission and new measurements; faster-profile range is unmeasured. Verify modulation support against [Semtech's SX1262 specifications](https://www.semtech.com/products/wireless-rf/lora-connect/sx1262) and the actual MCU chipset and firmware before admitting any faster profile.
 
 ## Where the useful-byte gains come from
 

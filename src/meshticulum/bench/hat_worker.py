@@ -57,6 +57,8 @@ class HATWorker:
         estimate = estimated_airtime_us(self.profile, len(packet))
         reservation = math.ceil(estimate * 1.10) + 1000
         timeout = reservation / 1000000 + 0.5
+        radio, transport = self.radio, self.io
+        receive_deadline = min(self.deadline, self.lease_deadline)
         self._live(timeout)
         request = self.journal.reserve(packet, reservation)
         outcome, evidence, driver = 'UNKNOWN', 'unsettled', None
@@ -91,6 +93,26 @@ class HATWorker:
                 self.fenced = True
                 self.radio.contain()
                 raise
+        if outcome == 'RF_DONE':
+            # TX evidence is already durably settled. Listen before returning
+            # to the upper loop, whose fresh authority checks can be costly.
+            # A failed RX handoff cannot turn that known TX into UNKNOWN.
+            try:
+                self._live()
+                require(self.radio is radio and self.io is transport and radio.io is transport,
+                        'hat_driver_changed_after_transmit')
+                radio.start_receive(authority_deadline=min(receive_deadline, self.deadline,
+                                                          self.lease_deadline))
+            except BaseException as error:
+                self.fenced = True
+                # Never use a substituted driver's transport for containment.
+                if radio.io is transport:
+                    try:
+                        radio.contain()
+                    except Exception:
+                        pass
+                if not isinstance(error, Exception):
+                    raise
         return AttemptResult(request, outcome, reservation, driver)
 
     def receive(self, timeout=0.0):
