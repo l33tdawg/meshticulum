@@ -21,6 +21,7 @@ REQUEST = struct.Struct('>3sB32sIH')
 RESPONSE = struct.Struct('>3s16sBII')
 MAGIC = b'MR1'
 MAX_BLOCK = 16384
+PUBLIC32_BLOCK = 32768 - RESPONSE.size
 MAX_RESOURCE = 8 * 1024 * 1024
 RESOURCE = re.compile(r'/packs/([0-9a-f]{64})/(manifest\.json|manifest\.sig\.json|availability\.json|chunks/([0-9a-f]{64})\.json)\Z')
 NAMES = {1: 'manifest.json', 2: 'manifest.sig.json', 3: 'availability.json'}
@@ -31,34 +32,41 @@ def require(value, message):
         raise ValueError(message)
 
 
-def encode_request(path, offset, size):
+def block_limit(public32=False):
+    require(type(public32) is bool, 'invalid public block capability')
+    return PUBLIC32_BLOCK if public32 else MAX_BLOCK
+
+
+def encode_request(path, offset, size, *, public32=False):
     match = RESOURCE.fullmatch(path)
     require(match is not None, 'unsupported resource')
     require(type(offset) is int and 0 <= offset < MAX_RESOURCE
-            and type(size) is int and 1 <= size <= MAX_BLOCK, 'invalid block range')
+            and type(size) is int and 1 <= size <= block_limit(public32), 'invalid block range')
     digest, name, chunk = match.groups()
     kind = 4 if chunk else next(k for k, v in NAMES.items() if v == name)
     return REQUEST.pack(MAGIC, kind, bytes.fromhex(digest), offset, size) + (bytes.fromhex(chunk) if chunk else b'')
 
 
-def decode_request(raw):
+def decode_request(raw, *, public32=False):
     require(type(raw) is bytes and len(raw) in (REQUEST.size, REQUEST.size + 32), 'invalid resource request size')
     magic, kind, digest, offset, size = REQUEST.unpack(raw[:REQUEST.size])
     require(magic == MAGIC and kind in (1, 2, 3, 4)
             and len(raw) == REQUEST.size + (32 if kind == 4 else 0), 'invalid resource request')
-    require(offset < MAX_RESOURCE and 1 <= size <= MAX_BLOCK, 'invalid block range')
+    require(offset < MAX_RESOURCE and 1 <= size <= block_limit(public32), 'invalid block range')
     name = 'chunks/' + raw[REQUEST.size:].hex() + '.json' if kind == 4 else NAMES[kind]
     return '/packs/' + digest.hex() + '/' + name, offset, size
 
 
 class BlockServer:
     """Read from a caller-owned verified public-resource allowlist."""
-    def __init__(self, read):
+    def __init__(self, read, *, public32=False):
         require(callable(read), 'invalid resource store')
+        block_limit(public32)
         self.read = read
+        self.public32 = public32
 
     def handle(self, request):
-        path, offset, size = decode_request(request)
+        path, offset, size = decode_request(request, public32=self.public32)
         binding = hashlib.sha256(request).digest()[:16]
         try:
             raw = self.read(path)
@@ -78,10 +86,11 @@ class BlockReader:
     the PHY MTU. The underlying reliable flow performs packet fragmentation.
     Retries/budgets/cipher sessions remain that flow owner's responsibility.
     """
-    def __init__(self, exchange, *, max_block=1024):
-        require(callable(exchange) and type(max_block) is int and 1 <= max_block <= MAX_BLOCK,
+    def __init__(self, exchange, *, max_block=1024, public32=False):
+        require(callable(exchange) and type(max_block) is int and 1 <= max_block <= block_limit(public32),
                 'invalid block adapter')
         self.exchange, self.max_block = exchange, max_block
+        self.public32 = public32
 
     def _resource(self, path, limit, deadline):
         require(type(limit) is int and 1 <= limit <= MAX_RESOURCE, 'invalid resource limit')
@@ -90,7 +99,7 @@ class BlockReader:
             if time.monotonic() >= deadline:
                 raise TimeoutError('resource deadline expired')
             size = min(self.max_block, limit - len(result))
-            request = encode_request(path, len(result), size)
+            request = encode_request(path, len(result), size, public32=self.public32)
             reply = self.exchange(request, RESPONSE.size + size, deadline)
             if time.monotonic() >= deadline:
                 raise TimeoutError('resource deadline expired')

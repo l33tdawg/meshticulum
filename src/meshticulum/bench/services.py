@@ -16,9 +16,12 @@ from ..contracts.identity import ServiceKind
 from .authority import RunAuthority
 from .flow_runtime import BenchFlow
 from .wire import require
+from .public_block import public32_service
 
 
-def _shape(payload, format):
+def _shape(payload, format, *, public32=False):
+    require(type(public32) is bool and (not public32 or format in ('MR1.request','MR1.response')),
+            'invalid_public32_service_capability')
     if format == 'LME.binary':
         from meshticulum.privacy.mesh_binary_envelope import to_text
         to_text(payload)  # Shape only. Recipient signature/expiry checks follow.
@@ -26,7 +29,7 @@ def _shape(payload, format):
         from meshticulum.privacy.forward_session import inspect_record
         inspect_record(payload)  # Shape only; endpoint crypto/native policy is external.
     elif format == 'MR1.request':
-        resource.decode_request(payload)
+        resource.decode_request(payload, public32=public32)
     else:
         require(format == 'MR1.response' and len(payload) >= resource.RESPONSE.size,
                 'invalid_service_format')
@@ -36,7 +39,8 @@ def _shape(payload, format):
                 'invalid_service_response')
         require((status == 1 and total == 0 and not data) or
                 (status == 0 and 0 < total <= resource.MAX_RESOURCE and offset < total
-                 and 0 < len(data) <= min(resource.MAX_BLOCK, total - offset)),
+                 and 0 < len(data) <= min(resource.block_limit(public32), total - offset)
+                 and (not public32 or len(payload) == 32768)),
                 'invalid_service_response')
 
 
@@ -75,6 +79,7 @@ class ServiceTransfer:
         self.descriptor = (authority.plan['object']['bytes'], authority.plan['object']['sha256'])
         self.grant_digest = authority.grant.digest
         self.started, self.cancelled = False, False
+        self.public32 = public32_service(authority.plan.get('service',{}))
         flow._service_adapter = self
 
     def live(self):
@@ -82,6 +87,8 @@ class ServiceTransfer:
                 and self.flow.authority is self.authority
                 and self.authority.service_kind is self.kind
                 and self.authority.service_format == self.format
+                and self.public32 == public32_service(self.authority.plan.get('service',{}))
+                and self.descriptor == (self.authority.plan['object']['bytes'],self.authority.plan['object']['sha256'])
                 and self.authority.grant.digest == self.grant_digest
                 and self.authority.application_live())
 
@@ -92,7 +99,7 @@ class ServiceTransfer:
         require(type(payload) is bytes and len(payload) == self.descriptor[0]
                 and hashlib.sha256(payload).hexdigest() == self.descriptor[1],
                 'service_object_mismatch')
-        _shape(payload, self.format)
+        _shape(payload, self.format, public32=self.public32)
         return payload
 
     def send(self, payload):
@@ -120,7 +127,8 @@ class ServiceTransfer:
         with self.authority.application_lease():
             request = self._received()
             result = server.handle(request)
-            _shape(result, 'MR1.response')
+            require(server.public32 == self.public32, 'public_block_capability_mismatch')
+            _shape(result, 'MR1.response', public32=self.public32)
             self._check()
             return result
 
@@ -157,7 +165,8 @@ class PreparedBlockExchange:
                 and resource.RESPONSE.size <= self.response.descriptor[0] <= limit <= self.response.flow.maximum_bytes
                 and type(deadline) in (int, float) and 0 < deadline < float('inf'),
                 'invalid_block_exchange')
-        _, _, requested_size = resource.decode_request(payload)
+        require(self.request.public32 == self.response.public32, 'public_block_capability_mismatch')
+        _, _, requested_size = resource.decode_request(payload, public32=self.request.public32)
         require(self.response.descriptor[0] <= resource.RESPONSE.size + requested_size,
                 'block_exchange_response_limit')
         # Polling alone cannot shorten the physical dispatch lease. Refuse a
@@ -176,7 +185,7 @@ class PreparedBlockExchange:
                 self._live(bound)
             reply = self.response.received()
             require(len(reply) <= limit, 'block_exchange_response_limit')
-            _, offset, size = resource.decode_request(payload)
+            _, offset, size = resource.decode_request(payload, public32=self.request.public32)
             magic, binding, status, total, at = resource.RESPONSE.unpack(reply[:resource.RESPONSE.size])
             require(magic == resource.MAGIC and binding == hashlib.sha256(payload).digest()[:16]
                     and at == offset and len(reply) <= resource.RESPONSE.size + size,

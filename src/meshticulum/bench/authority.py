@@ -28,6 +28,7 @@ from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
 from .admission import RadioAdmission
 from .wire import BenchGrant, require
+from .public_block import PUBLIC32_MARKER, public32_service, object_limit
 
 
 SERVICE_FORMATS = {
@@ -88,16 +89,20 @@ class RunAuthority:
                 extras.add(local_deadline_field)
             require(set(p) == fields | extras, 'invalid_bench_plan')
             self.service_kind, self.service_format = ServiceKind.KNOWLEDGE, None
+            self.public32 = False
             self.application_expires_epoch_us = p['expires_epoch_us']
             if is_service:
                 service = p['service']
-                require(type(service) is dict and set(service) ==
-                        {'kind', 'format', 'application_expires_epoch_us'}, 'invalid_service_plan')
+                require(type(service) is dict and set(service) in (
+                        {'kind', 'format', 'application_expires_epoch_us'},
+                        {'kind', 'format', 'application_expires_epoch_us', PUBLIC32_MARKER}),
+                        'invalid_service_plan')
                 require(type(service['format']) is str and service['format'] in SERVICE_FORMATS
                         and service['kind'] == SERVICE_FORMATS[service['format']].value,
                         'service_format_mismatch')
                 self.service_kind = SERVICE_FORMATS[service['format']]
                 self.service_format = service['format']
+                self.public32 = public32_service(service)
                 self.application_expires_epoch_us = service['application_expires_epoch_us']
                 require(type(self.application_expires_epoch_us) is int
                         and p['issued_epoch_us'] < self.application_expires_epoch_us <= p['expires_epoch_us'],
@@ -119,7 +124,8 @@ class RunAuthority:
             radio_admission.check(p['country'], p['antenna_confirmed'], self.profile)
             obj = p['object']
             require(type(obj) is dict and set(obj) == {'sha256', 'bytes', 'chunk_index', 'object_id'}
-                    and type(obj['bytes']) is int and 1 <= obj['bytes'] <= 16384
+                    and type(obj['bytes']) is int and 1 <= obj['bytes'] <= object_limit(p.get('service',{}))
+                    and (not self.public32 or self.service_format != 'MR1.response' or obj['bytes'] == 32768)
                     and type(obj['chunk_index']) is int and 0 <= obj['chunk_index'] < 64,
                     'invalid_bench_object_descriptor')
             for name in ('sha256', 'object_id'):
@@ -195,7 +201,9 @@ class RunAuthority:
         self.deadlines = DeadlineSet(min(mono / 1000000 + duration, self.application_deadline_us / 1000000),
                                     self.deadline_us / 1000000,
                                     self.grant.expires_epoch_us / 1000000)
-        limits = CapabilityLimits(208, 832, 16384, 0, 4, 16384, 4, 1, 1, 128, 32)
+        maximum = object_limit(self.plan.get('service',{}))
+        limits = CapabilityLimits(208, 832, maximum, 0, 4, maximum, 4, 1, 1,
+                                  256 if self.public32 and self.service_format == 'MR1.response' else 128, 32)
         private = self.service_kind is ServiceKind.MESSAGE
         feature = Feature.PROTECTED_MESSAGE_V2 if private else Feature.OBJECT_RESUME
         self.contract = NegotiatedContract(1, frozenset({Feature.BYTE_CREDIT, Feature.SELECTIVE_ACK_32,
