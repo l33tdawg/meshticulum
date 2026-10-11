@@ -12,6 +12,8 @@ The existing Meshticulum programme remains active. Moving source into its own re
 
 ## Recorded public checkpoints
 
+The optional [post-quantum source prototype](POST_QUANTUM_PROTOTYPE.md) adds hybrid key establishment and dual signatures without changing current radio, TCP or envelope formats. Adoption requires independent protocol review, persistent replay and key lifecycle integration, and actual device measurements of setup cost, completion and goodput. Its source controls and calculated fragment counts do not qualify a post-quantum network.
+
 Lantern recorded native public TCP request/reply and a finite C→A LoRa→B IP request/reverse reply. A later fresh 160-second campaign independently verified four 977-byte pieces under one unchanged expiry: initial IP, injected loss with partial rejection and the first verified piece retained, fresh C↔B LoRa request/reply, a faster current IP sample and IP completion. Ten sessions ended with twenty terminal, retired native children and three terminal owned management masters. Read-only debt/holder/service audit and timely handback passed. See [exact execution pins and scope](IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return).
 
 The earlier lease refusal remains a separate failed attempt. A completed campaign supplies no reusable device window or continuing dispatch authority. The drawn A↔B LoRa fallback and autonomous routing are not qualified by the separate C↔B resume result.

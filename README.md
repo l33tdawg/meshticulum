@@ -57,6 +57,8 @@ The opt-in [experimental v2 forward-session primitive](docs/FORWARD_SECRECY.md) 
 
 Below them, admission binds each transfer to its peers, service, object and original expiry. Receiver credit bounds what can enter the flow. The scheduler and exclusive worker account for DATA, ACKs, retries and shared-medium costs. Local RF completion, peer receipt and application acceptance remain separate observations.
 
+Current protocols use classical cryptography. An opt-in [post-quantum source prototype](docs/POST_QUANTUM_PROTOTYPE.md) combines X25519 and ML-KEM-768 through X-Wing draft 11, with both Ed25519 and ML-DSA-65 signatures required. It includes a runnable exchange and measured packet sizes; radio integration, native key lifecycle and independent cryptographic review remain open.
+
 [Architecture](docs/ARCHITECTURE.md) follows a transfer through these boundaries and shows the intended mixed-path topology.
 
 ## How we aim to make it faster
