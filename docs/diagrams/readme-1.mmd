@@ -4,4 +4,4 @@ flowchart TB
     FLOW --> AUTH["Authenticated session<br/>Peer, expiry and replay bindings"]
     AUTH --> WORKER["Exclusive radio worker<br/>Attempt and airtime journals"]
     WORKER --> RF["LoRa peers<br/>Serial radio or SX1262 HAT"]
-    AUTH -. "Authenticated IP adapter pending" .-> IP["IP peers"]
+    AUTH -. "TCP source prototype<br/>hardware qualification pending" .-> IP["IP peers"]

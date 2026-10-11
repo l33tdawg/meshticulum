@@ -70,7 +70,16 @@ class BenchFlow:
         require(window >= 1, 'bench_window_too_small')
         self.burst_frames = window if authority.profile.bandwidth_hz >= 250000 else 1
         self.burst_quiet_us = math.ceil(profile.forward_seconds * 1000000) + 60000
+        if self.burst_frames > 1:
+            # USB/driver completion can span more than one PHY packet. Use a
+            # bounded control window from the already negotiated initial RTO,
+            # without changing the frozen flow's retry policy or wire format.
+            self.burst_quiet_us = max(self.burst_quiet_us,
+                                     math.ceil(profile.initial_rto_seconds * 500000))
+        self.burst_max_hold_us = math.ceil(profile.initial_rto_seconds * 1000000)
+        self.burst_sent = 0
         self.burst_received = 0
+        self.burst_started_us = 0
         self.ack_due_us = 0
         quantum = cipher.grant.max_plaintext - flow.MIN_FRAME_BYTES
         require(flow.data_frame_fits(quantum, profile.payload_capacity), 'invalid_inner_frame_bound')
@@ -112,6 +121,9 @@ class BenchFlow:
                 max_persist_acks=8),
             flow_id=flow_key.flow_id, generation=1, sends=sends, receive=not sends,
             startup=None)
+        self.sender_control_hold_us = (max(self.burst_quiet_us,
+            math.ceil(self.flow.limits.persist_interval_s * 1000000)) + self.receive_gap_us
+            if self.burst_frames > 1 else self.receive_gap_us)
         self.parse_frame, self.ack_kind = flow.parse_frame, flow.KIND_ACK
         self.closed = False
         self.update_counter()
@@ -147,10 +159,25 @@ class BenchFlow:
         if result.outcome == 'RF_DONE':
             if kind is FrameKind.ACK:
                 self.burst_received = 0
+                self.burst_started_us = 0
                 self.ack_due_us = 0
+            elif self.burst_frames > 1:
+                self.burst_sent += 1
+                if self.burst_sent >= self.burst_frames:
+                    # Yield through the existing receiver persistence interval
+                    # plus reverse-ACK/turnaround margin, so a lost first ACK
+                    # can be repeated before DATA resumes. A real progress ACK
+                    # releases this hold early;
+                    # the frozen retry clock and credit remain unchanged.
+                    self.next_send_us = self.last_activity_us + self.sender_control_hold_us
+                    self.burst_sent = 0
+                    # One pump can expire several flights. Fence immediately,
+                    # before another retry in that same pump can use the radio.
+                    self.owner.settle_sending()
             return CommitOutcome.ACCEPTED
         if result.outcome in ('REFUSED', 'NOT_SENT'):
             return CommitOutcome.REFUSED_CARRIER
+        self.owner.settle_sending()
         return CommitOutcome.UNKNOWN
 
     def send(self, data):
@@ -186,20 +213,28 @@ class BenchFlow:
             # includes returned credit. Consuming after pump emitted a second
             # ACK in the next DATA slot on the real half-duplex radio.
             acknowledged_before = self.flow.acked_frames()
+            # Read the frozen flow's receive-work generation, without mutating
+            # it. Authentication alone does not make an invalid DATA admitted.
+            receive_work_before = self.flow._ack_work_gen
             self.flow.absorb(parsed, at)
             self.last_activity_us = self.clock()[1]
             if (not self.sends and self.burst_frames > 1 and verified.kind is FrameKind.DATA
                     and parsed['flow_id'] == self.flow.flow_id
-                    and parsed['generation'] == self.flow.generation):
+                    and parsed['generation'] == self.flow.generation
+                    and self.flow._ack_work_gen > receive_work_before):
+                if not self.burst_received:
+                    self.burst_started_us = self.last_activity_us
                 self.burst_received += 1
                 self.ack_due_us = (self.last_activity_us if self.burst_received >= self.burst_frames
-                    or self.flow.complete else self.last_activity_us + self.burst_quiet_us)
+                    or self.flow.complete else min(self.last_activity_us + self.burst_quiet_us,
+                        self.burst_started_us + self.burst_max_hold_us))
             # A received authenticated ACK has already finished on air. Once
             # its flow state is applied there is no reason to spend the rest
             # of a conservative reverse-airtime wait before the next DATA.
             if (self.sends and verified.kind is FrameKind.ACK
                     and self.flow.acked_frames() > acknowledged_before):
                 self.next_send_us = min(self.next_send_us, self.last_activity_us)
+                self.burst_sent = 0
             self.events.append({'event': 'rx', 'mono_us': self.last_activity_us,
                 'outer_counter': verified.counter, 'outer_kind': verified.kind.name,
                 'packet_sha256': hashlib.sha256(raw.packet).hexdigest(),
@@ -215,6 +250,7 @@ class BenchFlow:
         # answered after one maximum packet plus bounded host-turnaround time.
         if (not self.sends and self.burst_received and self.clock()[1] < self.ack_due_us):
             self.owner.settle_sending()
+            self._check_flow()
             return self.flow.complete
         if self.clock()[1] < self.next_send_us:
             self.owner.settle_sending()
@@ -227,13 +263,16 @@ class BenchFlow:
         # Keep the reviewed adapter's diagnostic history bounded too; no
         # application data is exported from it in the run receipt.
         del self.link.sent[:-64]
+        self._check_flow()
+        return self.flow.complete
+
+    def _check_flow(self):
         if self.flow.failure:
             raise WireError('reliable_flow_' + self.flow.failure)
         if self.worker.fenced:
             raise WireError('worker_run_fenced')
         require(not self.scheduler.snapshot()['fenced_flows'], 'bench_scheduler_flow_fenced')
         require(len(self.owner.retained) < 1024, 'bench_handle_retention_limit')
-        return self.flow.complete
 
     def snapshot(self):
         return {'complete': self.flow.complete, 'received_bytes': len(self.received),
@@ -242,6 +281,8 @@ class BenchFlow:
             'startup_pending': self.flow.startup_pending, 'rto_seconds': self.flow.rto,
             'timing_policy': {'receive_gap_us': self.receive_gap_us,
                              'burst_frames': self.burst_frames, 'burst_quiet_us': self.burst_quiet_us,
+                             'burst_max_hold_us': self.burst_max_hold_us,
+                             'sender_control_hold_us': self.sender_control_hold_us,
                              'ack_delay_seconds': self.flow.limits.ack_delay_s,
                              'persist_interval_seconds': self.flow.limits.persist_interval_s,
                              'control_rate_us_per_second': self.scheduler.policy.control_rate_us_per_second},

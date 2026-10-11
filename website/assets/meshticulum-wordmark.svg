@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 332 80" role="img" aria-labelledby="title">
+  <title id="title">Meshticulum</title>
+  <path d="M16 63V20L40 44L64 20V63" fill="none" stroke="#79bfa3" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M16 63L40 44L64 63" fill="none" stroke="#79bfa3" stroke-opacity=".38" stroke-width="3"/>
+  <path d="M33 44L40 37L47 44L40 51Z" fill="#efb76b"/>
+  <g fill="#efb76b"><circle cx="16" cy="20" r="5"/><circle cx="64" cy="20" r="5"/></g>
+  <g fill="#79bfa3"><circle cx="16" cy="63" r="5"/><circle cx="64" cy="63" r="5"/></g>
+  <text x="89" y="51" fill="#f1f0e9" font-family="ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="34" font-weight="650" letter-spacing="-1">Meshticulum</text>
+</svg>

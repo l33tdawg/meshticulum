@@ -1,12 +1,16 @@
 # Meshticulum
 
+<img src="website/assets/meshticulum-logo.svg" alt="Meshticulum mesh-node logo" width="80" height="80">
+
 **Secure messages and verified resources across small radios and faster networks.**
 
 A [SAGE Foundation](https://sage-foundation.net/) project, created and maintained by [Dhillon Andrew Kannabhiran (@l33tdawg)](https://github.com/l33tdawg). Part of the broader [SAGE project](https://github.com/l33tdawg/sage/).
 
+**Project preview.** Meshticulum is in active development. The source, architecture and measured results are available for review; `1.0.0-alpha` is planned and has not been released. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current scope](docs/PROJECT_PREVIEW.md).
+
 Meshticulum is an experimental transport and resource system for networks that mix LoRa and IP. We are building it to close the gap between practical embedded radio meshes and richer, secure networking across different transports—and to move more useful encrypted data through the radio time we have.
 
-It began in SAGE Lantern and now lives as a standalone project. The transport, public-resource and offline envelope code work without SAGE. SAGE remains an optional application integration.
+It began in SAGE Lantern and now lives as a standalone project. The transport, public-resource and offline envelope code work without SAGE or Lantern. [Lantern](https://github.com/l33tdawg/sage-lantern) consumes Meshticulum and owns its device and private SAGE integrations.
 
 ## SAGE project family
 
@@ -14,9 +18,11 @@ It began in SAGE Lantern and now lives as a standalone project. The transport, p
 | --- | --- |
 | **SAGE** | [Main SAGE repository](https://github.com/l33tdawg/sage/) — agent memory, governance and core infrastructure. |
 | **Meshticulum** | [This repository](https://github.com/l33tdawg/meshticulum) — reusable transport, reliable flow, radio/IP carrier work and verified resource protocols. |
-| **Lantern** | **A separate Lantern-specific repository is planned** for the product apps/UI, device provisioning, runtime orchestration and device integrations. Its link will be added when that repository is ready. |
+| **Lantern** | [SAGE Lantern repository](https://github.com/l33tdawg/sage-lantern) — product apps/UI, device provisioning, runtime orchestration and private SAGE integrations. |
 
-The planned Lantern repository will consume Meshticulum as an independent transport dependency. Historical Lantern lab helpers and optional integration adapters remain here during the transition; the product split is not yet complete. See [attribution and repository boundaries](docs/PROJECT_FAMILY.md).
+The dependency goes one way: **Lantern → Meshticulum**. Meshticulum has no dependency on Lantern, the SAGE SDK, protected storage or fleet services. Lantern owns `software/meshticulum-integration/` and `firmware/meshticulum-bench/`; its private adapters and native deployment tools are outside this package. See [attribution and repository boundaries](docs/PROJECT_FAMILY.md).
+
+Earlier extraction commits retain Lantern code as development history. The current tree and installable package are Meshticulum-only. [Repository history](docs/REPOSITORY_HISTORY.md) explains the separation and why that history is preserved.
 
 ## Why build this?
 
@@ -35,17 +41,19 @@ flowchart TB
     FLOW --> AUTH["Authenticated session<br/>Peer, expiry and replay bindings"]
     AUTH --> WORKER["Exclusive radio worker<br/>Attempt and airtime journals"]
     WORKER --> RF["LoRa peers<br/>Serial radio or SX1262 HAT"]
-    AUTH -. "Authenticated IP adapter pending" .-> IP["IP peers"]
+    AUTH -. "TCP source prototype<br/>hardware qualification pending" .-> IP["IP peers"]
 ```
 
 [Editable Mermaid](docs/diagrams/readme-1.mmd) · [Rendered SVG](docs/diagrams/readme-1.svg)
 
-The solid path is implemented source composition; the dotted IP branch is the next transport implementation and qualification step. The diagram describes components, rather than a completed hardware deployment.
+The diagram shows reusable source components. Finite native public campaigns have delivered a verified request/reply across LoRa and IP. A later campaign retained verified data through IP loss, resumed over freshly admitted LoRa and returned to a locally measured faster IP path. It verified four pieces totaling **3,908 bytes** within one original expiry. [The execution record](docs/IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return) gives the exact source pins, timing and scope. Broader performance, private production and release qualification remain open.
 
 Two service paths sit above the flow:
 
-- **Private messages:** recipient-encrypted, sender-signed envelopes. The compact binary carrier preserves the encrypted and signed bytes. Protected admission, durable capture and uncertain-write recovery live in the optional SAGE adapter.
+- **Private messages:** reusable recipient-encrypted, sender-signed envelopes. The compact binary carrier preserves the encrypted and signed bytes. Lantern supplies its protected admission, durable capture, consent policy and uncertain-write recovery outside Meshticulum.
 - **Public resources:** signed manifests and content-addressed chunks. Bounded MR1 requests and replies move blocks over a scarce carrier; publisher and content verification determine which chunks enter the reusable cache.
+
+The opt-in [experimental v2 forward-session primitive](docs/FORWARD_SECRECY.md) requires caller-owned, independently generated, dedicated Noise X25519 statics and pinned Ed25519 signing identities. The complete exchange and signed confirmations bind both key types and context before wrapping unchanged LM1/LM2 records. It rejects both pinned peers' known converted legacy recipient keys and MPF1 framing; retired v1 ID/role claims remain fenced in the retained counter namespace. Caller key-generation/purpose guarantees, protected lifecycle, full composition, native transport/key erasure and performance remain unqualified. There is no native/private service wiring or automatic legacy upgrade, and no deployed forward-secrecy or overall speed/security superiority claim.
 
 Below them, admission binds each transfer to its peers, service, object and original expiry. Receiver credit bounds what can enter the flow. The scheduler and exclusive worker account for DATA, ACKs, retries and shared-medium costs. Local RF completion, peer receipt and application acceptance remain separate observations.
 
@@ -55,27 +63,27 @@ Below them, admission binds each transfer to its peers, service, object and orig
 
 The goal is higher **useful encrypted goodput**: application bytes delivered under verification, rather than raw modem bitrate. In the retained radio bench, the timed interval ends at the sender's flow ACK; the receiver's durable hash is required separately. The design reduces avoidable carrier overhead through compact binary envelopes, bounded windows, selective acknowledgements and explicit receiver credit. Retry timing takes the carrier queue into account, and the request/reply adapters avoid carrying HTTP and base64 framing over the scarce radio link.
 
-For public resources, the path policy uses local verified request timings and shared-bottleneck information. It can retain verified chunks and select among explicitly supplied routes; it does not equate an interface name with a fast path. Authenticated IP transport and real mixed-path failover still need qualification.
+For public resources, the path policy uses local verified request timings and shared-bottleneck information. It can retain verified chunks and select among explicitly supplied routes; it does not equate an interface name with a fast path. The [authenticated TCP prototype](docs/IP_TRANSPORT.md) supports MR1 request/reply, and the later finite native campaign observed fresh-LoRa resume and return to a currently measured faster IP path. Its tiny service samples include management and final-ACK windows; they do not establish sustained carrier capacity or a speed ranking against MeshCore or Reticulum.
 
-Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s median useful encrypted goodput** across C→A, C→B and A→B LoRa links, with 30 completed RF samples. That is evidence from an earlier experimental runtime, and the current service runner still needs its own hardware qualification. The programme target is **1–1.5 kB/s**; matched MeshCore and Reticulum measurements remain to be collected.
+Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s median useful encrypted goodput** across C→A, C→B and A→B LoRa links, with 30 completed RF samples. That is evidence from an earlier experimental runtime. Seven later native public resource samples recorded **782, 708, 975, 996.7, 1,036.9 and 1,071.3 B/s** for 16,356 useful bytes, and **936.7 B/s with zero retries** for an 8,164-byte piece. The two latest 16,356-byte responses completed at **1.037 and 1.071 kB/s with zero DATA retries or duplicates**. Both finite samples meet the 1,000 B/s minimum; sustained qualification remains open. These rates end at the sender's reliable-flow ACK; publisher/content verification is separately required. [Current native samples and exact pins](docs/PERFORMANCE.md#native-public-resource-transfers-2026-10-11) remain distinct from the older distribution. Sustained capacity and native private forward-secrecy qualification remain open. The programme target is **1–1.5 kB/s**, with an owner-requested **4–5 kB/s stretch target** that requires a supported faster PHY and fresh admission; range at any faster profile is unmeasured. Comparison with published MeshCore/Reticulum figures is recorded with its conditions and limits in [Performance](docs/PERFORMANCE.md#comparison-with-published-figures).
 
-[Performance](docs/PERFORMANCE.md) explains the available evidence, units, measurement boundaries and the matched comparisons still required.
+[Performance](docs/PERFORMANCE.md) explains the available evidence, units, measurement boundaries and the scope of comparisons with published upstream figures.
 
 ## What works today?
 
-| Area | Implemented source | Next qualification |
+| Area | Current evidence | Next qualification |
 | --- | --- | --- |
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
-| Radio adapters | Exclusive serial-radio and Linux SX1262 workers; finite public service runner | Coordinated device runs with bounded disarm and rollback |
-| Public resources | Signed manifests, content checks, bounded MR1 blocks, verified-piece resume and measured path policy | C→A LoRa→B IP, IP loss, fresh LoRa admission and return to the faster measured path |
-| Private messages | Offline encrypted envelopes and compact binary carrier; optional protected SAGE capture/inbox adapters | Real native ownership, encrypted backend, consent and recovery behavior |
-| Standalone packaging | Canonical Python package, public host-runtime builder and SDK-free source suite | Reproducible firmware/BSP recipe and release review |
+| Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
+| Public resources | Finite native mixed request/reply verified 977 bytes; a later loss/LoRa-resume/IP-return campaign verified four pieces / 3,908 bytes under one original expiry | Broader Meshticulum performance qualification, published-comparison review and release review |
+| Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
+| Standalone packaging | Canonical Python package and standalone source suite | Candidate artifact review and separately qualified Lantern deployment |
 
-At the standalone extraction checkpoint, **1,676 SDK-free source controls** and **258 optional SAGE integration controls** passed. [CI](.github/workflows/tests.yml) runs the standalone suite and frozen-flow check on Python 3.11, 3.12 and 3.13. These checks support the source behavior; current-runtime hardware qualification, full mixed-path operation and production private admission remain open. The [roadmap](docs/ROADMAP.md) tracks that work.
+[CI](.github/workflows/tests.yml) runs the standalone suite and frozen-flow check on Python 3.11, 3.12 and 3.13. Historical [extraction validation](provenance/VALIDATION.json) remains a checkpoint for its original source snapshot. Private integration controls belong to Lantern and must be tied to its exact Meshticulum dependency. Source checks support implementation behavior. The recorded native public campaigns have their own exact execution pins; private native owner/consent and transport, sustained performance, firmware source/deployed-image equivalence and release gates remain open. The [roadmap](docs/ROADMAP.md) tracks that work.
 
 ## Install and explore
 
-Python 3.11 or later is required. The offline core runs on a development host; radio workers and Linux device entry points need the corresponding hardware interfaces.
+Python 3.11 or later is required. The offline core runs on a development host. Reusable radio drivers need the corresponding hardware interfaces; Lantern owns the native device entry points and their deployment requirements.
 
 ```sh
 git clone https://github.com/l33tdawg/meshticulum.git
@@ -83,7 +91,7 @@ cd meshticulum
 python -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[dev]'
-python -m pytest --ignore=tests/integrations
+python -m pytest
 python tools/verify_frozen_flow.py
 ```
 
@@ -97,14 +105,13 @@ from meshticulum.resources.resource import BlockReader, BlockServer
 
 `BlockReader` uses a caller-supplied, bounded exchange that must enforce authentication, admission and the absolute deadline. `BlockServer` reads from a caller-owned verified public-resource allowlist. The envelope conversion helpers change the carrier representation while preserving the sealed content; they do not create a transport session.
 
-The CLI help is safe to inspect:
+The generic public-resource CLI help is safe to inspect:
 
 ```sh
-meshticulum-service --help
 meshticulum-seed --help
 ```
 
-A radio service run needs a separately provisioned finite grant and the trusted exclusive worker. Follow [Hardware](docs/HARDWARE.md) before operating devices, and [SAGE integration](docs/SAGE_INTEGRATION.md) for the compatible local SDK and private-adapter controls. Source tests use synthetic identities and explicit source models; they do not flash radios or start production services.
+A device service run needs Lantern's separately provisioned finite grant and trusted exclusive worker. Follow [Hardware](docs/HARDWARE.md) for the boundary and [Lantern integration](docs/SAGE_INTEGRATION.md) for the owning repository. Meshticulum does not provide a product-pilot CLI or a SAGE installation extra. Source tests use synthetic identities and explicit source models; they do not flash radios or start production services.
 
 ## Repository map
 
@@ -113,18 +120,18 @@ A radio service run needs a separately provisioned finite grant and the trusted 
 | `src/meshticulum/contracts` | Peer, service, session, route, limit and deadline contracts |
 | `src/meshticulum/scheduler` | Admission, attempt settlement and medium budgeting |
 | `src/meshticulum/flow` | Accepted bounded reliable-flow and finite-port candidate |
-| `src/meshticulum/bench` | Authenticated frames, journals, workers and finite service runners |
+| `src/meshticulum/bench` | Authenticated frames, journals, reusable workers and public service composition |
+| `src/meshticulum/ip` | Authenticated TCP prototype, bounded stream budgets and replay state |
 | `src/meshticulum/resources` | Signed public packs, block exchange, verified cache and path policy |
 | `src/meshticulum/privacy` | Offline recipient-encrypted envelopes and binary carrier |
-| `src/meshticulum/integrations/sage` | Optional protected inbox, capture and storage adapters |
-| `firmware/meshticulum-bench` | Raw LoRa coprocessor source and experimental lab tooling |
-| `tests` | Acceptance and failure controls, including optional integration controls |
+| `tests` | Standalone protocol, resource, carrier and failure controls |
+| `tools` | Frozen-flow, documentation, artifact and retained-benchmark checks |
 
 New code should use `meshticulum.*` imports. Small compatibility bridges preserve the module and class identity of the unchanged accepted flow. [Extraction and provenance](docs/EXTRACTION.md) records the original source, namespace changes and frozen hashes.
 
 ## Read more and contribute
 
-[Documentation home](docs/index.md) · [Why](docs/WHY.md) · [Architecture](docs/ARCHITECTURE.md) · [MeshCore/Reticulum comparison](docs/COMPARISON.md) · [Performance](docs/PERFORMANCE.md) · [Roadmap](docs/ROADMAP.md)
+[Documentation home](docs/index.md) · [Why](docs/WHY.md) · [Architecture](docs/ARCHITECTURE.md) · [MeshCore/Reticulum comparison](docs/COMPARISON.md) · [Performance](docs/PERFORMANCE.md) · [Experimental forward sessions](docs/FORWARD_SECRECY.md) · [Roadmap](docs/ROADMAP.md) · [1.0.0-alpha readiness](docs/RELEASE_READINESS.md)
 
 Before changing transport behavior, read [AGENTS.md](AGENTS.md), run the standalone suite and verify the frozen-flow pins. Changes to the accepted flow and port require a reviewed revision. Keep original deadlines, replay decisions and attempt debt intact across cancellation and restart, and preserve failed or unavailable measurements alongside successful runs.
 

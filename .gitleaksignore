@@ -1,0 +1,8 @@
+# Four independently reviewed public test fixtures, not production credentials.
+# Exact finding fingerprints only; a new location or rule remains visible.
+# Noise keys reproduce from deterministic public test inputs; the Python hits
+# are a method-name literal and a diagnostic canary used to test log redaction.
+tests/fixtures/noise-kk-vector.json:generic-api-key:8
+tests/fixtures/noise-kk-vector.json:generic-api-key:10
+tests/test_forward_session.py:generic-api-key:352
+tests/test_meshticulum_negotiation_contract.py:generic-api-key:478

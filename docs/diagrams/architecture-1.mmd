@@ -6,9 +6,11 @@ flowchart TB
     end
 
     subgraph Service[Finite service adapters]
-        Transfer["ServiceTransfer and ServiceRunner"]
+        Transfer["ServiceTransfer<br/>exact admitted bytes"]
+        Runner["ServiceRunner<br/>public jobs only"]
         Blocks["PreparedBlockExchange<br/>MR1 request and response"]
-        Capture["Optional protected capture and inbox"]
+        Private["Lantern private composition<br/>external application code"]
+        Capture["Lantern protected capture / inbox<br/>external application code"]
     end
 
     subgraph Transport[Authenticated radio composition]
@@ -24,15 +26,15 @@ flowchart TB
     Replay["SessionStore<br/>durable counters<br/>and replay window"]
     Attempts["AttemptJournal<br/>reservations and<br/>outcome evidence"]
     HTTP["Existing bounded<br/>HTTP resource reader"]
-    IP["Designed IP carrier<br/>authentication pending"]
+    IP["Authenticated TCP carrier<br/>finite public native milestones"]
 
-    Resources --> Blocks --> Transfer
-    Envelopes --> Transfer
+    Resources --> Blocks --> Runner --> Transfer
+    Envelopes --> Private --> Transfer
     Transfer --> Flow --> Port --> Scheduler --> Wire --> Worker --> Radio
-    Transfer -->|private only| Capture
+    Private -->|sealed records| Capture
     Policy -. selects admitted resource readers .-> Blocks
     Policy -. selects resource readers .-> HTTP
-    Policy -. future reader .-> IP
+    Policy -. fresh admitted reader .-> IP
     Authority -. current leases .-> Scheduler
     Authority -. application lease .-> Transfer
     Wire -. commits before exposure .-> Replay

@@ -1,0 +1,178 @@
+{
+  "schema": "meshticulum.raw-firmware-inputs.v1",
+  "host": "darwin-arm64",
+  "platformio_version": "6.1.19",
+  "source_scope": "Primary pinned MeshCore BSP and external packages; no Lantern source patches or device/deployment policy.",
+  "inputs": [
+    {
+      "id": "framework",
+      "role": "framework",
+      "version": "3.20017.241212+sha.dcc1105b",
+      "filename": "framework-arduinoespressif32-3.20017.241212+sha.dcc1105b.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/platformio/tool/framework-arduinoespressif32/3.20017.241212+sha.dcc1105b/framework-arduinoespressif32-3.20017.241212+sha.dcc1105b.tar.gz",
+      "sha256": "7dbcfb86f9dfd5ecf6c881ed8226239d9ef63f27e1e1a2ddd87a87762e2ffbc9",
+      "bytes": 246321254,
+      "strip_prefix": null
+    },
+    {
+      "id": "scons",
+      "role": "tool",
+      "version": "4.40801.0",
+      "filename": "tool-scons-4.40801.0.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/platformio/tool/tool-scons/4.40801.0/tool-scons-4.40801.0.tar.gz",
+      "sha256": "289b1abf389b730ab5a1018ed9fc84e22d301e0d16c64548eb9db5bf8ba59d06",
+      "bytes": 483365,
+      "strip_prefix": null,
+      "package_spec": {
+        "owner": "platformio",
+        "id": 8192,
+        "name": "tool-scons"
+      }
+    },
+    {
+      "id": "esptool",
+      "role": "tool",
+      "version": "1.40501.0",
+      "filename": "tool-esptoolpy-1.40501.0.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/platformio/tool/tool-esptoolpy/1.40501.0/tool-esptoolpy-1.40501.0.tar.gz",
+      "sha256": "691d750c68455056348fafdff137354233e9c9b1b21dae4839e0c5e6151b0a76",
+      "bytes": 518547,
+      "strip_prefix": null
+    },
+    {
+      "id": "platform",
+      "role": "platform",
+      "version": "6.11.0",
+      "filename": "espressif32-6.11.0.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/platformio/platform/espressif32/6.11.0/espressif32-6.11.0.tar.gz",
+      "sha256": "1c3ea866082d6e752f91fd2a9f76d4cb67417e3208a839b88ab387f5a612a7bd",
+      "bytes": 916165,
+      "strip_prefix": null
+    },
+    {
+      "id": "crypto",
+      "role": "library",
+      "version": "0.4.0",
+      "filename": "Crypto-0.4.0.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/rweather/library/Crypto/0.4.0/Crypto-0.4.0.tar.gz",
+      "sha256": "1867740aad0d61bdcbac25f6dbc8eefe6eed9e7b37f48d9d0b9d80500ad431e0",
+      "bytes": 162696,
+      "strip_prefix": null
+    },
+    {
+      "id": "rtc",
+      "role": "library",
+      "version": "2.1.4",
+      "filename": "RTClib-2.1.4.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/adafruit/library/RTClib/2.1.4/RTClib-2.1.4.tar.gz",
+      "sha256": "9939e87c696879d7b34751ab6bd85d111e4a94f59698291c4c7979005ed53070",
+      "bytes": 35749,
+      "strip_prefix": null
+    },
+    {
+      "id": "rv3028",
+      "role": "library",
+      "version": "1.2.0",
+      "filename": "MeloperoRV3028-1.2.0.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/melopero/library/Melopero%20RV3028/1.2.0/MeloperoRV3028-1.2.0.tar.gz",
+      "sha256": "ca7784016fee8d451274890c471f3652d73e852c2af89942cf60183e12d7f7d8",
+      "bytes": 8767,
+      "strip_prefix": null
+    },
+    {
+      "id": "busio",
+      "role": "library",
+      "version": "1.17.4",
+      "filename": "AdafruitBusIO-1.17.4.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/adafruit/library/Adafruit%20BusIO/1.17.4/AdafruitBusIO-1.17.4.tar.gz",
+      "sha256": "406146081ca584ffa30264235f270521b1335d69d7b760807c650e502c323862",
+      "bytes": 23086,
+      "strip_prefix": null
+    },
+    {
+      "id": "cayenne",
+      "role": "library",
+      "version": "1.6.1",
+      "filename": "CayenneLPP-1.6.1.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/electroniccats/library/CayenneLPP/1.6.1/CayenneLPP-1.6.1.tar.gz",
+      "sha256": "e3717ac5f6c17ee617cc129506989973acdd40ada8724c7cd1fad8c21e784423",
+      "bytes": 19817,
+      "strip_prefix": null
+    },
+    {
+      "id": "json",
+      "role": "library",
+      "version": "7.4.3",
+      "filename": "ArduinoJson-7.4.3.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/bblanchon/library/ArduinoJson/7.4.3/ArduinoJson-7.4.3.tar.gz",
+      "sha256": "5a6a61292733a365e9384ce6a3d61dbedf7125a814b1424a3417e3135dc25190",
+      "bytes": 72355,
+      "strip_prefix": null
+    },
+    {
+      "id": "meshcore",
+      "role": "bsp",
+      "filename": "MeshCore-d9296435.tar.gz",
+      "url": "https://codeload.github.com/meshcore-dev/MeshCore/tar.gz/d92964352441e53b93e8667b802e04f6e072b39e",
+      "sha256": "280fb4e6a2704185a3ef2102887a0632b66611e68b2f6f25764709905fa3ba0a",
+      "bytes": 962573,
+      "strip_prefix": "MeshCore-d92964352441e53b93e8667b802e04f6e072b39e"
+    },
+    {
+      "id": "radiolib",
+      "role": "library",
+      "filename": "RadioLib-6d8934836678d8894e3d556550475b37dce3e2b6.tar.gz",
+      "url": "https://codeload.github.com/jgromes/RadioLib/tar.gz/6d8934836678d8894e3d556550475b37dce3e2b6",
+      "sha256": "f282d20332432989dfc790e7e958f46bdd7b61a6bc7afe32d996ba65afe22fb7",
+      "bytes": 5183312,
+      "strip_prefix": "RadioLib-6d8934836678d8894e3d556550475b37dce3e2b6"
+    },
+    {
+      "id": "compiler",
+      "role": "tool",
+      "filename": "xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos-arm64.tar.gz",
+      "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch5/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos-arm64.tar.gz",
+      "sha256": "c64b05be25d26916c65dcfe11de9e60b96d58980b2df706d3074cb70b1ef6cb9",
+      "bytes": 66791095,
+      "strip_prefix": "xtensa-esp32s3-elf"
+    },
+    {
+      "id": "riscv",
+      "role": "tool",
+      "version": "8.4.0+2021r2-patch5",
+      "filename": "toolchain-riscv32-esp-darwin_x86_64-8.4.0+2021r2-patch5.tar.gz",
+      "url": "https://dl.registry.platformio.org/download/espressif/tool/toolchain-riscv32-esp/8.4.0+2021r2-patch5/toolchain-riscv32-esp-darwin_x86_64-8.4.0+2021r2-patch5.tar.gz",
+      "sha256": "d0cea8c9a5a1661e98156d907a3037f9c3f2f46419523be1ad2540c900a7637c",
+      "bytes": 196616149,
+      "strip_prefix": null,
+      "package_spec": {
+        "owner": "espressif",
+        "id": 15395,
+        "name": "toolchain-riscv32-esp"
+      }
+    }
+  ],
+  "framework_patch": {
+    "path": "patches/hwcdc-2.0.17.patch",
+    "upstream_commit": "2ecad233178bfbba9c584ffd9f67e941d84adbb7",
+    "target": "cores/esp32/HWCDC.cpp",
+    "original_sha256": "d0a8ca606c2729c8522a041113285dbf27033c22a5a6af8649a7305ffe84c449",
+    "patched_sha256": "34fed4420c4ebec1af042e47e24c507f30f770cdb430af447689efa57fc3cfde",
+    "patch_sha256": "1bdb1339485c3c76c89f292cdf443b022deb4ffb1ce5b0a819f9c12e19fc0bc0",
+    "license": "Apache-2.0",
+    "copyright": "Copyright 2015-2024 Espressif Systems (Shanghai) PTE LTD",
+    "upstream_source_sha256": "afeebf0de83416b1c899b0037b6c82cbc582709627aee93a22179eac3745be81"
+  },
+  "source_date_epoch": 1786709959,
+  "source_date_basis": {
+    "repository": "https://github.com/meshcore-dev/MeshCore",
+    "commit": "d92964352441e53b93e8667b802e04f6e072b39e",
+    "committed_at": "2026-08-14T12:19:19Z"
+  },
+  "framework_license": {
+    "path": "patches/LICENSE.arduino-esp32",
+    "url": "https://raw.githubusercontent.com/espressif/arduino-esp32/2.0.17/LICENSE.md",
+    "sha256": "994ce1902a23c74519b5d118c6bbb657edabce91dd6b7cc825d86bb8f5c9780f",
+    "license": "LGPL-2.1-or-later"
+  }
+}

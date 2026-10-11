@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title">
+  <title id="title">Meshticulum: small radios, bigger possibilities. A SAGE Foundation project.</title>
+  <rect width="1200" height="630" fill="#101d1b"/>
+  <path d="M60 105H1140M60 558H1140" stroke="#79bfa3" stroke-opacity=".22"/>
+  <g font-family="sans-serif">
+    <text x="60" y="69" font-size="27" font-weight="700" fill="#f1f0e9">meshticulum<tspan fill="#efb76b">.</tspan></text>
+    <text x="883" y="67" font-size="13" letter-spacing="2" fill="#79bfa3">A SAGE FOUNDATION PROJECT</text>
+    <text x="63" y="168" font-size="14" letter-spacing="2.6" fill="#efb76b">OPEN SOURCE / IN DEVELOPMENT</text>
+  </g>
+  <g font-family="Georgia,serif" font-size="79" fill="#f1f0e9">
+    <text x="59" y="278">Small radios.</text>
+    <text x="59" y="372" fill="#c9d8af" font-style="italic">Bigger possibilities.</text>
+  </g>
+  <g font-family="sans-serif" fill="#c9d0c9">
+    <text x="63" y="443" font-size="23">Secure messages. Verified resources.</text>
+    <text x="63" y="480" font-size="23">Built to make more of LoRa and IP.</text>
+    <text x="63" y="594" font-size="17">l33tdawg.github.io/meshticulum</text>
+    <text x="833" y="594" font-size="13">Dhillon Andrew Kannabhiran / SAGE Foundation</text>
+  </g>
+  <g transform="translate(886 209) scale(2.9)">
+    <path d="M16 63V20L40 44L64 20V63" fill="none" stroke="#79bfa3" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M16 63L40 44L64 63M16 20L64 63M64 20L16 63" fill="none" stroke="#79bfa3" stroke-opacity=".25" stroke-width="1"/>
+    <path d="M33 44L40 37L47 44L40 51Z" fill="#efb76b"/>
+    <g fill="#efb76b"><circle cx="16" cy="20" r="4"/><circle cx="64" cy="20" r="4"/></g>
+    <g fill="#79bfa3"><circle cx="16" cy="63" r="4"/><circle cx="64" cy="63" r="4"/></g>
+  </g>
+</svg>

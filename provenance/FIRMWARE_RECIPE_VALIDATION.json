@@ -1,0 +1,273 @@
+{
+  "schema": "meshticulum.raw-firmware-validation.v1",
+  "validated_at": "2026-10-10",
+  "scope": "Source compilation and independent reproduction on one pinned macOS arm64 host; no RF, deployed-image equivalence or complete license closure.",
+  "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "python": "3.12.8",
+    "platformio": "6.1.19"
+  },
+  "lock_sha256": "9d2d534dbf784db3c13b729ab91d20832e0dd536dd8edf7ce2ccd79985c6dfb2",
+  "recipe_sha256": "64c86dc186d4c887adbabc5339209151bf2b2179d7c34c6c218ddb2e231c86e8",
+  "source_date_epoch": 1786709959,
+  "source_date_basis": {
+    "repository": "https://github.com/meshcore-dev/MeshCore",
+    "commit": "d92964352441e53b93e8667b802e04f6e072b39e",
+    "committed_at": "2026-08-14T12:19:19Z"
+  },
+  "frozen_flow_unchanged": true,
+  "app_cpp_and_protocol_unchanged": true,
+  "primary_input_comparison": {
+    "framework": {
+      "original_files": 10058,
+      "current_files": 10058,
+      "changed": [
+        "cores/esp32/HWCDC.cpp"
+      ],
+      "added": [],
+      "removed": []
+    },
+    "radiolib": {
+      "original_files": 409,
+      "current_files": 409,
+      "changed": [],
+      "added": [],
+      "removed": []
+    },
+    "scons": {
+      "original_files": 214,
+      "current_files": 214,
+      "changed": [],
+      "added": [],
+      "removed": []
+    },
+    "esptool": {
+      "original_files": 160,
+      "current_files": 160,
+      "changed": [],
+      "added": [],
+      "removed": []
+    }
+  },
+  "primary_library_comparison": {
+    "Crypto": {
+      "changed": [],
+      "added": [],
+      "removed": []
+    },
+    "RTClib": {
+      "changed": [],
+      "added": [],
+      "removed": []
+    },
+    "Melopero-RV3028": {
+      "changed": [],
+      "added": [],
+      "removed": []
+    },
+    "Adafruit-BusIO": {
+      "changed": [],
+      "added": [],
+      "removed": []
+    },
+    "CayenneLPP": {
+      "changed": [],
+      "added": [],
+      "removed": []
+    },
+    "ArduinoJson": {
+      "changed": [],
+      "added": [],
+      "removed": []
+    },
+    "espressif32": {
+      "changed": [],
+      "added": [],
+      "removed": []
+    }
+  },
+  "independent_builds": [
+    {
+      "target": "mtbench_heltec_v4",
+      "equal_artifacts": {
+        "bootloader.bin": true,
+        "firmware.bin": true,
+        "firmware.elf": true,
+        "firmware.map": false,
+        "partitions.bin": true
+      },
+      "firmware": {
+        "bytes": 388368,
+        "sha256": "9e3a43f0d5945e13974849008c8c252edf6fd89ba3a541865866266f18e861ef"
+      }
+    },
+    {
+      "target": "mtbench_xiao_s3_wio",
+      "equal_artifacts": {
+        "bootloader.bin": true,
+        "firmware.bin": true,
+        "firmware.elf": true,
+        "firmware.map": false,
+        "partitions.bin": true
+      },
+      "firmware": {
+        "bytes": 382048,
+        "sha256": "3c3e78bf99220e45eed5fb9da717422941b7a6c5065ba4fb386c51b66b63e938"
+      }
+    }
+  ],
+  "build_reports": {
+    "05": {
+      "sha256": "892f602a4c5420ba1b8757604e19f21b4e8859677c059fc5e44c4017e07b58db",
+      "results": [
+        {
+          "artifacts": {
+            "bootloader.bin": {
+              "bytes": 15104,
+              "sha256": "2a71d69b471e20c2bac7fb469f3c6a807b3ebee780e348e5889db0da849ca363"
+            },
+            "firmware.bin": {
+              "bytes": 388368,
+              "sha256": "9e3a43f0d5945e13974849008c8c252edf6fd89ba3a541865866266f18e861ef"
+            },
+            "firmware.elf": {
+              "bytes": 12049348,
+              "sha256": "a25fbd9c9affc904dec872d08c82b654553dd95a314b2ad383cddc430fa815ca"
+            },
+            "firmware.map": {
+              "bytes": 14498946,
+              "sha256": "831999391d340991bc3a9e6aa45eab2bb5d35887cf4ff6cb1c4a7349fe318f7c"
+            },
+            "partitions.bin": {
+              "bytes": 3072,
+              "sha256": "bd0f7954aca2ef7d925ee21aaa1f3dc8822d1d6ce5cbbd26a135e5886bfff6ce"
+            }
+          },
+          "log_sha256": "970ed6ca53c65fef5e2b888cfce5229b9aab1c0244bdf74a766743a3b289d527",
+          "returncode": 0,
+          "target": "mtbench_heltec_v4"
+        },
+        {
+          "artifacts": {
+            "bootloader.bin": {
+              "bytes": 15104,
+              "sha256": "1776e4dd896a69d0a5c2e79957b0e2a88aa4129b1381d6478683515a1f6af343"
+            },
+            "firmware.bin": {
+              "bytes": 382048,
+              "sha256": "3c3e78bf99220e45eed5fb9da717422941b7a6c5065ba4fb386c51b66b63e938"
+            },
+            "firmware.elf": {
+              "bytes": 11514708,
+              "sha256": "3a25cb9d5e12b1698433e2cc13f9690ab886a61337da6b1dc9a824970b01a184"
+            },
+            "firmware.map": {
+              "bytes": 14503610,
+              "sha256": "99702fa6565f0a3566a82ea8b3f662fd32cb7dac98127af005297badd636f003"
+            },
+            "partitions.bin": {
+              "bytes": 3072,
+              "sha256": "1d9cca96de0fe07ad7fc0648b9878ddecd9ce565e38b589ad20fea698ed4c80c"
+            }
+          },
+          "log_sha256": "3bd82fe5fbad3388e400a8135647c611b524c0f320c9e5e6caed1265e79e594f",
+          "returncode": 0,
+          "target": "mtbench_xiao_s3_wio"
+        }
+      ]
+    },
+    "06": {
+      "sha256": "5e8e3c13200fcb6b3943fff76008301b79187ef413c8c0fbfa2f2836ae2de90c",
+      "results": [
+        {
+          "artifacts": {
+            "bootloader.bin": {
+              "bytes": 15104,
+              "sha256": "2a71d69b471e20c2bac7fb469f3c6a807b3ebee780e348e5889db0da849ca363"
+            },
+            "firmware.bin": {
+              "bytes": 388368,
+              "sha256": "9e3a43f0d5945e13974849008c8c252edf6fd89ba3a541865866266f18e861ef"
+            },
+            "firmware.elf": {
+              "bytes": 12049348,
+              "sha256": "a25fbd9c9affc904dec872d08c82b654553dd95a314b2ad383cddc430fa815ca"
+            },
+            "firmware.map": {
+              "bytes": 14498946,
+              "sha256": "4eb87fbb25ae4fc28d2448a1dcf2189fb8fc6897dd15208a690b98a4116ee9c1"
+            },
+            "partitions.bin": {
+              "bytes": 3072,
+              "sha256": "bd0f7954aca2ef7d925ee21aaa1f3dc8822d1d6ce5cbbd26a135e5886bfff6ce"
+            }
+          },
+          "log_sha256": "fe92c0bf0f77bfa62e64dcdfcd77c72a4cc2ca7637b57650b6cc13f297371689",
+          "returncode": 0,
+          "target": "mtbench_heltec_v4"
+        },
+        {
+          "artifacts": {
+            "bootloader.bin": {
+              "bytes": 15104,
+              "sha256": "1776e4dd896a69d0a5c2e79957b0e2a88aa4129b1381d6478683515a1f6af343"
+            },
+            "firmware.bin": {
+              "bytes": 382048,
+              "sha256": "3c3e78bf99220e45eed5fb9da717422941b7a6c5065ba4fb386c51b66b63e938"
+            },
+            "firmware.elf": {
+              "bytes": 11514708,
+              "sha256": "3a25cb9d5e12b1698433e2cc13f9690ab886a61337da6b1dc9a824970b01a184"
+            },
+            "firmware.map": {
+              "bytes": 14503610,
+              "sha256": "c7adc734d21713decd2e1cd2a5fd9b42a42cbeb717f1f07298c0c023db4d85f0"
+            },
+            "partitions.bin": {
+              "bytes": 3072,
+              "sha256": "1d9cca96de0fe07ad7fc0648b9878ddecd9ce565e38b589ad20fea698ed4c80c"
+            }
+          },
+          "log_sha256": "4776e8affd631e54e1fd91b94fcae5315115183d32e98fef63fb649b883fe4a5",
+          "returncode": 0,
+          "target": "mtbench_xiao_s3_wio"
+        }
+      ]
+    }
+  },
+  "retained_failures": [
+    {
+      "phase": "fresh primary preparation/build01",
+      "reason": "Missing initial PlatformIO tool registration attempted a registry lookup; both failures retained, then fixed in new snapshots.",
+      "results": [
+        {
+          "artifacts": {},
+          "log_sha256": "9d252b6039b40c2386a1cff1bbe96a8e03bba8da73d58fb42fa41509e7a888e7",
+          "returncode": 1,
+          "target": "mtbench_heltec_v4"
+        },
+        {
+          "artifacts": {},
+          "log_sha256": "6b622eb22a80a3a3bc0fe65062bbc8eb86fb08ef6fa5e05d9b010ed31192906d",
+          "returncode": 1,
+          "target": "mtbench_xiao_s3_wio"
+        }
+      ]
+    }
+  ],
+  "limits": {
+    "flashed": false,
+    "rf_qualified": false,
+    "deployed_binary_equivalent": false,
+    "notices_complete": false,
+    "cross_host_reproduction": false,
+    "whole_binary_identity_is_app_tag": false
+  },
+  "license_scope": {
+    "hwcdc_file": "Apache-2.0",
+    "framework_declaration": "LGPL-2.1-or-later",
+    "full_linked_notice_closure": false
+  }
+}

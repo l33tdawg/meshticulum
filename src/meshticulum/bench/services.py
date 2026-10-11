@@ -22,6 +22,9 @@ def _shape(payload, format):
     if format == 'LME.binary':
         from meshticulum.privacy.mesh_binary_envelope import to_text
         to_text(payload)  # Shape only. Recipient signature/expiry checks follow.
+    elif format == 'MPF2.record':
+        from meshticulum.privacy.forward_session import inspect_record
+        inspect_record(payload)  # Shape only; endpoint crypto/native policy is external.
     elif format == 'MR1.request':
         resource.decode_request(payload)
     else:
@@ -45,16 +48,28 @@ class ServiceTransfer:
     not an RF drain or a refund of durable attempts and lifetime airtime debt.
     """
     def __init__(self, flow):
-        require(type(flow) is BenchFlow and type(flow.authority) is RunAuthority,
-                'invalid_service_flow')
-        authority = flow.authority
-        require(authority.service_format is not None
-                and not flow.owner.retained and not flow.received and not flow.events
-                and not flow.flow.queued_bytes() and getattr(flow, '_service_adapter', None) is None,
-                'service_requires_fresh_flow')
-        require(flow.cipher.grant is authority.grant
-                and flow.authority.contract.route.service.kind is authority.service_kind,
-                'service_flow_binding_mismatch')
+        if type(flow) is BenchFlow:
+            authority = flow.authority
+            require(type(authority) is RunAuthority and authority.service_format is not None
+                    and not flow.owner.retained and not flow.received and not flow.events
+                    and not flow.flow.queued_bytes(), 'service_requires_fresh_flow')
+            require(authority.contract.route.service.kind is authority.service_kind,
+                    'service_flow_binding_mismatch')
+        else:
+            # Optional source carrier. The frozen radio runtime stays independent
+            # of IP packaging and never enables a socket through this import.
+            try:
+                from ..ip.authority import IpAuthority
+                from ..ip.flow import IpFlow
+            except ImportError:
+                require(False, 'ip_carrier_not_in_runtime')
+            require(type(flow) is IpFlow, 'invalid_service_ip_flow')
+            authority = flow.authority
+            require(type(flow) is IpFlow and type(authority) is IpAuthority and flow.service_fresh()
+                    and authority.service_kind is authority.grant.service_kind,
+                    'invalid_service_ip_flow')
+        require(getattr(flow, '_service_adapter', None) is None
+                and flow.cipher.grant is authority.grant, 'service_flow_binding_mismatch')
         self.flow, self.authority = flow, authority
         self.kind, self.format = authority.service_kind, authority.service_format
         self.descriptor = (authority.plan['object']['bytes'], authority.plan['object']['sha256'])
@@ -106,20 +121,6 @@ class ServiceTransfer:
             request = self._received()
             result = server.handle(request)
             _shape(result, 'MR1.response')
-            self._check()
-            return result
-
-    def deliver_private(self, inbox, *, operation_id, sender, peer_check):
-        """Protected journal admission metadata, never delivery/read authority."""
-        require(self.kind is ServiceKind.MESSAGE and self.format == 'LME.binary'
-                and callable(peer_check),
-                'private_service_binding_refused')
-        from meshticulum.integrations.sage.mesh_inbox import MeshInbox
-        require(type(inbox) is MeshInbox, 'private_service_binding_refused')
-        with self.authority.application_lease():
-            packet = self._received()
-            result = inbox.ingest_binary(operation_id, packet, sender=sender,
-                peer_check=lambda peer: self.live() and peer_check(peer) is True)
             self._check()
             return result
 

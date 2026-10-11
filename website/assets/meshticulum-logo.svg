@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" role="img" aria-labelledby="title desc">
+  <title id="title">Meshticulum</title>
+  <desc id="desc">An M formed by connected mesh nodes, with an amber bridge through its center.</desc>
+  <path d="M16 63V20L40 44L64 20V63" fill="none" stroke="#79bfa3" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M16 63L40 44L64 63" fill="none" stroke="#79bfa3" stroke-opacity=".38" stroke-width="3"/>
+  <path d="M16 20L64 63M64 20L16 63" fill="none" stroke="#79bfa3" stroke-opacity=".18" stroke-width="2"/>
+  <path d="M33 44L40 37L47 44L40 51Z" fill="#efb76b"/>
+  <g fill="#efb76b"><circle cx="16" cy="20" r="5"/><circle cx="64" cy="20" r="5"/></g>
+  <g fill="#79bfa3"><circle cx="16" cy="63" r="5"/><circle cx="64" cy="63" r="5"/></g>
+</svg>
