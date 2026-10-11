@@ -19,7 +19,9 @@ struct FakeBoard {
 inline FakeBoard board;
 struct FakeRadio {
     int16_t standby_error=0, clear_error=0, start_error=0, finish_error=0, receive_error=0, config_error=0, read_error=0, irq_error=0;
-    uint32_t flags=0, starts=0;
+    uint32_t flags=0, starts=0, explicit_headers=0;
+    uint8_t configured_sf=0;
+    uint16_t configured_preamble=0;
     std::vector<uint8_t> received={0xc0,0xdb,0,255};
     int16_t standby() { return standby_error; }
     int16_t clearIrqFlags(uint32_t) { if(!clear_error) flags=0; return clear_error; }
@@ -38,12 +40,13 @@ struct FakeRadio {
     float getSNR() { return -2.3; }
     int16_t setFrequency(float) { return config_error; }
     int16_t setBandwidth(float) { return config_error; }
-    int16_t setSpreadingFactor(uint8_t) { return config_error; }
+    int16_t setSpreadingFactor(uint8_t sf) { configured_sf=sf; return config_error; }
     int16_t setCodingRate(uint8_t) { return config_error; }
     int16_t setOutputPower(int8_t) { return config_error; }
-    int16_t setPreambleLength(uint16_t) { return config_error; }
+    int16_t setPreambleLength(uint16_t length) { configured_preamble=length; return config_error; }
     int16_t setSyncWord(uint8_t) { return config_error; }
     int16_t setCRC(uint8_t) { return config_error; }
+    int16_t explicitHeader() { explicit_headers++; return config_error; }
 };
 inline FakeRadio radio;
 inline bool radio_init() { return true; }

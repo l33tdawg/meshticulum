@@ -38,7 +38,7 @@ def native(tmp_path_factory):
     'boot_failure', 'idle', 'complete_replay', 'timeout', 'conflicting_flags',
     'lost_interrupt', 'start_failure', 'finish_failure', 'clear_failure',
     'wrong_boot', 'lease_replay', 'budget', 'receive', 'backpressure', 'config_failure', 'irq_read_failure',
-    'frequency_bounds'])
+    'frequency_bounds', 'fast_profile'])
 def test_actual_firmware_faults(native, scenario):
     subprocess.run([str(native), scenario], check=True, capture_output=True, timeout=10)
 
