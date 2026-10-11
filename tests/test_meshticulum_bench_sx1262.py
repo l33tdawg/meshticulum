@@ -47,6 +47,7 @@ class Chip:
         elif opcode == 0x80:
             if not (self.tx and self.fault == 'finish_failure'):
                 self.mode = 2 + body[0]
+                self.tx = False
         elif opcode == 0x0D:
             address = int.from_bytes(body[:2], 'big')
             for index, byte in enumerate(body[2:]): self.reg[address+index] = byte
