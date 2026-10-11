@@ -7,16 +7,22 @@ Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project, create
 | Repository | Responsibility |
 | --- | --- |
 | [SAGE](https://github.com/l33tdawg/sage/) | The main SAGE project: agent memory, governance and core infrastructure. |
-| [Meshticulum](https://github.com/l33tdawg/meshticulum) | The independent transport and resource system: contracts, reliable flow, scheduling, authenticated carriers, generic radio interfaces and verified resource transfer. |
-| **Lantern-specific repository — planned** | Lantern product apps/UI, provisioning, runtime orchestration, device services and integrations that consume Meshticulum and SAGE. Its URL will be published when the repository is ready. |
+| [Meshticulum](https://github.com/l33tdawg/meshticulum) | Independent protocols, contracts, reliable flow, scheduling, cryptographic envelopes, generic radio/IP carriers and verified resources. |
+| [SAGE Lantern](https://github.com/l33tdawg/sage-lantern) | All Lantern product code, apps/UI, STL and printing files, private SAGE adapters, protected inbox/capture, device policy, provisioning, pilot control and deployment. |
 
-Lantern will use Meshticulum as a reusable dependency. Meshticulum's core remains usable by other applications without the Lantern product or SAGE services. The Foundation attribution describes the project's origin and stewardship; it does not make a SAGE service a transport prerequisite.
+The dependency direction is **Lantern → Meshticulum**. Meshticulum remains usable by other applications without Lantern, SAGE services or the SAGE SDK. Foundation attribution describes the project's origin and stewardship; it does not introduce an application dependency.
 
-## Transition status
+Lantern's repository is planned to become public closer to December/January alongside product announcement and Kickstarter preparation. Meshticulum can introduce its reusable networking work earlier. Those are separate launches, with readiness determining their dates. [Earlier repository history](REPOSITORY_HISTORY.md) remains visible; current Meshticulum source and distributions exclude Lantern implementations.
 
-The Meshticulum extraction is complete. The separate Lantern product repository is still planned. Some historical Lantern-oriented lab tools, compatibility code and optional SAGE integration adapters remain in this repository to preserve source provenance and existing controls during that transition. Their presence does not mean the Lantern product is owned by this repository or that the repository split has already finished.
+## The integration boundary
 
-The exact Lantern repository name, URL and dependency migration will be recorded when that work is completed. Historical source references in [extraction notes](EXTRACTION.md) and [UPSTREAM_SOURCE.json](../provenance/UPSTREAM_SOURCE.json) retain the actual donor snapshot; they are separate from the main SAGE project link.
+Lantern owns `software/meshticulum-integration/` for its private adapters and native host integration, and `firmware/meshticulum-bench/` for its device build, bundle, provisioning and pilot tools. Those components consume Meshticulum's protocol and resource APIs. Lantern also owns their integration tests, compatible SDK requirements and production lifecycle policy.
+
+Meshticulum owns the reusable encrypted-envelope codecs, public-resource verification, flow and scheduler contracts, authenticated carrier prototypes and generic drivers. It does not import Lantern modules, operate Lantern fleet services or implement SAGE's protected-store and consent lifecycle. Each application supplies its own admitted authority, storage and service policy through the core interfaces.
+
+The repository split transfers source ownership, not physical qualification. A Lantern deployment must pin its Meshticulum dependency and retain evidence for the exact combined candidate. Earlier radio measurements, modeled private controls and old runtime bundles keep their original scope and hashes. Alpha, private-backend and publication gates remain open as recorded in [release readiness](RELEASE_READINESS.md) and the [roadmap](ROADMAP.md).
+
+Historical references in [extraction notes](EXTRACTION.md) and [UPSTREAM_SOURCE.json](../provenance/UPSTREAM_SOURCE.json) retain the donor snapshot and original layout. They are provenance records rather than instructions to reinstall removed adapters into Meshticulum.
 
 ## Licensing and contributor credit
 

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#13251e">
+  <meta name="description" content="Meshticulum is an experimental transport for secure messages and verified resources across small radios and faster networks. A SAGE Foundation project.">
+  <meta property="og:title" content="Meshticulum | small radios, bigger possibilities">
+  <meta property="og:description" content="Bridging embedded radio operation and richer secure networking. Explore the architecture, measured results and open source.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://l33tdawg.github.io/meshticulum/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Meshticulum. Small radios, bigger possibilities. A SAGE Foundation project.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:url" content="https://l33tdawg.github.io/meshticulum/">
+  <link rel="canonical" href="https://l33tdawg.github.io/meshticulum/">
+  <title>Meshticulum | small radios, bigger possibilities</title>
+  <link rel="icon" type="image/svg+xml" href="assets/meshticulum-logo.svg">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js" defer></script>
+  <noscript><style>@media(max-width:780px){.header-inner{flex-wrap:wrap;padding-block:18px;gap:14px}.menu-toggle{display:none}.site-header nav{display:flex;position:static;border:0;padding:0;width:100%;gap:20px}.site-header nav .nav-source{margin-left:auto}}</style></noscript>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#" aria-label="Meshticulum home"><img class="brand-logo" src="assets/meshticulum-logo.svg" width="34" height="34" alt="">meshticulum<span class="brand-period">.</span></a>
+      <button class="menu-toggle" aria-expanded="false" aria-controls="navigation">Menu <span aria-hidden="true">+</span></button>
+      <nav id="navigation" aria-label="Main navigation">
+        <a href="#why">Why</a><a href="#architecture">Architecture</a><a href="#evidence">Evidence</a>
+        <a href="technical.html">Docs</a><a class="nav-source" href="https://github.com/l33tdawg/meshticulum">Source code <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>A SAGE Foundation project / In development</p>
+          <h1>Small radios.<br><em>Bigger possibilities.</em></h1>
+          <p class="hero-description">Secure messages. Verified resources. A transport designed to make more of every radio link, and use faster paths when they become available.</p>
+          <div class="hero-actions"><a class="button button-amber" href="https://github.com/l33tdawg/meshticulum">Explore the source <span aria-hidden="true">↗</span></a><a class="text-link" href="#architecture">See how it works <span aria-hidden="true">↓</span></a></div>
+          <p class="hero-footnote">Experimental, open source, Apache 2.0.<br>Standalone core. Built for applications beyond Lantern.</p>
+        </div>
+        <figure class="hero-figure">
+          <img src="assets/network.svg" width="620" height="550" alt="Illustrative network: verified resources and encrypted messages pass between radio peers, with an optional faster IP path.">
+          <figcaption><span>01 / The idea</span> Keep trust with the data, across a change of path.</figcaption>
+        </figure>
+      </div>
+      <div class="container hero-strip"><span>LoRa + IP</span><span>Authenticated flows</span><span>Signed public resources</span><span>Recipient-encrypted envelopes</span></div>
+    </section>
+
+    <section class="section paper" id="why">
+      <div class="container">
+        <div class="section-intro"><p class="eyebrow">01 / Why Meshticulum</p><h2>The radio is small.<br>The ambition shouldn’t be.</h2><p>A useful network needs both practical radio operation and secure ways to move complete data. Meshticulum brings those priorities together in a separate protocol.</p></div>
+        <div class="comparison-grid">
+          <article class="comparison-card"><span class="card-index">A starting point</span><h3>MeshCore</h3><p>A lightweight packet-radio framework, with embedded companion and repeater roles. Its practical radio focus is part of what inspires this work.</p><a href="https://github.com/meshcore-dev/MeshCore">MeshCore project <span aria-hidden="true">↗</span></a></article>
+          <article class="comparison-card"><span class="card-index">A starting point</span><h3>Reticulum</h3><p>A cryptographic networking stack spanning local and wide-area networks, including very low-bandwidth links. Its broader networking model informs the other side of the design.</p><a href="https://reticulum.network/manual/whatis.html">Reticulum overview <span aria-hidden="true">↗</span></a></article>
+          <article class="comparison-card our-card"><span class="card-index">The bridge we’re building</span><h3>Meshticulum</h3><p>Bounded radio transfers, authenticated peer and service bindings, verified resources, and an explicit path policy that can use LoRa or IP.</p><a href="comparison.html">Compare the designs <span aria-hidden="true">↗</span></a></article>
+        </div>
+        <p class="comparison-note">This is a bridge between design strengths. MeshCore and Reticulum wire compatibility is not implemented.</p>
+      </div>
+    </section>
+
+    <section class="section architecture-section" id="architecture">
+      <div class="container">
+        <div class="section-heading"><div><p class="eyebrow">02 / Architecture</p><h2>Trust above.<br>Transport below.</h2></div><p>A resource keeps its identity when its path changes. Each transfer still binds the peers, service, limits and original deadline.</p></div>
+        <figure class="architecture-figure"><picture><source media="(max-width:780px)" srcset="assets/architecture-mobile.svg"><img src="assets/architecture.svg" width="1100" height="440" alt="Meshticulum layers: applications use public resource verification or private encrypted envelopes; both use bounded reliable flow and authenticated sessions; exclusive radio workers or an experimental TCP carrier transport the packets. Host applications supply policy and device ownership."></picture><figcaption>Reusable Meshticulum components. Applications supply current admission and native device ownership.</figcaption></figure>
+        <div class="principle-grid">
+          <article><span class="small-number">01</span><h3>Move useful bytes</h3><p>Compact resource blocks, receiver credit and selective acknowledgements reduce avoidable framing and per-frame overhead.</p></article>
+          <article><span class="small-number">02</span><h3>Verify before accepting</h3><p>Public resources use signed manifests and content hashes. Private envelopes retain recipient encryption and sender signatures.</p></article>
+          <article><span class="small-number">03</span><h3>Keep the original limits</h3><p>Deadlines, replay decisions and attempt debt survive cancellation and restart. A retry does not renew permission.</p></article>
+        </div>
+        <a class="text-link light-link" href="https://github.com/l33tdawg/meshticulum/blob/main/docs/ARCHITECTURE.md">Follow a transfer through the architecture <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+
+    <section class="section paper evidence-section" id="evidence">
+      <div class="container">
+        <div class="section-heading"><div><p class="eyebrow">03 / Measured, with scope</p><h2>More than a modem<br>bitrate.</h2></div><p>We measure useful bytes in authenticated encrypted transfers, and require independent publisher and content verification. Timing boundaries matter.</p></div>
+        <div class="evidence-panel">
+          <div class="evidence-head"><span class="label">Latest accepted finite 16 KiB resource sample</span><span class="date">11 October 2026</span></div>
+          <div class="metrics-grid">
+            <div class="metric primary-metric"><strong>1.071<span>kB/s</span></strong><p>Useful goodput<br>through the sender’s flow ACK</p></div>
+            <div class="metric"><strong>16,356<span>bytes</span></strong><p>Fresh public resource bytes<br>independently verified</p></div>
+            <div class="metric"><strong>85<span>DATA frames</span></strong><p>Acknowledged<br>zero DATA retries or duplicates</p></div>
+          </div>
+          <div class="measurement-note"><span aria-hidden="true">↳</span><p>The response ACK interval was <strong>15.268 seconds</strong>. The complete request-to-publisher-verification interval was <strong>80.731 seconds</strong>, or <strong>202.6 B/s</strong>. These measure different parts of the same transfer.</p></div>
+          <div class="radio-settings"><span>SF7 / BW500 / CR4/5</span><span>921.375 MHz</span><span>0 dBm chip setting</span><span>Measured airtime, energy and EIRP: unavailable</span></div>
+        </div>
+        <div class="evidence-columns">
+          <article><h3>A comparison you can inspect</h3><p>The 1,071.3 B/s sample is numerically <strong>2.61×</strong> the <strong>410 B/s</strong> contributed test in <a href="https://github.com/meshcore-dev/MeshCore/issues/3404">MeshCore issue #3404</a>. That test used 25 individually acknowledged 128-byte frames at SF7/BW500. Ours used a windowed resource reply. Different workloads and timing boundaries prevent a general speed ranking.</p></article>
+          <article><h3>What’s still ahead</h3><p>Two consecutive finite samples exceeded 1,000 B/s. Sustained goodput, larger whole-file transfers, range at faster profiles, and native private forward-secrecy qualification remain open. The project is in development; an alpha release has not been published.</p></article>
+        </div>
+        <div class="evidence-links"><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/docs/PERFORMANCE.md">Read the measurement boundaries <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-11-native-public/successes.json">Inspect the sample records <span aria-hidden="true">↗</span></a></div>
+      </div>
+    </section>
+
+    <section class="section family-section" id="project">
+      <div class="container family-grid">
+        <div><p class="eyebrow">04 / One family, clear boundaries</p><h2>Its own transport.<br>Part of SAGE.</h2><p>Created and maintained by <a href="https://github.com/l33tdawg">Dhillon Andrew Kannabhiran</a>, under the <a href="https://sage-foundation.net/">SAGE Foundation</a>.</p><p>Meshticulum began in Lantern. The reusable protocol now stands on its own, so other applications can build on it too.</p></div>
+        <div class="family-list">
+          <a href="https://github.com/l33tdawg/meshticulum"><span class="family-number">01</span><div><h3>Meshticulum <span aria-hidden="true">↗</span></h3><p>Protocol, cryptography, reliable flow, drivers and verified resources.</p></div><span class="family-tag">You are here</span></a>
+          <a href="https://github.com/l33tdawg/sage-lantern"><span class="family-number">02</span><div><h3>SAGE Lantern <span aria-hidden="true">↗</span></h3><p>Product code, STL and printing files, private SAGE adapters, device policy and deployment.</p></div></a>
+          <a href="https://github.com/l33tdawg/sage/"><span class="family-number">03</span><div><h3>SAGE <span aria-hidden="true">↗</span></h3><p>Persistent agent memory, governance and core infrastructure.</p></div></a>
+          <p class="dependency-note">Dependency direction: <strong>Lantern → Meshticulum</strong></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section paper developer-section" id="developers">
+      <div class="container"><div class="section-heading"><div><p class="eyebrow">For developers</p><h2>Read the design.<br>Build on the core.</h2></div><p>Start with a local resource exchange. Follow the protocol boundaries before bringing a radio or a native application into the transfer.</p></div><div class="developer-grid">
+        <a href="technical.html"><span class="small-number">01 / Inside the protocol</span><h3>Technical overview <span aria-hidden="true">↗</span></h3><p>Cryptography, reliable flow, verified resources and path selection, with a diagram of the stack.</p></a>
+        <a href="comparison.html"><span class="small-number">02 / Different designs</span><h3>Compare the projects <span aria-hidden="true">↗</span></h3><p>MeshCore, Reticulum and Meshticulum side by side, with security properties and scoped performance evidence.</p></a>
+        <a href="getting-started.html"><span class="small-number">03 / Try the source</span><h3>SDK and device setup <span aria-hidden="true">↗</span></h3><p>Verified Python APIs, a local block example, pinned firmware builds and the application-owned flashing workflow.</p></a>
+      </div></div>
+    </section>
+
+    <section class="get-started paper">
+      <div class="container start-grid"><div><p class="eyebrow">Explore the work</p><h2>Open code.<br>Explicit evidence.</h2><p>Read the design, inspect the results, or help build the next piece.</p></div><div class="start-actions"><a class="button button-dark" href="https://github.com/l33tdawg/meshticulum">Open the repository <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/docs/index.md">Read the documentation <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/docs/ROADMAP.md">See the roadmap <span aria-hidden="true">↗</span></a></div></div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><a class="brand" href="#">meshticulum<span class="brand-period">.</span></a><p>A <a href="https://sage-foundation.net/">SAGE Foundation</a> project.<br>© 2026 Dhillon Andrew Kannabhiran · <a href="https://github.com/l33tdawg/meshticulum/blob/main/LICENSE">Apache 2.0</a></p><a href="getting-started.html">Developer guide <span aria-hidden="true">↗</span></a><a href="https://l33tdawg.github.io/sage/">Discover SAGE <span aria-hidden="true">↗</span></a></div></footer>
+</body>
+</html>

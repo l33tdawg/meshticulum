@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101d1b">
+  <meta name="description" content="Feature, performance and security comparisons between MeshCore, Reticulum and Meshticulum, with sources and measurement boundaries.">
+  <meta property="og:title" content="Compare the designs · Meshticulum">
+  <meta property="og:description" content="Feature, performance and security comparisons between MeshCore, Reticulum and Meshticulum, with sources and measurement boundaries.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://l33tdawg.github.io/meshticulum/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Meshticulum. Small radios, bigger possibilities. A SAGE Foundation project.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:url" content="https://l33tdawg.github.io/meshticulum/comparison.html">
+  <link rel="canonical" href="https://l33tdawg.github.io/meshticulum/comparison.html">
+  <title>Compare the designs · Meshticulum</title>
+  <link rel="icon" type="image/svg+xml" href="assets/meshticulum-logo.svg">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js" defer></script>
+  <noscript><style>@media(max-width:780px){.header-inner{flex-wrap:wrap;padding-block:18px;gap:14px}.menu-toggle{display:none}.site-header nav{display:flex;position:static;border:0;padding:0;width:100%;gap:20px}.site-header nav .nav-source{margin-left:auto}}</style></noscript>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Meshticulum home"><img class="brand-logo" src="assets/meshticulum-logo.svg" width="34" height="34" alt="">meshticulum<span class="brand-period">.</span></a>
+      <button class="menu-toggle" aria-expanded="false" aria-controls="navigation">Menu <span aria-hidden="true">+</span></button>
+      <nav id="navigation" aria-label="Main navigation">
+        <a href="index.html#why">Why</a><a href="index.html#architecture">Architecture</a><a href="index.html#evidence">Evidence</a>
+        <a href="technical.html">Docs</a><a class="nav-source" href="https://github.com/l33tdawg/meshticulum">Source code <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <section class="docs-hero"><div class="container"><p class="eyebrow">Developer documentation / Comparison</p><h1>Shared ambitions.<br><em>Different designs.</em></h1><p>MeshCore's practical radio operation and Reticulum's secure networking abstractions help explain why we're building Meshticulum. The comparison keeps each project's strengths and the current experiment's gaps visible.</p></div></section>
+    <div class="docs-tabs"><nav class="container" aria-label="Documentation pages"><a href="technical.html">Technical overview</a><a href="comparison.html" aria-current="page">Comparison</a><a href="getting-started.html">Getting started</a></nav></div>
+    <section class="section paper comparison-page"><div class="container">
+      <div class="table-intro"><p class="eyebrow">Design and capabilities</p><h2>What each system puts first.</h2><p id="features-hint" class="table-hint">The tables compare three project columns. Scroll horizontally on a small screen; the table region also accepts keyboard focus.</p></div>
+      <div class="table-scroll" role="region" aria-labelledby="features-caption" aria-describedby="features-hint" tabindex="0"><table class="comparison-table"><caption id="features-caption">Feature comparison. Meshticulum describes current source and finite native evidence, not a production network release.</caption><thead><tr><th scope="col">Concern</th><th scope="col">MeshCore</th><th scope="col">Reticulum</th><th scope="col">Meshticulum</th></tr></thead><tbody>
+        <tr><th scope="row">Core model</th><td>Embedded packet-radio framework with companion, repeater and room-server roles. <a href="https://github.com/meshcore-dev/MeshCore">Project</a></td><td>Cryptographic destinations, packets, Links and Resources across local or wide-area networks. <a href="https://reticulum.network/manual/whatis.html">Overview</a></td><td>Bounded authenticated flows, verified resources and explicit application and carrier boundaries. <a href="technical.html">Technical overview</a></td></tr>
+        <tr><th scope="row">Runtime and carriers</th><td>C++ on embedded radios, with client connections over BLE, USB or Wi-Fi; a KISS modem example also exists. <a href="https://github.com/meshcore-dev/MeshCore#-how-to-get-started">Examples</a></td><td>Python userland stack with RNode LoRa, serial, TCP and UDP interfaces. <a href="https://reticulum.network/manual/interfaces.html">Interfaces</a></td><td>Python host libraries, exclusive serial and Linux SX1262 workers, plus an authenticated TCP prototype. Native product tooling belongs to Lantern.</td></tr>
+        <tr><th scope="row">Routing</th><td>Flood discovery and returned paths support later direct packets; roles determine forwarding behavior. <a href="https://docs.meshcore.io/faq/#54-q-how-does-a-node-discover-a-path-to-its-destination-and-then-use-it-to-send-messages-in-the-future-instead-of-flooding-every-message-it-sends-like-meshtastic">Routing FAQ</a></td><td>Signed announcements and next-hop Transport routing establish reachability. <a href="https://reticulum.network/manual/understanding.html#reticulum-transport">Transport</a></td><td>Explicit supplied routes and measured resource-path selection. Autonomous authenticated discovery is not implemented.</td></tr>
+        <tr><th scope="row">Reliable transfer</th><td>Message ACKs, requests/replies and multipart/custom packet types. Applications can build on these. <a href="https://github.com/meshcore-dev/MeshCore/blob/a366955cb2f67b8e6842d4f00d2b6a554dddd88a/docs/payloads.md">Payload format</a></td><td>Resources provide sequencing, retransmission, integrity and reassembly over a Link; Channels support reliable messages. <a href="https://reticulum.network/manual/understanding.html#resources">Resources</a></td><td>Receiver credit, selective ACKs and bounded retries. MR1 binds blocks to requests; signed manifests verify complete public chunks.</td></tr>
+        <tr><th scope="row">Mixed paths</th><td>Companion client connectivity is distinct from a general mixed-media routed overlay.</td><td>Networks can combine interface types. IP can carry Reticulum traffic without replacing its network model. <a href="https://reticulum.network/manual/interfaces.html">Interface guide</a></td><td>Finite native public LoRa/IP delivery and loss/LoRa-resume/IP-return evidence. Broader sustained qualification remains open. <a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/IP_TRANSPORT.md">Recorded scope</a></td></tr>
+        <tr><th scope="row">Wire compatibility</th><td>MeshCore packet and routing protocol.</td><td>Reticulum packet, destination and Link protocol.</td><td>A separate protocol. It does not translate MeshCore or Reticulum peers into interoperable endpoints.</td></tr>
+      </tbody></table></div>
+
+      <div class="table-intro"><p class="eyebrow">Security properties</p><h2>Encryption is only part of the question.</h2><p>Compare author authentication, replay behavior and key compromise separately. A cipher name or a throughput figure cannot establish an overall security ranking.</p></div>
+      <div class="table-scroll" role="region" aria-labelledby="security-caption" tabindex="0"><table class="comparison-table"><caption id="security-caption">Security comparison scoped to the reviewed paths. The detailed repository review preserves source pins and mode-specific limits.</caption><thead><tr><th scope="col">Property</th><th scope="col">MeshCore</th><th scope="col">Reticulum</th><th scope="col">Meshticulum</th></tr></thead><tbody>
+        <tr><th scope="row">Identity and authentication</th><td>Ed25519-signed node advertisements and encrypted direct-message payloads. Shared-channel group text does not independently sign each displayed sender name. <a href="https://github.com/meshcore-dev/MeshCore/blob/a366955cb2f67b8e6842d4f00d2b6a554dddd88a/docs/payloads.md">Reviewed payloads</a></td><td>A Link verifies the destination; the initiator may remain anonymous or identify inside the encrypted Link. <a href="https://reticulum.network/manual/understanding.html#link-establishment-in-detail">Link establishment</a></td><td>Provisioned peer/session/service bindings and authenticated DATA/ACKs. Private envelopes separately carry sender signatures and recipient encryption. Trusted enrollment stays external.</td></tr>
+        <tr><th scope="row">Forward secrecy</th><td>The reviewed direct-message shared-secret path uses identity keys; it does not establish a fresh ephemeral exchange. This does not describe every custom application. <a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/COMPARISON.md#security-properties-and-gaps">Pinned source review</a></td><td>Links use ephemeral X25519 keys and document forward secrecy. Optional destination ratchets support some link-less traffic; GROUP/PLAIN modes differ. <a href="https://reticulum.network/manual/understanding.html">Mode details</a></td><td>Not proved for the current radio/IP session codecs or long-term recipient envelopes. The forward-session source primitive remains experimental, with native private qualification open.</td></tr>
+        <tr><th scope="row">Replay and lifecycle scope</th><td>Evaluate the selected payload and firmware path; this table does not equate all modes.</td><td>Evaluate Link, destination and ratchet behavior for the chosen API and mode.</td><td>Durable counters, replay decisions, original expiry and retained attempt debt. Protected state and operating-system rollback resistance remain deployment responsibilities.</td></tr>
+      </tbody></table></div>
+      <p class="table-source"><a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/COMPARISON.md#source-baseline">Full reviewed source baseline</a>: MeshCore <code>a366955</code>; Reticulum 1.5.5 / <code>7f2b3b9</code>. These identify source reviews, not flashed firmware or equal benchmark configurations.</p>
+
+      <div class="table-intro"><p class="eyebrow">Published observations</p><h2>Keep the units and timing.</h2><p>The competitive aim is more useful delivery per radio second. The figures below are different experiments, so each carries its own conditions.</p></div>
+      <div class="table-scroll" role="region" aria-labelledby="performance-caption" tabindex="0"><table class="comparison-table performance-table"><caption id="performance-caption">Performance observations, not a matched benchmark or general network ranking.</caption><thead><tr><th scope="col">Measurement</th><th scope="col">MeshCore</th><th scope="col">Reticulum / RNode guide</th><th scope="col">Meshticulum</th></tr></thead><tbody>
+        <tr><th scope="row">Reported figure</th><td><strong>410 B/s</strong><br>Contributor frame-ACK experiment in <a href="https://github.com/meshcore-dev/MeshCore/issues/3404">issue #3404</a>.</td><td><strong>3.1 kb/s</strong><br>On-air bitrate in the <a href="https://unsigned.io/rnode_bootstrap_console/guides/loracomms.html">RNode author's 2023 guide</a>, whose example logs use RNS 0.3.3.</td><td><strong>1,071.3 B/s</strong><br>Useful resource bytes through the sender's reliable-flow ACK, with separate publisher verification.</td></tr>
+        <tr><th scope="row">Payload and radio scope</th><td>25 individually acknowledged 128-byte frames. Two SX1262 companions, about one metre apart, SF7/BW500. Other settings/pins incompletely reported.</td><td>SF8/BW125/CR4/5 at 7 dBm. The figure is physical bitrate, not encrypted application goodput.</td><td>16,356 useful bytes / 16,384-byte MR1 response. SF7/BW500/CR4/5, 0 dBm chip setting. 85 acknowledged DATA frames, zero DATA retries or duplicates.</td></tr>
+        <tr><th scope="row">Timing boundary</th><td>Each frame's ACK round trip; reported confirmed throughput.</td><td>Modem on-air bitrate. It is neither 3.1 kB/s nor a like-for-like application rate.</td><td>15.268 seconds through sender ACK. Full request-to-publisher-verification: 80.731 seconds, <strong>202.6 B/s</strong>.</td></tr>
+      </tbody></table></div>
+      <div class="docs-note comparison-summary"><strong>A scoped 2.61× numerical ratio.</strong><p>1,071.3 / 410 is approximately 2.61. Windowed resource flow and individually acknowledged frames have different payloads and timing boundaries. Two consecutive Meshticulum finite samples exceeded 1,000 B/s; they do not establish sustained capacity, equal range or stronger encryption security.</p></div>
+      <div class="evidence-links"><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/docs/PERFORMANCE.md">Read the evidence and exact pins <span aria-hidden="true">↗</span></a><a class="text-link" href="technical.html">Explore the transport design <span aria-hidden="true">↗</span></a></div>
+    </div></section>
+
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><a class="brand" href="index.html">meshticulum<span class="brand-period">.</span></a><p>A <a href="https://sage-foundation.net/">SAGE Foundation</a> project.<br>© 2026 Dhillon Andrew Kannabhiran · <a href="https://github.com/l33tdawg/meshticulum/blob/main/LICENSE">Apache 2.0</a></p><a href="getting-started.html">Developer guide <span aria-hidden="true">↗</span></a><a href="https://l33tdawg.github.io/sage/">Discover SAGE <span aria-hidden="true">↗</span></a></div></footer>
+</body>
+</html>

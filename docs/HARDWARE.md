@@ -1,17 +1,31 @@
-# Experimental hardware tooling
+# Hardware library and deployment boundary
 
-`firmware/meshticulum-bench/main.cpp` and `protocol.hpp` implement the raw LoRa test coprocessor. Serial and Linux SX1262 HAT host adapters are in `meshticulum.bench`. Installation, inspection, admission, RF completion, peer receipt and application acceptance are separate events.
+Meshticulum owns reusable radio protocol and driver code. [Lantern](https://github.com/l33tdawg/sage-lantern) owns device integration: Linux jobs, native provisioning, fleet configuration, runtime packaging, installation, firmware flashing, coordinated pilots and rollback. The dependency is **Lantern → Meshticulum**. Importing a Meshticulum driver does not start those application services or acquire their authority.
 
-Build a public **host runtime archive**, without installing or arming a radio:
+## What remains in Meshticulum
 
-```sh
-python firmware/meshticulum-bench/build_runtime.py --output-dir build/runtime
-```
+[`main.cpp`](../firmware/meshticulum-bench/main.cpp) and [`protocol.hpp`](../firmware/meshticulum-bench/protocol.hpp) implement the project-authored raw LoRa test coprocessor and its bounded serial protocol. The library provides the [serial worker](../src/meshticulum/bench/serial_worker.py), [SX1262 driver](../src/meshticulum/bench/sx1262.py), [Linux HAT adapter](../src/meshticulum/bench/linux_hat.py) and [HAT worker](../src/meshticulum/bench/hat_worker.py). These consume caller-owned ports, journals, clocks and current authority. The host application selects its device and owns setup, finite leases, containment and cleanup.
 
-The archive includes canonical Meshticulum packages, an exact source manifest and a hash-verified launcher. Private native services are disabled. A separate root-provisioned finite grant, owner lock, journal and current device evidence are required for dispatch. `runtime_bootstrap.py` is installation tooling; building an archive grants no device authority.
+Installation, admission, local RF completion, authenticated peer receipt, durable bytes and application acceptance remain separate events. `RF_DONE` requires matching driver evidence for the original boot, request and packet; it does not establish remote storage or publisher verification. Unknown attempts retain their reservations and fence further dispatch. New grants and process cleanup cannot refund old debt.
 
-The retained firmware build and device orchestration scripts are historical lab tooling. Their defaults refer to parent SAGE lab evidence directories and A/B/C roles. A fresh clone does **not** contain that evidence, board support tree, third-party vendor libraries, rollback firmware, private management keys or live grants. These scripts are not a portable firmware provisioning installer. Treat every configured boot, host and artifact pin as requiring fresh verification.
+The [host-native protocol harness](../tests/meshticulum_bench_native) compiles against synthetic Arduino/ESP32 headers and exercises bounded serial input. [`check_linux_abi.c`](../firmware/meshticulum-bench/check_linux_abi.c) supports checking the Linux device ABI. These controls do not qualify a real board's timing, antenna, regional configuration or RF output.
 
-`prepare_build.py` depends on a retained, locally patched MeshCore-derived board support tree and pinned PlatformIO tools. The reconstructed donor is not asserted byte-identical to pristine upstream. RadioLib, MeshCore-derived BSP and platform components retain their own licenses; no third-party source or firmware binary is vendored by this extraction. A reproducible standalone firmware recipe and its license inventory remain on the roadmap.
+## Board support and a portable build
 
-The host-native firmware harness is in `tests/meshticulum_bench_native`; the tests compile it with the host C++ toolchain and exercise synthetic serial input. It does not qualify real board timing or RF output.
+The [explicit firmware recipe](FIRMWARE_RECIPE.md) uses 14 checksum-pinned primary archives for board support, Arduino/ESP32 framework, RadioLib and selected tools/libraries. It exposes separate fetch, prepare and build actions, with caller-supplied archive/output/CLI paths. Its current build host is macOS arm64; the two targets are Heltec V4 and Xiao S3 WIO. It uses no Lantern donor or home-directory toolchain default and invokes no device action.
+
+Preparation retains source and records the input lock, application files and isolated tree. A build checks those identities again and records logs plus binary/ELF/map hashes. The explicit HWCDC patch retains that file's Apache-2.0 grant and Espressif attribution; the framework package's overall LGPL-2.1-or-later text is retained separately. Neither label describes every linked SDK component. The application tag `mtb1-9816f92488` is not a whole-binary or BSP identity. Compilation, reproducible source selection, bit-identical rebuilds, license closure and physical qualification are separate claims.
+
+The [recorded independent pair](../provenance/FIRMWARE_RECIPE_VALIDATION.json), runs 05/06, compiled the corrected producer's two targets in fresh workspaces on one pinned macOS-arm64 host. Binary, ELF, bootloader and partitions matched per target; maps remained path-dependent. Earlier copied-dependency controls produced different binaries. This establishes only the recorded host/input reproduction; no output was flashed or RF-qualified, and linked SDK/notice closure remains open.
+
+The earlier lab firmware build used a locally patched MeshCore-derived board-support tree. Its [historical build preparation](https://github.com/l33tdawg/sage-lantern/blob/codex/meshticulum-boundary/firmware/meshticulum-bench/prepare_build.py) belongs to Lantern. The new recipe starts from a pinned pristine MeshCore archive and adds this project's raw-radio application/configuration; neither use makes this protocol wire-compatible with MeshCore. Earlier controls with copied dependencies and historical firmware hashes must not be relabeled as a fresh primary-only build.
+
+RadioLib, MeshCore-derived board support and platform components keep their upstream licenses. The Meshticulum source license does not relicense those inputs. The recorded build reproduction is scoped to its exact inputs and host. Source/deployed-image correspondence, complete third-party notices and release review remain open publication gates; a host-native stub test cannot close them.
+
+## Where to run Lantern jobs
+
+The actual finite [radio node and service entry](https://github.com/l33tdawg/sage-lantern/tree/codex/meshticulum-boundary/software/meshticulum-integration/src/lantern_meshticulum/bench), [TCP entry](https://github.com/l33tdawg/sage-lantern/blob/codex/meshticulum-boundary/software/meshticulum-integration/src/lantern_meshticulum/ip/node.py) and pilot controller live in Lantern's `software/meshticulum-integration`. Its [firmware/runtime tooling](https://github.com/l33tdawg/sage-lantern/tree/codex/meshticulum-boundary/firmware/meshticulum-bench) owns product bundle builds, provisioning, staging, flashing and rollback. Meshticulum's explicit-input compile recipe does not duplicate those deployment scripts.
+
+Lantern supplies current host/boot/service facts, independent adjacent-link keys, original resource deadlines and its native owner before dispatch. A finite radio job needs an exclusive worker, a separately provisioned grant and bounded disarm. A finite TCP job must authorize socket setup and independently bind the actual endpoints. Building or installing their runtime bundle grants neither radio nor connection authority.
+
+Lantern recorded finite public C→A LoRa→B IP delivery and a separate original-deadline loss/LoRa-resume/measured-IP-return campaign using Meshticulum primitives. [The native checkpoints](IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return) retain their exact source/runtime pins, verification and terminal evidence. Further device execution requires a fresh coordinated window, current process/driver evidence and bounded cleanup. Preserve production services, identities, protected stores and raw failures. The earlier physical [radio benchmark](PERFORMANCE.md) remains bound to its own runtime and settings; it does not qualify a newly built bundle or the full mixed path.

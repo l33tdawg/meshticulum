@@ -1,3 +1,4 @@
+from tests.radio_profiles import SOURCE_ADMISSION
 # Extracted for Meshticulum; namespace/path/test adaptation. See docs/EXTRACTION.md.
 """Recipient-sealed records across two real flow compositions and model workers.
 
@@ -25,7 +26,7 @@ from meshticulum.privacy.mesh_envelope import (
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.flow_runtime import BenchFlow
-from meshticulum.bench.profiles import profile_for
+from tests.radio_profiles import profile_for
 from meshticulum.bench.state import SessionStore
 from meshticulum.bench.wire import FrameKind, SessionCipher
 from meshticulum.scheduler.budget import BudgetPolicy, Ledger
@@ -51,13 +52,17 @@ def sealed_message(version):
 
 
 @contextmanager
-def carrier_pair(path, payload, clock, sender_unit, receiver_unit, session_number, *, service=None):
+def carrier_pair(path, payload, clock, sender_unit, receiver_unit, session_number, *, service=None,
+                 original_expires_epoch_us=None):
     """Each hop has independent identities, keys, incarnation and durable stores."""
     path.mkdir(mode=0o700)
     profile = profile_for("sf7-500")
     peers = [{"chain_id": "private-carrier-test", "agent_id": unit[-1] * 64}
              for unit in (sender_unit, receiver_unit)]
     digest = hashlib.sha256(payload).hexdigest()
+    # Both endpoints authenticate the same original provisioning timestamps.
+    # Sampling a ticking clock separately would create two different keys.
+    original_epoch = clock()[0]
     flows, workers = [], []
     with ExitStack() as stack:
         for index, unit in enumerate((sender_unit, receiver_unit)):
@@ -67,7 +72,9 @@ def carrier_pair(path, payload, clock, sender_unit, receiver_unit, session_numbe
                 local_peer=peers[index], initiator=peers[0], responder=peers[1],
                 session_id=bytes([session_number] * 16).hex(),
                 generation=bytes([session_number + 10] * 16).hex(),
-                issued_epoch_us=clock()[0] - 1000000, expires_epoch_us=clock()[0] + 180000000,
+                issued_epoch_us=original_epoch - 1000000,
+                expires_epoch_us=(original_epoch + 180000000 if original_expires_epoch_us is None
+                                  else original_expires_epoch_us),
                 profile=asdict(profile), sender_unit=sender_unit, country="MY",
                 antenna_confirmed=True, max_frames=512,
                 object=dict(sha256=digest, bytes=len(payload), chunk_index=0, object_id=digest))
@@ -83,7 +90,7 @@ def carrier_pair(path, payload, clock, sender_unit, receiver_unit, session_numbe
                 max_attempts=256, max_airtime_us=60000000, create=True, request_clock=lambda: clock()[0])
             stack.callback(journal.close)
             worker = ModelWorker(journal, clock)
-            authority = RunAuthority(directory, expected_unit=unit, host_boot_id=BOOT,
+            authority = RunAuthority(directory, radio_admission=SOURCE_ADMISSION, expected_unit=unit, host_boot_id=BOOT,
                 clock=clock, owner_probe=lambda w=worker: w.owned)
             stack.callback(authority.close)
             store = SessionStore(directory / "wire.db", authority.grant, authority.local_peer,

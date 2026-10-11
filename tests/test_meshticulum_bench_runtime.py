@@ -1,3 +1,4 @@
+from tests.radio_profiles import SOURCE_ADMISSION
 # Extracted for Meshticulum; namespace/path/test adaptation. See docs/EXTRACTION.md.
 """Local composed controls; the worker is a fault-injected radio model, not RF."""
 from collections import deque
@@ -18,7 +19,7 @@ from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.objects import VerifiedChunks
 from meshticulum.bench.serial_protocol import RadioProfile, RawReceive
 from meshticulum.bench.serial_worker import AttemptResult
-from meshticulum.bench.profiles import MODES, profile_for
+from tests.radio_profiles import MODES, profile_for
 from meshticulum.bench.state import SessionStore
 from meshticulum.bench.wire import HEADER, FrameKind, SessionCipher, WireError
 from meshticulum.scheduler.budget import BudgetPolicy, Ledger
@@ -100,7 +101,7 @@ def pair(tmp_path, request):
         journal = AttemptJournal(path / 'attempts.db', binding=bytes(32), max_attempts=256,
             max_airtime_us=60000000, create=True, request_clock=lambda: clock()[0])
         worker = ModelWorker(journal, clock)
-        authority = RunAuthority(path, expected_unit=unit, host_boot_id=BOOT,
+        authority = RunAuthority(path, radio_admission=SOURCE_ADMISSION, expected_unit=unit, host_boot_id=BOOT,
             clock=clock, owner_probe=lambda w=worker: w.owned)
         store = SessionStore(path / 'wire.db', authority.grant, authority.local_peer,
                              boot_id=BOOT, clock=clock, create=True)
@@ -241,7 +242,7 @@ def test_directional_costs_use_real_packet_bounds_and_reject_unlisted_modes(tmp_
     clock = Clock(); path = tmp_path / 'admitted'
     profile = profile_for(mode)
     provision(path, 'unit-a', b'payload', clock, profile)
-    authority = RunAuthority(path, expected_unit='unit-a', host_boot_id=BOOT,
+    authority = RunAuthority(path, radio_admission=SOURCE_ADMISSION, expected_unit='unit-a', host_boot_id=BOOT,
                              clock=clock, owner_probe=lambda: True)
     try:
         cost = authority.carrier_profile
@@ -254,8 +255,8 @@ def test_directional_costs_use_real_packet_bounds_and_reject_unlisted_modes(tmp_
     bad = tmp_path / 'unlisted'; plan = provision(bad, 'unit-a', b'payload', clock)
     plan['profile']['bandwidth_hz'] = 62500
     (bad / 'grant.json').write_text(json.dumps(plan))
-    with pytest.raises(WireError, match='unsupported_initial_bench_profile'):
-        RunAuthority(bad, expected_unit='unit-a', host_boot_id=BOOT, clock=clock, owner_probe=lambda: True)
+    with pytest.raises(WireError, match='unsupported_admitted_bench_profile'):
+        RunAuthority(bad, radio_admission=SOURCE_ADMISSION, expected_unit='unit-a', host_boot_id=BOOT, clock=clock, owner_probe=lambda: True)
     assert not (bad / 'started').exists()
 
 
@@ -291,7 +292,7 @@ def test_missing_actual_broker_owner_cannot_dispatch_startup_ack(pair):
 def test_used_grant_cannot_reinitialize_nonce_or_attempt_state(pair):
     authority = pair[2][0].authority
     with pytest.raises(FileExistsError):
-        RunAuthority(authority.path, expected_unit='unit-a', host_boot_id=BOOT,
+        RunAuthority(authority.path, radio_admission=SOURCE_ADMISSION, expected_unit='unit-a', host_boot_id=BOOT,
                      clock=pair[1], owner_probe=lambda: True)
 
 
@@ -307,12 +308,12 @@ def test_boot_and_unconfirmed_antenna_refusals_do_not_consume_grant(tmp_path):
     clock = Clock(); directory = tmp_path / 'run'
     plan = provision(directory, 'unit-a', b'payload', clock)
     with pytest.raises(WireError, match='wrong_bench_host'):
-        RunAuthority(directory, expected_unit='unit-a', host_boot_id='11' * 16,
+        RunAuthority(directory, radio_admission=SOURCE_ADMISSION, expected_unit='unit-a', host_boot_id='11' * 16,
                      clock=clock, owner_probe=lambda: True)
     plan['antenna_confirmed'] = False
     (directory / 'grant.json').write_text(json.dumps(plan))
     with pytest.raises(WireError, match='antenna_unconfirmed'):
-        RunAuthority(directory, expected_unit='unit-a', host_boot_id=BOOT,
+        RunAuthority(directory, radio_admission=SOURCE_ADMISSION, expected_unit='unit-a', host_boot_id=BOOT,
                      clock=clock, owner_probe=lambda: True)
     assert not (directory / 'started').exists()
 
@@ -408,48 +409,85 @@ def test_settled_handle_objects_are_retained_within_explicit_run_bound(pair):
         assert len(handles) < 1024
 
 
-def helper(name):
-    path = Path(__file__).resolve().parents[1] / 'firmware/meshticulum-bench' / (name + '.py')
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
-    return module
+def test_four_physical_frames_fence_same_pump_until_real_ack(pair):
+    data, clock, (sender, receiver), workers = pair
+    if sender.burst_frames == 1:
+        pytest.skip('Fast-profile arbitration only')
+    sender.send(data); receiver.step(); clock.advance(20000)
+    for _ in range(4):
+        sender.step(); clock.advance(20000)
+    assert len(workers[0].sent) == 4 and sender.owner.no_send
+    hold = sender.next_send_us
+    sender.step()
+    assert len(workers[0].sent) == 4 and sender.next_send_us == hold
+    receiver.step(); sender.step()
+    assert sender.flow.acked_frames() == 4 and len(workers[0].sent) == 5
 
 
-def test_fresh_management_packages_never_put_application_payload_on_receiver(tmp_path):
-    prep = helper('prepare_run')
-    clock = Clock()
-    peers = {u: {'chain_id': 'bench-test', 'agent_id': c * 64} for u, c in [('unit-a', 'a'), ('unit-b', 'b')]}
-    kwargs = dict(now_us=clock()[0], boot_ids={u: BOOT for u in peers}, peers=peers, payload=b'synthetic')
-    one, packages = prep.packages('unit-a', 'unit-b', **kwargs)
-    two, fresh = prep.packages('unit-a', 'unit-b', **kwargs)
-    assert one != two and packages['unit-a']['secret'] != fresh['unit-a']['secret']
-    assert packages['unit-a']['secret'] == packages['unit-b']['secret']
-    assert packages['unit-b']['payload'] is None
-    assert packages['unit-b']['reuse_verified_chunk'] is False
-    authorities = []
-    import base64
-    try:
-        for unit, package in packages.items():
-            root = tmp_path / unit; root.mkdir(mode=0o700)
-            for name, data in [('grant.json', json.dumps(package['grant']).encode()),
-                ('secret.bin', base64.b64decode(package['secret'])), ('active', b'active\n')]:
-                (root / name).write_bytes(data); (root / name).chmod(0o600)
-            authorities.append(RunAuthority(root, expected_unit=unit, host_boot_id=BOOT,
-                                            clock=clock, owner_probe=lambda: True))
-        assert authorities[0].grant.digest == authorities[1].grant.digest
-    finally:
-        for authority in authorities: authority.close()
+def test_unknown_attempt_is_charged_once_then_immediately_fences(pair):
+    data, clock, (sender, receiver), workers = pair
+    sender.send(data); receiver.step(); clock.advance(20000)
+    worker = workers[0]
+    def unknown(packet):
+        request = worker.journal.reserve(packet, 200000)
+        worker.journal.settle(request, packet, 'UNKNOWN', 'model_missing_driver_evidence')
+        worker.fenced = True
+        return AttemptResult(request, 'UNKNOWN', 200000, None)
+    worker.transmit = unknown
+    with pytest.raises(WireError, match='worker_run_fenced'):
+        sender.step()
+    assert worker.journal.snapshot()['attempts'] == 1 and sender.owner.no_send
 
 
-def test_runtime_archive_parser_refuses_bad_hash_and_link_member():
-    import io, tarfile
-    bootstrap = helper('runtime_bootstrap')
-    output = io.BytesIO()
-    with tarfile.open(fileobj=output, mode='w:gz') as archive:
-        entry = tarfile.TarInfo('bench_node.py'); entry.type = tarfile.SYMTYPE
-        entry.linkname = '/etc/passwd'; archive.addfile(entry)
-    data = output.getvalue()
-    with pytest.raises(RuntimeError, match='hash_mismatch'):
-        bootstrap.members(data, '0' * 64)
-    with pytest.raises(RuntimeError, match='archive_member'):
-        bootstrap.members(data, hashlib.sha256(data).hexdigest())
+@pytest.mark.parametrize('fault', ['invalid_total', 'invalid_fin', 'out_of_span', 'foreign_flow', 'stale_generation'])
+def test_authenticated_refused_data_cannot_open_or_extend_ack_quiet(pair, fault):
+    from meshticulum.flow.flow import build_data_frame
+    data, clock, (sender, receiver), workers = pair
+    if receiver.burst_frames == 1:
+        pytest.skip('Fast-profile arbitration only')
+    values = dict(flow_id=receiver.flow.flow_id, generation=receiver.flow.generation,
+                  seq=0, total=2, last=False, payload=b'authentic_but_refused')
+    if fault == 'invalid_total': values['total'] = 129
+    elif fault == 'invalid_fin': values['last'] = True
+    elif fault == 'out_of_span': values.update(seq=3, total=2)
+    elif fault == 'foreign_flow': values['flow_id'] += 1
+    elif fault == 'stale_generation': values['generation'] += 1
+    packet = sender.cipher.seal(build_data_frame(**values), FrameKind.DATA,
+                                authorize=sender.authority.live)
+    workers[1].incoming.append(packet); receiver.step()
+    assert receiver.burst_received == receiver.burst_started_us == receiver.ack_due_us == 0
+
+
+def held_sender(pair):
+    data,clock,(sender,receiver),workers=pair
+    if sender.burst_frames==1:pytest.skip('Fast-profile control window only')
+    sender.send(data);receiver.step();clock.advance(20000)
+    for _ in range(4):sender.step();clock.advance(20000)
+    assert sender.owner.no_send and len(workers[0].sent)==4
+    return clock,sender,receiver,workers
+
+
+def test_cancel_during_control_hold_never_resumes_any_lane(pair):
+    clock,sender,receiver,workers=held_sender(pair)
+    sender.flow.cancel();clock.advance(sender.sender_control_hold_us+1)
+    with pytest.raises(WireError,match='reliable_flow_cancelled'):sender.step()
+    assert len(workers[0].sent)==4 and not sender.flow.complete
+
+
+def test_original_expiry_during_control_hold_refuses_before_worker_io(pair):
+    clock,sender,receiver,workers=held_sender(pair)
+    clock.advance(181000000)
+    with pytest.raises(WireError,match='authority_not_live'):sender.step()
+    assert len(workers[0].sent)==4
+
+
+def test_authenticated_nonprogress_ACK_cannot_release_control_window(pair):
+    from meshticulum.flow.flow import build_ack_frame
+    clock,sender,receiver,workers=held_sender(pair)
+    hold=sender.next_send_us
+    inner=build_ack_frame(flow_id=sender.flow.flow_id,generation=sender.flow.generation,
+        ack_seq=0,credit=4,sack=0,grant_revision=1)
+    packet=receiver.cipher.seal(inner,FrameKind.ACK,authorize=receiver.authority.live)
+    workers[0].incoming.append(packet);sender.step()
+    assert sender.next_send_us==hold and sender.flow.acked_frames()==0
+    assert len(workers[0].sent)==4

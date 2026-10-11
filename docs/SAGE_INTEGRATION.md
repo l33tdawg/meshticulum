@@ -1,17 +1,13 @@
-# Optional SAGE integration
+# Lantern and SAGE integration boundary
 
-This adapter belongs to the [SAGE project family](PROJECT_FAMILY.md). The main SAGE code is in [l33tdawg/sage](https://github.com/l33tdawg/sage/). Lantern-specific product apps, device orchestration and integrations will live in a separate planned repository; the existing adapter is retained here during that transition.
+Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project created and maintained by [Dhillon Andrew Kannabhiran (@l33tdawg)](https://github.com/l33tdawg). Private SAGE integration belongs to the separate [SAGE Lantern repository](https://github.com/l33tdawg/sage-lantern), within the [SAGE project family](PROJECT_FAMILY.md). The main SAGE code is in [l33tdawg/sage](https://github.com/l33tdawg/sage/).
 
-The transport, signed public-resource and offline envelope modules require no SAGE service or SDK. The optional adapter contains the protected inbox, durable sealed capture and WorkflowStore interface.
+Lantern consumes Meshticulum as a one-way dependency. Its `software/meshticulum-integration/` owns protected inbox admission, durable sealed capture, WorkflowStore/storage interfaces, private lifecycle policy and native device entry points. Its `firmware/meshticulum-bench/` owns the runtime bundles, grant bootstraps and device/pilot deployment tooling. SDK installation and private integration tests are maintained in Lantern, not in this repository.
 
-Its source controls were developed against `sage-agent-sdk==11.19.10+lantern.20260906`. That Lantern SDK build must be supplied as a separately built, compatible local wheel. Do not substitute an unrelated public SDK version and treat it as qualified.
+Meshticulum provides generic identity/deadline contracts, authenticated transport, verified public resources and offline envelope codecs. It has no SAGE SDK extra and no dependency on Lantern services, protected storage or private application tests. An application must supply its own current authorization and storage policy; importing a codec or constructing a contract grants neither.
 
-```sh
-python -m pip install /path/to/sage_agent_sdk-11.19.10+lantern.20260906-py3-none-any.whl
-python -m pip install -e '.[dev,sage]'
-python -m pytest tests/integrations/sage
-```
+The source split preserves existing envelope protocol identity, signature domains and sender/recipient pinning. It does not enroll identities, rotate keys, import received packs into SAGE, produce read receipts or establish a canonical SAGE commit.
 
-These controls use SDK MockTransport and modeled native ownership. They prove source behavior only. Real encrypted backend, consent revocation, owner loss, boot/deadline recovery and physical worker qualification remain required before enabling private service dispatch. The public Linux launcher refuses private MESSAGE grants.
+Lantern's private controls must use its documented compatible SDK and pin the exact Meshticulum candidate. SDK MockTransport and modeled ownership remain source evidence. Real encrypted backend, native owner/consent/revocation authority, original boot/deadline recovery and physical worker qualification still gate private dispatch. Follow Lantern's current integration instructions and [the remaining qualification](ROADMAP.md); no private production enablement is implied by this boundary.
 
-SAGE messages retain their existing protocol identity and sender/recipient pinning. Moving the code does not enroll identities, rotate keys, import received packs into SAGE, produce read receipts or establish a canonical SAGE commit. The service owner must supply current authorization and protected storage.
+Publishing Meshticulum's reusable source and project documentation is separate from enabling a Lantern service or releasing an alpha. The public project does not carry Lantern credentials, deployment configuration or protected native policy implementations.

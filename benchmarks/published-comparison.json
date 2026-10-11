@@ -1,0 +1,172 @@
+{
+  "excluded_from_application_goodput_comparison": [
+    {
+      "reason": "Third-party0.7/2.7KB/s labels are paired with a table explicitly describing raw bitrate before RNS overhead; no timed encrypted application benchmark.",
+      "source": "https://github.com/Offline-Protocol/offline-protocol-sdk/blob/main/docs/reticulum.md"
+    },
+    {
+      "reason": "LR2021/FLRC driver RX-overhead investigation on different hardware/modulation; not stock encrypted MeshCore LoRa application goodput.",
+      "source": "https://github.com/meshcore-dev/MeshCore/issues/2841"
+    }
+  ],
+  "limited_meshcore_wide_profile_ratio": {
+    "by_direction": {
+      "ab": 2.8980672929979514,
+      "ca": 2.9538998093757334,
+      "cb": 3.002646104681757
+    },
+    "calculation": "Meshticulum per-direction median B/s divided by contributor-reported410 B/s.",
+    "scope": "Approximately2.9\u20133.0x difference between these reported workloads. Not a matched protocol benchmark or general MeshCore speed ranking."
+  },
+  "meshticulum": {
+    "completed": 30,
+    "distance_and_antenna_measurements": null,
+    "endpoint": "Sender flow ACK; independently required receiver durable hash.",
+    "evidence": "benchmarks/2026-10-09-radio/radio-results.json",
+    "evidence_class": "retained_measured_encrypted_flow_goodput",
+    "median_Bps_by_direction": {
+      "ab": 1188.20759012916,
+      "ca": 1211.0989218440507,
+      "cb": 1231.0849029195203
+    },
+    "payload_bytes_per_sample": 8192,
+    "radio_settings": {
+      "bandwidth_hz": 500000,
+      "chip_power_dbm": 0,
+      "coding_rate": 5,
+      "frequency_hz": 921375000,
+      "lease_ms": 90000,
+      "max_boot_attempts": 256,
+      "max_boot_estimated_airtime_us": 60000000,
+      "preamble": 8,
+      "spreading_factor": 7,
+      "sync_word": 66
+    },
+    "samples": 30,
+    "version_scope": "Earlier experimental runtime, not a new current service capacity measurement."
+  },
+  "overall_superiority_proved": false,
+  "owner_scope": "Compare our real measured results to published upstream figures; no requirement to run counterpart benchmark campaigns.",
+  "published_figures": [
+    {
+      "author": "l33tdawg",
+      "comparability": "Same stated SF/BW as retained Meshticulum; different payload sizes, framing, batching, timing and acceptance boundaries; other settings not fully reported.",
+      "conditions": "Two SX1262 companion radios, approximately1m apart;25 frames of128 bytes per profile, each confirmed by its mesh ACK.",
+      "evidence_class": "firsthand_contributor_measurement",
+      "median_ACK_round_trip_ms": 306,
+      "profile": {
+        "bandwidth_hz": 500000,
+        "coding_rate": null,
+        "spreading_factor": 7
+      },
+      "project": "MeshCore",
+      "project_maintainer_benchmark": false,
+      "published_on": "2026-09-13",
+      "quantity": "confirmed frame throughput",
+      "software_pin": null,
+      "source": "https://github.com/meshcore-dev/MeshCore/issues/3404",
+      "units": "B/s",
+      "value": 410
+    },
+    {
+      "author": "l33tdawg",
+      "comparability": "Different radio settings from retained Meshticulum; no speed ratio permitted.",
+      "conditions": "Same contributed25x128-byte frame-ACK experiment; approximately1m.",
+      "evidence_class": "firsthand_contributor_measurement",
+      "median_ACK_round_trip_ms": 1432,
+      "profile": {
+        "bandwidth_hz": 62500,
+        "coding_rate": null,
+        "spreading_factor": 8
+      },
+      "project": "MeshCore",
+      "project_maintainer_benchmark": false,
+      "published_on": "2026-09-13",
+      "quantity": "confirmed frame throughput",
+      "source": "https://github.com/meshcore-dev/MeshCore/issues/3404",
+      "units": "B/s",
+      "value": 89
+    },
+    {
+      "application_goodput_Bps": null,
+      "comparability": "Physical rate from an example, not encrypted application throughput; different radio profile.",
+      "evidence_class": "author_configuration_example",
+      "profile": {
+        "bandwidth_hz": 125000,
+        "chip_power_dbm": 7,
+        "coding_rate": 5,
+        "frequency_hz": 867200000,
+        "spreading_factor": 8
+      },
+      "project": "Reticulum/RNode",
+      "published_on": "2023-01-14",
+      "quantity": "reported on-air bitrate",
+      "source": "https://unsigned.io/rnode_bootstrap_console/guides/loracomms.html",
+      "units": "kb/s",
+      "value": 3.1,
+      "version": "RNS0.3.3 in shown logs"
+    },
+    {
+      "application_goodput_Bps": null,
+      "comparability": "No timed useful-payload transfer or acceptance scope supplied.",
+      "evidence_class": "author_status_documentation_example",
+      "project": "Reticulum/RNode",
+      "quantity": "example interface rate",
+      "source": "https://unsigned.io/rnode_bootstrap_console/m/using.html",
+      "units": "kb/s",
+      "value": 1.3
+    },
+    {
+      "application_goodput_Bps": null,
+      "comparability": "Raw 2.4 GHz backhaul, packet/management overhead excluded; not encrypted LoRa application goodput.",
+      "distance_km": 6.5,
+      "evidence_class": "maintainer_report",
+      "medium": "ESP32 2.4 GHz radio backhaul in the discussed Weave/802.11 setting",
+      "project": "Reticulum/RNode-Weave",
+      "published_on": "2025-04-14",
+      "quantity": "experimental raw-medium backhaul throughput",
+      "radio_settings": null,
+      "source": "https://github.com/markqvist/Reticulum/discussions/788",
+      "units": "kb/s",
+      "value": 150
+    },
+    {
+      "application_goodput_Bps": null,
+      "comparability": "CPU/network routing, not LoRa application goodput.",
+      "evidence_class": "project_published_performance_claim",
+      "hardware": "Raspberry Pi5, interpreted Python, one CPU core",
+      "project": "Reticulum",
+      "quantity": "raw routing throughput",
+      "source": "https://github.com/markqvist/Reticulum/blob/7f2b3b9b524c9386316379af1313b43a5e4f7a5d/README.md#performance",
+      "units": "Gb/s",
+      "value": 5
+    },
+    {
+      "application_goodput_Bps": null,
+      "comparability": "Spans different media/hardware; not a specific LoRa transfer benchmark.",
+      "evidence_class": "project_published_performance_claim",
+      "project": "Reticulum",
+      "quantity": "broad usable network performance envelope",
+      "source": "https://github.com/markqvist/Reticulum/blob/7f2b3b9b524c9386316379af1313b43a5e4f7a5d/README.md#performance",
+      "units": "b/s",
+      "value": [
+        150,
+        1000000000
+      ]
+    }
+  ],
+  "reticulum_comparable_encrypted_LoRa_goodput_Bps": null,
+  "reticulum_search_scope": "Four targeted primary-source searches/opens across official docs, author guides and maintainer discussions; no comparable LoRa application-goodput measurement found in those reviewed sources.",
+  "reviewed_on": "2026-10-10",
+  "schema": "meshticulum.published-upstream-comparison.v1",
+  "security_scope": "Explicit properties and threat models; current Meshticulum PSK/static recipient envelope does not establish forward secrecy. RNS documents forward-secrecy mechanisms. No overall stronger-security ranking is proved.",
+  "self_run_counterpart_campaign_required": false,
+  "speed_and_security_superiority_goal": true,
+  "unmeasured_metrics_preserved": [
+    "actual RF airtime",
+    "energy",
+    "EIRP",
+    "range-qualified goodput",
+    "current sustained service capacity"
+  ]
+}

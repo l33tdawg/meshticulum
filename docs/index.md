@@ -6,7 +6,9 @@ Meshticulum brings bounded radio transfers, authenticated service boundaries and
 
 | Guide | What it explains |
 | --- | --- |
-| [Attribution and project family](PROJECT_FAMILY.md) | SAGE Foundation stewardship, the main SAGE repository and the planned separate Lantern product repository |
+| [Project preview](PROJECT_PREVIEW.md) | The public source and website scope, measured claims and the later alpha release |
+| [Repository history](REPOSITORY_HISTORY.md) | Preserved extraction history and the current Meshticulum/Lantern boundary |
+| [Attribution and project family](PROJECT_FAMILY.md) | SAGE Foundation stewardship, the main SAGE repository and the separate Lantern product repository |
 | [Why Meshticulum](WHY.md) | The gap we are trying to close and the priorities drawn from embedded radio meshes and secure networking |
 | [Architecture](ARCHITECTURE.md) | Component diagrams, service separation, a transfer's lifecycle and the intended mixed-path topology |
 | [MeshCore and Reticulum comparison](COMPARISON.md) | The upstream designs, their strengths, and what Meshticulum implements differently |
@@ -21,8 +23,12 @@ Start with [installation and the standalone test command](../README.md#install-a
 | Guide | Use it when you need to… |
 | --- | --- |
 | [Hardware tooling](HARDWARE.md) | Build a public host runtime, understand serial/SX1262 adapters, or prepare a separately authorized device run |
-| [Optional SAGE integration](SAGE_INTEGRATION.md) | Supply the compatible local SDK and work with protected capture, replay and private inbox admission |
+| [Authenticated TCP prototype](IP_TRANSPORT.md) | Understand the explicit IP grants, durable counters, stream-byte budgets and source controls |
+| [Lantern's SAGE integration](SAGE_INTEGRATION.md) | Understand the separate owning repository for protected capture, replay and private inbox admission |
 | [Extraction and provenance](EXTRACTION.md) | Trace code to its original snapshot, inspect frozen flow pins or understand package bridges |
+| [Coordinated public pilot](HARDWARE_PILOT.md) | Follow native provisioning, relay provenance, publisher verification and the remaining physical checks |
+| [Alpha release readiness](RELEASE_READINESS.md) | Check the proposed 1.0.0-alpha scope, artifacts and public-release gates |
+| [Third-party inventory](THIRD_PARTY.md) | Identify runtime and firmware dependencies and outstanding redistribution requirements |
 | [Repository instructions](../AGENTS.md) | Change transport or integration behavior while preserving its contracts and writer ownership |
 | [Frozen flow history](../src/meshticulum/flow/README.md) | Inspect the accepted candidate's revisions, invariants and historical source controls |
 
@@ -30,7 +36,7 @@ The flow history includes references to lab receipts in the original SAGE checko
 
 ## Follow qualification
 
-The [roadmap](ROADMAP.md) retains the full programme: finite public-radio qualification, authenticated IP transport, C→A LoRa→B IP, loss and verified-piece resume, return to a locally measured faster path, native private integration and matched MeshCore/Reticulum measurements.
+The [roadmap](ROADMAP.md) retains the full programme: finite public-radio qualification, authenticated IP transport, C→A LoRa→B IP, loss and verified-piece resume, return to a locally measured faster path, native private integration, our performance qualification and comparisons with published MeshCore/Reticulum figures.
 
 Read [Performance](PERFORMANCE.md) alongside that roadmap. Source controls, modeled workers and loopback transfers provide useful implementation evidence. Physical RF completion, peer receipt, publisher verification and production application acceptance need their respective observations.
 

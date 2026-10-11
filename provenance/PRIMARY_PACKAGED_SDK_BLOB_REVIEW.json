@@ -1,0 +1,358 @@
+{
+  "archives": [
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "3ba5f70123321fe5461607458686b626f36c78c6",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/qio_qspi/libesp_hw_support.a",
+      "sha256": "b9b412df462a8eed8a4bd5e4ed6bf13c0c0271cec5fed97ff08bf9a0bf922308",
+      "upstream_blob_sha1": "3ba5f70123321fe5461607458686b626f36c78c6",
+      "upstream_path": "tools/sdk/esp32s3/qio_qspi/libesp_hw_support.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "eaadf1c4caa199371af6fa66329b9f23d5215b6c",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/qio_qspi/libfreertos.a",
+      "sha256": "258c4cc7c1d878cfb2a0a5a76344e4b4e8db326da95b4471f99430c8557c82f8",
+      "upstream_blob_sha1": "eaadf1c4caa199371af6fa66329b9f23d5215b6c",
+      "upstream_path": "tools/sdk/esp32s3/qio_qspi/libfreertos.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "ed34c1c5b0e9d65cb085e7169109244e4ebaf0af",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libdriver.a",
+      "sha256": "b8ab992d477263dba3306c057af7cb08f2808a22bc6aeec668c3a0d20e189773",
+      "upstream_blob_sha1": "ed34c1c5b0e9d65cb085e7169109244e4ebaf0af",
+      "upstream_path": "tools/sdk/esp32s3/lib/libdriver.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "ee48b0618efeeb32cd673d8b20144444e67155ae",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libapp_update.a",
+      "sha256": "63b0e765f044b9c4f58e8b4c5643daa902bb243210747e8b1df88c67c4520f9d",
+      "upstream_blob_sha1": "ee48b0618efeeb32cd673d8b20144444e67155ae",
+      "upstream_path": "tools/sdk/esp32s3/lib/libapp_update.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "c9390ce5247b27091238c512d47e1b11cb2eb833",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/qio_qspi/libbootloader_support.a",
+      "sha256": "569a073995d954de64877037de9f211c9f711d3bbe4755b316f8bcf6aab3fc6d",
+      "upstream_blob_sha1": "c9390ce5247b27091238c512d47e1b11cb2eb833",
+      "upstream_path": "tools/sdk/esp32s3/qio_qspi/libbootloader_support.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "3ad3f6f0b1ec9eb5501c12d421297851ca979597",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/qio_qspi/libspi_flash.a",
+      "sha256": "82287e5db87de68cd2fac77d144607cf0af5a871f3c4a9c80865b7a1c98d5666",
+      "upstream_blob_sha1": "3ad3f6f0b1ec9eb5501c12d421297851ca979597",
+      "upstream_path": "tools/sdk/esp32s3/qio_qspi/libspi_flash.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "15546900cb5e2b502691a9d192ea489870d28eff",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libpthread.a",
+      "sha256": "c99c47275fdf44c290e154b83b16cc0a62427a82d2875409e0eafe2945088ab1",
+      "upstream_blob_sha1": "15546900cb5e2b502691a9d192ea489870d28eff",
+      "upstream_path": "tools/sdk/esp32s3/lib/libpthread.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "898ae6c9f8e140f70fac0aecac793501ef690daa",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/qio_qspi/libesp_system.a",
+      "sha256": "2a58caf364f9417c0c81ed0509fc21b3db4a23b6bd75940937de8d10dc8d048a",
+      "upstream_blob_sha1": "898ae6c9f8e140f70fac0aecac793501ef690daa",
+      "upstream_path": "tools/sdk/esp32s3/qio_qspi/libesp_system.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "55a07a4101b8e3e90a61bf815bd3926ec6984154",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libesp_rom.a",
+      "sha256": "fd3ad8b4552687a2722288fdf8069e43ab01440196dbf3cd6c77cb994be2fbd6",
+      "upstream_blob_sha1": "55a07a4101b8e3e90a61bf815bd3926ec6984154",
+      "upstream_path": "tools/sdk/esp32s3/lib/libesp_rom.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "ba709fd22390447db7a0331b78d5080e2fe5626b",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libhal.a",
+      "sha256": "ba8f1f141062b0b567029d0bf21ed4981426870f8ae2d33ba1bfd91d32bf5fc7",
+      "upstream_blob_sha1": "ba709fd22390447db7a0331b78d5080e2fe5626b",
+      "upstream_path": "tools/sdk/esp32s3/lib/libhal.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "b91cdc53fd3c9ad130b1671abb14226bbf274fd5",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libesp_wifi.a",
+      "sha256": "cb06edb694b149bed9b9691be7942281549868e5e59624036da4ccaeb7d72175",
+      "upstream_blob_sha1": "b91cdc53fd3c9ad130b1671abb14226bbf274fd5",
+      "upstream_path": "tools/sdk/esp32s3/lib/libesp_wifi.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "d72d4f920cb796b622942642bc7b69b7c7829ec4",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libheap.a",
+      "sha256": "8108f23266178230dc27c03ac62b538a990a2a90d638503e3a1f3c482ea41513",
+      "upstream_blob_sha1": "d72d4f920cb796b622942642bc7b69b7c7829ec4",
+      "upstream_path": "tools/sdk/esp32s3/lib/libheap.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "aec68b349613a5d4bd42e376af12159c421cd924",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libxtensa.a",
+      "sha256": "42eda0b774a63e71e4b3b4ea983aa2a45374779eae270786272d93cfc30f1293",
+      "upstream_blob_sha1": "aec68b349613a5d4bd42e376af12159c421cd924",
+      "upstream_path": "tools/sdk/esp32s3/lib/libxtensa.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "04e3f43e234d2bbeeed2af8996ca1c69a0dc7ca6",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libesp_timer.a",
+      "sha256": "b09bd4231f011c0dc6f09900aa05f6df48f237d34b78965c746f777f5e9fc7bc",
+      "upstream_blob_sha1": "04e3f43e234d2bbeeed2af8996ca1c69a0dc7ca6",
+      "upstream_path": "tools/sdk/esp32s3/lib/libesp_timer.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "465e12c6d8d29d984ea312c7464251fd1011bf80",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libnewlib.a",
+      "sha256": "dbac7546c93c387a82f3a83cf6985468ad0c26177c391251bde37dac7725511f",
+      "upstream_blob_sha1": "465e12c6d8d29d984ea312c7464251fd1011bf80",
+      "upstream_path": "tools/sdk/esp32s3/lib/libnewlib.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "1005018a6d3366a6f17f1942eaacd52b9889c014",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libesp_ipc.a",
+      "sha256": "2bdbbe5e2669143738b2bbd89203eda25476960b5d4f6ce15c512513ae36fcc5",
+      "upstream_blob_sha1": "1005018a6d3366a6f17f1942eaacd52b9889c014",
+      "upstream_path": "tools/sdk/esp32s3/lib/libesp_ipc.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "7027d46cfc1f5fd768aff2612e11da67d1ac1194",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libesp_event.a",
+      "sha256": "32b0bdae4f59c6f09fab85c221cd459b4a44567ca4ad753807f9f7172eac70b2",
+      "upstream_blob_sha1": "7027d46cfc1f5fd768aff2612e11da67d1ac1194",
+      "upstream_path": "tools/sdk/esp32s3/lib/libesp_event.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "0cba9972d261b8d91091f9e202dc6a5234f9e1f0",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libesp_ringbuf.a",
+      "sha256": "71dedf0f14aa64031c973b73279a88f9c4ec83ccfef331fe01e3532183cafc8c",
+      "upstream_blob_sha1": "0cba9972d261b8d91091f9e202dc6a5234f9e1f0",
+      "upstream_path": "tools/sdk/esp32s3/lib/libesp_ringbuf.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "377409a943f0178bb3d71f749b5f25c94122c00d",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/liblog.a",
+      "sha256": "6ebbc908c98f6dca8a03533e95877d217b21a8a7777bfe0cded98dc228f4a2fc",
+      "upstream_blob_sha1": "377409a943f0178bb3d71f749b5f25c94122c00d",
+      "upstream_path": "tools/sdk/esp32s3/lib/liblog.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "03d3c390f631c01e9ec1160582c339db10a21bee",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libesp_phy.a",
+      "sha256": "b63a6ce02ad6490c3351964f2d901c2d468f3865a7d64187a287ae66eba7b3e1",
+      "upstream_blob_sha1": "03d3c390f631c01e9ec1160582c339db10a21bee",
+      "upstream_path": "tools/sdk/esp32s3/lib/libesp_phy.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "dd6a878fa1c4d97142b94bf342cb58ce971aedff",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libespcoredump.a",
+      "sha256": "8f8b9e9d1e7853232b113cff78c0e62f8939fc4026abd190512134d985695392",
+      "upstream_blob_sha1": "dd6a878fa1c4d97142b94bf342cb58ce971aedff",
+      "upstream_path": "tools/sdk/esp32s3/lib/libespcoredump.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "3456589ba86f6093f818ac186894d01d488acfdf",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/ld/libphy.a",
+      "sha256": "c8f6c6821c7e8e28c97f3a797e322d9987a0f3fd5f5da5e971ab0111ba513160",
+      "upstream_blob_sha1": "3456589ba86f6093f818ac186894d01d488acfdf",
+      "upstream_path": "tools/sdk/esp32s3/ld/libphy.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "c4554e93e872304ca5d9ac01e26533760791182c",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libxt_hal.a",
+      "sha256": "4823e6c657199a6726f3163f15e1222edb85a8a33eeaafd2aad0cc06150cc4ec",
+      "upstream_blob_sha1": "c4554e93e872304ca5d9ac01e26533760791182c",
+      "upstream_path": "tools/sdk/esp32s3/lib/libxt_hal.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "fefb07b662a7e3edad687673cbaf3dc8f24be525",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libvfs.a",
+      "sha256": "b70865ab418f4f4cc516e234e0011e975164f70b3282df197fd325b061308ed9",
+      "upstream_blob_sha1": "fefb07b662a7e3edad687673cbaf3dc8f24be525",
+      "upstream_path": "tools/sdk/esp32s3/lib/libvfs.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "4918c1aee92bd5b388e3795c065676c8bbb1ac33",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libefuse.a",
+      "sha256": "c65c8266bfa4170e534f9e3a9c744566f09f1f8e71da6bdf60ce9488be5a1ff2",
+      "upstream_blob_sha1": "4918c1aee92bd5b388e3795c065676c8bbb1ac33",
+      "upstream_path": "tools/sdk/esp32s3/lib/libefuse.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "6960f1da37edd39927c5c0cf965f6bdce1b418d5",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libcoexist.a",
+      "sha256": "0c61713a461511973e0d4270bcf6c75587fb5da361f0636c8346c960516ef05a",
+      "upstream_blob_sha1": "6960f1da37edd39927c5c0cf965f6bdce1b418d5",
+      "upstream_path": "tools/sdk/esp32s3/lib/libcoexist.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "f3dd3742f12708e5305bb1bdc3272e80c2e5f71e",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libbt.a",
+      "sha256": "48fe8a1427a6476e2a8671bc893bd0e346d1658f3714b97d25ca091487748365",
+      "upstream_blob_sha1": "f3dd3742f12708e5305bb1bdc3272e80c2e5f71e",
+      "upstream_path": "tools/sdk/esp32s3/lib/libbt.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "17f9231d16be89aa9ee54d7fbe2956a1fa705f0b",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libmbedcrypto.a",
+      "sha256": "abdaf759ee17aa697468427b55a86c6c0082ac4cdeb643a63d8b3ac2df324633",
+      "upstream_blob_sha1": "17f9231d16be89aa9ee54d7fbe2956a1fa705f0b",
+      "upstream_path": "tools/sdk/esp32s3/lib/libmbedcrypto.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "1bfc4e272d279237eee3c1ee1b570450f2ec50fe",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libnvs_flash.a",
+      "sha256": "f4163a6e3bb66867d06c5e7f33226f1941f123b77f358cc02e30021b1a2bf983",
+      "upstream_blob_sha1": "1bfc4e272d279237eee3c1ee1b570450f2ec50fe",
+      "upstream_path": "tools/sdk/esp32s3/lib/libnvs_flash.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "339599aa3150980c3dc956ac185362b0c7169807",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libesp_diagnostics.a",
+      "sha256": "69f28fb584e5a44cab0739d53679e78304e45d42ebd76f3e12eb8cf5d973007a",
+      "upstream_blob_sha1": "339599aa3150980c3dc956ac185362b0c7169807",
+      "upstream_path": "tools/sdk/esp32s3/lib/libesp_diagnostics.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "501f8d27349a9b5aefaa69dd95a7f8d16a350997",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libesp_pm.a",
+      "sha256": "60529aeaf1cd94b41983383ceec240d1f43256f86faf8d9357f9e7d6050d9191",
+      "upstream_blob_sha1": "501f8d27349a9b5aefaa69dd95a7f8d16a350997",
+      "upstream_path": "tools/sdk/esp32s3/lib/libesp_pm.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "575221fbe67afca64f65a8de2243fa2f3e978904",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libesp_common.a",
+      "sha256": "aa3b7a5f964bc7c7bfae623e64b15b695db268dd704b1fa7f967dad519f67b5f",
+      "upstream_blob_sha1": "575221fbe67afca64f65a8de2243fa2f3e978904",
+      "upstream_path": "tools/sdk/esp32s3/lib/libesp_common.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "3ffb5633ca0db2ac2f2931668418c5c6d93fcc98",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libcxx.a",
+      "sha256": "295951e87b7152a7364d45f5435ac24408a80dbe32fedf326e97edda8fc60412",
+      "upstream_blob_sha1": "3ffb5633ca0db2ac2f2931668418c5c6d93fcc98",
+      "upstream_path": "tools/sdk/esp32s3/lib/libcxx.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "dd478a6ce9949052c0cd7ebdfe4a96f7fed33a73",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/lib/libsoc.a",
+      "sha256": "a484ab659effaaecbd5fe75d20d4ef293e1a54de5034f10add071d597c7fae45",
+      "upstream_blob_sha1": "dd478a6ce9949052c0cd7ebdfe4a96f7fed33a73",
+      "upstream_path": "tools/sdk/esp32s3/lib/libsoc.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "00f3d9ebef0e29d58d7d2ba68c707496214bdcc6",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/qio_opi/libesp_hw_support.a",
+      "sha256": "a350af1d93e08a84d7b48dffc48e10cd39a884953b60f349951aed0b0a43f3e8",
+      "upstream_blob_sha1": "00f3d9ebef0e29d58d7d2ba68c707496214bdcc6",
+      "upstream_path": "tools/sdk/esp32s3/qio_opi/libesp_hw_support.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "eaadf1c4caa199371af6fa66329b9f23d5215b6c",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/qio_opi/libfreertos.a",
+      "sha256": "258c4cc7c1d878cfb2a0a5a76344e4b4e8db326da95b4471f99430c8557c82f8",
+      "upstream_blob_sha1": "eaadf1c4caa199371af6fa66329b9f23d5215b6c",
+      "upstream_path": "tools/sdk/esp32s3/qio_opi/libfreertos.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "c9390ce5247b27091238c512d47e1b11cb2eb833",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/qio_opi/libbootloader_support.a",
+      "sha256": "569a073995d954de64877037de9f211c9f711d3bbe4755b316f8bcf6aab3fc6d",
+      "upstream_blob_sha1": "c9390ce5247b27091238c512d47e1b11cb2eb833",
+      "upstream_path": "tools/sdk/esp32s3/qio_opi/libbootloader_support.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "cf07c0806cb157cbee36e42bcdb5735c771b8b0a",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/qio_opi/libspi_flash.a",
+      "sha256": "5a03c3a60664351698feaa706dd690a3894ff01f714443a3cdb2950e4f8cf623",
+      "upstream_blob_sha1": "cf07c0806cb157cbee36e42bcdb5735c771b8b0a",
+      "upstream_path": "tools/sdk/esp32s3/qio_opi/libspi_flash.a"
+    },
+    {
+      "exact_blob_match": true,
+      "packaged_blob_sha1": "e9b21ed0fb232d831d17e9b47a1fc68ef3bb3285",
+      "packaged_path": "packages/framework/tools/sdk/esp32s3/qio_opi/libesp_system.a",
+      "sha256": "e618e0fc82ba95afd3d556cd9d76e8e4c2e3159f257947a7810ff7076afd92bb",
+      "upstream_blob_sha1": "e9b21ed0fb232d831d17e9b47a1fc68ef3bb3285",
+      "upstream_path": "tools/sdk/esp32s3/qio_opi/libesp_system.a"
+    }
+  ],
+  "arduino_recorded_revision": {
+    "repository": "https://github.com/espressif/arduino-esp32",
+    "scope": "Resolved revision named by SDK versions.txt; no dirty-build reconstruction claim.",
+    "sha": "d75795f5e27eac7afea33b27a22d826cb4556c99"
+  },
+  "exact_blob_matches": 39,
+  "full_firmware_notice_closure": false,
+  "idf_recorded_revision": {
+    "repository": "https://github.com/espressif/esp-idf",
+    "scope": "Resolved revision named by SDK versions.txt; no dirty-build reconstruction claim.",
+    "sha": "38eeba213aa695aabfd6d89aa9f5078dbe5a94c3"
+  },
+  "metadata_blob_review": [
+    {
+      "exact_blob_match": true,
+      "local_git_blob_sha1": "08986d9275d3f1318bbaad5e091e551a2af2fba0",
+      "path": "tools/sdk/versions.txt",
+      "sha256": "dc450f0657edee2e754fb71b33a4f7c2558430d3879c7452317ab3d1bef792ec",
+      "upstream_git_blob_sha1": "08986d9275d3f1318bbaad5e091e551a2af2fba0"
+    },
+    {
+      "exact_blob_match": true,
+      "local_git_blob_sha1": "1bfeb870054948b0560bf993be2f0c5303783c64",
+      "path": "tools/sdk/esp32s3/sdkconfig",
+      "sha256": "a70d5c071e68c07e82fe5e71c3225b0854e1021ecd8a902da20523aa3123b476",
+      "upstream_git_blob_sha1": "1bfeb870054948b0560bf993be2f0c5303783c64"
+    }
+  ],
+  "per_member_notice_closure": false,
+  "per_target_contributing_sdk_archive_count": {
+    "mtbench_heltec_v4": 34,
+    "mtbench_xiao_s3_wio": 34
+  },
+  "recorded_sdk_versions_text": "esp-idf: v4.4.7 38eeba213a\narduino: idf-38eeba213a d75795f5\nesp-dl: master 0632d24\nesp-rainmaker: master d8e9345\nesp32-camera: master f0bb429\nesp_littlefs: master 41873c2\nespressif__esp-dsp: master 9b4a8b4\ntinyusb: master a0e5626bc\n",
+  "rf_qualification": false,
+  "schema": "meshticulum.primary-packaged-sdk-blob-review.v1",
+  "scope": "SDK archives contributing allocated members to the recorded build05 ELF/map pair; archive identity does not establish build source, per-member licenses or native image correspondence.",
+  "source_build_mapping_complete": false,
+  "tree_complete": true,
+  "upstream_commit": "5e19e086c43d0fa5e5a596497ff8f11a0a43f6c2",
+  "upstream_repository": "https://github.com/espressif/arduino-esp32",
+  "upstream_tag": "2.0.17"
+}

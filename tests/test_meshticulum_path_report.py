@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 SPEC = importlib.util.spec_from_file_location("meshticulum_path_report", Path(__file__).resolve().parents[1] /
-                                           "scripts/lantern/benchmarks/meshticulum_path_report.py")
+                                           "tools/benchmarks/meshticulum_path_report.py")
 REPORT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(REPORT)
 
