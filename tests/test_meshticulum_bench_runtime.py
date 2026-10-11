@@ -456,3 +456,38 @@ def test_authenticated_refused_data_cannot_open_or_extend_ack_quiet(pair, fault)
                                 authorize=sender.authority.live)
     workers[1].incoming.append(packet); receiver.step()
     assert receiver.burst_received == receiver.burst_started_us == receiver.ack_due_us == 0
+
+
+def held_sender(pair):
+    data,clock,(sender,receiver),workers=pair
+    if sender.burst_frames==1:pytest.skip('Fast-profile control window only')
+    sender.send(data);receiver.step();clock.advance(20000)
+    for _ in range(4):sender.step();clock.advance(20000)
+    assert sender.owner.no_send and len(workers[0].sent)==4
+    return clock,sender,receiver,workers
+
+
+def test_cancel_during_control_hold_never_resumes_any_lane(pair):
+    clock,sender,receiver,workers=held_sender(pair)
+    sender.flow.cancel();clock.advance(sender.sender_control_hold_us+1)
+    with pytest.raises(WireError,match='reliable_flow_cancelled'):sender.step()
+    assert len(workers[0].sent)==4 and not sender.flow.complete
+
+
+def test_original_expiry_during_control_hold_refuses_before_worker_io(pair):
+    clock,sender,receiver,workers=held_sender(pair)
+    clock.advance(181000000)
+    with pytest.raises(WireError,match='authority_not_live'):sender.step()
+    assert len(workers[0].sent)==4
+
+
+def test_authenticated_nonprogress_ACK_cannot_release_control_window(pair):
+    from meshticulum.flow.flow import build_ack_frame
+    clock,sender,receiver,workers=held_sender(pair)
+    hold=sender.next_send_us
+    inner=build_ack_frame(flow_id=sender.flow.flow_id,generation=sender.flow.generation,
+        ack_seq=0,credit=4,sack=0,grant_revision=1)
+    packet=receiver.cipher.seal(inner,FrameKind.ACK,authorize=receiver.authority.live)
+    workers[0].incoming.append(packet);sender.step()
+    assert sender.next_send_us==hold and sender.flow.acked_frames()==0
+    assert len(workers[0].sent)==4

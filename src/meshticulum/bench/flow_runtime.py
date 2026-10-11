@@ -121,6 +121,9 @@ class BenchFlow:
                 max_persist_acks=8),
             flow_id=flow_key.flow_id, generation=1, sends=sends, receive=not sends,
             startup=None)
+        self.sender_control_hold_us = (max(self.burst_quiet_us,
+            math.ceil(self.flow.limits.persist_interval_s * 1000000)) + self.receive_gap_us
+            if self.burst_frames > 1 else self.receive_gap_us)
         self.parse_frame, self.ack_kind = flow.parse_frame, flow.KIND_ACK
         self.closed = False
         self.update_counter()
@@ -161,11 +164,12 @@ class BenchFlow:
             elif self.burst_frames > 1:
                 self.burst_sent += 1
                 if self.burst_sent >= self.burst_frames:
-                    # Yield the radio for the receiver's bounded quiet/ACK
-                    # window. A real progress ACK releases this hold early;
+                    # Yield through the existing receiver persistence interval
+                    # plus reverse-ACK/turnaround margin, so a lost first ACK
+                    # can be repeated before DATA resumes. A real progress ACK
+                    # releases this hold early;
                     # the frozen retry clock and credit remain unchanged.
-                    self.next_send_us = (self.last_activity_us + self.burst_quiet_us
-                                         + self.receive_gap_us)
+                    self.next_send_us = self.last_activity_us + self.sender_control_hold_us
                     self.burst_sent = 0
                     # One pump can expire several flights. Fence immediately,
                     # before another retry in that same pump can use the radio.
@@ -278,6 +282,7 @@ class BenchFlow:
             'timing_policy': {'receive_gap_us': self.receive_gap_us,
                              'burst_frames': self.burst_frames, 'burst_quiet_us': self.burst_quiet_us,
                              'burst_max_hold_us': self.burst_max_hold_us,
+                             'sender_control_hold_us': self.sender_control_hold_us,
                              'ack_delay_seconds': self.flow.limits.ack_delay_s,
                              'persist_interval_seconds': self.flow.limits.persist_interval_s,
                              'control_rate_us_per_second': self.scheduler.policy.control_rate_us_per_second},

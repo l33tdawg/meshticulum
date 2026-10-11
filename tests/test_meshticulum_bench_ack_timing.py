@@ -33,11 +33,17 @@ class Air:
         self.frames = []
         self.collisions = 0
         self.drop_once = False
+        self.drop_ack_number = None
+        self.ack_count = 0
     def emit(self, worker, packet, start, end):
         frame = dict(worker=worker, packet=packet, start=start, end=end, lost=False, delivered=False)
         if self.drop_once and FrameKind(HEADER.unpack(packet[:HEADER.size])[2]) is FrameKind.DATA:
             frame['lost'] = True
             self.drop_once = False
+        if FrameKind(HEADER.unpack(packet[:HEADER.size])[2]) is FrameKind.ACK:
+            if self.ack_count == self.drop_ack_number:
+                frame['lost'] = True
+            self.ack_count += 1
         for old in self.frames:
             if old['worker'] is not worker and max(start, old['start']) < min(end, old['end']):
                 old['lost'] = frame['lost'] = True
@@ -76,11 +82,12 @@ class HalfDuplexWorker:
         return self.air.receive(self)
 
 
-def exercise(tmp_path, delays, *, loss=False, size=16384):
+def exercise(tmp_path, delays, *, loss=False, size=16384, drop_ack_number=None):
     tmp_path.mkdir(mode=0o700, parents=True, exist_ok=True)
     data = bytes(range(256)) * (size // 256)
     profile = profile_for('sf7-500')
     air = Air()
+    air.drop_ack_number = drop_ack_number
     opened, endpoints, workers, clocks = [], [], [], []
     try:
         for unit in ('unit-a', 'unit-b'):
@@ -138,3 +145,15 @@ def test_driver_gap_control_windows_complete_without_collisions(tmp_path, delays
 def test_lost_data_still_recovers_without_inferred_credit(tmp_path):
     result = exercise(tmp_path, (40000,), loss=True)
     assert result['retries'] >= 1 and result['acked'] == 85 and not result['fenced']
+
+
+@pytest.mark.parametrize('delays', [(40000,), (45000,)])
+def test_lost_cumulative_ack_is_repeated_before_data_resumes(tmp_path, delays):
+    # Startup ACK is zero; ACK fourteen states receipt through DATA55. Losing
+    # it forces the real frozen flow to persist its canonical grant after500ms.
+    result = exercise(tmp_path, delays, drop_ack_number=14)
+    assert result['collisions'] == result['retries'] == 0
+    assert result['sender_attempts'] == result['acked'] == 85
+    assert result['receiver_attempts'] == 24
+    assert result['receiver_bytes'] == 16384 and not result['fenced']
+    assert result['elapsed_us'] < 15000000
