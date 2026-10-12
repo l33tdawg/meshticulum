@@ -6,7 +6,7 @@ authority or authenticate raw RECEIVE frames. No network listener is present.
 Driver RF_DONE is physical-driver evidence, never a peer delivery receipt.
 """
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 import math
@@ -82,6 +82,8 @@ class SerialWorker:
         self.decoder = Decoder()
         self.identity = None
         self.journal = self.profile = self.authorize = None
+        self.arm_lease_ms = None
+        self.arm_confirmed_monotonic = self.arm_lease_end_upper_bound = None
         self.deadline = self.armed_until = 0.0
         self.fenced = False
         self._pending = deque()
@@ -141,7 +143,9 @@ class SerialWorker:
         require(type(profile) is self._profile_type and callable(authorize), 'invalid_arm_parameters')
         require(type(authority_deadline) in (int, float) and math.isfinite(authority_deadline),
                 'invalid_authority_deadline')
-        require(journal.binding == journal_binding(context_digest, self.identity, profile),
+        admitted_body = profile.encode(board_id=self.identity.board_id)
+        admitted_binding = journal_binding(context_digest, self.identity, profile)
+        require(journal.binding == admitted_binding,
                 'wrong_radio_journal_binding')
         require(not journal.snapshot()['fenced'], 'recovered_run_requires_new_session')
         require(journal.max_attempts <= profile.max_boot_attempts
@@ -152,15 +156,32 @@ class SerialWorker:
         self._live()
         try:
             self.disarm()
-            self._live(profile.lease_ms / 1000 + 0.5)
+            self._live()
             request = journal.command_request()
-            frame = Frame(self._arm_message, self.identity.boot, request,
-                          profile.encode(board_id=self.identity.board_id))
+            self._live()
+            require(self.profile is profile and self.journal is journal and self.authorize is authorize and self.deadline == authority_deadline
+                    and journal.binding == admitted_binding and profile.encode(board_id=self.identity.board_id) == admitted_body,
+                    'radio_arm_binding_changed')
             started = self.channel.monotonic()
+            # The admitted profile remains the immutable journal/crypto ceiling.
+            # Preparation and disarm can consume its setup reserve. Narrow only
+            # the actual MCU lease, allowing the existing two-second ARM reply
+            # bound and 100ms margin before the original absolute authority end.
+            room_us = math.floor(authority_deadline * 1000000) - math.ceil(started * 1000000) - 2100000
+            lease_ms = min(profile.lease_ms, room_us // 1000)
+            require(lease_ms >= 1000, 'radio_authority_expired')
+            armed_profile = profile if lease_ms == profile.lease_ms else replace(profile, lease_ms=lease_ms)
+            frame = Frame(self._arm_message, self.identity.boot, request,
+                          armed_profile.encode(board_id=self.identity.board_id))
             self._send(frame, started + 2.0)
             reply = self._wait(request, started + 2.0)
+            confirmed = self.channel.monotonic()
+            require(confirmed < started + 2.0, 'serial_reply_deadline')
             require(reply.type is self._arm_reply and reply.body == frame.body, 'arm_not_confirmed')
-            self.armed_until = started + profile.lease_ms / 1000 - 0.1
+            self.arm_lease_ms = lease_ms
+            self.arm_confirmed_monotonic = confirmed
+            self.arm_lease_end_upper_bound = confirmed + lease_ms / 1000
+            self.armed_until = started + lease_ms / 1000 - 0.1
         except BaseException:
             self.fenced = True
             raise
@@ -220,6 +241,7 @@ class SerialWorker:
 
     def receive(self, timeout=0.0):
         self._live()
+        require(self.channel.monotonic() < self.armed_until, 'radio_lease_expired')
         require(type(timeout) in (int, float) and 0 <= timeout <= 0.1, 'invalid_receive_timeout')
         if not self._received:
             try:
@@ -227,6 +249,7 @@ class SerialWorker:
             except (OSError, HardwareError, SerialError):
                 self.fenced = True
                 raise
+        require(self.channel.monotonic() < self.armed_until, 'radio_lease_expired')
         return self._received.popleft() if self._received else None
 
     def disarm(self):
