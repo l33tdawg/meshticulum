@@ -210,13 +210,13 @@ void loop() {
                 } else droppedRx++;
             } else { droppedRx++; radio.standby(); }
             startReceive();
-        } else if((flags & (RADIOLIB_SX126X_IRQ_CRC_ERR|RADIOLIB_SX126X_IRQ_TIMEOUT))
-                  || ((flags & RADIOLIB_SX126X_IRQ_HEADER_ERR)
+        } else if((flags & RADIOLIB_SX126X_IRQ_TIMEOUT)
+                  || ((flags & (RADIOLIB_SX126X_IRQ_HEADER_ERR|RADIOLIB_SX126X_IRQ_CRC_ERR))
                       && !(flags & RADIOLIB_SX126X_IRQ_HEADER_VALID))) {
             // A header/CRC failure need not include RX_DONE. Leaving that
             // sticky IRQ unhandled can reject a later good packet. Do not
-            // interrupt a new valid header merely because an older header
-            // error remains set (the same distinction RadioLib readData uses).
+            // interrupt a new valid header merely because an older error
+            // remains set. RX_DONE still passes through RadioLib's CRC check.
             if(flags & (RADIOLIB_SX126X_IRQ_CRC_ERR|RADIOLIB_SX126X_IRQ_HEADER_ERR)) droppedRx++;
             startReceive(); // checked standby/IRQ-clear/RX launch, same lease
         }

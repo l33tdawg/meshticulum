@@ -134,11 +134,13 @@ int main(int argc,char** argv) {
             auto frames=drain(); assert(frames.size()==1 && frames[0].type==RECEIVE && frames[0].size==8);
             assert(radio.receive_starts==3 && armed && !radio.starts);
         }
-    } else if(mode=="rx_stale_header_then_valid") {
-        command(armRequest()); drain(); radio.flags=RADIOLIB_SX126X_IRQ_HEADER_ERR|RADIOLIB_SX126X_IRQ_HEADER_VALID;
+    } else if(mode=="rx_stale_header_then_valid" || mode=="rx_crc_valid_header_in_progress") {
+        command(armRequest()); drain(); radio.flags=RADIOLIB_SX126X_IRQ_HEADER_VALID
+            | (mode=="rx_stale_header_then_valid" ? RADIOLIB_SX126X_IRQ_HEADER_ERR : RADIOLIB_SX126X_IRQ_CRC_ERR);
         loop(); assert(droppedRx==0 && radio.receive_starts==1 && drain().empty());
         radio.flags|=RADIOLIB_SX126X_IRQ_RX_DONE; loop(); auto frames=drain();
-        assert(frames.size()==1 && frames[0].type==RECEIVE && droppedRx==0);
+        if(mode=="rx_stale_header_then_valid") assert(frames.size()==1 && frames[0].type==RECEIVE && droppedRx==0);
+        else assert(frames.empty() && droppedRx==1 && radio.receive_starts==2);
     } else if(mode=="rx_crc_done_refused") {
         command(armRequest()); drain(); radio.flags=RADIOLIB_SX126X_IRQ_CRC_ERR|RADIOLIB_SX126X_IRQ_RX_DONE;
         loop(); assert(drain().empty() && droppedRx==1 && radio.receive_starts==2 && !radio.starts);
