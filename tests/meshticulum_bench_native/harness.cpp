@@ -23,6 +23,10 @@ static Frame gfskArmRequest(uint64_t id=1) {
 static Frame txRequest(uint64_t id=2) {
     auto f=request(TRANSMIT,id); f.size=3; f.body[0]=0xc0; f.body[1]=0xdb; f.body[2]=7; return f;
 }
+static Frame gfsk250ArmRequest(uint64_t id=1) {
+    auto f=gfskArmRequest(id);f.type=GFSK250_ARM;f.body[2]=2;
+    put32(f.body+7,250000);put32(f.body+11,62500);put32(f.body+15,467000);return f;
+}
 static void armAndTx() {
     command(armRequest()); assert(armed);
     command(txRequest()); assert(attempted==1 && reservedUs==100000);
@@ -57,6 +61,37 @@ int main(int argc,char** argv) {
         assert(!ready && !armed && !radio.starts); return 0;
     }
     assert(ready && !armed && !radio.starts && u64(boot+8)==18);
+    if(mode=="gfsk250_roundtrip") {
+        const auto oldMutation=lastMutation,oldDeadline=deadlineUs;
+        command(request(GFSK250_CAPABILITIES,99));auto rows=drain();
+        assert(rows.back().type==GFSK250_CAPABILITIES_REPLY && rows.back().size==16);
+        uint8_t capability[16]={};mtbench::gfsk250::capability(capability);
+        assert(!memcmp(rows.back().body,capability,16) && lastMutation==oldMutation
+            && deadlineUs==oldDeadline && !armed && !attempted && !reservedUs && !radio.starts);
+        command(gfsk250ArmRequest());assert(armed && gfskMode && gfsk250Mode && radio.gfsk_rate==250000);
+        rows=drain();assert(rows.back().type==GFSK250_ARM_REPLY && rows.back().body[2]==2);
+        command(request(GFSK250_STATUS,90));rows=drain();assert(rows.back().type==GFSK250_STATUS_REPLY && rows.back().size==66);
+        command(request(GFSK_STATUS,91));rows=drain();assert(rows.back().type==REFUSED && rows.back().body[0]==BAD_COMMAND);
+        radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;loop();rows=drain();assert(rows.back().type==GFSK250_RECEIVE && rows.back().size==6);
+        command(txRequest());assert(attempted==1 && reservedUs==576);radio.flags=RADIOLIB_SX126X_IRQ_TX_DONE;loop();
+        command(txRequest());assert(radio.starts==1 && attempted==1 && reservedUs==576);
+        command(request(DISARM,3));command(gfskArmRequest(4));
+        assert(armed && gfskMode && !gfsk250Mode && radio.gfsk_rate==125000 && attempted==1 && reservedUs==576);
+        return 0;
+    }
+    if(mode=="gfsk250_version_mismatch" || mode=="gfsk250_opcode_mismatch") {
+        auto f=gfsk250ArmRequest();if(mode=="gfsk250_version_mismatch") f.body[2]=1;else f.type=GFSK_ARM;
+        command(f);assert(fenced && !armed && !attempted && !reservedUs && !radio.starts);
+        return 0;
+    }
+    if(mode=="gfsk250_expiry_and_paid_budget") {
+        command(gfsk250ArmRequest());const auto end=deadlineUs;
+        command(txRequest());assert(attempted==1 && reservedUs==576);
+        radio.flags=RADIOLIB_SX126X_IRQ_TX_DONE;loop();
+        fake_time=end+1;loop();assert(!armed && !radio.warm && attempted==1 && reservedUs==576);
+        command(gfsk250ArmRequest());assert(!armed && deadlineUs==end && attempted==1 && reservedUs==576);
+        return 0;
+    }
     if(mode=="gfsk_roundtrip") {
         command(gfskArmRequest());assert(armed && gfskMode && radio.gfsk);auto rows=drain();assert(rows.back().type==GFSK_ARM_REPLY && rows.back().size==47);
         auto status=request(GFSK_STATUS,50);command(status);rows=drain();assert(rows.back().type==GFSK_STATUS_REPLY && rows.back().size==66 && rows.back().body[63]);

@@ -84,3 +84,27 @@ class GfskAdmission:
                 and profile.max_boot_attempts<=self.max_boot_attempts
                 and profile.max_boot_estimated_airtime_us<=self.max_boot_estimated_airtime_us,'unsupported_admitted_gfsk_profile')
         profile.encode(board_id=1)
+
+
+from .gfsk250_profile import Gfsk250Profile
+
+
+@dataclass(frozen=True)
+class Gfsk250Admission(GfskAdmission):
+    """Separate application-supplied 250 kbps limits; no default upgrade."""
+    def __post_init__(self):
+        super().__post_init__()
+        for hz in self.frequencies_hz:
+            for power in self.powers_dbm:
+                Gfsk250Profile(hz, power, self.max_lease_ms, self.max_boot_attempts,
+                               self.max_boot_estimated_airtime_us).encode(board_id=1)
+
+    def check(self, country, antenna_confirmed, profile):
+        require(country == self.country and antenna_confirmed is True, 'gfsk_country_or_antenna_unconfirmed')
+        require(type(profile) is Gfsk250Profile and profile.frequency_hz in self.frequencies_hz
+                and profile.chip_power_dbm in self.powers_dbm
+                and self.min_lease_ms <= profile.lease_ms <= self.max_lease_ms
+                and profile.max_boot_attempts <= self.max_boot_attempts
+                and profile.max_boot_estimated_airtime_us <= self.max_boot_estimated_airtime_us,
+                'unsupported_admitted_gfsk250_profile')
+        profile.encode(board_id=1)

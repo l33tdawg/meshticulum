@@ -132,6 +132,8 @@ def sx1262_plan(profile, size=255):
 def radio_airtime_us(profile,size):
     """Explicit physical profile dispatch; malformed/foreign classes refuse."""
     if type(profile) is GfskProfile:return estimated_airtime_us(profile,size)
+    from .gfsk250_profile import Gfsk250Profile, estimated_airtime_us as gfsk250_airtime_us
+    if type(profile) is Gfsk250Profile:return gfsk250_airtime_us(profile,size)
     from .serial_protocol import RadioProfile
     from .serial_worker import estimated_airtime_us as lora_airtime
     need(type(profile) is RadioProfile,'unsupported_radio_profile_class')
@@ -140,6 +142,8 @@ def radio_airtime_us(profile,size):
 
 def radio_is_fast(profile):
     if type(profile) is GfskProfile:return True
+    from .gfsk250_profile import Gfsk250Profile
+    if type(profile) is Gfsk250Profile:return True
     from .serial_protocol import RadioProfile
     need(type(profile) is RadioProfile,'unsupported_radio_profile_class')
     return profile.bandwidth_hz>=250000
@@ -147,6 +151,8 @@ def radio_is_fast(profile):
 
 def radio_is_sf5(profile):
     if type(profile) is GfskProfile:return False
+    from .gfsk250_profile import Gfsk250Profile
+    if type(profile) is Gfsk250Profile:return False
     from .serial_protocol import RadioProfile
     need(type(profile) is RadioProfile,'unsupported_radio_profile_class')
     return profile.spreading_factor==5 and profile.bandwidth_hz==500000

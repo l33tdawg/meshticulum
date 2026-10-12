@@ -101,7 +101,7 @@ class SerialWorker:
                     else:
                         self._received.append((self.channel.monotonic(), received))
                     continue
-                require(frame.type not in (Message.RECEIVE, Message.GFSK_RECEIVE), 'wrong_receive_modem')
+                require(frame.type not in (Message.RECEIVE, Message.GFSK_RECEIVE, Message.GFSK250_RECEIVE), 'wrong_receive_modem')
             require(len(self._pending) < 64, 'serial_reply_queue_full')
             self._pending.append(frame)
 
@@ -275,3 +275,61 @@ class GfskSerialWorker(SerialWorker):
     _receive_record = GfskRawReceive
     _airtime = staticmethod(gfsk_airtime_us)
     _exact_driver_estimate = True
+
+
+from .gfsk250_profile import Gfsk250Profile, CAPABILITY, estimated_airtime_us as gfsk250_airtime_us
+from .serial_protocol import Gfsk250RawReceive
+
+
+class Gfsk250SerialWorker(SerialWorker):
+    """Separate ARM contract, requiring a current-boot read-only capability proof.
+
+    Discover still requires the caller's exact firmware version. An older or
+    mismatched firmware cannot reach ARM, even if its HELLO is otherwise valid.
+    """
+    _profile_type = Gfsk250Profile
+    _arm_message = Message.GFSK250_ARM
+    _arm_reply = Message.GFSK250_ARM_REPLY
+    _receive_message = Message.GFSK250_RECEIVE
+    _receive_record = Gfsk250RawReceive
+    _airtime = staticmethod(gfsk250_airtime_us)
+    _exact_driver_estimate = True
+    __slots__ = ('__capability_check',)
+
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.__capability_check = None
+
+    def __setattr__(self, name, value):
+        if name == '_Gfsk250SerialWorker__capability_check' and getattr(self, name, None) is not None:
+            raise HardwareError('gfsk250_capability_guard_changed')
+        super().__setattr__(name, value)
+
+    def __delattr__(self, name):
+        if name == '_Gfsk250SerialWorker__capability_check':
+            raise HardwareError('gfsk250_capability_guard_changed')
+        super().__delattr__(name)
+
+    def discover(self, *, expected_board_id, expected_version):
+        identity = super().discover(expected_board_id=expected_board_id, expected_version=expected_version)
+        request = secrets.randbits(63) or 1
+        deadline = self.channel.monotonic() + 3.0
+        self._send(Frame(Message.GFSK250_CAPABILITIES, identity.boot, request), deadline)
+        reply = self._wait(request, deadline)
+        require(self.channel.monotonic() < deadline
+                and reply.type is Message.GFSK250_CAPABILITIES_REPLY and reply.body == CAPABILITY,
+                'gfsk250_firmware_capability_absent')
+        binding = (identity.boot, identity.board_id, identity.version)
+        def check():
+            require(self.__capability_check is check and self.identity is identity
+                    and (identity.boot, identity.board_id, identity.version) == binding,
+                    'gfsk250_firmware_capability_changed')
+        self.__capability_check = check
+        return identity
+
+    def _live(self, needed=0.0):
+        check = self.__capability_check
+        require(callable(check), 'gfsk250_firmware_capability_absent')
+        check()
+        super()._live(needed)
+        check()

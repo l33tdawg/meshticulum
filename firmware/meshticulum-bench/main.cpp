@@ -7,6 +7,7 @@
 #include <target.h>
 #include "protocol.hpp"
 #include "gfsk_profile.hpp"
+#include "gfsk250_profile.hpp"
 
 extern RADIO_CLASS radio;
 using namespace mtbench;
@@ -19,6 +20,7 @@ static uint32_t attempted=0, capCount=0, droppedRx=0;
 static uint16_t previousSize=0;
 static uint64_t previousEstimate=0;
 static bool gfskMode=false;
+static bool gfsk250Mode=false;
 static bool ready=false, armed=false, transmitting=false, fenced=false, resultPending=false;
 static Frame previousResult;
 
@@ -70,7 +72,7 @@ static bool drainCompletedReceive(bool rearm,bool alreadyStandby=false) {
         armed=false; fenced=true; idleRadio(); return false;
     }
     const size_t length=radio.getPacketLength();
-    Frame received=response(gfskMode ? GFSK_RECEIVE : RECEIVE,0);
+    Frame received=response(gfsk250Mode ? GFSK250_RECEIVE : (gfskMode ? GFSK_RECEIVE : RECEIVE),0);
     if(length>=1 && length<=255 && output.freeSlots()>2) {
         const int16_t error=radio.readData(received.body+(gfskMode ? 2 : 4),length);
         if(error==RADIOLIB_ERR_NONE) {
@@ -111,17 +113,19 @@ static bool configure(const uint8_t* body) {
         // on every standby->TX/RX transition. SF7+ retain their old mode.
         || radio.setStandbyXOSC(sf<=6)!=RADIOLIB_ERR_NONE) return false;
     deadlineUs=nowUs()+uint64_t(duration)*1000; capCount=count; capUs=budget;
-    memcpy(profile,body,30); gfskMode=false; return true;
+    memcpy(profile,body,30); gfskMode=false; gfsk250Mode=false; return true;
 }
 
-static bool configureGfsk(const uint8_t* body,size_t size) {
+static bool configureGfsk(const uint8_t* body,size_t size,bool fast=false) {
     mtbench::gfsk::Profile p;
-    if(!mtbench::gfsk::decode(body,size,p,MESHTICULUM_BOARD_ID)
+    if(!(fast ? mtbench::gfsk250::decode(body,size,p,MESHTICULUM_BOARD_ID)
+              : mtbench::gfsk::decode(body,size,p,MESHTICULUM_BOARD_ID))
         || p.maxAttempts<=attempted || p.maxAirtimeUs<=reservedUs) return false;
     if(radio.standby()!=RADIOLIB_ERR_NONE
-        || mtbench::gfsk::program(radio,p,SX126X_DIO3_TCXO_VOLTAGE,false)!=RADIOLIB_ERR_NONE) return false;
+        || (fast ? mtbench::gfsk250::program(radio,p,SX126X_DIO3_TCXO_VOLTAGE,false)
+                 : mtbench::gfsk::program(radio,p,SX126X_DIO3_TCXO_VOLTAGE,false))!=RADIOLIB_ERR_NONE) return false;
     deadlineUs=nowUs()+uint64_t(p.leaseMs)*1000;capCount=p.maxAttempts;capUs=p.maxAirtimeUs;
-    memcpy(profile,body,47);gfskMode=true;return true;
+    memcpy(profile,body,47);gfskMode=true;gfsk250Mode=fast;return true;
 }
 
 static void command(const Frame& frame) {
@@ -134,14 +138,20 @@ static void command(const Frame& frame) {
         memcpy(reply.body+4,version,sizeof(version)); output.offer(reply); return;
     }
     if(!isCurrentBoot(frame)) { refuse(frame,WRONG_BOOT); return; }
+    if(frame.type==GFSK250_CAPABILITIES && frame.size==0) {
+        // Read-only feature negotiation: no ARM, RF, replay counter or lease.
+        Frame reply=response(GFSK250_CAPABILITIES_REPLY,frame.request);reply.size=16;
+        mtbench::gfsk250::capability(reply.body);output.offer(reply);return;
+    }
     if(frame.type==mtbench::STATUS && frame.size==0 && !gfskMode) {
         Frame reply=response(STATUS_REPLY,frame.request); reply.size=49;
         memcpy(reply.body,profile,30); put32(reply.body+30,attempted); put64(reply.body+34,reservedUs);
         put32(reply.body+42,droppedRx); reply.body[46]=armed; reply.body[47]=transmitting;
         reply.body[48]=fenced; output.offer(reply); return;
     }
-    if(frame.type==GFSK_STATUS && frame.size==0 && gfskMode) {
-        Frame reply=response(GFSK_STATUS_REPLY,frame.request);reply.size=66;
+    if(((frame.type==GFSK_STATUS && !gfsk250Mode)
+        || (frame.type==GFSK250_STATUS && gfsk250Mode)) && frame.size==0 && gfskMode) {
+        Frame reply=response(gfsk250Mode ? GFSK250_STATUS_REPLY : GFSK_STATUS_REPLY,frame.request);reply.size=66;
         memcpy(reply.body,profile,47);put32(reply.body+47,attempted);put64(reply.body+51,reservedUs);
         put32(reply.body+59,droppedRx);reply.body[63]=armed;reply.body[64]=transmitting;reply.body[65]=fenced;
         output.offer(reply);return;
@@ -152,7 +162,7 @@ static void command(const Frame& frame) {
         else refuse(frame,ATTEMPT_CONFLICT);
         return;
     }
-    if(frame.type==ARM || frame.type==GFSK_ARM || frame.type==DISARM || frame.type==TRANSMIT) {
+    if(frame.type==ARM || frame.type==GFSK_ARM || frame.type==GFSK250_ARM || frame.type==DISARM || frame.type==TRANSMIT) {
         if(frame.request<=lastMutation) { refuse(frame,OLD_ATTEMPT); return; }
         lastMutation=frame.request; // A delayed ARM must not silently extend its lease.
     }
@@ -172,16 +182,17 @@ static void command(const Frame& frame) {
         Frame reply=response(ARM_REPLY,frame.request); reply.size=30; memcpy(reply.body,profile,30);
         output.offer(reply); return;
     }
-    if(frame.type==GFSK_ARM && frame.size==47) {
+    if((frame.type==GFSK_ARM || frame.type==GFSK250_ARM) && frame.size==47) {
         if(armed) { refuse(frame,mtbench::BUSY);return; }
-        if(!configureGfsk(frame.body,frame.size)) { armed=false;fenced=true;idleRadio();refuse(frame,BAD_PROFILE);return; }
+        if(!configureGfsk(frame.body,frame.size,frame.type==GFSK250_ARM)) { armed=false;fenced=true;idleRadio();refuse(frame,BAD_PROFILE);return; }
         armed=true;startReceive();if(!armed) { refuse(frame,FENCED);return; }
-        Frame reply=response(GFSK_ARM_REPLY,frame.request);reply.size=47;memcpy(reply.body,profile,47);output.offer(reply);return;
+        Frame reply=response(gfsk250Mode ? GFSK250_ARM_REPLY : GFSK_ARM_REPLY,frame.request);reply.size=47;memcpy(reply.body,profile,47);output.offer(reply);return;
     }
     if(frame.type!=TRANSMIT || frame.size<1 || frame.size>255) { refuse(frame,BAD_COMMAND); return; }
     if(frame.request<=previousRequest) { refuse(frame,OLD_ATTEMPT); return; }
     if(!armed || nowUs()>=deadlineUs) { armed=false; refuse(frame,NOT_ARMED); return; }
-    const uint64_t estimate=gfskMode ? mtbench::gfsk::airtimeUs(frame.size) : radio.getTimeOnAir(frame.size);
+    const uint64_t estimate=gfsk250Mode ? mtbench::gfsk250::airtimeUs(frame.size)
+        : (gfskMode ? mtbench::gfsk::airtimeUs(frame.size) : radio.getTimeOnAir(frame.size));
     if(!estimate || attempted>=capCount || estimate>capUs-reservedUs
         || nowUs()+estimate+100000>=deadlineUs) { refuse(frame,BUDGET); return; }
     // The RX may have completed while this USB frame was being decoded.

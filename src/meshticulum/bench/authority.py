@@ -26,8 +26,9 @@ from ..contracts.negotiation import (CapabilityLimits, Feature,
 from ..scheduler.scheduler import DispatchGrant, LeaseScope
 from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
-from .admission import RadioAdmission,GfskAdmission
+from .admission import RadioAdmission,GfskAdmission,Gfsk250Admission
 from .gfsk_profile import GfskProfile,radio_airtime_us,radio_is_fast,radio_is_sf5
+from .gfsk250_profile import Gfsk250Profile
 from .wire import BenchGrant, require
 from .public_block import (PUBLIC32_MARKER,REPRESENTATION_MARKER,TRANSPORT_DESCRIPTOR_MARKER,
                           public32_service,public_mb1_service,object_limit)
@@ -63,7 +64,7 @@ def _open(path, flags=os.O_RDONLY):
 
 class RunAuthority:
     def __init__(self, directory, *, expected_unit, host_boot_id, clock, owner_probe, radio_admission=None):
-        require(type(radio_admission) in (RadioAdmission,GfskAdmission), 'explicit_native_radio_admission_required')
+        require(type(radio_admission) in (RadioAdmission,GfskAdmission,Gfsk250Admission), 'explicit_native_radio_admission_required')
         self.path = Path(directory).absolute()
         _private_info(self.path.lstat(), directory=True)
         self.fds, self.held = {}, {}
@@ -87,7 +88,7 @@ class RunAuthority:
             is_service = p['schema'] == 'meshticulum.service-run.v1'
             local_deadline_field = 'application_deadline_monotonic_us'
             extras = {'service'} if is_service else set()
-            if p.get('radio_modem')=='gfsk125':extras.add('radio_modem')
+            if p.get('radio_modem') in ('gfsk125','gfsk250'):extras.add('radio_modem')
             if is_service and local_deadline_field in p:
                 extras.add(local_deadline_field)
             require(set(p) == fields | extras, 'invalid_bench_plan')
@@ -129,6 +130,9 @@ class RunAuthority:
             if p.get('radio_modem')=='gfsk125':
                 require(type(radio_admission) is GfskAdmission,'explicit_gfsk_admission_required')
                 self.profile=GfskProfile.from_dict(p['profile'],board_id=1)
+            elif p.get('radio_modem')=='gfsk250':
+                require(type(radio_admission) is Gfsk250Admission,'explicit_gfsk250_admission_required')
+                self.profile=Gfsk250Profile.from_dict(p['profile'],board_id=1)
             else:
                 require(type(radio_admission) is RadioAdmission,'wrong_radio_admission_modem')
                 self.profile = RadioProfile(**p['profile'])
@@ -147,7 +151,7 @@ class RunAuthority:
             secret = os.pread(self.fds['secret.bin'], 33, 0)
             self.route_record = {k: p[k] for k in ('initiator', 'responder', 'session_id', 'generation',
                                                   'profile', 'object', 'sender_unit', 'country')}
-            if p.get('radio_modem')=='gfsk125':self.route_record['radio_modem']='gfsk125'
+            if p.get('radio_modem') in ('gfsk125','gfsk250'):self.route_record['radio_modem']=p['radio_modem']
             if is_service:
                 self.route_record['service'] = p['service']
             route_digest = hashlib.sha256(canonical(self.route_record)).digest()
@@ -202,7 +206,7 @@ class RunAuthority:
             raise
 
     def _contract(self, epoch, mono):
-        profile_digest = hashlib.sha256(canonical(self.profile.to_dict() if type(self.profile) is GfskProfile else asdict(self.profile))).digest()
+        profile_digest = hashlib.sha256(canonical(self.profile.to_dict() if type(self.profile) in (GfskProfile,Gfsk250Profile) else asdict(self.profile))).digest()
         air = radio_airtime_us(self.profile, 255) * 1.10 / 1000000 + .001
         ack_air = radio_airtime_us(self.profile, 70) * 1.10 / 1000000 + .001
         exchange = air + ack_air

@@ -311,3 +311,14 @@ class GfskHATWorker(HATWorker):
     _profile_type = GfskProfile
     _driver_type = GfskSX1262
     _airtime = staticmethod(gfsk_airtime_us)
+
+
+from .gfsk250_profile import Gfsk250Profile, estimated_airtime_us as gfsk250_airtime_us
+from .gfsk250_sx1262 import Gfsk250SX1262
+
+
+class Gfsk250HATWorker(HATWorker):
+    """Explicit GFSK250; ordinary GFSK125 and LoRa workers reject its profile."""
+    _profile_type = Gfsk250Profile
+    _driver_type = Gfsk250SX1262
+    _airtime = staticmethod(gfsk250_airtime_us)

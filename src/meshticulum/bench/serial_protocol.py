@@ -37,6 +37,9 @@ class Message(IntEnum):
     DISARM = 5
     GFSK_ARM = 6
     GFSK_STATUS = 7
+    GFSK250_ARM = 8
+    GFSK250_STATUS = 9
+    GFSK250_CAPABILITIES = 10
     HELLO_REPLY = 0x81
     ARM_REPLY = 0x82
     TX_RESULT = 0x83
@@ -44,8 +47,12 @@ class Message(IntEnum):
     DISARM_REPLY = 0x85
     GFSK_ARM_REPLY = 0x86
     GFSK_STATUS_REPLY = 0x87
+    GFSK250_ARM_REPLY = 0x88
+    GFSK250_STATUS_REPLY = 0x89
+    GFSK250_CAPABILITIES_REPLY = 0x8A
     RECEIVE = 0x90
     GFSK_RECEIVE = 0x91
+    GFSK250_RECEIVE = 0x92
     REFUSED = 0xFF
 
 
@@ -253,3 +260,40 @@ class GfskStatus:
         require(all(v in (0,1) for v in flags) and attempts<=profile.max_boot_attempts
                 and airtime<=profile.max_boot_estimated_airtime_us,'invalid_gfsk_status')
         return cls(profile,attempts,airtime,dropped,*(bool(v) for v in flags))
+
+
+@dataclass(frozen=True, slots=True)
+class Gfsk250RawReceive:
+    """Explicit GFSK250 raw ciphertext; cannot be delivered as GFSK125."""
+    rssi_dbm: float
+    packet: bytes = field(repr=False)
+    snr_db: None = None
+
+    @classmethod
+    def from_frame(cls, frame, *, boot):
+        require(frame.type is Message.GFSK250_RECEIVE and frame.boot == boot and frame.request == 0
+                and 3 <= len(frame.body) <= 257, 'invalid_gfsk250_receive')
+        rssi, = struct.unpack('!h', frame.body[:2])
+        return cls(rssi / 10, frame.body[2:])
+
+
+@dataclass(frozen=True, slots=True)
+class Gfsk250Status:
+    profile: object
+    boot_attempts: int
+    boot_reserved_estimated_airtime_us: int
+    dropped_receive: int
+    armed: bool
+    transmitting: bool
+    fenced: bool
+
+    @classmethod
+    def from_reply(cls, frame, *, boot, request, board_id):
+        from .gfsk250_profile import Gfsk250Profile
+        require(frame.type is Message.GFSK250_STATUS_REPLY and frame.boot == boot and frame.request == request
+                and type(request) is int and request > 0 and len(frame.body) == 66, 'unbound_gfsk250_status')
+        profile = Gfsk250Profile.decode(frame.body[:47], board_id=board_id)
+        attempts, airtime, dropped = struct.unpack('!IQI', frame.body[47:63]); flags = frame.body[63:]
+        require(all(v in (0, 1) for v in flags) and attempts <= profile.max_boot_attempts
+                and airtime <= profile.max_boot_estimated_airtime_us, 'invalid_gfsk_status')
+        return cls(profile, attempts, airtime, dropped, *(bool(v) for v in flags))

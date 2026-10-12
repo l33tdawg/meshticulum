@@ -28,6 +28,7 @@ struct FakeRadio {
     uint32_t flags=0, starts=0, receive_starts=0;
     bool warm=false;
     bool gfsk=false;
+    uint32_t gfsk_rate=0;
     bool receiving=false, shared_fifo=false, overwrite_during_read=false;
     uint32_t irq_on_standby=0;
     uint64_t read_advance_us=0;
@@ -66,8 +67,9 @@ struct FakeRadio {
     int16_t setSyncWord(uint8_t) { return config_error; }
     int16_t setCRC(uint8_t) { return config_error; }
     int16_t beginFSK(float,float br,float dev,float bw,int8_t,uint16_t pre,float tcxo,bool ldo) {
-        assert(br==125 && dev==31.25 && bw==312 && pre==32 && tcxo==1.8f && !ldo);
-        if(!config_error) gfsk=true; return config_error;
+        assert(((br==125 && dev==31.25 && bw==312) || (br==250 && dev==62.5 && bw==467))
+            && pre==32 && tcxo==1.8f && !ldo);
+        if(!config_error) { gfsk=true;gfsk_rate=uint32_t(br*1000); } return config_error;
     }
     int16_t setDataShaping(uint8_t n) { assert(n==2); return config_error; }
     int16_t setSyncWord(uint8_t* data,size_t n) { assert(n==8 && !memcmp(data,"MTGFSK01",8)); return config_error; }
