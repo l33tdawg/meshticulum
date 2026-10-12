@@ -109,6 +109,9 @@ int main(int argc,char** argv) {
         }
         auto f=armRequest(); put32(f.body,921375000u); assert(configure(f.body));
         assert(!armed && !radio.starts);
+    } else if(mode=="sf5_profile") {
+        auto f=armRequest(); put32(f.body,921375000u); put32(f.body+4,500000u); f.body[8]=5;
+        command(f); assert(armed && profile[8]==5 && radio.starts==0);
     } else assert(false);
     return 0;
 }

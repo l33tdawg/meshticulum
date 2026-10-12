@@ -18,7 +18,7 @@ from .serial_protocol import (Decoder, FirmwareIdentity, Frame, Message, Outcome
 
 
 def estimated_airtime_us(profile, size):
-    """Source LoRa airtime estimate: explicit header, CRC, SF7..12.
+    """Source LoRa airtime estimate: explicit header, CRC, SF5..12.
 
     Same PHY assumptions as the coprocessor; includes no measured airtime or
     host latency. Reservations add margin separately and never receive refunds.

@@ -271,3 +271,6 @@ def test_source_airtime_known_vectors_and_slowest_supported_bound():
     assert estimated_airtime_us(sf7, 255) == 399616
     slow = replace(PROFILE, spreading_factor=12, bandwidth_hz=62500, coding_rate=8, preamble=64)
     assert estimated_airtime_us(slow, 255) < 33000000
+    fast = replace(PROFILE, spreading_factor=5, bandwidth_hz=500000)
+    assert estimated_airtime_us(fast, 255) == 34576
+    assert 193 * 1000000 / estimated_airtime_us(fast, 255) > 5500
