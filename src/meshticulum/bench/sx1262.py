@@ -200,8 +200,19 @@ class SX1262:
         if was_receiving:
             flags = self.irq()
             if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
-                self.receive_pending = True
-                return False
+                try:
+                    # Freeze the shared FIFO across host permission checks and
+                    # durable NOT_SENT settlement. Even a receive backend in
+                    # continuous mode cannot overwrite this completed packet.
+                    self.standby()
+                    flags = self.irq()
+                    require(flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT),
+                            'sx1262_pending_receive_changed')
+                    self.receive_pending = True
+                    return False
+                except BaseException:
+                    self.contain()
+                    raise
         self.attempts += 1
         self.reserved_us += estimate
         self.tx_estimate, self.tx_started = estimate, self._now()

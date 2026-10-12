@@ -431,6 +431,7 @@ def test_completed_receive_is_preserved_before_transmit_even_during_standby(late
     start=len(chip.commands)
     assert radio.start_transmit(b'outbound',authority_deadline=160,antenna_confirmed=True) is False
     assert not chip.tx_calls and radio.receive_pending and not radio.transmitting
+    assert chip.mode==2 and not radio.receiving
     assert not any(c[0] in (0x02,0x0e,0x83) for c in chip.commands[start:])
     assert radio.attempts==int(late!='before')  # retain a late refusal's paid local attempt
     if late!='before':
@@ -481,3 +482,43 @@ def test_worker_settles_pending_receive_refusal_and_drains_it_under_same_lease(t
         assert worker.lease_deadline==original_end
         assert worker.transmit(b'new-outbound').outcome=='RF_DONE' and chip.tx_calls==1
     finally:journal.close()
+
+
+def test_pending_receive_fifo_stays_frozen_during_not_sent_settlement(tmp_path):
+    tmp_path.chmod(0o700);chip=Chip();context=b'c'*32
+    journal=AttemptJournal(tmp_path/'attempts.sqlite',binding=journal_binding(context,chip.boot_id,PROFILE),
+        max_attempts=20,max_airtime_us=10000000,create=True)
+    try:
+        worker=HATWorker(chip,journal=journal,profile=PROFILE,context_digest=context,
+            authorize=lambda:True,authority_deadline=200,antenna_confirmed=True,
+            monotonic=lambda:chip.time,time_basis='model-monotonic')
+        worker.receive();chip.flags=2;expected=chip.rx;settle=journal.settle
+        def incoming_during_settlement(*args):
+            if chip.mode==5:chip.rx=b'later packet overwrote the unread FIFO'
+            chip.sleep(.035)
+            return settle(*args)
+        journal.settle=incoming_during_settlement
+        assert worker.transmit(b'outbound').outcome=='NOT_SENT'
+        assert chip.mode==2 and worker.radio.receive_pending
+        assert worker.receive()[1].packet==expected
+        assert chip.tx_calls==0 and journal.snapshot()['attempts']==1
+    finally:journal.close()
+
+
+@pytest.mark.parametrize('failure',['standby','irq_changed','irq_failure'])
+def test_freezing_pending_receive_failure_contains_without_transmit(failure):
+    chip,radio=configured();radio.start_receive(authority_deadline=160);chip.flags=2
+    original=chip.transfer;entered=False
+    def transfer(command):
+        nonlocal entered
+        reply=original(command)
+        if command[0]==0x80:
+            entered=True
+            if failure=='irq_changed':chip.flags=0
+        if entered and command[0]==0xc0 and failure=='standby':return b'\0\x62'
+        if entered and command[0]==0x12 and failure=='irq_failure':raise OSError('unproved IRQ')
+        return reply
+    chip.transfer=transfer
+    with pytest.raises((HardwareError,OSError)):
+        radio.start_transmit(b'outbound',authority_deadline=160,antenna_confirmed=True)
+    assert radio.fenced and chip.resets[-1] is False and not chip.tx_calls
