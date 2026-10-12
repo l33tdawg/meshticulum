@@ -153,6 +153,13 @@ class RunAuthority:
             route_digest = hashlib.sha256(canonical(self.route_record)).digest()
             self.grant = BenchGrant(session, 'bench_transfer', route_digest,
                 p['issued_epoch_us'], p['expires_epoch_us'], 208, p['max_frames'], secret)
+            # Retain the original admitted bytes and immutable service/object
+            # values. A later mutation of plan or route is never a new grant.
+            service_binding=(self.service_kind,self.service_format,self.public32,self.mb1_descriptor_sha256,
+                             (obj['bytes'],obj['sha256']),self.grant.digest)
+            refs=(self.plan,self.plan_bytes,self.route_record,self.grant,
+                  canonical(self.plan),canonical(self.route_record),service_binding)
+            self._admission_refs=refs;self._captured_admission=lambda:refs
             require(self.grant.max_frames <= 512
                     and self.grant.expires_epoch_us - self.grant.issued_epoch_us <= 240000000,
                     'bench_grant_too_large')
@@ -234,6 +241,22 @@ class RunAuthority:
             feature}), limits, route, self.deadlines,
             TrafficClass.INTERACTIVE if private else TrafficClass.BULK, 1, self.owner_id)
 
+    def _admission_current(self):
+        try:
+            refs=self._captured_admission();binding=refs[6]
+            return (self._admission_refs is refs and type(refs) is tuple and len(refs)==7
+                and self.plan is refs[0] and self.plan_bytes is refs[1]
+                and self.route_record is refs[2] and self.grant is refs[3]
+                and canonical(self.plan)==refs[4] and canonical(self.route_record)==refs[5]
+                and (self.service_kind,self.service_format,self.public32,self.mb1_descriptor_sha256,
+                     (self.plan['object']['bytes'],self.plan['object']['sha256']),self.grant.digest)==binding)
+        except (TypeError,ValueError,AttributeError,KeyError,IndexError):return False
+
+    def admitted_service_binding(self):
+        """Original immutable service/object values; refuses any current drift."""
+        require(self._admission_current(),'bench_admitted_plan_changed')
+        return self._captured_admission()[6]
+
     def live(self):
         if self.closed:
             return False
@@ -243,6 +266,7 @@ class RunAuthority:
             require(self.grant.issued_epoch_us <= epoch < self.grant.expires_epoch_us
                     and mono < self.deadline_us and epoch < self.application_expires_epoch_us
                     and mono < self.application_deadline_us, 'bench_authority_expired')
+            require(self._admission_current(),'bench_admitted_plan_changed')
             for name, fd in self.fds.items():
                 current = (self.path / name).lstat()
                 _private_info(current)

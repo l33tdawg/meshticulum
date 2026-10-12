@@ -90,12 +90,16 @@ class ServiceTransfer:
         require(getattr(flow, '_service_adapter', None) is None
                 and flow.cipher.grant is authority.grant, 'service_flow_binding_mismatch')
         self.flow, self.authority = flow, authority
-        self.kind, self.format = authority.service_kind, authority.service_format
-        self.descriptor = (authority.plan['object']['bytes'], authority.plan['object']['sha256'])
-        self.grant_digest = authority.grant.digest
+        if type(authority) is RunAuthority:
+            admitted=authority.admitted_service_binding()
+            self.kind,self.format,self.public32,self.mb1_descriptor_sha256,self.descriptor,self.grant_digest=admitted
+        else:
+            self.kind, self.format = authority.service_kind, authority.service_format
+            self.descriptor = (authority.plan['object']['bytes'], authority.plan['object']['sha256'])
+            self.grant_digest = authority.grant.digest
+            self.public32 = public32_service(authority.plan.get('service',{}))
+            self.mb1_descriptor_sha256=public_mb1_service(authority.plan.get('service',{}))
         self.started, self.cancelled = False, False
-        self.public32 = public32_service(authority.plan.get('service',{}))
-        self.mb1_descriptor_sha256=public_mb1_service(authority.plan.get('service',{}))
         flow._service_adapter = self
 
     def live(self):
@@ -103,6 +107,7 @@ class ServiceTransfer:
                 and self.flow.authority is self.authority
                 and self.authority.service_kind is self.kind
                 and self.authority.service_format == self.format
+                and (type(self.authority) is not RunAuthority or self.authority._admission_current())
                 and self.public32 == public32_service(self.authority.plan.get('service',{}))
                 and self.mb1_descriptor_sha256==public_mb1_service(self.authority.plan.get('service',{}))
                 and self.descriptor == (self.authority.plan['object']['bytes'],self.authority.plan['object']['sha256'])

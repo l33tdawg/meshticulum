@@ -97,3 +97,32 @@ def test_descriptor_difference_changes_authenticated_route_and_refuses_forged_fr
             packet=original.sender.cipher.seal(b'data',FrameKind.DATA,authorize=original.sender.authority.live)
             with pytest.raises(WireError,match='authentication_failed'):
                 different.receiver.cipher.open(packet,authorize=different.receiver.authority.live)
+
+
+def test_mutating_legacy_plan_cannot_upgrade_immutable_admitted_grant(tmp_path,compact):
+    reply,digest,raw,_=compact;clock=Clock()
+    legacy=resource.RESPONSE.pack(resource.MAGIC,b'0'*16,0,len(raw),0)+raw
+    with carrier_pair(tmp_path/'upgrade',legacy,clock,'unit-c','unit-a',117,
+        service=dict(scope('MR1.response',clock),public_response_max_bytes=32768)) as pair:
+        authority=pair.sender.authority
+        authority.plan['service'].update({REPRESENTATION_MARKER:'MB1',TRANSPORT_DESCRIPTOR_MARKER:digest})
+        authority.plan['object'].update(bytes=len(reply),sha256=hashlib.sha256(reply).hexdigest())
+        assert authority.mb1_descriptor_sha256 is None and authority.live() is False
+        with pytest.raises(WireError,match='bench_admitted_plan_changed'):ServiceTransfer(pair.sender)
+        assert pair.sender.flow.queued_bytes()==0 and not pair.workers[0].sent
+        assert pair.sender.journal.snapshot()['attempts']==0
+
+
+@pytest.mark.parametrize('fault',['descriptor','object','route'])
+def test_mutating_admitted_MB1_binding_refuses_before_or_after_adapter_creation(tmp_path,compact,fault):
+    reply,digest,_,_=compact;clock=Clock()
+    with carrier_pair(tmp_path/'mutation',reply,clock,'unit-c','unit-a',118,service=service(clock,digest)) as pair:
+        transfer=ServiceTransfer(pair.sender);authority=pair.sender.authority
+        if fault=='descriptor':authority.plan['service'][TRANSPORT_DESCRIPTOR_MARKER]='f'*64
+        elif fault=='object':authority.plan['object']['sha256']='f'*64
+        else:authority.route_record=dict(authority.route_record,country='XX')
+        assert authority.live() is False
+        with pytest.raises(WireError):transfer.send(reply)
+        with pytest.raises(WireError):ServiceTransfer(pair.sender)
+        assert pair.sender.flow.queued_bytes()==0 and not pair.workers[0].sent
+        assert pair.sender.journal.snapshot()['attempts']==0
