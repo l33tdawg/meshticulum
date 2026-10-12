@@ -210,7 +210,7 @@ def test_unknown_opcode_retains_write_settle_delay():
     chip.transfer = lambda packet: bytes(len(packet))
     started = chip.time
     radio._transfer(b'\xfe\0')
-    assert chip.time - started == pytest.approx(0.0002)
+    assert chip.time - started == pytest.approx(0.000002)
 
 
 def test_busy_timeout_after_tx_irq_keeps_attempt_unknown_and_fenced():

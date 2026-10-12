@@ -68,10 +68,10 @@ class SX1262:
         result = self.io.transfer(packet)
         require(type(result) is bytes and len(result) == len(packet), 'sx1262_short_reply')
         # DS2.2 section 8.3.1: writes assert BUSY within 600 ns after NSS
-        # rises; reads do not assert it. Keep the write settle and both BUSY
+        # rises; reads do not assert it. Keep a 2 us minimum settle and both BUSY
         # gates, including the post-read gate for an asynchronous internal IRQ.
         if packet[0] not in _READ_OPCODES:
-            self.io.sleep(0.0002)
+            self.io.sleep(0.000002)
         self._ready()
         return result
 
