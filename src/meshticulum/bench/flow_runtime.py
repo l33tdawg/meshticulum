@@ -73,14 +73,23 @@ class BenchFlow:
                      limits.max_reassembly_frames)
         require(window >= 1, 'bench_window_too_small')
         self.burst_frames = window if authority.profile.bandwidth_hz >= 250000 else 1
+        fast_sf5 = (authority.profile.spreading_factor == 5
+                    and authority.profile.bandwidth_hz == 500000)
         self.burst_quiet_us = math.ceil(profile.forward_seconds * 1000000) + 60000
         if self.burst_frames > 1:
-            # USB/driver completion can span more than one PHY packet. Use a
-            # bounded control window from the already negotiated initial RTO,
-            # without changing the frozen flow's retry policy or wire format.
-            self.burst_quiet_us = max(self.burst_quiet_us,
-                                     math.ceil(profile.initial_rto_seconds * 500000))
+            # USB/driver completion can span more than one PHY packet. Keep
+            # fast SF5 quiet at250 ms when its retry floor grows: retry and
+            # inter-frame silence are different clocks. Other profiles retain
+            # their negotiated control window.
+            quiet_rto = min(profile.initial_rto_seconds, .5) if fast_sf5 else profile.initial_rto_seconds
+            self.burst_quiet_us = max(self.burst_quiet_us, math.ceil(quiet_rto * 500000))
         self.burst_max_hold_us = math.ceil(profile.initial_rto_seconds * 1000000)
+        if fast_sf5:
+            # A bounded four-frame train can exceed the old 500ms hold under
+            # native host work. Never let its total-time cap preempt a train
+            # whose individual gaps remain inside the quiet window. A full
+            # train still earns its ACK immediately in step().
+            self.burst_max_hold_us = self.burst_frames * self.burst_quiet_us
         self.burst_sent = 0
         self.burst_received = 0
         self.burst_started_us = 0
@@ -128,6 +137,13 @@ class BenchFlow:
         self.sender_control_hold_us = (max(self.burst_quiet_us,
             math.ceil(self.flow.limits.persist_interval_s * 1000000)) + self.receive_gap_us
             if self.burst_frames > 1 else self.receive_gap_us)
+        if fast_sf5 and self.burst_frames > 1:
+            # A partial burst is first acknowledged after quiet. If that ACK
+            # is lost, leave room for one existing persistence interval too.
+            # Authenticated progress still releases this fallback early.
+            self.sender_control_hold_us = (self.burst_quiet_us
+                + math.ceil(self.flow.limits.persist_interval_s * 1000000)
+                + max(self.receive_gap_us, self.burst_quiet_us))
         self.parse_frame, self.ack_kind = flow.parse_frame, flow.KIND_ACK
         self.closed = False
         self.update_counter()

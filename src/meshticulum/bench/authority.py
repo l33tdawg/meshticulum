@@ -188,6 +188,16 @@ class RunAuthority:
         burst = 4 if self.profile.bandwidth_hz >= 250000 else 1
         initial_rto = max(.5, 3 * exchange + .15, (burst + 1) * air + 2 * ack_air + .15)
         minimum_rto = max(.25, 2 * exchange + .10, burst * air + ack_air + .10)
+        if self.profile.spreading_factor == 5 and self.profile.bandwidth_hz == 500000:
+            # The fast PHY does not remove held-source, journal and host-driver
+            # work. Clean native four-frame/ACK rounds exceeded the former
+            # 500ms PHY-only estimate. Keep the retry floor explicit in the
+            # supported carrier profile; do not alter the frozen retry engine.
+            # Allow four 250ms host/frame opportunities, the existing 500ms
+            # repeated-ACK interval and 250ms bounded control turnaround.
+            # These are adapter bounds, not added RF airtime or a new lease.
+            initial_rto = max(initial_rto, 1.75)
+            minimum_rto = max(minimum_rto, 1.75)
         # SOURCE_FIXTURE is the frozen API's label for unmeasured source cost.
         # Receipts explicitly call this a calculation, never measured RF time.
         self.carrier_profile = CarrierProfile(CarrierKind.BINARY, 255, 31, 16, profile_digest,
