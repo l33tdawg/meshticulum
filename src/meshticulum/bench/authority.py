@@ -29,7 +29,8 @@ from .serial_worker import estimated_airtime_us
 from .admission import RadioAdmission,GfskAdmission
 from .gfsk_profile import GfskProfile,radio_airtime_us,radio_is_fast,radio_is_sf5
 from .wire import BenchGrant, require
-from .public_block import PUBLIC32_MARKER, public32_service, object_limit
+from .public_block import (PUBLIC32_MARKER,REPRESENTATION_MARKER,TRANSPORT_DESCRIPTOR_MARKER,
+                          public32_service,public_mb1_service,object_limit)
 
 
 SERVICE_FORMATS = {
@@ -92,12 +93,15 @@ class RunAuthority:
             require(set(p) == fields | extras, 'invalid_bench_plan')
             self.service_kind, self.service_format = ServiceKind.KNOWLEDGE, None
             self.public32 = False
+            self.mb1_descriptor_sha256 = None
             self.application_expires_epoch_us = p['expires_epoch_us']
             if is_service:
                 service = p['service']
                 require(type(service) is dict and set(service) in (
                         {'kind', 'format', 'application_expires_epoch_us'},
-                        {'kind', 'format', 'application_expires_epoch_us', PUBLIC32_MARKER}),
+                        {'kind', 'format', 'application_expires_epoch_us', PUBLIC32_MARKER},
+                        {'kind', 'format', 'application_expires_epoch_us', PUBLIC32_MARKER,
+                         REPRESENTATION_MARKER,TRANSPORT_DESCRIPTOR_MARKER}),
                         'invalid_service_plan')
                 require(type(service['format']) is str and service['format'] in SERVICE_FORMATS
                         and service['kind'] == SERVICE_FORMATS[service['format']].value,
@@ -105,6 +109,7 @@ class RunAuthority:
                 self.service_kind = SERVICE_FORMATS[service['format']]
                 self.service_format = service['format']
                 self.public32 = public32_service(service)
+                self.mb1_descriptor_sha256 = public_mb1_service(service)
                 self.application_expires_epoch_us = service['application_expires_epoch_us']
                 require(type(self.application_expires_epoch_us) is int
                         and p['issued_epoch_us'] < self.application_expires_epoch_us <= p['expires_epoch_us'],
@@ -132,7 +137,8 @@ class RunAuthority:
             obj = p['object']
             require(type(obj) is dict and set(obj) == {'sha256', 'bytes', 'chunk_index', 'object_id'}
                     and type(obj['bytes']) is int and 1 <= obj['bytes'] <= object_limit(p.get('service',{}))
-                    and (not self.public32 or self.service_format != 'MR1.response' or obj['bytes'] == 32768)
+                    and (not self.public32 or self.service_format != 'MR1.response'
+                         or self.mb1_descriptor_sha256 is not None or obj['bytes'] == 32768)
                     and type(obj['chunk_index']) is int and 0 <= obj['chunk_index'] < 64,
                     'invalid_bench_object_descriptor')
             for name in ('sha256', 'object_id'):
