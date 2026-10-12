@@ -5,6 +5,7 @@ padding are wire overhead. Completion requires the signed whole-file length
 and SHA256, not a sum of independently completed or timed pieces.
 """
 import base64
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -246,6 +247,88 @@ class Receiver:
             original_deadline_monotonic_us=self.context['deadline_monotonic_us'],
             original_start_epoch_us=self.context['original_epoch_us'],original_start_monotonic_us=self.context['original_monotonic_us'],
             verified_epoch_us=self.last[0],verified_monotonic_us=self.last[1],native_transport_qualified=False)
+    def _file_matches(self,name,size,digest,identity):
+        """Recheck a published/staged file without reading the whole file at once."""
+        self._live()
+        fd=os.open(name,os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=self.fd)
+        original=None
+        try:
+            info=os.fstat(fd);self._private(info);original=self._file_identity(info)
+            kp.require(original[:2]==identity and info.st_size==size,'bundle file size or identity changed')
+            hashed=hashlib.sha256();offset=0
+            while offset<size:
+                self._live()
+                raw=os.pread(fd,min(PART_BYTES,size-offset),offset)
+                kp.require(0<len(raw)<=min(PART_BYTES,size-offset),'short bundle file read')
+                hashed.update(raw);offset+=len(raw)
+                self._live()
+            kp.require(not os.pread(fd,1,offset) and hashed.hexdigest()==digest
+                       and original==self._file_identity(os.fstat(fd))
+                       ==self._file_identity(os.stat(name,dir_fd=self.fd,follow_symlinks=False)),
+                       'bundle file bytes changed')
+            self._live()
+        finally:
+            try:
+                if original is None or self._identity(os.fstat(fd))[:2]==original[:2]:os.close(fd)
+            except OSError:pass
+    def finish_file(self):
+        """Verify and atomically publish bundle.bin using one bounded part at a time.
+
+        The signed whole-file length/hash, publisher trust and original owner,
+        boot and clocks are rechecked. A failed finalization removes only its
+        own exact staging/publication inode; it never overwrites an existing
+        bundle. This method grants no transport or application authority.
+        """
+        self._live();temporary='.bundle-'+secrets.token_hex(16);directory_fd=self.fd
+        fd=None;identity=None;published=complete=False
+        size=wire=encoded=padding=0;hashed=hashlib.sha256()
+        try:
+            fd=os.open(temporary,os.O_RDWR|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW|os.O_CLOEXEC,0o600,dir_fd=directory_fd)
+            info=os.fstat(fd);identity=self._identity(info)[:2];self._private(info)
+            for index in range(len(self.expected['parts'])):
+                self._live();raw,(decoded,part)=self._part(index)
+                kp.require(size+len(decoded)<=self.expected['bytes'],'bundle file exceeds signed length')
+                view=memoryview(decoded)
+                while view:
+                    self._live();count=os.write(fd,view)
+                    kp.require(type(count) is int and 0<count<=len(view),'short bundle write')
+                    view=view[count:]
+                hashed.update(decoded);size+=len(decoded)
+                wire+=len(raw);encoded+=len(part['payload_base64']);padding+=len(part['wire_padding'])
+                self._live()
+            kp.require(size==self.expected['bytes'] and hashed.hexdigest()==self.expected['sha256'],
+                       'whole public bundle mismatch')
+            os.fsync(fd);written=self._file_identity(os.fstat(fd));self._live()
+            self._file_matches(temporary,size,self.expected['sha256'],identity)
+            kp.require(written==self._file_identity(os.fstat(fd))
+                       ==self._file_identity(os.stat(temporary,dir_fd=directory_fd,follow_symlinks=False)),
+                       'bundle staging rebound')
+            os.link(temporary,'bundle.bin',src_dir_fd=directory_fd,dst_dir_fd=directory_fd,follow_symlinks=False)
+            published=True;os.unlink(temporary,dir_fd=directory_fd);os.fsync(directory_fd)
+            self._live();self._file_matches('bundle.bin',size,self.expected['sha256'],identity);self._live()
+            complete=True
+            return dict(schema=SCHEMA,complete=True,publisher_verified=True,manifest_sha256=self.digest,
+                useful_decoded_bytes=size,whole_file_sha256=self.expected['sha256'],parts=len(self.expected['parts']),
+                reused_verified_parts=self.reused,serialized_chunk_bytes=wire,base64_bytes=encoded,padding_bytes=padding,
+                json_overhead_bytes=wire-encoded-padding,original_expires_epoch_us=self.context['expires_epoch_us'],
+                original_deadline_monotonic_us=self.context['deadline_monotonic_us'],
+                original_start_epoch_us=self.context['original_epoch_us'],original_start_monotonic_us=self.context['original_monotonic_us'],
+                verified_epoch_us=self.last[0],verified_monotonic_us=self.last[1],native_transport_qualified=False,
+                file_backed=True,read_block_bytes=PART_BYTES)
+        finally:
+            names=(temporary,'bundle.bin') if published and not complete else (temporary,)
+            try:
+                if identity is not None:
+                    for name in names:
+                        try:
+                            if self._identity(os.stat(name,dir_fd=directory_fd,follow_symlinks=False))[:2]==identity:
+                                os.unlink(name,dir_fd=directory_fd);os.fsync(directory_fd)
+                        except FileNotFoundError:pass
+            finally:
+                if fd is not None:
+                    try:
+                        if identity is None or self._identity(os.fstat(fd))[:2]==identity:os.close(fd)
+                    except OSError:pass
     def close(self):
         if self.closed:return
         if (self.pid,self.thread)!=(os.getpid(),threading.get_ident()):return
