@@ -56,7 +56,30 @@ static void contain(uint32_t flags,int16_t error) {
 }
 static void startReceive() {
     if(!armed || fenced) return;
+    if(nowUs()>=deadlineUs) { armed=false; if(idleRadio()!=RADIOLIB_ERR_NONE) fenced=true; return; }
     if(radio.startReceive()!=RADIOLIB_ERR_NONE) { armed=false; fenced=true; idleRadio(); }
+}
+static bool drainCompletedReceive(bool rearm,bool alreadyStandby=false) {
+    // RX continuous shares the FIFO with TX. Stop writes before reading the
+    // completed packet; SetStandby preserves the latched IRQ and FIFO contents.
+    uint32_t flags=0;
+    if((!alreadyStandby && radio.standby()!=RADIOLIB_ERR_NONE)
+        || readIrqFlags(flags)!=RADIOLIB_ERR_NONE || !(flags & RADIOLIB_SX126X_IRQ_RX_DONE)) {
+        armed=false; fenced=true; idleRadio(); return false;
+    }
+    const size_t length=radio.getPacketLength();
+    Frame received=response(RECEIVE,0);
+    if(length>=1 && length<=255 && output.freeSlots()>2) {
+        const int16_t error=radio.readData(received.body+4,length);
+        if(error==RADIOLIB_ERR_NONE) {
+            put16(received.body,uint16_t(int16_t(radio.getRSSI()*10)));
+            put16(received.body+2,uint16_t(int16_t(radio.getSNR()*10)));
+            received.size=length+4;
+            if(!output.offer(received)) droppedRx++;
+        } else droppedRx++;
+    } else droppedRx++;
+    if(rearm) startReceive();
+    return armed && !fenced;
 }
 static bool configure(const uint8_t* body) {
     const uint32_t hz=u32(body), bw=u32(body+4);
@@ -136,6 +159,16 @@ static void command(const Frame& frame) {
     const uint64_t estimate=radio.getTimeOnAir(frame.size);
     if(!estimate || attempted>=capCount || estimate>capUs-reservedUs
         || nowUs()+estimate+100000>=deadlineUs) { refuse(frame,BUDGET); return; }
+    // The RX may have completed while this USB frame was being decoded.
+    // Preserve it before TX's IRQ clear and shared-FIFO write.
+    uint32_t receiveFlags=0;
+    if(readIrqFlags(receiveFlags)!=RADIOLIB_ERR_NONE) {
+        armed=false; fenced=true; idleRadio(); refuse(frame,FENCED); return;
+    }
+    if((receiveFlags & RADIOLIB_SX126X_IRQ_RX_DONE) && !drainCompletedReceive(false)) {
+        refuse(frame,FENCED); return;
+    }
+    if(nowUs()+estimate+100000>=deadlineUs) { armed=false; idleRadio(); refuse(frame,NOT_ARMED); return; }
     // Reserve once before touching TX. No refunds; host maintains debt across reboot.
     if(mbedtls_sha256_ret(frame.body,frame.size,previousDigest,0)!=0) {
         armed=false; fenced=true; radio.standby(); refuse(frame,FENCED); return;
@@ -146,8 +179,19 @@ static void command(const Frame& frame) {
     previousResult.body[0]=UNKNOWN; memcpy(previousResult.body+1,previousDigest,32);
     put64(previousResult.body+33,estimate);
     int16_t error=radio.standby();
+    if(error==RADIOLIB_ERR_NONE) {
+        // Catch a packet that completed while the USB frame was being decoded
+        // or while entering standby, before TX clears IRQs/writes the FIFO.
+        uint32_t flags=0;
+        error=readIrqFlags(flags);
+        if(error==RADIOLIB_ERR_NONE && (flags & RADIOLIB_SX126X_IRQ_RX_DONE)
+            && !drainCompletedReceive(false,true)) { contain(flags,-1); return; }
+        if(error==RADIOLIB_ERR_NONE && (flags & RADIOLIB_SX126X_IRQ_HEADER_VALID)
+            && !(flags & RADIOLIB_SX126X_IRQ_RX_DONE)) droppedRx++;
+    }
     if(error==RADIOLIB_ERR_NONE) error=radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
     if(error!=RADIOLIB_ERR_NONE) { contain(0,error); return; }
+    if(!armed || nowUs()+estimate+100000>=deadlineUs) { contain(0,-1); return; }
     board.onBeforeTransmit();
     error=radio.startTransmit(previousPacket,previousSize);
     if(error!=RADIOLIB_ERR_NONE) { contain(0,error); return; }
@@ -169,12 +213,8 @@ void setup() {
     // No Mesh instance, background advertising, automatic forwarding or RF ACK.
 }
 
-void loop() {
-    output.flush(Serial);
-    if(resultPending && output.offer(previousResult)) resultPending=false;
-    Frame frame;
-    for(unsigned n=0;n<128 && Serial.available();n++) if(decoder.feed(uint8_t(Serial.read()),frame)) command(frame);
-    if(!ready) { delay(1); return; }
+static void serviceRadio() {
+    if(!ready) return;
     const uint64_t now=nowUs();
     if(transmitting) {
         uint32_t flags=0;
@@ -198,18 +238,7 @@ void loop() {
             armed=false; fenced=true; idleRadio(); return;
         }
         if(flags & RADIOLIB_SX126X_IRQ_RX_DONE) {
-            const size_t length=radio.getPacketLength();
-            Frame received=response(RECEIVE,0);
-            if(length>=1 && length<=255 && output.freeSlots()>2) {
-                const int16_t error=radio.readData(received.body+4,length);
-                if(error==RADIOLIB_ERR_NONE) {
-                    put16(received.body,uint16_t(int16_t(radio.getRSSI()*10)));
-                    put16(received.body+2,uint16_t(int16_t(radio.getSNR()*10)));
-                    received.size=length+4;
-                    if(!output.offer(received)) droppedRx++;
-                } else droppedRx++;
-            } else { droppedRx++; radio.standby(); }
-            startReceive();
+            drainCompletedReceive(true);
         } else if((flags & RADIOLIB_SX126X_IRQ_TIMEOUT)
                   || ((flags & (RADIOLIB_SX126X_IRQ_HEADER_ERR|RADIOLIB_SX126X_IRQ_CRC_ERR))
                       && !(flags & RADIOLIB_SX126X_IRQ_HEADER_VALID))) {
@@ -221,6 +250,14 @@ void loop() {
             startReceive(); // checked standby/IRQ-clear/RX launch, same lease
         }
     }
+}
+
+void loop() {
+    output.flush(Serial);
+    if(resultPending && output.offer(previousResult)) resultPending=false;
+    serviceRadio(); // Drain RX_DONE before a queued TX can clear it or overwrite its FIFO.
+    Frame frame;
+    for(unsigned n=0;n<128 && Serial.available();n++) if(decoder.feed(uint8_t(Serial.read()),frame)) command(frame);
     output.flush(Serial);
     delay(1);
 }

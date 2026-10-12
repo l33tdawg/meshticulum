@@ -26,6 +26,13 @@ static std::vector<Frame> drain() {
     for(auto byte:Serial.bytes) if(d.feed(byte,f)) result.push_back(f);
     Serial.bytes.clear(); return result;
 }
+static void enqueue(const Frame& frame) {
+    uint8_t encoded[MAX_ENCODED]; const size_t size=encode(frame,encoded,sizeof(encoded));
+    assert(size); for(size_t i=0;i<size;i++) Serial.input.push_back(encoded[i]);
+}
+static void receivedDuringDecode() {
+    radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE; Serial.read_hook=nullptr;
+}
 
 int main(int argc,char** argv) {
     assert(argc==2); const std::string mode=argv[1];
@@ -92,6 +99,41 @@ int main(int argc,char** argv) {
         auto frames=drain(); auto f=frames.back(); assert(f.type==RECEIVE && f.size==8);
         assert(int16_t(u16(f.body))==-925 && memcmp(f.body+4,radio.received.data(),4)==0);
         assert(!radio.starts);
+    } else if(mode=="rx_before_queued_tx" || mode=="rx_during_decode" || mode=="rx_at_standby") {
+        command(armRequest()); drain(); const auto expected=radio.received; radio.shared_fifo=true;
+        if(mode=="rx_before_queued_tx") radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;
+        if(mode=="rx_during_decode") Serial.read_hook=receivedDuringDecode;
+        if(mode=="rx_at_standby") radio.irq_on_standby=RADIOLIB_SX126X_IRQ_RX_DONE;
+        enqueue(txRequest()); loop(); auto frames=drain();
+        assert(frames.size()==2 && frames[0].type==RECEIVE && frames[1].type==TX_RESULT);
+        assert(frames[0].size==expected.size()+4 && memcmp(frames[0].body+4,expected.data(),expected.size())==0);
+        assert(frames[1].body[0]==STARTED && radio.starts==1 && attempted==1 && reservedUs==100000);
+    } else if(mode=="rx_fifo_frozen") {
+        command(armRequest()); drain(); const auto expected=radio.received;
+        radio.overwrite_during_read=true; radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;
+        loop(); auto frames=drain();
+        assert(frames.size()==1 && frames[0].type==RECEIVE);
+        assert(memcmp(frames[0].body+4,expected.data(),expected.size())==0 && droppedRx==0);
+    } else if(mode=="rx_priority_crc_rejected") {
+        command(armRequest()); drain(); radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE|RADIOLIB_SX126X_IRQ_CRC_ERR;
+        enqueue(txRequest()); loop(); auto frames=drain();
+        assert(frames.size()==1 && frames[0].type==TX_RESULT && frames[0].body[0]==STARTED);
+        assert(droppedRx==1 && attempted==1 && radio.starts==1 && reservedUs==100000);
+    } else if(mode=="rx_priority_irq_failure") {
+        command(armRequest()); drain(); radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE; radio.irq_error=-11;
+        enqueue(txRequest()); loop(); auto frames=drain();
+        assert(frames.size()==1 && frames[0].type==REFUSED && frames[0].body[0]==FENCED);
+        assert(!armed && fenced && !radio.starts && attempted==0 && reservedUs==0);
+    } else if(mode=="rx_priority_lease_expiry") {
+        command(armRequest()); drain(); radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE; radio.read_advance_us=2000001;
+        enqueue(txRequest()); loop(); auto frames=drain();
+        assert(!armed && !radio.starts && attempted==0 && reservedUs==0);
+        assert(frames.back().type==REFUSED && frames.back().body[0]==NOT_ARMED);
+    } else if(mode=="rx_boundary_lease_expiry") {
+        command(armRequest()); drain(); radio.irq_on_standby=RADIOLIB_SX126X_IRQ_RX_DONE; radio.read_advance_us=2000001;
+        command(txRequest());
+        assert(!armed && fenced && !radio.starts && attempted==1 && reservedUs==100000);
+        assert(previousResult.body[0]==UNKNOWN);
     } else if(mode=="backpressure") {
         auto f=txRequest(); OutputQueue queue; assert(queue.offer(f));
         FakeSerial serial; serial.stalled=true; queue.flush(serial); assert(serial.bytes.empty());

@@ -40,7 +40,10 @@ def native(tmp_path_factory):
     'wrong_boot', 'lease_replay', 'budget', 'receive', 'backpressure', 'config_failure', 'irq_read_failure',
     'frequency_bounds', 'sf5_profile', 'sf5_short_preamble', 'warm_lease_expiry', 'warm_tx_fence', 'warm_config_failure',
     'rx_error_then_good', 'rx_crc_then_good', 'rx_timeout_then_good', 'rx_error_rearm_failure',
-    'rx_stale_header_then_valid', 'rx_crc_valid_header_in_progress', 'rx_crc_done_refused'])
+    'rx_stale_header_then_valid', 'rx_crc_valid_header_in_progress', 'rx_crc_done_refused',
+    'rx_before_queued_tx', 'rx_during_decode', 'rx_at_standby', 'rx_fifo_frozen',
+    'rx_priority_crc_rejected', 'rx_priority_irq_failure', 'rx_priority_lease_expiry',
+    'rx_boundary_lease_expiry'])
 def test_actual_firmware_faults(native, scenario):
     subprocess.run([str(native), scenario], check=True, capture_output=True, timeout=10)
 
