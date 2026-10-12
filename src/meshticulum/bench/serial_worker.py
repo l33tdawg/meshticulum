@@ -294,38 +294,66 @@ class Gfsk250SerialWorker(SerialWorker):
     _receive_record = Gfsk250RawReceive
     _airtime = staticmethod(gfsk250_airtime_us)
     _exact_driver_estimate = True
-    __slots__ = ('__capability_check',)
+    __slots__ = ('__capability_check', '__discover250')
 
     def __init__(self, channel):
         super().__init__(channel)
-        self.__capability_check = None
+        binding = None
+        discover_identity = super().discover
+        send, wait = self._send, self._wait
+        live_function = self._live.__func__
+        def check():
+            require(self.__capability_check is check and self.__discover250 is discover250
+                    and getattr(self._live, '__self__', None) is self
+                    and getattr(self._live, '__func__', None) is live_function,
+                    'gfsk250_capability_guard_changed')
+            require(binding is not None, 'gfsk250_firmware_capability_absent')
+            identity, values = binding
+            require(self.channel is channel and self.identity is identity
+                    and (identity.boot, identity.board_id, identity.version) == values,
+                    'gfsk250_firmware_capability_changed')
+        def discover250(expected_board_id, expected_version):
+            nonlocal binding
+            require(self.__capability_check is check and self.__discover250 is discover250,
+                    'gfsk250_capability_guard_changed')
+            identity = discover_identity(expected_board_id=expected_board_id, expected_version=expected_version)
+            request = secrets.randbits(63) or 1
+            deadline = channel.monotonic() + 3.0
+            send(Frame(Message.GFSK250_CAPABILITIES, identity.boot, request), deadline)
+            reply = wait(request, deadline)
+            require(self.channel is channel and channel.monotonic() < deadline
+                    and reply.type is Message.GFSK250_CAPABILITIES_REPLY and reply.boot == identity.boot
+                    and reply.body == CAPABILITY, 'gfsk250_firmware_capability_absent')
+            binding = (identity, (identity.boot, identity.board_id, identity.version))
+            check()
+            return identity
+        self.__capability_check = check
+        self.__discover250 = discover250
 
     def __setattr__(self, name, value):
-        if name == '_Gfsk250SerialWorker__capability_check' and getattr(self, name, None) is not None:
+        if name in ('_Gfsk250SerialWorker__capability_check', '_Gfsk250SerialWorker__discover250', '_live') and hasattr(self, name):
             raise HardwareError('gfsk250_capability_guard_changed')
         super().__setattr__(name, value)
 
     def __delattr__(self, name):
-        if name == '_Gfsk250SerialWorker__capability_check':
+        if name in ('_Gfsk250SerialWorker__capability_check', '_Gfsk250SerialWorker__discover250', '_live'):
             raise HardwareError('gfsk250_capability_guard_changed')
         super().__delattr__(name)
 
     def discover(self, *, expected_board_id, expected_version):
-        identity = super().discover(expected_board_id=expected_board_id, expected_version=expected_version)
-        request = secrets.randbits(63) or 1
-        deadline = self.channel.monotonic() + 3.0
-        self._send(Frame(Message.GFSK250_CAPABILITIES, identity.boot, request), deadline)
-        reply = self._wait(request, deadline)
-        require(self.channel.monotonic() < deadline
-                and reply.type is Message.GFSK250_CAPABILITIES_REPLY and reply.body == CAPABILITY,
-                'gfsk250_firmware_capability_absent')
-        binding = (identity.boot, identity.board_id, identity.version)
-        def check():
-            require(self.__capability_check is check and self.identity is identity
-                    and (identity.boot, identity.board_id, identity.version) == binding,
-                    'gfsk250_firmware_capability_changed')
-        self.__capability_check = check
-        return identity
+        return self.__discover250(expected_board_id, expected_version)
+
+    def arm(self, **parameters):
+        self.__capability_check()
+        return super().arm(**parameters)
+
+    def transmit(self, packet):
+        self.__capability_check()
+        return super().transmit(packet)
+
+    def receive(self, timeout=0.0):
+        self.__capability_check()
+        return super().receive(timeout)
 
     def _live(self, needed=0.0):
         check = self.__capability_check

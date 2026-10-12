@@ -108,6 +108,33 @@ def test_capability_refusal_never_arms_or_transmits(fault):
     with pytest.raises(HardwareError): worker.receive()
 
 
+def test_failed_capability_guard_cannot_be_filled_by_assignment_or_arm(tmp_path):
+    tmp_path.chmod(0o700);channel=Channel250('old_firmware');worker=Gfsk250SerialWorker(channel)
+    with pytest.raises(HardwareError,match='capability_absent'):
+        worker.discover(expected_board_id=1,expected_version=VERSION)
+    for name in ('_Gfsk250SerialWorker__capability_check','_Gfsk250SerialWorker__discover250','_live'):
+        with pytest.raises(HardwareError,match='guard_changed'): setattr(worker,name,lambda *a:None)
+        with pytest.raises(HardwareError,match='guard_changed'): delattr(worker,name)
+    identity=worker.identity;before=len(channel.writes)
+    with closing(AttemptJournal(tmp_path/'unsupported.db',binding=journal_binding(b'u'*32,identity,P),
+        max_attempts=10,max_airtime_us=10000000,create=True,request_clock=lambda:100000000)) as journal:
+        with pytest.raises(HardwareError,match='capability_absent'):
+            worker.arm(journal=journal,profile=P,context_digest=b'u'*32,authorize=lambda:True,authority_deadline=200)
+        assert len(channel.writes)==before and journal.snapshot()['attempts']==0
+
+
+def test_failed_capability_cannot_bypass_live_method_through_dict_shadow(tmp_path):
+    tmp_path.chmod(0o700);channel=Channel250('old_firmware');worker=Gfsk250SerialWorker(channel)
+    with pytest.raises(HardwareError):worker.discover(expected_board_id=1,expected_version=VERSION)
+    worker.__dict__['_live']=lambda *a:None
+    identity=worker.identity;before=len(channel.writes)
+    with closing(AttemptJournal(tmp_path/'shadow.db',binding=journal_binding(b's'*32,identity,P),
+        max_attempts=10,max_airtime_us=10000000,create=True,request_clock=lambda:100000000)) as journal:
+        with pytest.raises(HardwareError,match='guard_changed'):
+            worker.arm(journal=journal,profile=P,context_digest=b's'*32,authorize=lambda:True,authority_deadline=200)
+        assert len(channel.writes)==before and journal.snapshot()['attempts']==0
+
+
 @pytest.mark.parametrize('fault', [None, 'partial', 'estimate'])
 def test_serial250_paid_reservation_exact_estimate_and_unknown_containment(tmp_path, fault):
     tmp_path.chmod(0o700); channel = Channel250(fault); worker = Gfsk250SerialWorker(channel)
@@ -129,6 +156,12 @@ def test_capability_and_modem_identity_are_not_mutable_after_discovery():
     with pytest.raises(HardwareError): worker._Gfsk250SerialWorker__capability_check = lambda:None
     worker.identity = replace(worker.identity, version='other')
     with pytest.raises(HardwareError, match='capability_changed'): worker._live()
+
+
+def test_capability_cannot_move_to_another_transport():
+    worker=Gfsk250SerialWorker(Channel250());worker.discover(expected_board_id=1,expected_version=VERSION)
+    worker.channel=Channel250()
+    with pytest.raises(HardwareError,match='capability_changed'):worker._live()
 
 
 def test_serial250_arm_downgrade_and_expiry_preserve_profile_and_paid_state(tmp_path):
@@ -181,7 +214,7 @@ def test_serial250_revocation_during_setup_never_reaches_arm_or_rf(tmp_path,refu
 
 @pytest.mark.parametrize('worker_type,profile_type', [(GfskSerialWorker, Gfsk250Profile), (Gfsk250SerialWorker, GfskProfile)])
 def test_serial_modes_never_accept_the_other_profile(worker_type, profile_type):
-    worker = worker_type(Channel250()); worker.identity = object()
+    worker = worker_type(Channel250()); worker.discover(expected_board_id=1,expected_version=VERSION)
     with pytest.raises(HardwareError, match='invalid_arm_parameters'):
         worker.arm(journal=None, profile=profile_type(921375000,0,60000,10,10000000),
                    context_digest=bytes(32), authorize=lambda:True, authority_deadline=200)
