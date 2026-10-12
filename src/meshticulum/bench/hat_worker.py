@@ -235,6 +235,13 @@ class HATWorker:
                 received = radio.poll_receive()
                 if received is not None:
                     now = self._live()
+                    # poll_receive drains the packet in standby. Rearm while
+                    # this original worker still owns the radio, so the next
+                    # burst packet can arrive during the caller's decrypt,
+                    # flow and credit processing. Keep the original finite
+                    # deadline and fresh authority checks around SPI setup.
+                    radio.start_receive(authority_deadline=owned())
+                    now = self._live()
                     return now, received
                 now = self._clock()
                 require(type(now) in (int, float) and math.isfinite(now)

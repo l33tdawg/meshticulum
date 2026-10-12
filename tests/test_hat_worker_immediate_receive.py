@@ -184,3 +184,76 @@ def test_post_settlement_interrupt_contains_and_preserves_done(rig):
         worker.transmit(b'encrypted packet')
     assert row(journal)[0][0] == 'RF_DONE' and worker.fenced and chip.tx_calls == 1
     assert chip.resets[-1] is False and not any(c[0] == 0x82 for c in chip.commands)
+
+
+def test_next_burst_packet_can_arrive_during_upper_layer_work(rig):
+    chip, journal, worker = rig
+    worker.radio.start_receive(authority_deadline=worker.lease_deadline)
+    chip.rx, chip.flags = b'first encrypted packet', 2
+    first = worker.receive(timeout=0)
+    assert first[1].packet == b'first encrypted packet'
+    # Model the next RF packet arriving while the caller authenticates and
+    # processes the previous packet. The chip accepts it only in RX mode.
+    chip.sleep(.025)
+    if chip.mode == 5:
+        chip.rx, chip.flags = b'next encrypted packet', 2
+    second = worker.receive(timeout=0)
+    assert second is not None and second[1].packet == b'next encrypted packet'
+    assert worker.radio.receiving and chip.mode == 5 and not worker.fenced
+    assert chip.tx_calls == journal.snapshot()['attempts'] == 0
+
+
+@pytest.mark.parametrize('fault', ['refused', 'expired', 'lease_expired',
+                                 'radio', 'driver', 'post_rearm_refused'])
+def test_rx_rearm_keeps_current_authority_and_contains_original_owner(rig, fault):
+    chip, journal, worker = rig
+    original_radio = worker.radio
+    foreign = SimpleNamespace(io=Chip())
+    worker.radio.start_receive(authority_deadline=worker.lease_deadline)
+    chip.flags = 2
+    before = len(chip.commands)
+    calls = 0
+    def authorize():
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            if fault == 'refused': return False
+            if fault == 'expired': chip.time = worker.deadline
+            if fault == 'lease_expired': chip.time = worker.lease_deadline
+            if fault == 'radio': worker.radio = foreign
+        if calls == 3 and fault == 'post_rearm_refused': return False
+        return True
+    worker._test_authorize_state['callback'] = authorize
+    transfer = chip.transfer
+    def failed_rx(command):
+        if command[0] == 0x82: raise OSError('partial RX command')
+        return transfer(command)
+    if fault == 'driver': chip.transfer = failed_rx
+    with pytest.raises((HardwareError, OSError)):
+        worker.receive(timeout=0)
+    assert worker.fenced and original_radio.fenced
+    assert chip.resets[-1] is False and chip.tx_calls == 0
+    assert journal.snapshot()['attempts'] == 0
+    assert not foreign.io.commands and not foreign.io.resets
+    if fault in ('refused', 'expired', 'lease_expired', 'radio'):
+        assert not any(c[0] == 0x82 for c in chip.commands[before:])
+
+
+def test_rx_rearm_cannot_extend_original_finite_window(rig):
+    chip, _, worker = rig
+    original_end = min(worker.deadline, worker.lease_deadline)
+    worker.radio.start_receive(authority_deadline=original_end)
+    chip.flags = 2
+    start_receive = worker.radio.start_receive
+    deadlines = []
+    def changed_authority():
+        worker.deadline += 100
+        worker.lease_deadline += 100
+        return True
+    def record_receive(*, authority_deadline):
+        deadlines.append(authority_deadline)
+        return start_receive(authority_deadline=authority_deadline)
+    worker._test_authorize_state['callback'] = changed_authority
+    worker.radio.start_receive = record_receive
+    assert worker.receive(timeout=0) is not None
+    assert deadlines == [original_end]
