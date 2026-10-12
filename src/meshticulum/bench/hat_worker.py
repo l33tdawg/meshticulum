@@ -163,6 +163,16 @@ class HATWorker:
         self._live(timeout)
         request = journal.reserve(packet, reservation)
         outcome, evidence, driver = 'UNKNOWN', 'unsettled', None
+        def receive_failure(error):
+            self.fenced = True
+            # The original owner contains; a substituted driver's transport
+            # must never be used to handle a failed RX handoff.
+            try:
+                owned(contain=True)
+            except Exception:
+                pass
+            if not isinstance(error, Exception):
+                raise error
         try:
             try:
                 self._live(timeout)
@@ -186,6 +196,19 @@ class HATWorker:
             evidence = json.dumps({'driver_estimate_us': driver.estimated_airtime_us,
                 'host_driver_elapsed_us': driver.driver_elapsed_us, 'irq': driver.irq_flags,
                 'error': driver.driver_error}, separators=(',', ':'))
+            if outcome == 'RF_DONE':
+                # The attempt was durably reserved before RF. Once TX_DONE is
+                # known, listen while its result is saved, rather than leaving
+                # the radio in standby through journal fsync. RX failure is
+                # separate and cannot erase this known transmit evidence.
+                try:
+                    self._live()
+                    require(self.radio is radio and self.io is transport and radio.io is transport,
+                            'hat_driver_changed_after_transmit')
+                    radio.start_receive(authority_deadline=min(receive_deadline, self.deadline,
+                                                              self.lease_deadline))
+                except BaseException as error:
+                    receive_failure(error)
         except (OSError, HardwareError):
             outcome, evidence, driver = 'UNKNOWN', 'spi_or_evidence_failure', None
         finally:
@@ -201,25 +224,15 @@ class HATWorker:
                 self.fenced = True
                 owned(contain=True)
                 raise
-        if outcome == 'RF_DONE':
-            # TX evidence is already durably settled. Listen before returning
-            # to the upper loop, whose fresh authority checks can be costly.
-            # A failed RX handoff cannot turn that known TX into UNKNOWN.
+        if outcome == 'RF_DONE' and not self.fenced:
+            # Retain the fresh check after durable settlement: fsync may have
+            # crossed the original deadline or a revocation boundary. No
+            # packet is returned during settlement, and failed authority now
+            # contains the already-listening radio without rewriting TX_DONE.
             try:
                 self._live()
-                require(self.radio is radio and self.io is transport and radio.io is transport,
-                        'hat_driver_changed_after_transmit')
-                radio.start_receive(authority_deadline=min(receive_deadline, self.deadline,
-                                                          self.lease_deadline))
             except BaseException as error:
-                self.fenced = True
-                # Never use a substituted driver's transport for containment.
-                try:
-                    owned(contain=True)
-                except Exception:
-                    pass
-                if not isinstance(error, Exception):
-                    raise
+                receive_failure(error)
         clock_basis = ('host_monotonic' if self.time_basis == 'host-monotonic'
                        else 'model_monotonic') if driver is not None else None
         return AttemptResult(request, outcome, reservation, driver, clock_basis)

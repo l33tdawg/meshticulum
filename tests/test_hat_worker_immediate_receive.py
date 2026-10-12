@@ -1,5 +1,7 @@
 """Durable TX/RX handoff controls; modeled SPI is not native RF evidence."""
 from types import SimpleNamespace
+import subprocess
+import types
 
 import pytest
 
@@ -43,7 +45,7 @@ def assert_done(chip, journal, result):
     assert not journal.snapshot()['fenced'] and chip.tx_calls == 1
 
 
-def test_receive_starts_after_durable_done_before_transmit_returns(rig):
+def test_receive_starts_after_known_done_before_result_settlement(rig):
     chip, journal, worker = rig
     settled = []
     original_settle, transfer = journal.settle, chip.transfer
@@ -52,7 +54,8 @@ def test_receive_starts_after_durable_done_before_transmit_returns(rig):
         settled.append(args[2])
     def checked_transfer(command):
         if command[0] == 0x82:
-            assert settled == ['RF_DONE'] and row(journal)[0][0] == 'RF_DONE'
+            assert settled == [] and row(journal)[0][0] == 'RESERVED'
+            assert not worker.radio.transmitting and chip.tx_calls == 1
         return transfer(command)
     journal.settle, chip.transfer = settle, checked_transfer
     result = worker.transmit(b'encrypted packet')
@@ -71,8 +74,8 @@ def test_failed_receive_preserves_known_done_and_fences_without_second_tx(rig, f
     def authorize():
         nonlocal calls
         calls += 1
-        if calls == 3:  # pre-reserve, pre-SPI, then fresh post-settlement authority
-            assert row(journal)[0][0] == 'RF_DONE'
+        if calls == 3:  # pre-reserve, pre-SPI, then fresh RX-handoff authority
+            assert row(journal)[0][0] == 'RESERVED'
             if fault == 'refused': return False
             if fault == 'raised': raise RuntimeError('revoked')
             if fault == 'expired': chip.time = worker.deadline
@@ -161,17 +164,18 @@ def test_incomplete_driver_evidence_never_starts_receive(rig):
     assert not any(c[0] == 0x82 for c in chip.commands)
 
 
-def test_unsettled_journal_never_starts_receive(rig):
+def test_unsettled_result_contains_early_receive_and_retains_reservation(rig):
     chip, journal, worker = rig
     def fail_settle(*_args): raise OSError('durable settlement failed')
     journal.settle = fail_settle
     with pytest.raises(OSError, match='durable settlement failed'):
         worker.transmit(b'encrypted packet')
     assert row(journal)[0][0] == 'RESERVED' and worker.fenced and chip.tx_calls == 1
-    assert not any(c[0] == 0x82 for c in chip.commands)
+    assert any(c[0] == 0x82 for c in chip.commands)
+    assert not worker.radio.receiving and chip.resets[-1] is False
 
 
-def test_post_settlement_interrupt_contains_and_preserves_done(rig):
+def test_receive_handoff_interrupt_settles_known_done_before_propagating(rig):
     chip, journal, worker = rig
     calls = 0
     def authorize():
@@ -184,6 +188,84 @@ def test_post_settlement_interrupt_contains_and_preserves_done(rig):
         worker.transmit(b'encrypted packet')
     assert row(journal)[0][0] == 'RF_DONE' and worker.fenced and chip.tx_calls == 1
     assert chip.resets[-1] is False and not any(c[0] == 0x82 for c in chip.commands)
+
+
+@pytest.mark.parametrize('fault',['revoked','expired','lease_expired','interrupt'])
+def test_settlement_cutoff_contains_early_receive_without_erasing_done(rig,fault):
+    chip,journal,worker=rig;granted=True;settle=journal.settle
+    def delayed_settle(*args):
+        nonlocal granted
+        assert chip.mode==5 and worker.radio.receiving and args[2]=='RF_DONE'
+        settle(*args)
+        if fault=='revoked':granted=False
+        if fault=='expired':chip.time=worker.deadline
+        if fault=='lease_expired':chip.time=worker.lease_deadline
+    def authorize():
+        if fault=='interrupt' and row(journal) and row(journal)[0][0]=='RF_DONE':raise KeyboardInterrupt()
+        return granted
+    journal.settle=delayed_settle;worker._test_authorize_state['callback']=authorize
+    if fault=='interrupt':
+        with pytest.raises(KeyboardInterrupt):worker.transmit(b'encrypted packet')
+    else:assert_done(chip,journal,worker.transmit(b'encrypted packet'))
+    assert row(journal)[0][0]=='RF_DONE' and worker.fenced and not worker.radio.receiving
+    assert chip.tx_calls==1 and chip.resets[-1] is False
+    with pytest.raises(HardwareError):worker.receive()
+
+
+def settlement_ack_model(tmp_path,worker_type,*,settlement_us=35000,authorize_us=2000):
+    """Injected local timings, not measured hardware or throughput."""
+    tmp_path.mkdir(mode=0o700);chip=Chip();context=b'c'*32;calls=0
+    journal=AttemptJournal(tmp_path/'attempts.sqlite',binding=journal_binding(context,chip.boot_id,PROFILE),
+        max_attempts=20,max_airtime_us=10000000,create=True)
+    try:
+        def authorize():
+            nonlocal calls
+            calls+=1;chip.sleep(authorize_us/1e6);return True
+        worker=worker_type(chip,journal=journal,profile=PROFILE,context_digest=context,
+            authorize=authorize,authority_deadline=200,antenna_confirmed=True,
+            monotonic=lambda:chip.time,time_basis='model-monotonic')
+        calls=0;done=[];rx_ready=[];heard=[]
+        transfer,poll,settle=chip.transfer,worker.radio.poll_transmit,journal.settle
+        def record_poll():
+            result=poll()
+            if result is not None:done.append(chip.time)
+            return result
+        def record_transfer(command):
+            reply=transfer(command)
+            if command[0]==0x82:rx_ready.append(chip.time)
+            return reply
+        def result_fsync(*args):
+            # A reverse ACK arrives5ms into35ms of injected result persistence.
+            # The already durable RESERVED row exists before this interval.
+            assert row(journal)[0][0]=='RESERVED' and args[2]=='RF_DONE'
+            chip.sleep(.005)
+            heard.append(chip.mode==5)
+            if heard[-1]:chip.rx,chip.flags=b'modeled encrypted ACK',2
+            chip.sleep((settlement_us-5000)/1e6)
+            return settle(*args)
+        chip.transfer=record_transfer;worker.radio.poll_transmit=record_poll;journal.settle=result_fsync
+        started=chip.time;result=worker.transmit(b'encrypted packet');finished=chip.time
+        assert_done(chip,journal,result)
+        receive=worker.receive()
+        return dict(ack_received=receive is not None and receive[1].packet==b'modeled encrypted ACK',
+            receive_ready_after_done_us=round((rx_ready[0]-done[0])*1e6),
+            transmit_call_elapsed_us=round((finished-started)*1e6),
+            transmit_authorization_calls=calls-(3 if receive is not None else 1))
+    finally:journal.close()
+
+
+def test_reverse_ack_during_result_fsync_is_received_and_deaf_gap_excludes_fsync(tmp_path):
+    # Use the exact baseline worker with the same current chip/driver model.
+    source=subprocess.check_output(['git','show','6e55cb11672b6294abdd480554d604ce324b9806:src/meshticulum/bench/hat_worker.py'],text=True)
+    baseline=types.ModuleType('meshticulum.bench._early_rx_baseline')
+    baseline.__package__='meshticulum.bench';exec(compile(source,'_early_rx_baseline.py','exec'),baseline.__dict__)
+    old=settlement_ack_model(tmp_path/'baseline',baseline.HATWorker)
+    revised=settlement_ack_model(tmp_path/'revised',HATWorker)
+    assert old['ack_received'] is False and revised['ack_received'] is True
+    assert old['receive_ready_after_done_us']-revised['receive_ready_after_done_us']==35000
+    # One extra fresh post-settlement authorization is retained. It increases
+    # modeled total work by2ms; the35ms gain is listening readiness, not B/s.
+    assert revised['transmit_call_elapsed_us']-old['transmit_call_elapsed_us']==2000
 
 
 def test_successful_legacy_none_return_is_not_a_pending_receive_refusal(rig):
