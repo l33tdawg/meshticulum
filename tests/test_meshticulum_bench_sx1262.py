@@ -412,3 +412,72 @@ def test_spi_worker_reserves_before_set_tx_and_records_unknown_on_failure(tmp_pa
         assert chip.tx_calls == 1
     finally:
         journal.close()
+
+
+@pytest.mark.parametrize('late',['before','during_standby','after_standby'])
+def test_completed_receive_is_preserved_before_transmit_even_during_standby(late):
+    chip,radio=configured();radio.start_receive(authority_deadline=160)
+    original=chip.transfer;entered_standby=False
+    def transfer(command):
+        nonlocal entered_standby
+        reply=original(command)
+        if command[0]==0x80:
+            entered_standby=True
+            if late=='during_standby':chip.flags=2
+        if late=='after_standby' and entered_standby and command[0]==0xc0:chip.flags=2
+        return reply
+    chip.transfer=transfer
+    if late=='before':chip.flags=2
+    start=len(chip.commands)
+    assert radio.start_transmit(b'outbound',authority_deadline=160,antenna_confirmed=True) is False
+    assert not chip.tx_calls and radio.receive_pending and not radio.transmitting
+    assert not any(c[0] in (0x02,0x0e,0x83) for c in chip.commands[start:])
+    assert radio.attempts==int(late!='before')  # retain a late refusal's paid local attempt
+    if late!='before':
+        assert not radio.receiving and chip.mode==2
+        chip.transfer=original
+    assert radio.poll_receive().packet==bytes(range(255))
+    assert not radio.receive_pending
+    radio.start_receive(authority_deadline=160)
+    assert radio.start_transmit(b'outbound',authority_deadline=160,antenna_confirmed=True) is True
+    assert chip.tx_calls==1
+
+
+@pytest.mark.parametrize('flags',[0x20,0x40,0x22,0x42,0x202])
+def test_header_crc_or_timeout_irq_does_not_block_transmit(flags):
+    chip,radio=configured();radio.start_receive(authority_deadline=160);chip.flags=flags
+    assert radio.start_transmit(b'outbound',authority_deadline=160,antenna_confirmed=True) is True
+    assert chip.tx_calls==1 and not radio.receive_pending
+
+
+@pytest.mark.parametrize('late',['before','during_standby','after_standby'])
+def test_worker_settles_pending_receive_refusal_and_drains_it_under_same_lease(tmp_path,late):
+    tmp_path.chmod(0o700);chip=Chip();context=b'c'*32
+    journal=AttemptJournal(tmp_path/'attempts.sqlite',binding=journal_binding(context,chip.boot_id,PROFILE),
+        max_attempts=20,max_airtime_us=10000000,create=True)
+    try:
+        worker=HATWorker(chip,journal=journal,profile=PROFILE,context_digest=context,
+            authorize=lambda:True,authority_deadline=200,antenna_confirmed=True,
+            monotonic=lambda:chip.time,time_basis='model-monotonic')
+        worker.receive();original_end=worker.lease_deadline;original=chip.transfer;entered_standby=False
+        def transfer(command):
+            nonlocal entered_standby
+            reply=original(command)
+            if command[0]==0x80:
+                entered_standby=True
+                if late=='during_standby':chip.flags=2
+            if late=='after_standby' and entered_standby and command[0]==0xc0:chip.flags=2
+            return reply
+        chip.transfer=transfer
+        if late=='before':chip.flags=2
+        result=worker.transmit(b'outbound')
+        assert result.outcome=='NOT_SENT' and result.driver is None and chip.tx_calls==0
+        state=journal.snapshot();assert state['attempts']==1 and not state['fenced']
+        assert state['reserved_estimated_airtime_us']==result.reserved_estimated_us>0
+        assert journal.db.execute('SELECT state FROM attempts').fetchone()[0]=='NOT_SENT'
+        chip.transfer=original
+        _,received=worker.receive();assert received.packet==bytes(range(255))
+        assert worker.radio.receiving and not worker.radio.receive_pending
+        assert worker.lease_deadline==original_end
+        assert worker.transmit(b'new-outbound').outcome=='RF_DONE' and chip.tx_calls==1
+    finally:journal.close()

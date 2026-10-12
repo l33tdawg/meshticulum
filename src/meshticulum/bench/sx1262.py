@@ -42,6 +42,7 @@ class SX1262:
         self.profile = None
         self.fenced = False
         self.receiving = self.transmitting = False
+        self.receive_pending = False
         self.attempts = self.reserved_us = 0
         self.rx_errors = 0
         self.tx_estimate = self.tx_started = self.tx_deadline = 0
@@ -179,6 +180,12 @@ class SX1262:
                 and self._now() + seconds < deadline, 'sx1262_authority_deadline')
 
     def start_transmit(self, packet, *, authority_deadline, antenna_confirmed):
+        """Start TX, or return False while a valid completed RX awaits draining.
+
+        False proves no TX command/FIFO write was issued by this call. A late
+        RX completion after standby may already have consumed the local paid
+        attempt; that charge is deliberately retained.
+        """
         require(antenna_confirmed is True, 'sx1262_antenna_not_confirmed')
         require(self.profile is not None and not self.transmitting and not self.fenced,
                 'sx1262_not_ready')
@@ -189,12 +196,27 @@ class SX1262:
         require(self.attempts < self.profile.max_boot_attempts
                 and self.reserved_us + estimate <= self.profile.max_boot_estimated_airtime_us,
                 'sx1262_attempt_budget')
+        was_receiving = self.receiving or self.receive_pending
+        if was_receiving:
+            flags = self.irq()
+            if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
+                self.receive_pending = True
+                return False
         self.attempts += 1
         self.reserved_us += estimate
         self.tx_estimate, self.tx_started = estimate, self._now()
         self.transmitting = True
         try:
             self.standby()
+            # A packet can finish between the first IRQ sample and standby.
+            # Once standby completes, its FIFO is stable. Preserve it before
+            # ClearIrqStatus/WriteBuffer, for the worker's next receive pass.
+            if was_receiving:
+                flags = self.irq()
+                if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
+                    self.transmitting = False
+                    self.receive_pending = True
+                    return False
             self.clear_irq()
             self._packet(len(packet))
             self._write(0x0E, b'\0' + packet)
@@ -203,6 +225,7 @@ class SX1262:
             self._room(authority_deadline, timeout_us / 1000000 + 0.05)
             self.tx_deadline = self._now() + timeout_us / 1000000 + 0.05
             self._write(0x83, self._rtc_steps(timeout_us))
+            return True
         except BaseException:
             self.contain()
             raise
@@ -230,6 +253,7 @@ class SX1262:
     def start_receive(self, *, authority_deadline):
         require(self.profile is not None and not self.transmitting and not self.fenced,
                 'sx1262_not_ready')
+        require(not self.receive_pending, 'sx1262_completed_receive_pending')
         self._room(authority_deadline, 0.020)
         try:
             self.standby()
@@ -251,7 +275,7 @@ class SX1262:
             raise
 
     def poll_receive(self):
-        require(self.receiving and not self.fenced, 'sx1262_not_receiving')
+        require((self.receiving or self.receive_pending) and not self.fenced, 'sx1262_not_receiving')
         try:
             flags = self.irq()
             if not flags & RX_MASK:
@@ -271,6 +295,7 @@ class SX1262:
             elif flags & (CRC_ERROR | HEADER_ERROR):
                 self.rx_errors += 1
             self.clear_irq()
+            self.receive_pending = False
             return packet
         except BaseException:
             self.contain()
@@ -280,6 +305,7 @@ class SX1262:
         """Contain ambiguous hardware outcome by holding RESET low, then fence."""
         self.fenced = True
         self.receiving = self.transmitting = False
+        self.receive_pending = False
         try:
             self.io.reset(False)
         finally:

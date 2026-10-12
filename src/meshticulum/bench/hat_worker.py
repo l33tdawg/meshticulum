@@ -169,8 +169,15 @@ class HATWorker:
             except HardwareError:
                 outcome, evidence = 'NOT_SENT', 'authority_changed_before_spi'
                 return AttemptResult(request, outcome, reservation, None)
-            radio.start_transmit(packet, authority_deadline=owned(),
-                                      antenna_confirmed=self.antenna_confirmed)
+            started = radio.start_transmit(packet, authority_deadline=owned(),
+                                           antenna_confirmed=self.antenna_confirmed)
+            if started is False:
+                # A completed RX remained intact before any TX/FIFO write.
+                # Recheck the original owner/lease; the paid reservation is
+                # settled, never refunded, and ordinary receive drains it.
+                self._live()
+                outcome, evidence = 'NOT_SENT', 'completed_receive_pending_before_tx'
+                return AttemptResult(request, outcome, reservation, None)
             while driver is None:
                 driver = radio.poll_transmit()
                 if driver is None:
@@ -226,7 +233,7 @@ class HATWorker:
             now = self._live()
             until = min(now + timeout, owned())
             while True:
-                if not radio.receiving:
+                if not radio.receiving and not radio.receive_pending:
                     radio.start_receive(authority_deadline=owned())
                     # Configuration runs transport operations; recheck before poll.
                     self._live()

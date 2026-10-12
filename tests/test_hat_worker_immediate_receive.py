@@ -186,6 +186,42 @@ def test_post_settlement_interrupt_contains_and_preserves_done(rig):
     assert chip.resets[-1] is False and not any(c[0] == 0x82 for c in chip.commands)
 
 
+def test_successful_legacy_none_return_is_not_a_pending_receive_refusal(rig):
+    chip,journal,worker=rig;original=worker.radio.start_transmit
+    def legacy(*args,**kwargs):
+        original(*args,**kwargs)
+    worker.radio.start_transmit=legacy
+    result=worker.transmit(b'encrypted packet')
+    assert_done(chip,journal,result)
+
+
+@pytest.mark.parametrize('fault',['revoked','expired','lease_expired','irq_failure'])
+def test_pending_receive_does_not_bypass_fresh_permission_or_containment(rig,fault):
+    chip,journal,worker=rig
+    worker.radio.start_receive(authority_deadline=worker.lease_deadline);chip.flags=2
+    calls=0
+    def authorize():
+        nonlocal calls
+        calls+=1
+        if calls==3:
+            if fault=='revoked':return False
+            if fault=='expired':chip.time=worker.deadline
+            if fault=='lease_expired':chip.time=worker.lease_deadline
+        return True
+    worker._test_authorize_state['callback']=authorize
+    original=chip.transfer
+    def transfer(command):
+        if fault=='irq_failure' and command[0]==0x12:raise OSError('unproved IRQ')
+        return original(command)
+    chip.transfer=transfer
+    result=worker.transmit(b'encrypted packet')
+    assert result.outcome=='UNKNOWN' and row(journal)[0][0]=='UNKNOWN'
+    assert worker.fenced and journal.snapshot()['fenced'] and chip.tx_calls==0
+    assert journal.snapshot()['reserved_estimated_airtime_us']==result.reserved_estimated_us>0
+    assert chip.resets[-1] is False
+    with pytest.raises(HardwareError):worker.receive()
+
+
 def test_next_burst_packet_can_arrive_during_upper_layer_work(rig):
     chip, journal, worker = rig
     worker.radio.start_receive(authority_deadline=worker.lease_deadline)
