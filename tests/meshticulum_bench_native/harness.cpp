@@ -119,6 +119,29 @@ int main(int argc,char** argv) {
         auto f=armRequest(); put32(f.body,921375000u); put32(f.body+4,500000u); f.body[8]=5;
         command(f); assert(!armed && !radio.warm && !radio.starts);
         auto frames=drain(); assert(frames.back().type==REFUSED && frames.back().body[0]==BAD_PROFILE);
+    } else if(mode=="rx_error_then_good" || mode=="rx_crc_then_good" || mode=="rx_timeout_then_good" || mode=="rx_error_rearm_failure") {
+        auto f=armRequest(); f.body[8]=5; put16(f.body+11,12); command(f); drain();
+        assert(armed && radio.warm && radio.receive_starts==1);
+        radio.flags=mode=="rx_timeout_then_good" ? RADIOLIB_SX126X_IRQ_TIMEOUT
+                    : mode=="rx_crc_then_good" ? RADIOLIB_SX126X_IRQ_CRC_ERR : RADIOLIB_SX126X_IRQ_HEADER_ERR;
+        if(mode=="rx_error_rearm_failure") radio.receive_error=-11;
+        loop(); assert(drain().empty() && !radio.starts && radio.receive_starts==2);
+        if(mode=="rx_error_rearm_failure") assert(!armed && fenced && !radio.warm);
+        else {
+            assert(armed && !fenced && radio.warm && radio.flags==0);
+            assert(droppedRx==(mode=="rx_timeout_then_good" ? 0u : 1u));
+            radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE; loop();
+            auto frames=drain(); assert(frames.size()==1 && frames[0].type==RECEIVE && frames[0].size==8);
+            assert(radio.receive_starts==3 && armed && !radio.starts);
+        }
+    } else if(mode=="rx_stale_header_then_valid") {
+        command(armRequest()); drain(); radio.flags=RADIOLIB_SX126X_IRQ_HEADER_ERR|RADIOLIB_SX126X_IRQ_HEADER_VALID;
+        loop(); assert(droppedRx==0 && radio.receive_starts==1 && drain().empty());
+        radio.flags|=RADIOLIB_SX126X_IRQ_RX_DONE; loop(); auto frames=drain();
+        assert(frames.size()==1 && frames[0].type==RECEIVE && droppedRx==0);
+    } else if(mode=="rx_crc_done_refused") {
+        command(armRequest()); drain(); radio.flags=RADIOLIB_SX126X_IRQ_CRC_ERR|RADIOLIB_SX126X_IRQ_RX_DONE;
+        loop(); assert(drain().empty() && droppedRx==1 && radio.receive_starts==2 && !radio.starts);
     } else if(mode=="warm_config_failure") {
         auto f=armRequest(); put32(f.body,921375000u); put32(f.body+4,500000u); f.body[8]=5; put16(f.body+11,12);
         radio.warm_error=-11; command(f); assert(!armed && fenced && !radio.starts);

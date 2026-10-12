@@ -4,6 +4,9 @@
 #define RADIOLIB_ERR_NONE 0
 #define RADIOLIB_SX126X_IRQ_TX_DONE 1
 #define RADIOLIB_SX126X_IRQ_RX_DONE 2
+#define RADIOLIB_SX126X_IRQ_HEADER_VALID 0x10
+#define RADIOLIB_SX126X_IRQ_HEADER_ERR 0x20
+#define RADIOLIB_SX126X_IRQ_CRC_ERR 0x40
 #define RADIOLIB_SX126X_IRQ_TIMEOUT 0x200
 #define RADIOLIB_SX126X_IRQ_ALL 0x43ff
 #define RADIOLIB_SX126X_CMD_GET_IRQ_STATUS 0x12
@@ -35,7 +38,11 @@ struct FakeRadio {
     }
     uint64_t getTimeOnAir(size_t) { return 100000; }
     size_t getPacketLength() { return received.size(); }
-    int16_t readData(uint8_t* p,size_t n) { memcpy(p,received.data(),n); return read_error; }
+    int16_t readData(uint8_t* p,size_t n) {
+        if((flags & RADIOLIB_SX126X_IRQ_CRC_ERR)
+            || ((flags & RADIOLIB_SX126X_IRQ_HEADER_ERR) && !(flags & RADIOLIB_SX126X_IRQ_HEADER_VALID))) return -7;
+        memcpy(p,received.data(),n); return read_error;
+    }
     float getRSSI() { return -92.5; }
     float getSNR() { return -2.3; }
     int16_t setFrequency(float) { return config_error; }
