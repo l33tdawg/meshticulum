@@ -20,16 +20,19 @@ from .serial_protocol import (Decoder, FirmwareIdentity, Frame, Message, Outcome
 def estimated_airtime_us(profile, size):
     """Source LoRa airtime estimate: explicit header, CRC, SF5..12.
 
-    Same PHY assumptions as the coprocessor; includes no measured airtime or
-    host latency. Reservations add margin separately and never receive refunds.
+    Semtech SX1261/2 section 6.1.4, matching the coprocessor's RadioLib
+    SX126x::calculateTimeOnAir. SF5/6 use their shorter coded header and longer
+    synchronization suffix. This is not measured airtime or host latency;
+    reservations add margin separately and never receive refunds.
     """
     profile.encode(board_id=2)
     require(type(size) is int and 1 <= size <= 255, 'invalid_radio_size')
     symbol_us = (1 << profile.spreading_factor) * 1000000 / profile.bandwidth_hz
     low_rate = int(symbol_us >= 16000)
-    coded = max(0, math.ceil((8 * size + 44 - 4 * profile.spreading_factor) /
+    short_sf = profile.spreading_factor <= 6
+    coded = max(0, math.ceil((8 * size + (36 if short_sf else 44) - 4 * profile.spreading_factor) /
                              (4 * (profile.spreading_factor - 2 * low_rate))))
-    symbols = profile.preamble + 12.25 + coded * profile.coding_rate
+    symbols = profile.preamble + (14.25 if short_sf else 12.25) + coded * profile.coding_rate
     return math.ceil(symbols * symbol_us)
 
 

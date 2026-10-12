@@ -256,7 +256,7 @@ def test_sf5_500khz_profile_has_a_measurable_airtime_budget_without_transmitting
     chip = Chip(); radio = SX1262(chip); radio.configure(profile)
     modulation = next(command for command in chip.commands if command[0] == 0x8B)
     assert modulation[1:] == bytes((5, 6, 1, 0))
-    assert estimated_airtime_us(profile, 255) == 34576
+    assert estimated_airtime_us(profile, 255) == 34384
     assert 193 * 1000000 / estimated_airtime_us(profile, 255) > 5500
     assert chip.tx_calls == radio.attempts == 0
 
