@@ -111,7 +111,24 @@ int main(int argc,char** argv) {
         assert(!armed && !radio.starts);
     } else if(mode=="sf5_profile") {
         auto f=armRequest(); put32(f.body,921375000u); put32(f.body+4,500000u); f.body[8]=5;
+        put16(f.body+11,12);
         command(f); assert(armed && profile[8]==5 && radio.starts==0);
+        assert(radio.warm);
+        command(request(DISARM,2)); assert(!armed && !radio.warm && !radio.starts);
+    } else if(mode=="sf5_short_preamble") {
+        auto f=armRequest(); put32(f.body,921375000u); put32(f.body+4,500000u); f.body[8]=5;
+        command(f); assert(!armed && !radio.warm && !radio.starts);
+        auto frames=drain(); assert(frames.back().type==REFUSED && frames.back().body[0]==BAD_PROFILE);
+    } else if(mode=="warm_config_failure") {
+        auto f=armRequest(); put32(f.body,921375000u); put32(f.body+4,500000u); f.body[8]=5; put16(f.body+11,12);
+        radio.warm_error=-11; command(f); assert(!armed && fenced && !radio.starts);
+    } else if(mode=="warm_lease_expiry" || mode=="warm_tx_fence") {
+        auto f=armRequest(); put32(f.body,921375000u); put32(f.body+4,500000u); f.body[8]=5; put16(f.body+11,12);
+        command(f); assert(armed && radio.warm);
+        if(mode=="warm_lease_expiry") fake_time=deadlineUs+1;
+        else { command(txRequest()); radio.flags=RADIOLIB_SX126X_IRQ_TIMEOUT; }
+        loop(); assert(!armed && !radio.warm);
+        if(mode=="warm_tx_fence") assert(fenced && previousResult.body[0]==UNKNOWN && attempted==1 && reservedUs==100000);
     } else assert(false);
     return 0;
 }

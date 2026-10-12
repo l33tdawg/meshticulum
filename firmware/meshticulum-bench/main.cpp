@@ -24,6 +24,12 @@ static Frame response(uint8_t type,uint64_t request) {
     Frame frame; frame.type=type; frame.request=request; memcpy(frame.boot,boot,16); return frame;
 }
 static uint64_t nowUs() { return uint64_t(esp_timer_get_time()); }
+static int16_t idleRadio() {
+    // A disarmed/expired/fenced carrier does not retain the fast oscillator.
+    // RadioLib updates both standby() and the RX/TX fallback mode within this
+    // checked call; an error remains a containment failure.
+    return radio.setStandbyXOSC(false);
+}
 static int16_t readIrqFlags(uint32_t& flags) {
     // RadioLib getIrqFlags() discards the SPI return code. A failed read must
     // never turn partially returned bytes into physical completion evidence.
@@ -45,12 +51,12 @@ static void reportOutcome(uint8_t outcome,uint64_t elapsed,uint32_t flags,int16_
 }
 static void contain(uint32_t flags,int16_t error) {
     // Standby is an attempted containment action, not proof of RF completion.
-    radio.standby(); board.onAfterTransmit(); transmitting=false; armed=false; fenced=true;
+    idleRadio(); board.onAfterTransmit(); transmitting=false; armed=false; fenced=true;
     reportOutcome(UNKNOWN,nowUs()-startedUs,flags,error);
 }
 static void startReceive() {
     if(!armed || fenced) return;
-    if(radio.startReceive()!=RADIOLIB_ERR_NONE) { armed=false; fenced=true; }
+    if(radio.startReceive()!=RADIOLIB_ERR_NONE) { armed=false; fenced=true; idleRadio(); }
 }
 static bool configure(const uint8_t* body) {
     const uint32_t hz=u32(body), bw=u32(body+4);
@@ -63,7 +69,7 @@ static bool configure(const uint8_t* body) {
     if((bw!=62500 && bw!=125000 && bw!=250000 && bw!=500000)
         || hz<902000000u+bw/2 || hz>928000000u-bw/2
         || sf<5 || sf>12 || cr<5 || cr>8 || power<0 || power>MESHTICULUM_MAX_CHIP_DBM
-        || preamble<8 || preamble>64 || sync==0 || duration<1000 || duration>300000
+        || preamble<(sf<=6 ? 12 : 8) || preamble>64 || sync==0 || duration<1000 || duration>300000
         || count<=attempted || count>100000 || budget<=reservedUs || budget>300000000ull) return false;
     if(radio.standby()!=RADIOLIB_ERR_NONE
         || radio.setFrequency(hz/1000000.0f)!=RADIOLIB_ERR_NONE
@@ -73,7 +79,11 @@ static bool configure(const uint8_t* body) {
         || radio.setOutputPower(power)!=RADIOLIB_ERR_NONE
         || radio.setPreambleLength(preamble)!=RADIOLIB_ERR_NONE
         || radio.setSyncWord(sync)!=RADIOLIB_ERR_NONE
-        || radio.setCRC(1)!=RADIOLIB_ERR_NONE) return false;
+        || radio.setCRC(1)!=RADIOLIB_ERR_NONE
+        // SF5/6 require short packet/ACK turnarounds. Keep the TCXO/XOSC
+        // running within the original ARM lease instead of restarting it
+        // on every standby->TX/RX transition. SF7+ retain their old mode.
+        || radio.setStandbyXOSC(sf<=6)!=RADIOLIB_ERR_NONE) return false;
     deadlineUs=nowUs()+uint64_t(duration)*1000; capCount=count; capUs=budget;
     memcpy(profile,body,30); return true;
 }
@@ -107,14 +117,14 @@ static void command(const Frame& frame) {
     if(transmitting || resultPending) { refuse(frame,mtbench::BUSY); return; }
     if(frame.type==DISARM && frame.size==0) {
         armed=false;
-        if(radio.standby()!=RADIOLIB_ERR_NONE) fenced=true;
+        if(idleRadio()!=RADIOLIB_ERR_NONE) fenced=true;
         Frame reply=response(DISARM_REPLY,frame.request); reply.size=1; reply.body[0]=fenced;
         output.offer(reply); return;
     }
     if(fenced || !ready) { refuse(frame,FENCED); return; }
     if(frame.type==ARM && frame.size==30) {
         if(armed) { refuse(frame,mtbench::BUSY); return; }
-        if(!configure(frame.body)) { armed=false; refuse(frame,BAD_PROFILE); return; }
+        if(!configure(frame.body)) { armed=false; if(idleRadio()!=RADIOLIB_ERR_NONE) fenced=true; refuse(frame,BAD_PROFILE); return; }
         armed=true; startReceive();
         if(!armed) { refuse(frame,FENCED); return; }
         Frame reply=response(ARM_REPLY,frame.request); reply.size=30; memcpy(reply.body,profile,30);
@@ -155,7 +165,7 @@ void setup() {
     if(generation==UINT64_MAX || state.putULong64("boot",generation+1)!=8) { state.end(); return; }
     state.end(); put64(boot+8,generation+1);
     ready=radio_init();
-    if(ready && radio.standby()!=RADIOLIB_ERR_NONE) ready=false;
+    if(ready && idleRadio()!=RADIOLIB_ERR_NONE) ready=false;
     // No Mesh instance, background advertising, automatic forwarding or RF ACK.
 }
 
@@ -180,12 +190,12 @@ void loop() {
     } else if(armed) {
         if(now>=deadlineUs) {
             armed=false;
-            if(radio.standby()!=RADIOLIB_ERR_NONE) fenced=true;
+            if(idleRadio()!=RADIOLIB_ERR_NONE) fenced=true;
             return;
         }
         uint32_t flags=0;
         if(readIrqFlags(flags)!=RADIOLIB_ERR_NONE) {
-            armed=false; fenced=true; radio.standby(); return;
+            armed=false; fenced=true; idleRadio(); return;
         }
         if(flags & RADIOLIB_SX126X_IRQ_RX_DONE) {
             const size_t length=radio.getPacketLength();

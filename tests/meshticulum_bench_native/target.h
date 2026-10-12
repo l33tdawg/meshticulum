@@ -18,14 +18,16 @@ struct FakeBoard {
 };
 inline FakeBoard board;
 struct FakeRadio {
-    int16_t standby_error=0, clear_error=0, start_error=0, finish_error=0, receive_error=0, config_error=0, read_error=0, irq_error=0;
-    uint32_t flags=0, starts=0;
+    int16_t standby_error=0, clear_error=0, start_error=0, finish_error=0, receive_error=0, config_error=0, read_error=0, irq_error=0, warm_error=0;
+    uint32_t flags=0, starts=0, receive_starts=0;
+    bool warm=false;
     std::vector<uint8_t> received={0xc0,0xdb,0,255};
     int16_t standby() { return standby_error; }
+    int16_t setStandbyXOSC(bool enabled) { if(warm_error) return warm_error; warm=enabled; return standby(); }
     int16_t clearIrqFlags(uint32_t) { if(!clear_error) flags=0; return clear_error; }
     int16_t startTransmit(uint8_t*,size_t) { starts++; return start_error; }
     int16_t finishTransmit() { flags=0; return finish_error; }
-    int16_t startReceive() { flags=0; return receive_error; }
+    int16_t startReceive() { receive_starts++; flags=0; return receive_error; }
     uint32_t getIrqFlags() { return flags; }
     FakeRadio* getMod() { return this; }
     int16_t SPIreadStream(uint16_t,uint8_t* data,size_t) {
