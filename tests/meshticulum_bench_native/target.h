@@ -5,12 +5,15 @@
 #define RADIOLIB_SX126X_IRQ_TX_DONE 1
 #define RADIOLIB_SX126X_IRQ_RX_DONE 2
 #define RADIOLIB_SX126X_IRQ_HEADER_VALID 0x10
+#define RADIOLIB_SX126X_IRQ_SYNC_WORD_VALID 0x08
 #define RADIOLIB_SX126X_IRQ_HEADER_ERR 0x20
 #define RADIOLIB_SX126X_IRQ_CRC_ERR 0x40
 #define RADIOLIB_SX126X_IRQ_TIMEOUT 0x200
 #define RADIOLIB_SX126X_IRQ_ALL 0x43ff
 #define RADIOLIB_SX126X_CMD_GET_IRQ_STATUS 0x12
 #define MESHTICULUM_BOARD_ID 1
+#define SX126X_DIO3_TCXO_VOLTAGE 1.8f
+#define RADIOLIB_SHAPING_0_5 2
 #define MESHTICULUM_MAX_CHIP_DBM 10
 #define MESHTICULUM_FIRMWARE "host-fault-test"
 struct FakeBoard {
@@ -24,6 +27,7 @@ struct FakeRadio {
     int16_t standby_error=0, clear_error=0, start_error=0, finish_error=0, receive_error=0, config_error=0, read_error=0, irq_error=0, warm_error=0;
     uint32_t flags=0, starts=0, receive_starts=0;
     bool warm=false;
+    bool gfsk=false;
     bool receiving=false, shared_fifo=false, overwrite_during_read=false;
     uint32_t irq_on_standby=0;
     uint64_t read_advance_us=0;
@@ -47,10 +51,11 @@ struct FakeRadio {
         if(read_error) return read_error;
         memcpy(p,received.data(),n); flags=0; fake_time+=read_advance_us;
         if((irq & RADIOLIB_SX126X_IRQ_CRC_ERR)
-            || ((irq & RADIOLIB_SX126X_IRQ_HEADER_ERR) && !(irq & RADIOLIB_SX126X_IRQ_HEADER_VALID))) return -7;
+            || ((irq & RADIOLIB_SX126X_IRQ_HEADER_ERR) && !(irq & (gfsk ? RADIOLIB_SX126X_IRQ_SYNC_WORD_VALID : RADIOLIB_SX126X_IRQ_HEADER_VALID)))) return -7;
         return 0;
     }
     float getRSSI() { return -92.5; }
+    float getRSSI(bool packet) { assert(packet);return -92.5; }
     float getSNR() { return -2.3; }
     int16_t setFrequency(float) { return config_error; }
     int16_t setBandwidth(float) { return config_error; }
@@ -60,6 +65,15 @@ struct FakeRadio {
     int16_t setPreambleLength(uint16_t) { return config_error; }
     int16_t setSyncWord(uint8_t) { return config_error; }
     int16_t setCRC(uint8_t) { return config_error; }
+    int16_t beginFSK(float,float br,float dev,float bw,int8_t,uint16_t pre,float tcxo,bool ldo) {
+        assert(br==125 && dev==31.25 && bw==312 && pre==32 && tcxo==1.8f && !ldo);
+        if(!config_error) gfsk=true; return config_error;
+    }
+    int16_t setDataShaping(uint8_t n) { assert(n==2); return config_error; }
+    int16_t setSyncWord(uint8_t* data,size_t n) { assert(n==8 && !memcmp(data,"MTGFSK01",8)); return config_error; }
+    int16_t variablePacketLengthMode(uint8_t n) { assert(n==255); return config_error; }
+    int16_t setCRC(uint8_t n,uint16_t seed,uint16_t poly,bool inverted) { assert(n==2 && seed==65535 && poly==0x1021 && !inverted);return config_error; }
+    int16_t setWhitening(bool enabled,uint16_t seed) { assert(enabled && seed==511); return config_error; }
 };
 inline FakeRadio radio;
-inline bool radio_init() { return true; }
+inline bool radio_init() { radio.gfsk=false;return true; }

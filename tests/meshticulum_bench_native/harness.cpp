@@ -14,6 +14,12 @@ static Frame armRequest(uint64_t id=1) {
     put32(f.body+14,2000); put32(f.body+18,3); put64(f.body+22,300000);
     return f;
 }
+static Frame gfskArmRequest(uint64_t id=1) {
+    auto f=request(GFSK_ARM,id);f.size=47;f.body[0]='G';f.body[1]='F';f.body[2]=1;
+    put32(f.body+3,921375000);put32(f.body+7,125000);put32(f.body+11,31250);put32(f.body+15,312000);
+    f.body[19]=0;put16(f.body+20,32);memcpy(f.body+22,"MTGFSK01",8);f.body[30]=9;
+    put32(f.body+31,2000);put32(f.body+35,3);put64(f.body+39,300000);return f;
+}
 static Frame txRequest(uint64_t id=2) {
     auto f=request(TRANSMIT,id); f.size=3; f.body[0]=0xc0; f.body[1]=0xdb; f.body[2]=7; return f;
 }
@@ -51,6 +57,23 @@ int main(int argc,char** argv) {
         assert(!ready && !armed && !radio.starts); return 0;
     }
     assert(ready && !armed && !radio.starts && u64(boot+8)==18);
+    if(mode=="gfsk_roundtrip") {
+        command(gfskArmRequest());assert(armed && gfskMode && radio.gfsk);auto rows=drain();assert(rows.back().type==GFSK_ARM_REPLY && rows.back().size==47);
+        auto status=request(GFSK_STATUS,50);command(status);rows=drain();assert(rows.back().type==GFSK_STATUS_REPLY && rows.back().size==66 && rows.back().body[63]);
+        radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;loop();rows=drain();assert(rows.back().type==GFSK_RECEIVE && rows.back().size==6);
+        command(txRequest());assert(attempted==1 && reservedUs==1152);radio.flags=RADIOLIB_SX126X_IRQ_TX_DONE;loop();
+        command(txRequest());assert(radio.starts==1 && reservedUs==1152);
+        command(request(DISARM,3));assert(!armed && !radio.warm);command(armRequest(4));assert(armed && !gfskMode && !radio.gfsk && attempted==1 && reservedUs==1152);
+        return 0;
+    }
+    if(mode=="gfsk_failed_or_replayed") {
+        auto f=gfskArmRequest();f.body[7]=1;command(f);assert(fenced && !armed && !radio.starts);
+        command(gfskArmRequest(1));assert(!armed && !radio.starts);return 0;
+    }
+    if(mode=="gfsk_expiry") {
+        command(gfskArmRequest());const auto end=deadlineUs;fake_time=end+1;loop();assert(!armed && !radio.warm);
+        command(gfskArmRequest());assert(!armed && deadlineUs==end);return 0;
+    }
     if(mode=="idle") {
         for(unsigned i=0;i<1000;i++) loop();
         assert(!radio.starts && Serial.bytes.empty());

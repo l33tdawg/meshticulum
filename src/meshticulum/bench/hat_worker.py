@@ -32,6 +32,10 @@ def journal_binding(context_digest, host_boot_id, profile):
 
 
 class HATWorker:
+    _profile_type = RadioProfile
+    _driver_type = SX1262
+    _airtime = staticmethod(estimated_airtime_us)
+
     __slots__ = ('__dispatch', '__dict__')
 
     def __setattr__(self, name, value):
@@ -47,7 +51,7 @@ class HATWorker:
     def __init__(self, transport, *, journal, profile, context_digest, authorize,
                  authority_deadline, antenna_confirmed, monotonic=None,
                  time_basis='host-monotonic'):
-        require(type(profile) is RadioProfile and callable(authorize), 'invalid_hat_authority')
+        require(type(profile) is self._profile_type and callable(authorize), 'invalid_hat_authority')
         require(type(antenna_confirmed) is bool, 'invalid_antenna_confirmation')
         require(type(authority_deadline) in (int, float) and math.isfinite(authority_deadline),
                 'invalid_authority_deadline')
@@ -58,6 +62,7 @@ class HATWorker:
         require(journal.max_attempts <= profile.max_boot_attempts
                 and journal.max_airtime_us <= profile.max_boot_estimated_airtime_us,
                 'host_limits_exceed_driver_limits')
+        profile_type,driver_type,airtime=self._profile_type,self._driver_type,self._airtime
         self.io, self.journal, self.profile = transport, journal, profile
         self.authorize, self.deadline = authorize, authority_deadline
         self.antenna_confirmed, self.fenced = antenna_confirmed, False
@@ -75,7 +80,7 @@ class HATWorker:
                     and callable(monotonic), 'hat_clock_basis_unverified')
             native_clock = monotonic
         self._clock, self.time_basis = native_clock, time_basis
-        self.radio = SX1262(transport, monotonic=native_clock)
+        self.radio = self._driver_type(transport, monotonic=native_clock)
         self.lease_deadline = min(authority_deadline, native_clock() + profile.lease_ms / 1000)
         original_end = min(authority_deadline, self.lease_deadline)
         pid, thread = os.getpid(), threading.get_ident()
@@ -88,6 +93,7 @@ class HATWorker:
                     and current.__self__ is transport_clock.__self__
                     and current.__func__ is transport_clock.__func__) or current is transport_clock
         driver_clock = original_radio._now
+        driver_airtime=original_radio._airtime
         failed = False
         def owned(*, contain=False, disarm=False):
             nonlocal failed
@@ -109,7 +115,9 @@ class HATWorker:
                     and self.authorize is authorize
                     and self._clock is native_clock and self.time_basis == time_basis
                     and same_transport_clock()
-                    and original_radio._now is driver_clock, 'hat_owner_or_clock_changed')
+                    and original_radio._now is driver_clock
+                    and self._profile_type is profile_type and self._driver_type is driver_type
+                    and self._airtime is airtime and original_radio._airtime is driver_airtime, 'hat_owner_or_clock_changed')
             require(type(self.deadline) in (int, float) and math.isfinite(self.deadline)
                     and type(self.lease_deadline) in (int, float)
                     and math.isfinite(self.lease_deadline), 'invalid_hat_deadline')
@@ -157,7 +165,7 @@ class HATWorker:
         owned = self._dispatch
         receive_deadline = owned()
         radio, transport, journal, profile = self.radio, self.io, self.journal, self.profile
-        estimate = estimated_airtime_us(profile, len(packet))
+        estimate = self._airtime(profile, len(packet))
         reservation = math.ceil(estimate * 1.10) + 1000
         timeout = reservation / 1000000 + 0.5
         self._live(timeout)
@@ -192,6 +200,8 @@ class HATWorker:
                 driver = radio.poll_transmit()
                 if driver is None:
                     transport.sleep(0.001)
+            require(type(profile) is RadioProfile or driver.estimated_airtime_us==estimate<=reservation,
+                    'gfsk_driver_estimate_changed')
             outcome = 'RF_DONE' if driver.outcome is Outcome.RF_DONE else 'UNKNOWN'
             evidence = json.dumps({'driver_estimate_us': driver.estimated_airtime_us,
                 'host_driver_elapsed_us': driver.driver_elapsed_us, 'irq': driver.irq_flags,
@@ -290,3 +300,14 @@ class HATWorker:
     def disarm(self):
         self.lease_deadline = 0
         self._dispatch(disarm=True)
+
+
+from .gfsk_profile import GfskProfile, estimated_airtime_us as gfsk_airtime_us
+from .gfsk_sx1262 import GfskSX1262
+
+
+class GfskHATWorker(HATWorker):
+    """Explicit GFSK125 admission path; legacy HATWorker remains LoRa only."""
+    _profile_type = GfskProfile
+    _driver_type = GfskSX1262
+    _airtime = staticmethod(gfsk_airtime_us)

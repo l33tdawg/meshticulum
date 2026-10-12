@@ -35,6 +35,7 @@ def native(tmp_path_factory):
 
 
 @pytest.mark.parametrize('scenario', [
+    'gfsk_roundtrip','gfsk_failed_or_replayed','gfsk_expiry',
     'boot_failure', 'idle', 'complete_replay', 'timeout', 'conflicting_flags',
     'lost_interrupt', 'start_failure', 'finish_failure', 'clear_failure',
     'wrong_boot', 'lease_replay', 'budget', 'receive', 'backpressure', 'config_failure', 'irq_read_failure',

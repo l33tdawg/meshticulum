@@ -26,17 +26,26 @@ _READ_OPCODES = frozenset((0xC0, 0x1D, 0x1E, 0x11, 0x12, 0x13, 0x14, 0x17))
 
 
 class SX1262:
+    _airtime = staticmethod(estimated_airtime_us)
+
     def __init__(self, transport, *, monotonic=None):
         self.io = transport
+        original_airtime=self._airtime
+        hook_names=('_rx_tail_us','_receive_evidence','_packet')
+        hooks=tuple((getattr(self,name).__self__,getattr(self,name).__func__) for name in hook_names)
+        def same_hooks():
+            return all(getattr(getattr(self,name),'__self__',None) is owner
+                       and getattr(getattr(self,name),'__func__',None) is function
+                       for name,(owner,function) in zip(hook_names,hooks))
         clock = transport.monotonic if monotonic is None else monotonic
         require(callable(clock), 'invalid_sx1262_clock')
         # HATWorker supplies its captured host clock. Direct driver model users
         # retain their explicit transport time basis; this layer grants no authority.
         def now():
-            require(self.io is transport, 'sx1262_transport_changed')
+            require(self.io is transport and self._airtime is original_airtime and same_hooks(), 'sx1262_transport_changed')
             value = clock()
             require(type(value) in (int, float) and math.isfinite(value), 'invalid_sx1262_clock')
-            require(self.io is transport, 'sx1262_transport_changed')
+            require(self.io is transport and self._airtime is original_airtime and same_hooks(), 'sx1262_transport_changed')
             return value
         self._now = now
         self.profile = None
@@ -190,7 +199,7 @@ class SX1262:
         require(self.profile is not None and not self.transmitting and not self.fenced,
                 'sx1262_not_ready')
         require(type(packet) is bytes and 1 <= len(packet) <= 255, 'sx1262_invalid_packet')
-        estimate = estimated_airtime_us(self.profile, len(packet))
+        estimate = self._airtime(self.profile, len(packet))
         timeout_us = math.ceil(estimate * 1.10) + 100000
         self._room(authority_deadline, timeout_us / 1000000 + 0.05)
         require(self.attempts < self.profile.max_boot_attempts
@@ -272,11 +281,11 @@ class SX1262:
             self._packet(255)
             self._write(0x08, struct.pack('!HHHH', RX_MASK, RX_MASK, 0, 0))
             self.io.receive_switch(True)
-            available_us = int((authority_deadline - self._now() - 0.01) * 1000000)
+            available_us = int((authority_deadline - self._now() - 0.01) * 1000000) - self._rx_tail_us()
             # Allow preamble acquisition across a maximum-frame-sized gap.
             # In explicit-header LoRa mode the finite RX timer stops after a
             # valid header; reception can then extend by the bounded payload.
-            window_us = min(math.ceil(estimated_airtime_us(self.profile, 255) * 1.10)
+            window_us = min(math.ceil(self._airtime(self.profile, 255) * 1.10)
                             + 250000, available_us)
             require(window_us > 0, 'sx1262_authority_deadline')
             self._write(0x82, self._rtc_steps(window_us))
@@ -300,9 +309,7 @@ class SX1262:
                 length, offset = self._read(0x13, 2)
                 require(1 <= length <= 255, 'sx1262_invalid_received_size')
                 data = self._read(0x1E, length, bytes([offset]))
-                rssi, snr, _signal_rssi = self._read(0x14, 3)
-                signed_snr = snr - 256 if snr >= 128 else snr
-                packet = RawReceive(-rssi / 2, signed_snr / 4, data)
+                packet = self._receive_evidence(data, self._read(0x14, 3))
             elif flags & (CRC_ERROR | HEADER_ERROR):
                 self.rx_errors += 1
             self.clear_irq()
@@ -311,6 +318,14 @@ class SX1262:
         except BaseException:
             self.contain()
             raise
+
+    def _rx_tail_us(self):
+        return 0  # Preserve the legacy LoRa receive timing contract.
+
+    def _receive_evidence(self, data, status):
+        rssi, snr, _signal_rssi = status
+        signed_snr = snr - 256 if snr >= 128 else snr
+        return RawReceive(-rssi / 2, signed_snr / 4, data)
 
     def contain(self):
         """Contain ambiguous hardware outcome by holding RESET low, then fence."""

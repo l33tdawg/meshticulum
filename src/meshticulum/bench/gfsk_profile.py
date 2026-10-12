@@ -1,8 +1,8 @@
 """Typed, opt-in 125 kbps GFSK configuration and airtime; opens no hardware.
 
 This record is deliberately distinct from the existing 30-byte LoRa ARM body.
-Existing workers/admission continue to reject it until a reviewed GFSK adapter
-binds the record, a finite authority and durable attempt accounting together.
+Explicit GFSK workers bind this record to finite caller-supplied authority and
+durable attempt accounting; default LoRa workers continue to reject it.
 Register encodings follow Semtech SX1261/2 section13.4 and RadioLib7.7.1.
 """
 from dataclasses import dataclass
@@ -72,6 +72,22 @@ class GfskProfile:
         result.encode(board_id=board_id)
         return result
 
+    def to_dict(self):
+        from dataclasses import asdict
+        value=asdict(self);value['sync_word_hex']=value.pop('sync_word').hex()
+        value['schema']='meshticulum.gfsk-profile.v1';return value
+
+    @classmethod
+    def from_dict(cls,value,*,board_id):
+        fields={'schema','frequency_hz','chip_power_dbm','lease_ms','max_boot_attempts',
+                'max_boot_estimated_airtime_us','bit_rate_bps','deviation_hz','rx_bandwidth_hz',
+                'preamble_bits','sync_word_hex','shaping_code'}
+        need(type(value) is dict and set(value)==fields and value['schema']=='meshticulum.gfsk-profile.v1',
+             'wrong_gfsk_record_schema')
+        need(type(value['sync_word_hex']) is str and value['sync_word_hex']==SYNC_WORD.hex(),'wrong_gfsk_sync_record')
+        data=dict(value);data.pop('schema');data['sync_word']=bytes.fromhex(data.pop('sync_word_hex'))
+        profile=cls(**data);profile.encode(board_id=board_id);return profile
+
 
 def estimated_airtime_us(profile, size):
     """Ceiling of physical packet bits/bitrate, including variable length byte.
@@ -111,3 +127,26 @@ def sx1262_plan(profile, size=255):
     # variable-length header, payload length, CRC2 non-inverted, whitening on.
     packet = struct.pack('!HBBBBBBB', PREAMBLE_BITS, 0x07, 64, 0, 1, size, 0x02, 1)
     return GfskRegisterPlan(b'\0', modulation, packet, SYNC_WORD, b'\xff\xff', b'\x10\x21', 0x01FF)
+
+
+def radio_airtime_us(profile,size):
+    """Explicit physical profile dispatch; malformed/foreign classes refuse."""
+    if type(profile) is GfskProfile:return estimated_airtime_us(profile,size)
+    from .serial_protocol import RadioProfile
+    from .serial_worker import estimated_airtime_us as lora_airtime
+    need(type(profile) is RadioProfile,'unsupported_radio_profile_class')
+    return lora_airtime(profile,size)
+
+
+def radio_is_fast(profile):
+    if type(profile) is GfskProfile:return True
+    from .serial_protocol import RadioProfile
+    need(type(profile) is RadioProfile,'unsupported_radio_profile_class')
+    return profile.bandwidth_hz>=250000
+
+
+def radio_is_sf5(profile):
+    if type(profile) is GfskProfile:return False
+    from .serial_protocol import RadioProfile
+    need(type(profile) is RadioProfile,'unsupported_radio_profile_class')
+    return profile.spreading_factor==5 and profile.bandwidth_hz==500000

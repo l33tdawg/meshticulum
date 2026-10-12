@@ -53,8 +53,32 @@ class AttemptResult:
 
 
 class SerialWorker:
+    _profile_type = RadioProfile
+    _arm_message = Message.ARM
+    _arm_reply = Message.ARM_REPLY
+    _receive_message = Message.RECEIVE
+    _receive_record = RawReceive
+    _airtime = staticmethod(estimated_airtime_us)
+    _exact_driver_estimate = False
+
+    __slots__ = ('__mode_check','__dict__')
+
+    def __setattr__(self,name,value):
+        if name=='_SerialWorker__mode_check' and hasattr(self,name):raise HardwareError('serial_modem_guard_changed')
+        object.__setattr__(self,name,value)
+
+    def __delattr__(self,name):
+        if name=='_SerialWorker__mode_check':raise HardwareError('serial_modem_guard_changed')
+        object.__delattr__(self,name)
+
     def __init__(self, channel):
         self.channel = channel
+        names=('_profile_type','_arm_message','_arm_reply','_receive_message','_receive_record','_airtime','_exact_driver_estimate')
+        original=tuple(getattr(self,name) for name in names)
+        def mode_check():
+            require(self.__mode_check is mode_check and all(getattr(self,name) is value for name,value in zip(names,original)),
+                    'serial_modem_dispatch_changed')
+        self.__mode_check=mode_check
         self.decoder = Decoder()
         self.identity = None
         self.journal = self.profile = self.authorize = None
@@ -68,13 +92,14 @@ class SerialWorker:
         for frame in self.decoder.feed(data):
             if self.identity is not None:
                 require(frame.boot == self.identity.boot, 'radio_boot_changed')
-                if frame.type is Message.RECEIVE:
-                    received = RawReceive.from_frame(frame, boot=self.identity.boot)
+                if frame.type is self._receive_message:
+                    received = self._receive_record.from_frame(frame, boot=self.identity.boot)
                     if len(self._received) == 32:
                         self.dropped_receive += 1
                     else:
                         self._received.append((self.channel.monotonic(), received))
                     continue
+                require(frame.type not in (Message.RECEIVE, Message.GFSK_RECEIVE), 'wrong_receive_modem')
             require(len(self._pending) < 64, 'serial_reply_queue_full')
             self._pending.append(frame)
 
@@ -105,13 +130,15 @@ class SerialWorker:
         return self.identity
 
     def _live(self, needed=0.0):
+        check=self.__mode_check;check()
         require(not self.fenced and self.authorize is not None
                 and self.authorize() is True, 'radio_authority_refused')
+        require(self.__mode_check is check,'serial_modem_guard_changed');check()
         require(self.channel.monotonic() + needed < self.deadline, 'radio_authority_expired')
 
     def arm(self, *, journal, profile, context_digest, authorize, authority_deadline):
         require(self.identity is not None and self.journal is None, 'invalid_arm_state')
-        require(type(profile) is RadioProfile and callable(authorize), 'invalid_arm_parameters')
+        require(type(profile) is self._profile_type and callable(authorize), 'invalid_arm_parameters')
         require(type(authority_deadline) in (int, float) and math.isfinite(authority_deadline),
                 'invalid_authority_deadline')
         require(journal.binding == journal_binding(context_digest, self.identity, profile),
@@ -127,21 +154,22 @@ class SerialWorker:
             self.disarm()
             self._live(profile.lease_ms / 1000 + 0.5)
             request = journal.command_request()
-            frame = Frame(Message.ARM, self.identity.boot, request,
+            frame = Frame(self._arm_message, self.identity.boot, request,
                           profile.encode(board_id=self.identity.board_id))
             started = self.channel.monotonic()
             self._send(frame, started + 2.0)
             reply = self._wait(request, started + 2.0)
-            require(reply.type is Message.ARM_REPLY and reply.body == frame.body, 'arm_not_confirmed')
+            require(reply.type is self._arm_reply and reply.body == frame.body, 'arm_not_confirmed')
             self.armed_until = started + profile.lease_ms / 1000 - 0.1
         except BaseException:
             self.fenced = True
             raise
 
     def transmit(self, packet):
+        self.__mode_check()
         require(self.profile is not None and type(packet) is bytes and 1 <= len(packet) <= 255,
                 'invalid_transmit')
-        estimate = estimated_airtime_us(self.profile, len(packet))
+        estimate = self._airtime(self.profile, len(packet))
         reservation = math.ceil(estimate * 1.10) + 1000
         timeout = reservation / 1000000 + 1.5
         self._live(timeout)
@@ -168,6 +196,7 @@ class SerialWorker:
                 driver = TxEvidence.from_reply(reply, boot=self.identity.boot,
                                                request=request, packet=packet)
                 require(driver.estimated_airtime_us <= reservation, 'driver_estimate_exceeded_reservation')
+                require(not self._exact_driver_estimate or driver.estimated_airtime_us == estimate, 'wrong_modem_driver_estimate')
                 if driver.outcome is Outcome.STARTED:
                     saw_start = True
                     continue
@@ -208,3 +237,18 @@ class SerialWorker:
         self._send(Frame(Message.DISARM, self.identity.boot, request), deadline)
         reply = self._wait(request, deadline)
         require(reply.type is Message.DISARM_REPLY and reply.body == b'\0', 'disarm_not_confirmed')
+
+
+from .gfsk_profile import GfskProfile, estimated_airtime_us as gfsk_airtime_us
+from .serial_protocol import GfskRawReceive
+
+
+class GfskSerialWorker(SerialWorker):
+    """Explicit finite GFSK worker. Constructing it opens no port or authority."""
+    _profile_type = GfskProfile
+    _arm_message = Message.GFSK_ARM
+    _arm_reply = Message.GFSK_ARM_REPLY
+    _receive_message = Message.GFSK_RECEIVE
+    _receive_record = GfskRawReceive
+    _airtime = staticmethod(gfsk_airtime_us)
+    _exact_driver_estimate = True

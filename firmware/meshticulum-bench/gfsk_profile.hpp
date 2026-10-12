@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
-// Opt-in GFSK record/config stage. The existing firmware loop does not call it.
-// It grants no ARM/TX authority; a future distinct GFSK command must bind the
-// finite lease, boot/request replay and durable debt before enabling this mode.
+// Typed GFSK configuration. The distinct firmware ARM contract supplies the
+// finite lease, boot/request replay guard and persistent boot debt.
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
@@ -43,8 +42,7 @@ inline uint64_t airtimeUs(size_t size) {
     //32 preamble bits +64 sync bits +8 length bits +16 CRC bits.
     return (120ull+8ull*size)*1000000ull/125000ull;
 }
-// Public RadioLib7.7.1 APIs. Templates are instantiated only in the source
-// harness until a distinct authenticated GFSK ARM/STATUS contract is reviewed.
+// Public RadioLib7.7.1 APIs. This bench path uses the common <=10 dBm profile.
 template<class Radio> int16_t program(Radio& radio,const Profile& profile,float boardTcxoVoltage,bool boardUseLdo) {
     if(!valid(profile,1)) return -32000;
     int16_t result=radio.beginFSK(profile.frequency/1000000.0f,125.0f,31.25f,312.0f,
@@ -59,7 +57,7 @@ template<class Radio> int16_t program(Radio& radio,const Profile& profile,float 
     if((result=radio.variablePacketLengthMode(255))) return result;
     if((result=radio.setCRC(2,0xFFFF,0x1021,false))) return result;
     if((result=radio.setWhitening(true,0x01FF))) return result;
-    // Preserve the warm oscillator only within the future admitted lease.
+    // Preserve the warm oscillator only within the admitted lease.
     return radio.setStandbyXOSC(true);
 }
 } // namespace mtbench::gfsk

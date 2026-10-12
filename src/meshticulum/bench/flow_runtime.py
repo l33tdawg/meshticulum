@@ -22,7 +22,7 @@ from ..scheduler.budget import CounterSample, Ledger
 from ..scheduler.scheduler import FrameRole, Scheduler, SchedulerPolicy
 from .wire import FrameKind, WireError, require
 from .serial_protocol import TxEvidence
-from .serial_worker import estimated_airtime_us
+from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .public_block import object_limit
 
 
@@ -61,7 +61,7 @@ class BenchFlow:
         self.last_activity_us = self.clock()[1]
         flow, port = _flow_modules()
         self.next_send_us = 0
-        self.receive_gap_us = math.ceil(estimated_airtime_us(authority.profile,
+        self.receive_gap_us = math.ceil(radio_airtime_us(authority.profile,
             flow.ACK_BYTES + 47) * 1.10) + 60000
         limits = contract.limits
         self.maximum_bytes = min(limits.max_queued_bytes, limits.max_unconsumed_bytes)
@@ -72,9 +72,8 @@ class BenchFlow:
         window = min(4, limits.window_bytes // limits.max_payload_bytes,
                      limits.max_reassembly_frames)
         require(window >= 1, 'bench_window_too_small')
-        self.burst_frames = window if authority.profile.bandwidth_hz >= 250000 else 1
-        fast_sf5 = (authority.profile.spreading_factor == 5
-                    and authority.profile.bandwidth_hz == 500000)
+        self.burst_frames = window if radio_is_fast(authority.profile) else 1
+        fast_sf5 = radio_is_sf5(authority.profile)
         self.burst_quiet_us = math.ceil(profile.forward_seconds * 1000000) + 60000
         if self.burst_frames > 1:
             # USB/driver completion can span more than one PHY packet. Keep
