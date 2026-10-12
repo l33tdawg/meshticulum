@@ -203,14 +203,32 @@ def test_next_burst_packet_can_arrive_during_upper_layer_work(rig):
     assert chip.tx_calls == journal.snapshot()['attempts'] == 0
 
 
+@pytest.mark.parametrize('flags', [0x200, 0x20, 0x22, 0x42])
+def test_ack_can_arrive_during_upper_work_after_empty_timeout_or_error(rig, flags):
+    chip, journal, worker = rig
+    worker.radio.start_receive(authority_deadline=worker.lease_deadline)
+    chip.flags = flags
+    assert worker.receive(timeout=0) is None
+    # Model the peer's encrypted ACK arriving during the upper loop's work.
+    # Standby cannot receive it; the worker must already have rearmed RX.
+    chip.sleep(.025)
+    if chip.mode == 5:
+        chip.rx, chip.flags = b'encrypted peer ACK', 2
+    received = worker.receive(timeout=0)
+    assert received is not None and received[1].packet == b'encrypted peer ACK'
+    assert worker.radio.receiving and chip.mode == 5 and not worker.fenced
+    assert chip.tx_calls == journal.snapshot()['attempts'] == 0
+
+
 @pytest.mark.parametrize('fault', ['refused', 'expired', 'lease_expired',
                                  'radio', 'driver', 'post_rearm_refused'])
-def test_rx_rearm_keeps_current_authority_and_contains_original_owner(rig, fault):
+@pytest.mark.parametrize('flags', [2, 0x200, 0x20, 0x22, 0x42])
+def test_rx_rearm_keeps_current_authority_and_contains_original_owner(rig, fault, flags):
     chip, journal, worker = rig
     original_radio = worker.radio
     foreign = SimpleNamespace(io=Chip())
     worker.radio.start_receive(authority_deadline=worker.lease_deadline)
-    chip.flags = 2
+    chip.flags = flags
     before = len(chip.commands)
     calls = 0
     def authorize():
@@ -239,11 +257,12 @@ def test_rx_rearm_keeps_current_authority_and_contains_original_owner(rig, fault
         assert not any(c[0] == 0x82 for c in chip.commands[before:])
 
 
-def test_rx_rearm_cannot_extend_original_finite_window(rig):
+@pytest.mark.parametrize('flags', [2, 0x200, 0x20, 0x22, 0x42])
+def test_rx_rearm_cannot_extend_original_finite_window(rig, flags):
     chip, _, worker = rig
     original_end = min(worker.deadline, worker.lease_deadline)
     worker.radio.start_receive(authority_deadline=original_end)
-    chip.flags = 2
+    chip.flags = flags
     start_receive = worker.radio.start_receive
     deadlines = []
     def changed_authority():
@@ -255,5 +274,5 @@ def test_rx_rearm_cannot_extend_original_finite_window(rig):
         return start_receive(authority_deadline=authority_deadline)
     worker._test_authorize_state['callback'] = changed_authority
     worker.radio.start_receive = record_receive
-    assert worker.receive(timeout=0) is not None
+    assert (worker.receive(timeout=0) is not None) is (flags == 2)
     assert deadlines == [original_end]

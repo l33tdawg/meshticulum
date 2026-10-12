@@ -243,6 +243,15 @@ class HATWorker:
                     radio.start_receive(authority_deadline=owned())
                     now = self._live()
                     return now, received
+                if not radio.receiving:
+                    # Finite RX timeout and rejected header/CRC also leave
+                    # the chip in standby. Restore RX before an empty return,
+                    # so a peer ACK can arrive during upper-loop processing.
+                    # The original finite lease and fresh permission still
+                    # bound both the SPI operation and the returned state.
+                    self._live()
+                    radio.start_receive(authority_deadline=owned())
+                    self._live()
                 now = self._clock()
                 require(type(now) in (int, float) and math.isfinite(now)
                         and now < owned(), 'hat_authority_expired')
