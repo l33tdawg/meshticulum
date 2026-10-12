@@ -20,6 +20,9 @@ from .serial_worker import estimated_airtime_us
 TX_DONE, RX_DONE, HEADER_ERROR, CRC_ERROR, TIMEOUT = 1, 2, 0x20, 0x40, 0x200
 RX_MASK = RX_DONE | HEADER_ERROR | CRC_ERROR | TIMEOUT
 BW_CODES = {62500: 3, 125000: 4, 250000: 5, 500000: 6}
+# Datasheet read commands used by this driver. Unknown commands retain the
+# write settle delay; a read never starts the command-processing state machine.
+_READ_OPCODES = frozenset((0xC0, 0x1D, 0x1E, 0x11, 0x12, 0x13, 0x14, 0x17))
 
 
 class SX1262:
@@ -54,7 +57,11 @@ class SX1262:
         self._ready()
         result = self.io.transfer(packet)
         require(type(result) is bytes and len(result) == len(packet), 'sx1262_short_reply')
-        self.io.sleep(0.0002)  # let BUSY assert after command processing starts
+        # DS2.2 section 8.3.1: writes assert BUSY within 600 ns after NSS
+        # rises; reads do not assert it. Keep the write settle and both BUSY
+        # gates, including the post-read gate for an asynchronous internal IRQ.
+        if packet[0] not in _READ_OPCODES:
+            self.io.sleep(0.0002)
         self._ready()
         return result
 
@@ -73,7 +80,7 @@ class SX1262:
 
     def _write(self, opcode, body=b''):
         self._transfer(bytes([opcode]) + body)
-        self.status()  # status of the completed command, not an unchecked MISO byte
+        return self.status()  # completed command, not an unchecked write MISO byte
 
     def _read(self, opcode, size, prefix=b''):
         value = self._transfer(bytes([opcode]) + prefix + bytes(size + 1))
@@ -109,8 +116,8 @@ class SX1262:
         require(self.irq() == 0, 'sx1262_stale_irq')
 
     def standby(self):
-        self._write(0x80, b'\0')
-        require((self.status() >> 4) & 7 == 2, 'sx1262_standby_failed')
+        value = self._write(0x80, b'\0')
+        require((value >> 4) & 7 == 2, 'sx1262_standby_failed')
         self.io.receive_switch(True)
         self.receiving = False
 

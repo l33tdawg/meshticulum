@@ -120,6 +120,132 @@ def test_bad_modes_and_command_errors_still_rejected(value):
         SX1262._valid_status(value)
 
 
+@pytest.mark.parametrize('packet', [
+    b'\xc0\0', b'\x1d\x07\x40\0\0', b'\x1e\0\0\0',
+    b'\x11\0\0', b'\x12\0\0\0', b'\x13\0\0\0',
+    b'\x14\0\0\0\0', b'\x17\0\0\0'])
+def test_documented_reads_have_no_fixed_sleep_with_busy_low(packet):
+    chip, radio = configured()
+    started = chip.time
+    checks, sleeps = [], []
+    original_busy, original_sleep = chip.busy, chip.sleep
+    def busy():
+        checks.append(chip.time)
+        return original_busy()
+    def sleep(seconds):
+        sleeps.append(seconds)
+        original_sleep(seconds)
+    chip.busy, chip.sleep = busy, sleep
+    assert len(radio._transfer(packet)) == len(packet)
+    assert checks == [started, started] and not sleeps
+    assert chip.time == started
+
+
+def test_internal_irq_busy_after_read_is_waited_before_the_next_spi_command():
+    chip, radio = configured()
+    original = chip.transfer
+    busy_until = chip.time
+    def busy():
+        return chip.time < busy_until
+    def transfer(packet):
+        nonlocal busy_until
+        assert not busy(), 'SPI command issued while internal IRQ holds BUSY'
+        reply = original(packet)
+        if packet[0] == 0x12:
+            busy_until = chip.time + 0.00035
+        return reply
+    chip.busy, chip.transfer = busy, transfer
+    started = chip.time
+    assert radio.irq() == 0
+    assert chip.time - started >= 0.00035
+    radio.status()
+    assert chip.commands[-2:] == [b'\x12\0\0\0', b'\xc0\0']
+
+
+def test_write_waits_for_delayed_busy_then_rejects_completed_command_error():
+    chip, radio = configured()
+    original = chip.transfer
+    pending = None
+    def busy():
+        return pending is not None and pending[0] <= chip.time < pending[1]
+    def transfer(packet):
+        nonlocal pending
+        if packet[0] == 0x8C:
+            pending = (chip.time + 0.0000006, chip.time + 0.00035)
+            original(packet)
+            # The write MISO reports a previous successful command. It must
+            # never replace the status of this completed command.
+            return bytes([0x22]) * len(packet)
+        if packet[0] == 0xC0 and pending is not None:
+            assert chip.time >= pending[1], 'GetStatus queried before write completion'
+            original(packet)
+            return b'\0\xaa'
+        return original(packet)
+    chip.busy, chip.transfer = busy, transfer
+    with pytest.raises(HardwareError, match='sx1262_bad_status_0xaa'):
+        radio.start_transmit(b'packet', authority_deadline=160, antenna_confirmed=True)
+    assert not chip.tx_calls and radio.fenced and chip.resets[-1] is False
+    assert radio.attempts == 1 and radio.reserved_us == estimated_airtime_us(PROFILE, 6)
+
+
+def test_standby_uses_one_fresh_completed_status_and_checks_its_mode():
+    chip, radio = configured()
+    offset = len(chip.commands)
+    radio.standby()
+    assert chip.commands[offset:] == [b'\x80\0', b'\xc0\0']
+    original = chip.transfer
+    def transfer(packet):
+        reply = original(packet)
+        # A valid command status alone is insufficient: standby must confirm
+        # the RC mode from the completed command's GetStatus response.
+        return b'\0\x62' if packet[0] == 0xC0 else reply
+    chip.transfer = transfer
+    with pytest.raises(HardwareError, match='sx1262_standby_failed'):
+        radio.start_transmit(b'packet', authority_deadline=160, antenna_confirmed=True)
+    assert not chip.tx_calls and radio.fenced and chip.resets[-1] is False
+
+
+def test_unknown_opcode_retains_write_settle_delay():
+    chip, radio = configured()
+    chip.transfer = lambda packet: bytes(len(packet))
+    started = chip.time
+    radio._transfer(b'\xfe\0')
+    assert chip.time - started == pytest.approx(0.0002)
+
+
+def test_busy_timeout_after_tx_irq_keeps_attempt_unknown_and_fenced():
+    chip, radio = configured()
+    original = chip.transfer
+    def transfer(packet):
+        reply = original(packet)
+        if packet[0] == 0x12 and chip.tx:
+            chip.fault = 'busy'
+        return reply
+    chip.transfer = transfer
+    radio.start_transmit(b'packet', authority_deadline=160, antenna_confirmed=True)
+    result = radio.poll_transmit()
+    assert result.outcome is Outcome.UNKNOWN and radio.fenced
+    assert chip.tx_calls == radio.attempts == 1 and chip.resets[-1] is False
+
+
+def test_time_spent_in_spi_does_not_extend_the_original_tx_deadline():
+    chip, radio = configured()
+    original = chip.transfer
+    def transfer(packet):
+        reply = original(packet)
+        if packet[0] == 0x0E:
+            chip.time += 0.20
+        return reply
+    chip.transfer = transfer
+    data = b'packet'
+    estimate = estimated_airtime_us(PROFILE, len(data))
+    deadline = chip.time + (estimate * 1.10 + 100000) / 1000000 + 0.055
+    with pytest.raises(HardwareError, match='sx1262_authority_deadline'):
+        radio.start_transmit(data, authority_deadline=deadline, antenna_confirmed=True)
+    assert not chip.tx_calls and radio.fenced and chip.resets[-1] is False
+    assert radio.attempts == 1 and radio.reserved_us == estimate
+
+
 def finish(chip, radio):
     for _ in range(5000):
         result = radio.poll_transmit()
