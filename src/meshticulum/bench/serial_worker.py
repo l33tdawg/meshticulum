@@ -46,6 +46,7 @@ class AttemptResult:
     outcome: str
     reserved_estimated_us: int
     driver: TxEvidence | None
+    driver_elapsed_clock_basis: str | None = None
 
 
 class SerialWorker:
@@ -182,7 +183,8 @@ class SerialWorker:
             except BaseException:
                 self.fenced = True
                 raise
-        return AttemptResult(request, result, reservation, driver)
+        return AttemptResult(request, result, reservation, driver,
+                             'coprocessor_monotonic' if driver is not None else None)
 
     def receive(self, timeout=0.0):
         self._live()

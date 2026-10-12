@@ -21,6 +21,7 @@ from ..contracts.negotiation import CommitOutcome, NegotiatedContract
 from ..scheduler.budget import CounterSample, Ledger
 from ..scheduler.scheduler import FrameRole, Scheduler, SchedulerPolicy
 from .wire import FrameKind, WireError, require
+from .serial_protocol import TxEvidence
 from .serial_worker import estimated_airtime_us
 from .public_block import object_limit
 
@@ -37,7 +38,9 @@ class BenchFlow:
     Profile costs are conservative source estimates. The scheduler additionally
     observes the durable worker's charged reservations, never a made-up RF
     counter. Overlap remains charged twice by the frozen ledger. Actual TX_DONE
-    evidence stays in the worker journal, separate from peer receipt.
+    evidence stays in the worker journal, separate from peer receipt. Per-TX
+    diagnostics retain driver elapsed time and clock basis beside host worker
+    call time; neither is a refund or peer-delivery assertion.
     """
     def __init__(self, *, authority, worker, cipher, journal, flow_key, contract,
                  profile, ledger, scheduler_epoch, broker_epoch, sends, clock):
@@ -146,11 +149,26 @@ class BenchFlow:
         require((frame.request.role is FrameRole.CONTROL) == (kind is FrameKind.ACK),
                 'inner_lane_mismatch')
         packet = self.cipher.seal(frame.payload, kind, authorize=self.authority.live)
+        worker_started_us = self.clock()[1]
         result = self.worker.transmit(packet)
+        worker_finished_us = self.clock()[1]
+        require(type(worker_started_us) is int and type(worker_finished_us) is int
+                and worker_finished_us >= worker_started_us, 'invalid_worker_timing')
+        driver = result.driver
+        require(driver is None or type(driver) is TxEvidence, 'invalid_driver_timing')
+        basis = result.driver_elapsed_clock_basis if driver is not None else None
+        require(driver is None or basis in ('coprocessor_monotonic', 'host_monotonic', 'model_monotonic'),
+                'invalid_driver_clock_basis')
         self.counts['tx_' + result.outcome] += 1
-        self.events.append({'event': 'tx', 'mono_us': self.clock()[1],
+        self.events.append({'event': 'tx', 'mono_us': worker_finished_us,
             'outer_kind': kind.name, 'packet_sha256': hashlib.sha256(packet).hexdigest(),
-            'bytes': len(packet), 'request': result.request, 'outcome': result.outcome})
+            'bytes': len(packet), 'request': result.request, 'outcome': result.outcome,
+            'worker_call_elapsed_us': worker_finished_us - worker_started_us,
+            'driver_estimated_airtime_us': driver.estimated_airtime_us if driver is not None else None,
+            'driver_elapsed_us': driver.driver_elapsed_us if driver is not None else None,
+            'driver_elapsed_clock_basis': basis,
+            'driver_irq_flags': driver.irq_flags if driver is not None else None,
+            'driver_error': driver.driver_error if driver is not None else None})
         self.last_activity_us = self.clock()[1]
         # A single half-duplex radio needs time to hear the reverse ACK before
         # another DATA start. This is an explicit initial bench pacing policy,

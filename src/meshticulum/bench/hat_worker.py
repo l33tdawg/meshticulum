@@ -213,7 +213,9 @@ class HATWorker:
                     pass
                 if not isinstance(error, Exception):
                     raise
-        return AttemptResult(request, outcome, reservation, driver)
+        clock_basis = ('host_monotonic' if self.time_basis == 'host-monotonic'
+                       else 'model_monotonic') if driver is not None else None
+        return AttemptResult(request, outcome, reservation, driver, clock_basis)
 
     def receive(self, timeout=0.0):
         require(type(timeout) in (int, float) and 0 <= timeout <= 0.1, 'invalid_receive_timeout')

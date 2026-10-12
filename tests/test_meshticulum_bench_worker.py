@@ -141,6 +141,7 @@ def test_reservation_is_durable_before_first_transport_write(setup):
     assert journal.snapshot()['attempts'] == 1
     assert journal.snapshot()['reserved_estimated_airtime_us'] == result.reserved_estimated_us
     assert result.driver.outcome is Outcome.RF_DONE  # not a peer delivery assertion
+    assert result.driver_elapsed_clock_basis == 'coprocessor_monotonic'
 
 
 @pytest.mark.parametrize('fault', ['partial_write', 'started_only', 'wrong_digest',

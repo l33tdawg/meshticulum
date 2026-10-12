@@ -35,6 +35,7 @@ def row(journal):
 
 def assert_done(chip, journal, result):
     assert result.outcome == 'RF_DONE' and result.driver.outcome is Outcome.RF_DONE
+    assert result.driver_elapsed_clock_basis == 'model_monotonic'
     records = row(journal)
     assert len(records) == 1 and records[0][0] == 'RF_DONE'
     assert records[0][1] == result.reserved_estimated_us
