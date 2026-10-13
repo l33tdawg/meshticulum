@@ -3,6 +3,8 @@ from copy import deepcopy
 import hashlib
 import json
 import os
+import subprocess
+import sys
 
 import pytest
 
@@ -160,3 +162,97 @@ def test_failed_publisher_construction_closes_only_its_opened_fds(tmp_path, sign
     assert opened
     for fd in opened:
         with pytest.raises(OSError): os.fstat(fd)
+
+
+@pytest.mark.parametrize('change', ['rebind', 'mutate'])
+def test_cleanup_rejects_registry_changes_without_closing_foreign_fds(tmp_path, signer, change):
+    p = package(signer); publisher = source(tmp_path / 'source', p)
+    originals = tuple(publisher.owned)
+    target = tmp_path / 'foreign'; target.write_bytes(b'foreign')
+    foreign = os.open(target, os.O_RDONLY | os.O_CLOEXEC)
+    identity = os.fstat(foreign).st_dev, os.fstat(foreign).st_ino
+    try:
+        if change == 'rebind': publisher.owned = {foreign: identity}
+        else: publisher.owned.clear(); publisher.owned[foreign] = identity
+        with pytest.raises(ValueError): publisher._check()
+        with pytest.raises(ValueError, match='ownership registry changed'): publisher.close()
+        assert os.fstat(foreign).st_ino == identity[1]
+        for fd in originals:
+            with pytest.raises(OSError): os.fstat(fd)
+    finally:
+        publisher.close(); os.close(foreign)
+
+
+def test_cleanup_uses_immutable_accessor_and_rejects_private_slot_changes(tmp_path, signer):
+    p = package(signer); publisher = source(tmp_path / 'source', p); originals = tuple(publisher.owned)
+    target = tmp_path / 'foreign'; target.write_bytes(b'foreign'); foreign = os.open(target, os.O_RDONLY)
+    try:
+        publisher._captured_cleanup = lambda: (((foreign, publisher._identity(os.fstat(foreign))[:2], None),),
+                                               (os.getpid(), publisher.thread), {}, ())
+        with pytest.raises(ValueError): publisher._FilePublisher__cleanup = publisher._captured_cleanup
+        with pytest.raises(ValueError): del publisher._FilePublisher__cleanup
+        publisher.close()
+        assert os.fstat(foreign)
+        for fd in originals:
+            with pytest.raises(OSError): os.fstat(fd)
+    finally:
+        publisher.close(); os.close(foreign)
+
+
+def test_same_inode_borrowed_descriptor_is_not_closed(tmp_path, signer):
+    p = package(signer); path = tmp_path / 'source'; publisher = source(path, p)
+    borrowed = publisher.metadata[0][0]
+    os.close(borrowed)
+    replacement = os.open(path / 'manifest.json', os.O_RDONLY | os.O_CLOEXEC)
+    if replacement != borrowed:
+        os.dup2(replacement, borrowed); os.close(replacement)
+    try:
+        with pytest.raises(ValueError, match='descriptor changed'): publisher._check()
+        publisher.close()
+        assert os.fstat(borrowed).st_ino == (path / 'manifest.json').stat().st_ino
+    finally:
+        publisher.close(); os.close(borrowed)
+
+
+@pytest.mark.parametrize('where', ['publisher_manifest', 'publisher_piece', 'receiver_context', 'receiver_part', 'receiver_published'])
+def test_fifo_replacement_is_refused_without_a_blocking_open(tmp_path, signer, where):
+    p = package(signer); path = tmp_path / 'source'; receiver_path = tmp_path / 'receiver'
+    with source(path, p): pass
+    with receive(receiver_path, p, Clock()) as receiver:
+        for index, raw in enumerate(inputs(p)): receiver.accept(index, raw)
+    fixture = tmp_path / 'input.json'
+    fixture.write_text(json.dumps(dict(raw=p[0].hex(), signature=p[1].hex(), trust=p[2], digest=p[3])))
+    script = '''
+import json, os, sys
+from pathlib import Path
+from meshticulum.resources import bundle_transport as bt, byte_bundle as bb
+value=json.loads(Path(sys.argv[1]).read_text()); source=Path(sys.argv[2]); target=Path(sys.argv[3]); where=sys.argv[4]
+raw=bytes.fromhex(value['raw']); signature=bytes.fromhex(value['signature']); args=(raw,signature,value['trust'],value['digest'])
+def fifo(path):
+    path.unlink(); os.mkfifo(path,0o600)
+try:
+    if where=='publisher_manifest':
+        fifo(source/'manifest.json')
+        with bt.FilePublisher(source,*args): pass
+    elif where=='publisher_piece':
+        with bt.FilePublisher(source,*args) as publisher:
+            address=json.loads(raw)['chunks'][0]['sha256']; fifo(source/'chunks'/(address+'.json'))
+            publisher.read_chunk(address)
+    else:
+        if where=='receiver_context': fifo(target/'context.json')
+        with bb.Receiver(target,*args,expires_epoch_us=2800000000,clock=lambda:(100000000,800000000),boot_reader=lambda:'test-host-boot') as receiver:
+            if where=='receiver_part': fifo(target/'parts'/(json.loads(raw)['chunks'][0]['sha256']+'.json'))
+            elif where=='receiver_published':
+                original=os.link
+                def replace(source,name,**kwargs):
+                    result=original(source,name,**kwargs); fifo(target/name); return result
+                os.link=replace
+            receiver.finish_file()
+except (OSError,ValueError) as error:
+    print(json.dumps({'refused':True,'error':type(error).__name__}))
+else:
+    raise SystemExit('FIFO was accepted')
+'''
+    result = subprocess.run([sys.executable, '-c', script, str(fixture), str(path), str(receiver_path), where],
+                            capture_output=True, text=True, timeout=3, check=True)
+    assert json.loads(result.stdout)['refused'] is True

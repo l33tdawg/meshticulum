@@ -19,6 +19,7 @@ SCHEMA = 'meshticulum.mb1-byte-bundle-transport.v1'
 KIND = 'mb1-byte-bundle-transport-v1'
 MAX_DESCRIPTOR = MAX_MANIFEST = 65536
 MAX_SIGNATURE = 4096
+_FD_TOKEN_BASE = 2 * kp.BUNDLE_BYTES + MAX_MANIFEST + MAX_SIGNATURE
 FIELDS = frozenset(('schema', 'transport_kind', 'manifest_sha256', 'signature_sha256',
                     'whole_bytes', 'whole_sha256', 'parts'))
 
@@ -98,12 +99,41 @@ class FilePublisher:
     The caller still owns transport authorization and must consume the iterator
     without accumulating its responses.
     """
+    __slots__ = ('__cleanup', '__dict__')
+
+    def __setattr__(self, name, value):
+        if name == '_FilePublisher__cleanup' and hasattr(self, name):
+            raise ValueError('bundle publisher cleanup changed')
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name):
+        if name == '_FilePublisher__cleanup':
+            raise ValueError('bundle publisher cleanup changed')
+        object.__delattr__(self, name)
+
     def __init__(self, directory, manifest_raw, signature_raw, trust, manifest_sha256):
         self.path = Path(directory).absolute()
         self.raw, self.signature, self.trust, self.digest = manifest_raw, signature_raw, trust, manifest_sha256
         self.pid, self.thread = os.getpid(), threading.get_ident()
         self.closed = False
-        self.owned, chain, metadata = {}, [], []
+        registry, tokens, chain, metadata = {}, [], [], []
+        owner = (self.pid, self.thread)
+        self.owned = registry
+        cleanup = ((), owner, registry, ())
+        self.__cleanup = lambda: cleanup
+        def freeze_cleanup():
+            nonlocal cleanup
+            cleanup = (tuple(tokens), owner, registry, tuple(registry.items()))
+        def retain(fd, info):
+            identity = self._identity(info)[:2]
+            registry[fd] = identity; tokens.append((fd, identity, None))
+            # pread leaves regular-file offsets untouched. Directory offsets
+            # remain untouched because arbitrary directory seeks are not portable.
+            if stat.S_ISREG(info.st_mode):
+                token = _FD_TOKEN_BASE + fd
+                kp.require(os.lseek(fd, token, os.SEEK_SET) == token, 'publisher descriptor token refused')
+                tokens[-1] = (fd, identity, token)
+        freeze_cleanup()
         self.chunks_fd = None
         try:
             _manifest(self.raw, self.signature, self.trust, self.digest)
@@ -113,19 +143,19 @@ class FilePublisher:
             for name in self.path.parts:
                 fd = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=parent)
                 info = os.fstat(fd); identity = self._identity(info)
-                self.owned[fd] = identity[:2]
+                retain(fd, info)
                 kp.require(info.st_uid in (0, os.geteuid()), 'foreign bundle publisher ancestor')
                 chain.append((fd, parent, name, identity)); parent = fd
             self.directory_fd = parent
             self.chunks_fd = os.open('chunks', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
                                      dir_fd=parent)
             self.chunks_identity = self._identity(os.fstat(self.chunks_fd))
-            self.owned[self.chunks_fd] = self.chunks_identity[:2]
+            retain(self.chunks_fd, os.fstat(self.chunks_fd))
             kp.require(os.fstat(self.chunks_fd).st_uid in (0, os.geteuid()), 'foreign bundle publisher directory')
             for name, expected, maximum in (('manifest.json', self.raw, MAX_MANIFEST),
                                             ('manifest.sig.json', self.signature, MAX_SIGNATURE)):
-                fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=parent)
-                identity = self._file_identity(os.fstat(fd)); self.owned[fd] = identity[:2]
+                fd = os.open(name, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=parent)
+                identity = self._file_identity(os.fstat(fd)); retain(fd, os.fstat(fd))
                 self._regular(os.fstat(fd))
                 kp.require(os.fstat(fd).st_size <= maximum and os.pread(fd, maximum + 1, 0) == expected
                            and identity == self._file_identity(os.fstat(fd))
@@ -133,11 +163,13 @@ class FilePublisher:
                            'bundle publisher metadata changed')
                 metadata.append((fd, name, identity, expected, maximum))
             self.chain, self.metadata = tuple(chain), tuple(metadata)
+            freeze_cleanup()
             refs = (self.path, self.raw, self.signature, self.trust, self.digest, self.directory_fd,
                     self.chunks_fd, self.chunks_identity, self.chain, self.metadata)
             self.refs = refs; self._captured_refs = lambda: refs
             self._check()
         except BaseException:
+            freeze_cleanup()
             self.close()
             raise
 
@@ -156,11 +188,17 @@ class FilePublisher:
 
     def _check(self):
         refs = self._captured_refs()
+        tokens, owner, registry, original = self.__cleanup()
         kp.require(not self.closed and (self.pid, self.thread) == (os.getpid(), threading.get_ident())
+                   == owner and self.owned is registry and tuple(registry.items()) == original
                    and self.refs is refs and all(a is b for a, b in zip(
                        (self.path, self.raw, self.signature, self.trust, self.digest, self.directory_fd,
                         self.chunks_fd, self.chunks_identity, self.chain, self.metadata), refs)),
                    'bundle publisher rebound')
+        for fd, identity, token in tokens:
+            kp.require(self._identity(os.fstat(fd))[:2] == identity
+                       and (token is None or os.lseek(fd, 0, os.SEEK_CUR) == token),
+                       'bundle publisher descriptor changed')
         for fd, parent, name, identity in self.chain:
             kp.require(self._identity(os.fstat(fd)) == identity
                        == self._identity(os.stat(name, dir_fd=parent, follow_symlinks=False)),
@@ -184,7 +222,7 @@ class FilePublisher:
         entry = next((e for e in manifest['chunks'] if e['sha256'] == content_address), None)
         kp.require(entry is not None, 'unknown bundle publisher part')
         name = content_address + '.json'
-        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=self.chunks_fd)
+        fd = os.open(name, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=self.chunks_fd)
         identity = None
         try:
             info = os.fstat(fd); identity = self._file_identity(info); self._regular(info)
@@ -207,16 +245,19 @@ class FilePublisher:
                 pass
 
     def close(self):
-        if self.closed or (self.pid, self.thread) != (os.getpid(), threading.get_ident()):
+        tokens, owner, registry, original = self.__cleanup()
+        if self.closed or owner != (os.getpid(), threading.get_ident()):
             return
+        valid = self.owned is registry and tuple(registry.items()) == original
         self.closed = True
-        for fd, identity in tuple(self.owned.items()):
+        for fd, identity, token in tokens:
             try:
-                if self._identity(os.fstat(fd))[:2] == identity:
+                if self._identity(os.fstat(fd))[:2] == identity and (token is None or os.lseek(fd, 0, os.SEEK_CUR) == token):
                     os.close(fd)
             except OSError:
                 pass
-        self.owned.clear()
+        if valid: registry.clear()
+        kp.require(valid, 'bundle publisher ownership registry changed')
 
     def __enter__(self):
         return self

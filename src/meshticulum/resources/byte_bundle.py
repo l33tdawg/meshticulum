@@ -103,13 +103,13 @@ class Receiver:
             first=clock();self._clock(first)
             kp.require(type(expires_epoch_us) is int and 0<expires_epoch_us-first[0]<=86400000000,
                        'invalid original bundle lifetime')
-            try:self.context_fd=os.open('context.json',os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=self.fd)
+            try:self.context_fd=os.open('context.json',os.O_RDONLY|os.O_NONBLOCK|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=self.fd)
             except FileNotFoundError:
                 kp.require(not os.listdir(self.fd),'unverified existing bundle quarantine')
                 context=dict(self.binding,original_epoch_us=first[0],original_monotonic_us=first[1],
                     deadline_monotonic_us=first[1]+expires_epoch_us-first[0])
                 self._atomic(self.fd,'context.json',kp.canonical_json(context))
-                self.context_fd=os.open('context.json',os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=self.fd)
+                self.context_fd=os.open('context.json',os.O_RDONLY|os.O_NONBLOCK|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=self.fd)
                 self.owned[self.context_fd]=self._identity(os.fstat(self.context_fd))[:2]
                 os.mkdir('parts',mode=0o700,dir_fd=self.fd)
             self.owned[self.context_fd]=self._identity(os.fstat(self.context_fd))[:2]
@@ -149,7 +149,7 @@ class Receiver:
             kp.require(self._identity(os.fstat(fd))[:4]==identity
                        ==self._identity(os.stat(name,dir_fd=parent,follow_symlinks=False))[:4],'bundle ancestry rebound')
     def _published(self,directory_fd,name,raw,identity=None):
-        fd=os.open(name,os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=directory_fd)
+        fd=os.open(name,os.O_RDONLY|os.O_NONBLOCK|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=directory_fd)
         try:
             info=os.fstat(fd);self._private(info);original=self._file_identity(info)
             kp.require((identity is None or original[:2]==identity) and info.st_size==len(raw)
@@ -221,7 +221,7 @@ class Receiver:
         return decoded,part
     def _part(self,index):
         name=self.expected['parts'][index]['chunk_sha256']+'.json'
-        fd=os.open(name,os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=self.parts_fd)
+        fd=os.open(name,os.O_RDONLY|os.O_NONBLOCK|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=self.parts_fd)
         try:
             self._private(os.fstat(fd));original=self._file_identity(os.fstat(fd));raw=os.pread(fd,kp.BUNDLE_CHUNK_BYTES+1,0)
             kp.require(original==self._file_identity(os.fstat(fd))==self._file_identity(os.stat(name,dir_fd=self.parts_fd,follow_symlinks=False)),
@@ -250,7 +250,7 @@ class Receiver:
     def _file_matches(self,name,size,digest,identity):
         """Recheck a published/staged file without reading the whole file at once."""
         self._live()
-        fd=os.open(name,os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=self.fd)
+        fd=os.open(name,os.O_RDONLY|os.O_NONBLOCK|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=self.fd)
         original=None
         try:
             info=os.fstat(fd);self._private(info);original=self._file_identity(info)
