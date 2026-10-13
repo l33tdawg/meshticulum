@@ -127,11 +127,50 @@ def describe_stage(kind, incoming, outgoing):
     return RelayStage(kind, one, two, size, bytes.fromhex(pin))
 
 
+@dataclass(frozen=True, slots=True, repr=False)
+class RelayCloseDelegation:
+    """One exact relay's local cleanup handoff, never a carrier permission.
+
+    Only an instance retained by ``prepare_close_delegation`` is accepted.
+    Constructing or copying this record grants no access.
+    """
+    _relay: object
+    _owner: tuple
+    _gate: object
+    _methods: tuple
+
+    def __repr__(self):
+        return '<RelayCloseDelegation>'
+
+
+def _cancel_binding(transfer):
+    """Retain only exact local cancellation targets; no permission callback."""
+    require(type(transfer) is ServiceTransfer)
+    flow = transfer.flow
+    objects = (transfer, flow, transfer.authority)
+    targets = ((transfer, 'cancel'), (flow, 'close'))
+    if type(flow) is BenchFlow:
+        objects += (flow.owner, flow.scheduler, flow.link)
+        targets += ((flow.owner, 'settle_sending'), (flow.owner, 'dispatch_lease'),
+                    (flow.scheduler, 'close'))
+    else:
+        from ..ip.flow import IpFlow
+        require(type(flow) is IpFlow)
+        objects += (flow.flow,)
+        targets += ((flow.flow, 'cancel'),)
+    methods = tuple((target, name, type(target), getattr(type(target), name))
+                    for target, name in targets)
+    require(all(name not in vars(target) for target, name in targets))
+    return objects, methods
+
+
 def _operation(method):
     @wraps(method)
     def checked(self, *args, **kwargs):
-        # A foreign thread never closes or drives another thread's carriers.
+        # Only an explicit idle cleanup delegation crosses the thread boundary.
         require(self._owner == (os.getpid(), threading.get_ident()))
+        gate = self._gate
+        require(gate is self._gate_ref and gate.acquire(blocking=False))
         entered = False
         try:
             require(not self._busy and not self._closed)
@@ -148,6 +187,7 @@ def _operation(method):
         finally:
             if entered:
                 self._busy = False
+            gate.release()
     return checked
 
 
@@ -160,6 +200,11 @@ authenticated final ACK. ``finish_stage`` releases the borrowed references but
 does not close devices, assert upstream final-ACK receipt or admit private data.
 The owner must complete its own receive-ACK/retirement/disarm protocol.
 
+The creator may prepare one cleanup delegation for a shutdown coordinator.
+It grants only idle local cancellation in this process. The coordinator must
+independently fence external carrier producers before consuming it; device,
+authority and journal retirement remain the caller's responsibility.
+
 Failure cancels local queues, fences this helper and preserves all carrier
 journals. No automatic retry, replacement carrier or deadline renewal occurs.
     """
@@ -170,11 +215,15 @@ journals. No automatic retry, replacement carrier or deadline renewal occurs.
         self._context = description.context.prologue
         self._limits = self._description_values()
         self._owner = (os.getpid(), threading.get_ident())
+        self._gate = self._gate_ref = threading.RLock()
+        self._close_delegation = None
+        self._close_consumed = False
         self._last_clock = None
         self._busy = self._closed = self._uncertain = False
         self._position = 0
         self._active = self._packet = None
         self._bindings = None
+        self._cancel_bindings = None
         self._seen_sessions = set()
         self._seen_generations = set()
         self._receipts = []
@@ -263,6 +312,7 @@ journals. No automatic retry, replacement carrier or deadline renewal occurs.
         self._active = stage, incoming, outgoing
         self._bindings = (incoming, incoming.flow, incoming.authority,
                           outgoing, outgoing.flow, outgoing.authority)
+        self._cancel_bindings = tuple(_cancel_binding(t) for t in (incoming, outgoing))
         self._bound()
         self._seen_sessions.update(s.session_id for s in sessions)
         self._seen_generations.update(s.session_generation for s in sessions)
@@ -306,29 +356,120 @@ journals. No automatic retry, replacement carrier or deadline renewal occurs.
         self._receipts.append(receipt)
         self._position += 1
         self._active = self._bindings = self._packet = None
+        self._cancel_bindings = None
         return dict(receipt)
+
+    def prepare_close_delegation(self):
+        """Creator-only, once, without clock/authority calls or ownership changes."""
+        require(type(self) is OpaqueForwardRelay
+                and self._owner == (os.getpid(), threading.get_ident()))
+        gate = self._gate
+        require(gate is self._gate_ref and gate.acquire(blocking=False))
+        try:
+            require(not self._busy and self._close_delegation is None)
+            self._description_current()
+            names = ('prepare_close_delegation', 'close_delegated', 'close',
+                     '_cancellation_idle', '_cancel_owned', '_retire')
+            require(all(name not in vars(self) for name in names))
+            methods = tuple((name, getattr(type(self), name)) for name in names)
+            token = RelayCloseDelegation(self, self._owner, gate, methods)
+            self._close_delegation = token
+            return token
+        finally:
+            gate.release()
+
+    def _cancellation_idle(self):
+        require(not self._busy)
+        for objects, _ in self._cancel_bindings or ():
+            _, flow, authority, *extra = objects
+            require(not authority.held)
+            if type(flow) is BenchFlow:
+                owner, scheduler, link = extra
+                require(not scheduler._busy and not owner._lease_open and not link._in_send)
+
+    def _cancel_owned(self, binding):
+        objects, methods = binding
+        transfer, flow, authority, *extra = objects
+        current_objects, current_methods = _cancel_binding(transfer)
+        require(len(objects) == len(current_objects)
+                and all(a is b for a, b in zip(objects, current_objects))
+                and methods == current_methods and flow.authority is authority
+                and not authority.held)
+        if type(flow) is BenchFlow:
+            owner, scheduler, link = extra
+            require(not scheduler._busy and not owner._lease_open and not link._in_send)
+            if scheduler._unresolved or any(row.fenced for row in scheduler._flows.values()):
+                self._uncertain = True
+        # This is the retained ServiceTransfer.cancel, not a caller replacement.
+        methods[0][3](transfer)
+        require(transfer.cancelled is True and flow.closed is True)
+        if type(flow) is BenchFlow:
+            require(owner.no_send and scheduler._closed and not scheduler._busy
+                    and not scheduler._flows and not scheduler._queues and not scheduler._unresolved)
+        else:
+            require(flow.flow._fenced and not flow.flow.queued_bytes())
+
+    def close_delegated(self, token):
+        """Consume one same-process idle handoff; True proves local cleanup only.
+
+        Busy/wrong/spent handoffs are rejected before consumption. Once cleanup
+        is accepted, any failure consumes the token and leaves uncertainty
+        latched. No live authority, clock, journal or device method is invoked.
+        """
+        require(type(self) is OpaqueForwardRelay and type(token) is RelayCloseDelegation
+                and token is self._close_delegation and token._relay is self
+                and token._owner == self._owner and os.getpid() == self._owner[0]
+                and token._gate is self._gate is self._gate_ref)
+        gate = token._gate
+        require(gate.acquire(blocking=False))
+        try:
+            require(not self._close_consumed
+                    and all(name not in vars(self) and getattr(type(self), name) is method
+                            for name, method in token._methods))
+            self._cancellation_idle()
+            self._close_consumed = True
+            self._retire()
+            return not self._uncertain
+        finally:
+            gate.release()
 
     def _retire(self):
         self._closed = True
         active, self._active = self._active, None
         self._packet = self._bindings = None
+        bindings, self._cancel_bindings = self._cancel_bindings, None
         if active is not None:
-            for transfer in active[1:]:
+            if bindings is None or len(bindings) != 2:
+                self._uncertain = True
+                return
+            for binding in bindings:
                 try:
-                    transfer.cancel()
+                    self._cancel_owned(binding)
                 except BaseException:
                     self._uncertain = True
 
     def close(self):
         require(self._owner == (os.getpid(), threading.get_ident()))
-        self._retire()
+        gate = self._gate
+        require(gate is self._gate_ref and gate.acquire(blocking=False))
+        try:
+            self._cancellation_idle()
+            self._retire()
+            return not self._uncertain
+        finally:
+            gate.release()
 
     def snapshot(self):
         require(self._owner == (os.getpid(), threading.get_ident()))
-        return dict(schema='meshticulum.opaque-forward-relay.v1',
-                    completed_stages=self._position, closed=self._closed,
-                    uncertain=self._uncertain, queued_records=int(self._packet is not None),
-                    queued_bytes=len(self._packet) if self._packet is not None else 0,
-                    receipts=[dict(value) for value in self._receipts],
-                    private_admission=False, native_retirement_proved=False,
-                    durable_replay_proved=False, refunds=0)
+        gate = self._gate
+        require(gate is self._gate_ref and gate.acquire(blocking=False))
+        try:
+            return dict(schema='meshticulum.opaque-forward-relay.v1',
+                        completed_stages=self._position, closed=self._closed,
+                        uncertain=self._uncertain, queued_records=int(self._packet is not None),
+                        queued_bytes=len(self._packet) if self._packet is not None else 0,
+                        receipts=[dict(value) for value in self._receipts],
+                        private_admission=False, native_retirement_proved=False,
+                        durable_replay_proved=False, refunds=0)
+        finally:
+            gate.release()
