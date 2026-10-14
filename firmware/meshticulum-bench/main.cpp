@@ -14,6 +14,10 @@ using namespace mtbench;
 
 static Decoder decoder;
 static OutputQueue output;
+static constexpr size_t USB_RX_BYTES=2048, USB_RX_DRAIN_BYTES=128;
+static_assert(USB_RX_BYTES>=2*MAX_ENCODED,"USB RX must hold two maximum encoded frames");
+static bool serialReady=false;
+static bool serialContainmentPending=false;
 static uint8_t boot[16]={}, profile[47]={}, previousPacket[255]={}, previousDigest[32]={};
 static uint64_t previousRequest=0, lastMutation=0, deadlineUs=0, startedUs=0, reservedUs=0, capUs=0;
 static uint32_t attempted=0, capCount=0, droppedRx=0;
@@ -235,7 +239,11 @@ static void command(const Frame& frame) {
 }
 
 void setup() {
+    // Preset HWCDC's bounded queue before begin enables its USB interrupt.
+    // Allocation failure leaves serial decoding and radio initialization off.
+    if(Serial.setRxBufferSize(USB_RX_BYTES)!=USB_RX_BYTES) return;
     Serial.begin(115200); Serial.setTxTimeoutMs(0);
+    serialReady=true;
     board.begin();
     put64(boot,ESP.getEfuseMac());
     // A separate NVS namespace preserves existing MeshCore identity/settings.
@@ -288,12 +296,34 @@ static void serviceRadio() {
     }
 }
 
+static void serialReadFailed() {
+    serialReady=false; armed=false; fenced=true;
+    const int16_t error=idleRadio();
+    serialContainmentPending=error!=RADIOLIB_ERR_NONE;
+    if(transmitting) {
+        board.onAfterTransmit(); transmitting=false;
+        // A failed input channel cannot establish completion or erase debt.
+        reportOutcome(UNKNOWN,nowUs()-startedUs,0,error==RADIOLIB_ERR_NONE ? -1 : error);
+    }
+}
+
 void loop() {
     output.flush(Serial);
     if(resultPending && output.offer(previousResult)) resultPending=false;
+    if(!serialReady) {
+        // Preserve output evidence and retry checked containment even when RX
+        // is unusable. A later standby success never upgrades UNKNOWN.
+        if(serialContainmentPending) serialContainmentPending=idleRadio()!=RADIOLIB_ERR_NONE;
+        output.flush(Serial); delay(1); return;
+    }
     serviceRadio(); // Drain RX_DONE before a queued TX can clear it or overwrite its FIFO.
     Frame frame;
-    for(unsigned n=0;n<128 && Serial.available();n++) if(decoder.feed(uint8_t(Serial.read()),frame)) command(frame);
+    uint8_t bytes[USB_RX_DRAIN_BYTES];
+    const size_t count=Serial.read(bytes,sizeof(bytes));
+    if(count>sizeof(bytes)) {
+        serialReadFailed(); output.flush(Serial); delay(1); return;
+    }
+    for(size_t n=0;n<count;n++) if(decoder.feed(bytes[n],frame)) command(frame);
     output.flush(Serial);
     delay(1);
 }

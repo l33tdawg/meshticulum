@@ -35,6 +35,9 @@ def native(tmp_path_factory):
 
 
 @pytest.mark.parametrize('scenario', [
+    'usb_rx_allocation_failure','usb_rx_escaped_burst','usb_rx_queue_bound','usb_rx_legacy_queue_overflow',
+    'usb_rx_read_error_idle','usb_rx_read_error_started','usb_rx_read_error_oversized',
+    'usb_rx_read_error_standby_failure','usb_rx_read_error_backpressure',
     'gfsk_roundtrip','gfsk_failed_or_replayed','gfsk_expiry',
     'gfsk250_roundtrip','gfsk250_version_mismatch','gfsk250_opcode_mismatch','gfsk250_expiry_and_paid_budget',
     'boot_failure', 'idle', 'complete_replay', 'timeout', 'conflicting_flags',
