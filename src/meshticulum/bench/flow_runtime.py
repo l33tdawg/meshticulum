@@ -21,7 +21,9 @@ from ..contracts.negotiation import CommitOutcome, NegotiatedContract
 from ..scheduler.budget import CounterSample, Ledger
 from ..scheduler.scheduler import FrameRole, Scheduler, SchedulerPolicy
 from .wire import FrameKind, WireError, require
-from .serial_worker import estimated_airtime_us
+from .serial_protocol import TxEvidence
+from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
+from .public_block import object_limit
 
 
 def _flow_modules():
@@ -36,7 +38,9 @@ class BenchFlow:
     Profile costs are conservative source estimates. The scheduler additionally
     observes the durable worker's charged reservations, never a made-up RF
     counter. Overlap remains charged twice by the frozen ledger. Actual TX_DONE
-    evidence stays in the worker journal, separate from peer receipt.
+    evidence stays in the worker journal, separate from peer receipt. Per-TX
+    diagnostics retain driver elapsed time and clock basis beside host worker
+    call time; neither is a refund or peer-delivery assertion.
     """
     def __init__(self, *, authority, worker, cipher, journal, flow_key, contract,
                  profile, ledger, scheduler_epoch, broker_epoch, sends, clock):
@@ -57,26 +61,34 @@ class BenchFlow:
         self.last_activity_us = self.clock()[1]
         flow, port = _flow_modules()
         self.next_send_us = 0
-        self.receive_gap_us = math.ceil(estimated_airtime_us(authority.profile,
+        self.receive_gap_us = math.ceil(radio_airtime_us(authority.profile,
             flow.ACK_BYTES + 47) * 1.10) + 60000
         limits = contract.limits
         self.maximum_bytes = min(limits.max_queued_bytes, limits.max_unconsumed_bytes)
-        require(self.maximum_bytes <= 16384, 'bench_transfer_too_large')
+        require(self.maximum_bytes <= object_limit(authority.plan.get('service',{})), 'bench_transfer_too_large')
         # Owner credit uses the admitted frame bound (208). Derive the DATA
         # overhead from the actual MT3 wire encoder, not older adapter prose:
         # the reviewed encoding uses fifteen bytes, leaving 193 useful bytes.
         window = min(4, limits.window_bytes // limits.max_payload_bytes,
                      limits.max_reassembly_frames)
         require(window >= 1, 'bench_window_too_small')
-        self.burst_frames = window if authority.profile.bandwidth_hz >= 250000 else 1
+        self.burst_frames = window if radio_is_fast(authority.profile) else 1
+        fast_sf5 = radio_is_sf5(authority.profile)
         self.burst_quiet_us = math.ceil(profile.forward_seconds * 1000000) + 60000
         if self.burst_frames > 1:
-            # USB/driver completion can span more than one PHY packet. Use a
-            # bounded control window from the already negotiated initial RTO,
-            # without changing the frozen flow's retry policy or wire format.
-            self.burst_quiet_us = max(self.burst_quiet_us,
-                                     math.ceil(profile.initial_rto_seconds * 500000))
+            # USB/driver completion can span more than one PHY packet. Keep
+            # fast SF5 quiet at250 ms when its retry floor grows: retry and
+            # inter-frame silence are different clocks. Other profiles retain
+            # their negotiated control window.
+            quiet_rto = min(profile.initial_rto_seconds, .5) if fast_sf5 else profile.initial_rto_seconds
+            self.burst_quiet_us = max(self.burst_quiet_us, math.ceil(quiet_rto * 500000))
         self.burst_max_hold_us = math.ceil(profile.initial_rto_seconds * 1000000)
+        if fast_sf5:
+            # A bounded four-frame train can exceed the old 500ms hold under
+            # native host work. Never let its total-time cap preempt a train
+            # whose individual gaps remain inside the quiet window. A full
+            # train still earns its ACK immediately in step().
+            self.burst_max_hold_us = self.burst_frames * self.burst_quiet_us
         self.burst_sent = 0
         self.burst_received = 0
         self.burst_started_us = 0
@@ -112,7 +124,7 @@ class BenchFlow:
             flow.FlowLimits(frame_payload_bytes=quantum, window_frames=window,
                 initial_credit_frames=window, max_reassembly_frames=window,
                 max_delivered_bytes=self.maximum_bytes, max_queued_bytes=self.maximum_bytes,
-                max_total_frames=min(128, limits.max_total_frames),
+                max_total_frames=min(256 if authority.public32 else 128, limits.max_total_frames),
                 max_retries=limits.max_retry_attempts,
                 initial_rto_s=profile.initial_rto_seconds,
                 min_rto_s=profile.min_rto_seconds, max_rto_s=profile.max_rto_seconds,
@@ -124,6 +136,13 @@ class BenchFlow:
         self.sender_control_hold_us = (max(self.burst_quiet_us,
             math.ceil(self.flow.limits.persist_interval_s * 1000000)) + self.receive_gap_us
             if self.burst_frames > 1 else self.receive_gap_us)
+        if fast_sf5 and self.burst_frames > 1:
+            # A partial burst is first acknowledged after quiet. If that ACK
+            # is lost, leave room for one existing persistence interval too.
+            # Authenticated progress still releases this fallback early.
+            self.sender_control_hold_us = (self.burst_quiet_us
+                + math.ceil(self.flow.limits.persist_interval_s * 1000000)
+                + max(self.receive_gap_us, self.burst_quiet_us))
         self.parse_frame, self.ack_kind = flow.parse_frame, flow.KIND_ACK
         self.closed = False
         self.update_counter()
@@ -145,11 +164,26 @@ class BenchFlow:
         require((frame.request.role is FrameRole.CONTROL) == (kind is FrameKind.ACK),
                 'inner_lane_mismatch')
         packet = self.cipher.seal(frame.payload, kind, authorize=self.authority.live)
+        worker_started_us = self.clock()[1]
         result = self.worker.transmit(packet)
+        worker_finished_us = self.clock()[1]
+        require(type(worker_started_us) is int and type(worker_finished_us) is int
+                and worker_finished_us >= worker_started_us, 'invalid_worker_timing')
+        driver = result.driver
+        require(driver is None or type(driver) is TxEvidence, 'invalid_driver_timing')
+        basis = result.driver_elapsed_clock_basis if driver is not None else None
+        require(driver is None or basis in ('coprocessor_monotonic', 'host_monotonic', 'model_monotonic'),
+                'invalid_driver_clock_basis')
         self.counts['tx_' + result.outcome] += 1
-        self.events.append({'event': 'tx', 'mono_us': self.clock()[1],
+        self.events.append({'event': 'tx', 'mono_us': worker_finished_us,
             'outer_kind': kind.name, 'packet_sha256': hashlib.sha256(packet).hexdigest(),
-            'bytes': len(packet), 'request': result.request, 'outcome': result.outcome})
+            'bytes': len(packet), 'request': result.request, 'outcome': result.outcome,
+            'worker_call_elapsed_us': worker_finished_us - worker_started_us,
+            'driver_estimated_airtime_us': driver.estimated_airtime_us if driver is not None else None,
+            'driver_elapsed_us': driver.driver_elapsed_us if driver is not None else None,
+            'driver_elapsed_clock_basis': basis,
+            'driver_irq_flags': driver.irq_flags if driver is not None else None,
+            'driver_error': driver.driver_error if driver is not None else None})
         self.last_activity_us = self.clock()[1]
         # A single half-duplex radio needs time to hear the reverse ACK before
         # another DATA start. This is an explicit initial bench pacing policy,

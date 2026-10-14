@@ -17,7 +17,7 @@ from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import RunAuthority, revoke
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.objects import VerifiedChunks
-from meshticulum.bench.serial_protocol import RadioProfile, RawReceive
+from meshticulum.bench.serial_protocol import Outcome, RadioProfile, RawReceive, TxEvidence
 from meshticulum.bench.serial_worker import AttemptResult
 from tests.radio_profiles import MODES, profile_for
 from meshticulum.bench.state import SessionStore
@@ -143,6 +143,32 @@ def test_real_composition_waits_for_authenticated_startup_credit(pair):
     assert workers[1].sent and FrameKind(HEADER.unpack(workers[1].sent[0][:HEADER.size])[2]) is FrameKind.ACK
     assert sender.flow.acked_frames() > 0
     assert sender.snapshot()['complete']
+
+
+def test_tx_events_preserve_driver_and_host_worker_timings_separately(pair):
+    data, clock, (sender, receiver), workers = pair
+    original = workers[0].transmit
+
+    def measured(packet):
+        result = original(packet)
+        evidence = TxEvidence(Outcome.RF_DONE, estimated_airtime_us=12000,
+                              driver_elapsed_us=9000, irq_flags=1, driver_error=0)
+        return AttemptResult(result.request, result.outcome, result.reserved_estimated_us,
+                             evidence, 'coprocessor_monotonic')
+
+    workers[0].transmit = measured
+    sender.send(data)
+    finish(pair)
+    events = [event for event in sender.snapshot()['events']
+              if event['event'] == 'tx' and event['outer_kind'] == 'DATA']
+    assert events
+    assert all(type(event['worker_call_elapsed_us']) is int
+               and event['worker_call_elapsed_us'] >= 0 for event in events)
+    assert all(event['driver_estimated_airtime_us'] == 12000
+               and event['driver_elapsed_us'] == 9000
+               and event['driver_elapsed_clock_basis'] == 'coprocessor_monotonic'
+               and event['driver_irq_flags'] == 1 and event['driver_error'] == 0
+               for event in events)
 
 
 def test_consumed_delivery_uses_one_ack_before_persistence_interval(pair):

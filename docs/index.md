@@ -23,6 +23,7 @@ Start with [installation and the standalone test command](../README.md#install-a
 
 | Guide | Use it when you need to… |
 | --- | --- |
+| [Transport source update](TRANSPORT_SOURCE_UPDATE.md) | Review the GFSK, byte-bundle and opaque-relay source additions and their qualification limits |
 | [Hardware tooling](HARDWARE.md) | Build a public host runtime, understand serial/SX1262 adapters, or prepare a separately authorized device run |
 | [Authenticated TCP prototype](IP_TRANSPORT.md) | Understand the explicit IP grants, durable counters, stream-byte budgets and source controls |
 | [Lantern's SAGE integration](SAGE_INTEGRATION.md) | Understand the separate owning repository for protected capture, replay and private inbox admission |

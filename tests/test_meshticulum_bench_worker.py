@@ -141,6 +141,7 @@ def test_reservation_is_durable_before_first_transport_write(setup):
     assert journal.snapshot()['attempts'] == 1
     assert journal.snapshot()['reserved_estimated_airtime_us'] == result.reserved_estimated_us
     assert result.driver.outcome is Outcome.RF_DONE  # not a peer delivery assertion
+    assert result.driver_elapsed_clock_basis == 'coprocessor_monotonic'
 
 
 @pytest.mark.parametrize('fault', ['partial_write', 'started_only', 'wrong_digest',
@@ -271,3 +272,20 @@ def test_source_airtime_known_vectors_and_slowest_supported_bound():
     assert estimated_airtime_us(sf7, 255) == 399616
     slow = replace(PROFILE, spreading_factor=12, bandwidth_hz=62500, coding_rate=8, preamble=64)
     assert estimated_airtime_us(slow, 255) < 33000000
+    fast = replace(PROFILE, spreading_factor=5, bandwidth_hz=500000)
+    assert estimated_airtime_us(fast, 255) == 34384
+    assert 193 * 1000000 / estimated_airtime_us(fast, 255) > 5500
+
+
+@pytest.mark.parametrize('sf,size,expected', [
+    (5, 1, 2320), (5, 2, 2320), (5, 3, 2320),
+    (5, 70, 10960), (5, 71, 11280), (5, 72, 11280), (5, 255, 34640),
+    (6, 1, 4000), (6, 2, 4640), (6, 3, 4640),
+    (6, 70, 18720), (6, 71, 19360), (6, 72, 19360), (6, 255, 58400),
+])
+def test_sf56_explicit_header_crc_airtime_matches_coprocessor_vectors(sf,size,expected):
+    # Reference values from the exact RadioLib7.7.1 SX126x LoRa formula,
+    # compiled independently of this Python worker. Semtech section6.1.4
+    # changes both synchronization and coded-header terms for SF5/SF6.
+    profile = replace(PROFILE, spreading_factor=sf, bandwidth_hz=500000, preamble=12)
+    assert estimated_airtime_us(profile, size) == expected

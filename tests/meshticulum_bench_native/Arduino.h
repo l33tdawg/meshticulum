@@ -11,10 +11,11 @@ struct FakeSerial {
     std::vector<uint8_t> bytes;
     size_t write_limit=710;
     bool stalled=false;
+    void (*read_hook)()=nullptr;
     void begin(int) {}
     void setTxTimeoutMs(int) {}
     int available() { return input.size(); }
-    int read() { uint8_t b=input.front(); input.pop_front(); return b; }
+    int read() { uint8_t b=input.front(); input.pop_front(); if(read_hook) read_hook(); return b; }
     int availableForWrite() { return stalled ? 0 : 710; }
     size_t write(const uint8_t* p,size_t n) {
         if(stalled) return 0;

@@ -35,12 +35,24 @@ class Message(IntEnum):
     TRANSMIT = 3
     STATUS = 4
     DISARM = 5
+    GFSK_ARM = 6
+    GFSK_STATUS = 7
+    GFSK250_ARM = 8
+    GFSK250_STATUS = 9
+    GFSK250_CAPABILITIES = 10
     HELLO_REPLY = 0x81
     ARM_REPLY = 0x82
     TX_RESULT = 0x83
     STATUS_REPLY = 0x84
     DISARM_REPLY = 0x85
+    GFSK_ARM_REPLY = 0x86
+    GFSK_STATUS_REPLY = 0x87
+    GFSK250_ARM_REPLY = 0x88
+    GFSK250_STATUS_REPLY = 0x89
+    GFSK250_CAPABILITIES_REPLY = 0x8A
     RECEIVE = 0x90
+    GFSK_RECEIVE = 0x91
+    GFSK250_RECEIVE = 0x92
     REFUSED = 0xFF
 
 
@@ -162,7 +174,7 @@ class RadioProfile:
         require(self.bandwidth_hz in (62500, 125000, 250000, 500000)
                 and 902000000 + self.bandwidth_hz // 2 <= self.frequency_hz
                 <= 928000000 - self.bandwidth_hz // 2
-                and 7 <= self.spreading_factor <= 12 and 5 <= self.coding_rate <= 8
+                and 5 <= self.spreading_factor <= 12 and 5 <= self.coding_rate <= 8
                 and 0 <= self.chip_power_dbm <= (10 if board_id == 1 else 22)
                 and 8 <= self.preamble <= 64 and 1 <= self.sync_word <= 255
                 and 1000 <= self.lease_ms <= 300000 and 1 <= self.max_boot_attempts <= 100000
@@ -210,3 +222,78 @@ class RawReceive:
                 and 5 <= len(frame.body) <= 259, 'invalid_receive')
         rssi, snr = struct.unpack('!hh', frame.body[:4])
         return cls(rssi / 10, snr / 10, frame.body[4:])
+
+
+@dataclass(frozen=True, slots=True)
+class GfskRawReceive:
+    """GFSK RSSI and raw ciphertext. GFSK packet status provides no LoRa SNR."""
+    rssi_dbm: float
+    packet: bytes = field(repr=False)
+    snr_db: None = None
+
+    @classmethod
+    def from_frame(cls, frame, *, boot):
+        require(frame.type is Message.GFSK_RECEIVE and frame.boot == boot and frame.request == 0
+                and 3 <= len(frame.body) <= 257, 'invalid_gfsk_receive')
+        rssi, = struct.unpack('!h', frame.body[:2])
+        return cls(rssi / 10, frame.body[2:])
+
+
+@dataclass(frozen=True, slots=True)
+class GfskStatus:
+    """Typed GFSK status. The profile carries its own modem/version marker."""
+    profile: object
+    boot_attempts: int
+    boot_reserved_estimated_airtime_us: int
+    dropped_receive: int
+    armed: bool
+    transmitting: bool
+    fenced: bool
+
+    @classmethod
+    def from_reply(cls,frame,*,boot,request,board_id):
+        from .gfsk_profile import GfskProfile
+        require(frame.type is Message.GFSK_STATUS_REPLY and frame.boot==boot and frame.request==request
+                and type(request) is int and request>0 and len(frame.body)==66,'unbound_gfsk_status')
+        profile=GfskProfile.decode(frame.body[:47],board_id=board_id)
+        attempts,airtime,dropped=struct.unpack('!IQI',frame.body[47:63]);flags=frame.body[63:]
+        require(all(v in (0,1) for v in flags) and attempts<=profile.max_boot_attempts
+                and airtime<=profile.max_boot_estimated_airtime_us,'invalid_gfsk_status')
+        return cls(profile,attempts,airtime,dropped,*(bool(v) for v in flags))
+
+
+@dataclass(frozen=True, slots=True)
+class Gfsk250RawReceive:
+    """Explicit GFSK250 raw ciphertext; cannot be delivered as GFSK125."""
+    rssi_dbm: float
+    packet: bytes = field(repr=False)
+    snr_db: None = None
+
+    @classmethod
+    def from_frame(cls, frame, *, boot):
+        require(frame.type is Message.GFSK250_RECEIVE and frame.boot == boot and frame.request == 0
+                and 3 <= len(frame.body) <= 257, 'invalid_gfsk250_receive')
+        rssi, = struct.unpack('!h', frame.body[:2])
+        return cls(rssi / 10, frame.body[2:])
+
+
+@dataclass(frozen=True, slots=True)
+class Gfsk250Status:
+    profile: object
+    boot_attempts: int
+    boot_reserved_estimated_airtime_us: int
+    dropped_receive: int
+    armed: bool
+    transmitting: bool
+    fenced: bool
+
+    @classmethod
+    def from_reply(cls, frame, *, boot, request, board_id):
+        from .gfsk250_profile import Gfsk250Profile
+        require(frame.type is Message.GFSK250_STATUS_REPLY and frame.boot == boot and frame.request == request
+                and type(request) is int and request > 0 and len(frame.body) == 66, 'unbound_gfsk250_status')
+        profile = Gfsk250Profile.decode(frame.body[:47], board_id=board_id)
+        attempts, airtime, dropped = struct.unpack('!IQI', frame.body[47:63]); flags = frame.body[63:]
+        require(all(v in (0, 1) for v in flags) and attempts <= profile.max_boot_attempts
+                and airtime <= profile.max_boot_estimated_airtime_us, 'invalid_gfsk_status')
+        return cls(profile, attempts, airtime, dropped, *(bool(v) for v in flags))

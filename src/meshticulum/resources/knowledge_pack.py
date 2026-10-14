@@ -57,6 +57,9 @@ SCHEMA_TRUST_ROOT = "sage.knowledge-pack.trust-root.v1"
 CHUNK_CONTENT_FIELDS = ("id", "title", "text", "tags", "source", "date", "confidence_bp",
                         "licence")
 CHUNK_RECORD_FIELDS = set(CHUNK_CONTENT_FIELDS) | {"schema", "sha256", "embedding"}
+BUNDLE_PART_FIELDS = {"schema", "encoding", "index", "parts", "part_bytes", "offset", "raw_bytes", "raw_sha256",
+                      "bundle_bytes", "bundle_sha256", "payload_base64", "wire_padding"}
+BUNDLE_PART_BYTES, BUNDLE_CHUNK_BYTES, BUNDLE_BYTES = 24000, 32740, 1000000
 MANIFEST_FIELDS = {"schema", "pack", "embedding", "chunks", "totals", "parent"}
 PACK_FIELDS = {"id", "version", "class", "title", "licence", "provenance", "created_at"}
 PROVENANCE_FIELDS = {"source", "curator", "url", "note"}
@@ -142,7 +145,9 @@ def sha256_hex(payload: bytes) -> str:
 
 
 def content_object(chunk: dict) -> dict:
-    return {field: chunk[field] for field in CHUNK_CONTENT_FIELDS}
+    value = {field: chunk[field] for field in CHUNK_CONTENT_FIELDS}
+    if "bundle_part" in chunk: value["bundle_part"] = chunk["bundle_part"]
+    return value
 
 
 def content_address(chunk: dict) -> str:
@@ -177,7 +182,7 @@ def decode_vector(text: str, dimension: int) -> list[float]:
 
 def build_chunk(identifier: str, text: str, *, title: str = "", tags=(), source: str = "",
                 date: str = "", confidence_bp: int = REFERENCE_CONFIDENCE_BP, licence: str = "",
-                embedding=None, embedding_model=None) -> dict:
+                embedding=None, embedding_model=None, bundle_part=None) -> dict:
     record = {
         "schema": SCHEMA_CHUNK,
         "id": identifier,
@@ -189,6 +194,7 @@ def build_chunk(identifier: str, text: str, *, title: str = "", tags=(), source:
         "confidence_bp": confidence_bp,
         "licence": licence,
     }
+    if bundle_part is not None: record["bundle_part"] = dict(bundle_part)
     record["sha256"] = content_address(record)
     if embedding is not None:
         require(embedding_model, "an embedding needs its model name")
@@ -204,7 +210,8 @@ def chunk_bytes(record: dict) -> bytes:
 
 def validate_chunk(record) -> None:
     require(isinstance(record, dict), "chunk record must be an object")
-    require(set(record) in (CHUNK_RECORD_FIELDS, CHUNK_RECORD_FIELDS - {"embedding"}),
+    require(set(record) in (CHUNK_RECORD_FIELDS, CHUNK_RECORD_FIELDS - {"embedding"},
+                           (CHUNK_RECORD_FIELDS - {"embedding"}) | {"bundle_part"}),
             f"chunk record fields must be {sorted(CHUNK_RECORD_FIELDS)}, with embedding optional")
     require(record["schema"] == SCHEMA_CHUNK, f"chunk schema must be {SCHEMA_CHUNK}")
     require(CHUNK_ID.match(record["id"] or ""), "chunk id must be a lowercase slug")
@@ -230,6 +237,9 @@ def validate_chunk(record) -> None:
     require(HEX64.match(record["sha256"] or ""), "chunk sha256 must be lowercase hex")
     require(record["sha256"] == content_address(record),
             f"chunk {record['id']} content address does not match its content")
+    if "bundle_part" in record:
+        decode_bundle_part(record["bundle_part"])
+        require(len(chunk_bytes(record)) <= BUNDLE_CHUNK_BYTES, "bundle chunk exceeds public byte cap")
     if "embedding" in record:
         embedding = record["embedding"]
         require(isinstance(embedding, dict) and set(embedding) == VECTOR_FIELDS,
@@ -240,6 +250,32 @@ def validate_chunk(record) -> None:
                 and 1 <= embedding["dimension"] <= 8192,
                 f"chunk {record['id']} embedding dimension is out of range")
         decode_vector(embedding["vector_f32_le"], embedding["dimension"])
+
+
+def decode_bundle_part(value) -> bytes:
+    """Typed public file bytes; this is content verification, never admission."""
+    require(type(value) is dict and set(value) == BUNDLE_PART_FIELDS
+            and value["schema"] == "meshticulum.public-byte-bundle-part.v1"
+            and value["encoding"] == "base64", "invalid public bundle part")
+    require(all(type(value[k]) is int for k in ("index", "parts", "part_bytes", "offset", "raw_bytes", "bundle_bytes"))
+            and 1 <= value["bundle_bytes"] <= BUNDLE_BYTES
+            and 1 <= value["part_bytes"] <= BUNDLE_PART_BYTES
+            and 1 <= value["parts"] <= 42
+            and value["parts"] == (value["bundle_bytes"] + value["part_bytes"] - 1)//value["part_bytes"]
+            and 0 <= value["index"] < value["parts"]
+            and value["offset"] == value["index"]*value["part_bytes"]
+            and value["raw_bytes"] == min(value["part_bytes"], value["bundle_bytes"] - value["offset"]),
+            "invalid public bundle range")
+    require(all(type(value[k]) is str and HEX64.fullmatch(value[k]) for k in ("raw_sha256", "bundle_sha256"))
+            and type(value["payload_base64"]) is str and len(value["payload_base64"]) <= 32000
+            and type(value["wire_padding"]) is str and len(value["wire_padding"]) <= BUNDLE_CHUNK_BYTES
+            and not value["wire_padding"].strip("_"), "invalid public bundle encoding")
+    try: raw = base64.b64decode(value["payload_base64"], validate=True)
+    except (ValueError, UnicodeError): raise PackFormatError("invalid public bundle base64") from None
+    require(base64.b64encode(raw).decode("ascii") == value["payload_base64"]
+            and len(raw) == value["raw_bytes"] and sha256_hex(raw) == value["raw_sha256"],
+            "public bundle bytes do not match")
+    return raw
 
 
 def validate_pack_rules(manifest: dict, records) -> None:
