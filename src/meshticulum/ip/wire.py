@@ -19,6 +19,8 @@ from ..contracts.identity import PeerID, SessionKey, ServiceKind
 from ..bench.wire import WireError
 
 DOMAIN=b'meshticulum.ip.v1\x00'
+READY_DOMAIN=b'meshticulum.ip.v2\x00'
+READY_MODE='sender_ready_v1'
 MAGIC=b'MI'
 HEADER=struct.Struct('!2sBBB16sQH')
 PREFIX=struct.Struct('!I')
@@ -51,6 +53,7 @@ def address(value):
 class FrameKind(IntEnum):
     DATA=1
     ACK=2
+    READY=3
 
 
 @dataclass(frozen=True,slots=True)
@@ -86,6 +89,7 @@ class IpGrant:
     responder_address:tuple
     limits:IpLimits
     secret:bytes=field(repr=False)
+    startup_mode:str|None=None
 
     def __post_init__(self):
         require(type(self.session) is SessionKey and type(self.limits) is IpLimits,'invalid_ip_session')
@@ -98,12 +102,21 @@ class IpGrant:
                 and self.expires_epoch_us-self.issued_epoch_us<=240000000,'invalid_ip_expiry')
         address(self.initiator_address);address(self.responder_address)
         require(self.initiator_address!=self.responder_address,'same_ip_endpoint')
+        require(self.startup_mode is None or (type(self.startup_mode) is str and self.startup_mode==READY_MODE),'invalid_ip_startup_mode')
+        if self.startup_mode is not None:
+            require(self.limits.max_plaintext>=32 and self.limits.max_frames>=2,'invalid_ip_ready_limits')
 
     @property
     def service_kind(self):return FORMATS[self.format]
 
     @property
     def max_frames(self):return self.limits.max_frames
+
+    @property
+    def wire_version(self):return 1 if self.startup_mode is None else 2
+
+    @property
+    def domain(self):return DOMAIN if self.startup_mode is None else READY_DOMAIN
 
     def direction(self,peer):
         require(type(peer) is PeerID,'invalid_ip_peer')
@@ -112,7 +125,7 @@ class IpGrant:
         return 1
 
     def context(self):
-        return json.dumps({'protocol':'meshticulum.ip.v1','transport':'tcp',
+        value={'protocol':'meshticulum.ip.v1','transport':'tcp',
           'initiator':asdict(self.session.initiator),'responder':asdict(self.session.responder),
           'session_id':self.session.session_id.hex(),'session_generation':self.session.session_generation.hex(),
           'service_kind':self.service_kind.value,'format':self.format,'object_bytes':self.object_bytes,
@@ -120,7 +133,10 @@ class IpGrant:
           'issued_epoch_us':self.issued_epoch_us,'expires_epoch_us':self.expires_epoch_us,
           'application_expires_epoch_us':self.application_expires_epoch_us,
           'initiator_address':self.initiator_address,'responder_address':self.responder_address,
-          'limits':asdict(self.limits)},sort_keys=True,separators=(',',':')).encode('ascii')
+          'limits':asdict(self.limits)}
+        if self.startup_mode is not None:
+            value.update(protocol='meshticulum.ip.v2',startup_mode=self.startup_mode)
+        return json.dumps(value,sort_keys=True,separators=(',',':')).encode('ascii')
 
     @property
     def digest(self):return hashlib.sha256(self.context()).digest()
@@ -139,26 +155,33 @@ class IpCipher:
         self.grant,self.direction,self.store=grant,grant.direction(local_peer),store
         require(store.binding==(grant.digest,self.direction),'ip_state_binding_mismatch')
         keys=[HKDF(algorithm=hashes.SHA256(),length=32,salt=grant.session.session_generation,
-            info=DOMAIN+bytes([d])+grant.context()).derive(grant.secret) for d in (0,1)]
+            info=grant.domain+bytes([d])+grant.context()).derive(grant.secret) for d in (0,1)]
         self._tx=ChaCha20Poly1305(keys[self.direction]);self._rx=ChaCha20Poly1305(keys[1-self.direction])
 
     def seal(self,payload,kind,*,authorize):
         require(type(payload) is bytes and 0<len(payload)<=self.grant.limits.max_plaintext,'invalid_ip_payload')
         require(type(kind) is FrameKind,'invalid_ip_frame_kind')
+        if kind is FrameKind.READY:
+            require(self.grant.startup_mode==READY_MODE and self.direction==0 and payload==self.grant.digest,'invalid_ip_ready_frame')
         counter=self.store.reserve_transmit(authorize=authorize)
-        header=HEADER.pack(MAGIC,1,int(kind),self.direction,self.grant.session.session_id,counter,len(payload))
-        return header+self._tx.encrypt(bytes(4)+counter.to_bytes(8,'big'),payload,DOMAIN+self.grant.digest+header)
+        require(kind is not FrameKind.READY or counter==1,'invalid_ip_ready_counter')
+        header=HEADER.pack(MAGIC,self.grant.wire_version,int(kind),self.direction,self.grant.session.session_id,counter,len(payload))
+        return header+self._tx.encrypt(bytes(4)+counter.to_bytes(8,'big'),payload,self.grant.domain+self.grant.digest+header)
 
     def open(self,packet,*,authorize):
         require(type(packet) is bytes and HEADER.size+TAG_BYTES<len(packet)<=HEADER.size+TAG_BYTES+self.grant.limits.max_plaintext,'invalid_ip_packet')
         header=packet[:HEADER.size]
         magic,version,kind,direction,session,counter,length=HEADER.unpack(header)
-        require(magic==MAGIC and version==1,'unsupported_ip_wire')
+        require(magic==MAGIC and version==self.grant.wire_version,'unsupported_ip_wire')
         require(direction==1-self.direction and session==self.grant.session.session_id,'wrong_ip_session_direction')
         integer(counter,1,self.grant.max_frames,'invalid_ip_counter')
         require(kind in FrameKind._value2member_map_ and length==len(packet)-HEADER.size-TAG_BYTES,'invalid_ip_header')
+        if kind==FrameKind.READY:
+            require(self.grant.startup_mode==READY_MODE and direction==0 and self.direction==1
+              and counter==1 and length==32,'invalid_ip_ready_frame')
         self.store.check_live(authorize=authorize)
-        try:payload=self._rx.decrypt(bytes(4)+counter.to_bytes(8,'big'),packet[HEADER.size:],DOMAIN+self.grant.digest+header)
+        try:payload=self._rx.decrypt(bytes(4)+counter.to_bytes(8,'big'),packet[HEADER.size:],self.grant.domain+self.grant.digest+header)
         except InvalidTag:raise IpError('ip_authentication_failed') from None
+        require(kind!=FrameKind.READY or payload==self.grant.digest,'invalid_ip_ready_payload')
         self.store.record_receive(counter,authorize=authorize)
         return VerifiedFrame(FrameKind(kind),counter,payload)

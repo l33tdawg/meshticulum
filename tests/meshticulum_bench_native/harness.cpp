@@ -38,7 +38,7 @@ static std::vector<Frame> drain() {
 }
 static void enqueue(const Frame& frame) {
     uint8_t encoded[MAX_ENCODED]; const size_t size=encode(frame,encoded,sizeof(encoded));
-    assert(size); for(size_t i=0;i<size;i++) Serial.input.push_back(encoded[i]);
+    assert(size); for(size_t i=0;i<size;i++) Serial.offerInput(encoded[i]);
 }
 static void receivedDuringDecode() {
     radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE; Serial.read_hook=nullptr;
@@ -55,12 +55,96 @@ int main(int argc,char** argv) {
         return 0;
     }
     if(mode=="boot_failure") preference_ok=false;
+    if(mode=="usb_rx_allocation_failure") Serial.rx_allocation_failure=true;
     setup();
+    if(mode=="usb_rx_allocation_failure") {
+        assert(!Serial.begun && !serialReady && !ready && !armed && !radio.starts);
+        Serial.input.push_back(END); // Even unexpected input cannot enter decoding.
+        loop(); assert(Serial.input.size()==1 && !radio.starts && !attempted && !reservedUs);
+        assert(u64(boot+8)==0); return 0;
+    }
     if(mode=="boot_failure") {
         command(armRequest()); command(txRequest());
         assert(!ready && !armed && !radio.starts); return 0;
     }
     assert(ready && !armed && !radio.starts && u64(boot+8)==18);
+    assert(Serial.begun && serialReady && Serial.rx_capacity==2048);
+    if(mode=="usb_rx_read_error_idle" || mode=="usb_rx_read_error_started"
+        || mode=="usb_rx_read_error_oversized" || mode=="usb_rx_read_error_standby_failure"
+        || mode=="usb_rx_read_error_backpressure") {
+        const bool started=mode!="usb_rx_read_error_idle" && mode!="usb_rx_read_error_oversized";
+        if(started) armAndTx();
+        enqueue(armRequest(3));enqueue(txRequest(4));
+        const size_t queued=Serial.input.size();
+        const auto paid=reservedUs,end=deadlineUs,mutation=lastMutation;
+        const auto count=attempted,maximum=capCount;const auto budget=capUs;
+        Serial.forced_read_count=mode=="usb_rx_read_error_oversized" ? USB_RX_DRAIN_BYTES+1 : size_t(-1);
+        if(mode=="usb_rx_read_error_standby_failure") { radio.warm=true;radio.warm_error=-9; }
+        if(mode=="usb_rx_read_error_backpressure") {
+            Serial.stalled=true;
+            while(output.freeSlots()) assert(output.offer(response(STATUS_REPLY,99)));
+        }
+        loop();
+        assert(!serialReady && fenced && !armed && !transmitting);
+        assert(Serial.input.size()==queued && Serial.rx_capacity==2048 && Serial.rx_buffer_calls==1);
+        assert(attempted==count && reservedUs==paid && deadlineUs==end && lastMutation==mutation
+            && capCount==maximum && capUs==budget && radio.starts==unsigned(started));
+        if(started) {
+            assert(previousRequest==2 && previousResult.body[0]==UNKNOWN);
+            assert(u64(previousResult.body+33)==100000);
+            assert(int16_t(u16(previousResult.body+53))==(mode=="usb_rx_read_error_standby_failure" ? -9 : -1));
+        }
+        const auto read_calls=Serial.bulk_read_calls;
+        if(mode=="usb_rx_read_error_standby_failure") {
+            assert(serialContainmentPending && radio.warm);loop();
+            assert(serialContainmentPending && radio.warm);
+            radio.warm_error=0;
+        }
+        if(mode=="usb_rx_read_error_backpressure") { assert(resultPending);Serial.stalled=false; }
+        radio.flags=RADIOLIB_SX126X_IRQ_TX_DONE;if(fake_time<=end) fake_time=end+1;
+        for(unsigned n=0;n<3;n++) loop();
+        assert(!serialContainmentPending && !radio.warm && Serial.bulk_read_calls==read_calls);
+        assert(Serial.input.size()==queued && Serial.rx_buffer_calls==1 && radio.starts==unsigned(started));
+        assert(attempted==count && reservedUs==paid && deadlineUs==end && capCount==maximum && capUs==budget);
+        auto rows=drain();unsigned unknown=0,completed=0;
+        for(const auto& row:rows) if(row.type==TX_RESULT) {
+            if(row.body[0]==UNKNOWN) { unknown++;assert(row.request==2); }
+            if(row.body[0]==RF_DONE) completed++;
+        }
+        assert(unknown==unsigned(started) && completed==0 && !resultPending && fenced);
+        return 0;
+    }
+    if(mode=="usb_rx_escaped_burst") {
+        command(gfsk250ArmRequest()); auto first=txRequest(); first.size=255;
+        for(size_t i=0;i<first.size;i++) first.body[i]=(i%2) ? ESC : END;
+        auto second=first; second.request=3; second.body[254]=ESC;
+        enqueue(first);enqueue(second);
+        assert(Serial.input.size()>256 && Serial.input.size()<=USB_RX_BYTES && !Serial.dropped_input);
+        for(unsigned n=0;n<32 && !Serial.input.empty();n++) {
+            if(transmitting) radio.flags=RADIOLIB_SX126X_IRQ_TX_DONE;
+            loop();
+            if(previousRequest==first.request) assert(!memcmp(previousPacket,first.body,255));
+        }
+        assert(Serial.input.empty() && Serial.largest_read==USB_RX_DRAIN_BYTES);
+        radio.flags=RADIOLIB_SX126X_IRQ_TX_DONE;loop();
+        assert(radio.starts==2 && attempted==2 && reservedUs==2*mtbench::gfsk250::airtimeUs(255));
+        assert(previousRequest==second.request && !memcmp(previousPacket,second.body,255));
+        auto rows=drain();unsigned finished=0;
+        for(const auto& row:rows) if(row.type==TX_RESULT && row.body[0]==RF_DONE) finished++;
+        assert(finished==2 && !transmitting && !fenced);return 0;
+    }
+    if(mode=="usb_rx_queue_bound") {
+        for(size_t n=0;n<USB_RX_BYTES+64;n++) Serial.offerInput(0x55);
+        assert(Serial.input.size()==USB_RX_BYTES && Serial.dropped_input==64);
+        const auto before=Serial.input.size();loop();
+        assert(Serial.input.size()==before-USB_RX_DRAIN_BYTES && !radio.starts && !attempted && !reservedUs);
+        return 0;
+    }
+    if(mode=="usb_rx_legacy_queue_overflow") {
+        FakeSerial legacy;for(size_t n=0;n<MAX_ENCODED;n++) legacy.offerInput(END);
+        assert(legacy.input.size()==256 && legacy.dropped_input==MAX_ENCODED-256);
+        return 0;
+    }
     if(mode=="gfsk250_roundtrip") {
         const auto oldMutation=lastMutation,oldDeadline=deadlineUs;
         command(request(GFSK250_CAPABILITIES,99));auto rows=drain();

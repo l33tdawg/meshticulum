@@ -37,11 +37,11 @@ def connected():
 
 
 @contextmanager
-def pair(tmp_path,payload,format='MR1.request',limits=None,*,initiator=A,responder=B,session_id=b'i'*16,generation=b'g'*16,expires=None,deadline_us=None,route_binding_digest=b'r'*32):
+def pair(tmp_path,payload,format='MR1.request',limits=None,*,initiator=A,responder=B,session_id=b'i'*16,generation=b'g'*16,expires=None,deadline_us=None,route_binding_digest=b'r'*32,startup_mode=None):
     tmp_path.mkdir(mode=0o700)
     left,right=connected();clock=Clock();epoch,mono=clock()
     spec=IpGrant(SessionKey(initiator,responder,session_id,generation),format,len(payload),hashlib.sha256(payload).digest(),route_binding_digest,
-      epoch-1000000,(expires or epoch+60000000)+30000000,expires or epoch+60000000,left.getsockname(),right.getsockname(),limits or IpLimits(),b's'*32)
+      epoch-1000000,(expires or epoch+60000000)+30000000,expires or epoch+60000000,left.getsockname(),right.getsockname(),limits or IpLimits(),b's'*32,startup_mode)
     with ExitStack() as stack:
         stack.callback(left.close);stack.callback(right.close)
         flows=[];workers=[];stores=[]
@@ -52,6 +52,8 @@ def pair(tmp_path,payload,format='MR1.request',limits=None,*,initiator=A,respond
               format=spec.format,object={'bytes':len(payload),'sha256':spec.object_sha256.hex()},route_binding_digest=spec.route_binding_digest.hex(),
               issued_epoch_us=spec.issued_epoch_us,expires_epoch_us=spec.expires_epoch_us,application_expires_epoch_us=spec.application_expires_epoch_us,
               application_deadline_monotonic_us=deadline_us or mono+59000000,initiator_address=list(spec.initiator_address),responder_address=list(spec.responder_address),limits=asdict(spec.limits))
+            if startup_mode is not None:
+                plan.update(schema='meshticulum.ip-service-run.v2',startup_mode=startup_mode)
             for name,raw in [('grant.json',json.dumps(plan).encode()),('secret.bin',spec.secret),('active',b'active\n')]:
                 fd=os.open(directory/name,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
                 with os.fdopen(fd,'wb')as f:f.write(raw)

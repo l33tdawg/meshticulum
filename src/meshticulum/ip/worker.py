@@ -11,7 +11,7 @@ import time
 
 from .authority import IpAuthority
 from .journal import IpJournal
-from .wire import IpGrant,IpError,FrameKind,MAGIC,HEADER,PREFIX,TAG_BYTES,require
+from .wire import IpGrant,IpError,FrameKind,MAGIC,HEADER,PREFIX,TAG_BYTES,READY_MODE,require
 
 
 class TcpWorker:
@@ -59,9 +59,12 @@ class TcpWorker:
         self._guard(authority)
         require(type(packet) is bytes and HEADER.size+TAG_BYTES<len(packet)<=HEADER.size+TAG_BYTES+self.grant.limits.max_plaintext,'invalid_tcp_packet')
         magic,version,kind,direction,session,counter,length=HEADER.unpack(packet[:HEADER.size])
-        require(magic==MAGIC and version==1 and direction==self.direction and session==self.grant.session.session_id
+        require(magic==MAGIC and version==self.grant.wire_version and direction==self.direction and session==self.grant.session.session_id
                 and kind in FrameKind._value2member_map_ and FrameKind(kind).name==lane
+                and 1<=counter<=self.grant.max_frames
                 and length==len(packet)-HEADER.size-TAG_BYTES, 'tcp_transmit_lane_binding_mismatch')
+        if kind==FrameKind.READY:
+            require(self.grant.startup_mode==READY_MODE and direction==0 and counter==1 and length==32,'invalid_tcp_ready_frame')
         framed=PREFIX.pack(len(packet))+packet
         token=self.journal.reserve(framed,lane);done=0;invoked=False
         stop=min(time.monotonic()+.25,authority.application_deadline_us/1e6)
