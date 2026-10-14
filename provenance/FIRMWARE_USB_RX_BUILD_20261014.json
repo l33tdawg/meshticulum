@@ -1,0 +1,82 @@
+{
+  "application": {
+    "gfsk250_profile.hpp": "379c0023940a6091a93c20f2199f2dcb0f70e7678c680681107622ea71cd6aba",
+    "gfsk_profile.hpp": "eae3b0883490663c89bdd6b636aa054e0031e294651185e52cf4ebd292cb4d82",
+    "main.cpp": "45eef0423fbc364204f3d6e764f176d2a7eb3be4e42e8c3e217c6111269a5eea",
+    "protocol.hpp": "9664157bd3c526739317e18f6120c332f078026012bdb1271bd6254fe3419ad7"
+  },
+  "application_identity": "mtb1-4f6cfc6b63",
+  "build_record_sha256": "c26b89b9f233ca4c2e20406c9718821bfa276c889a528f44c6053fe4154571c7",
+  "date": "2026-10-14",
+  "flashed": false,
+  "host": {
+    "machine": "arm64",
+    "system": "Darwin"
+  },
+  "independent_reproduction": false,
+  "input_archive_count": 14,
+  "input_lock_sha256": "9d2d534dbf784db3c13b729ab91d20832e0dd536dd8edf7ce2ccd79985c6dfb2",
+  "notices_complete": false,
+  "platformio_version": "6.1.19",
+  "recipe_sha256": "92eab8413b0e4dce22ff57ff3dc3abf4aa0909a7f30f1d269b7a79bb58116805",
+  "results": [
+    {
+      "artifacts": {
+        "bootloader.bin": {
+          "bytes": 15104,
+          "sha256": "2a71d69b471e20c2bac7fb469f3c6a807b3ebee780e348e5889db0da849ca363"
+        },
+        "firmware.bin": {
+          "bytes": 391424,
+          "sha256": "73d44a3194dec9493a101c8e041beb61a410e1e781d741e7ecc9d4cf7e1e0b5d"
+        },
+        "firmware.elf": {
+          "bytes": 12069852,
+          "sha256": "ec5a17b8772dd28156aca391dda31a2e07e37657a6e1d6053f378d77579010c2"
+        },
+        "firmware.map": {
+          "bytes": 15231353,
+          "sha256": "0334eb4b970ede3ca17ac772ed371c58c9831beea50f7086e87c35adf6bc709b"
+        },
+        "partitions.bin": {
+          "bytes": 3072,
+          "sha256": "bd0f7954aca2ef7d925ee21aaa1f3dc8822d1d6ce5cbbd26a135e5886bfff6ce"
+        }
+      },
+      "log_sha256": "61f619980c52107245776cb905219f1f74d76186a69efbe8f21d3ad285f8c5b7",
+      "returncode": 0,
+      "target": "mtbench_heltec_v4"
+    },
+    {
+      "artifacts": {
+        "bootloader.bin": {
+          "bytes": 15104,
+          "sha256": "1776e4dd896a69d0a5c2e79957b0e2a88aa4129b1381d6478683515a1f6af343"
+        },
+        "firmware.bin": {
+          "bytes": 385088,
+          "sha256": "af6326359f962133cda5caba066224ea41bdf5ac8a389959f3a6b1992acdf493"
+        },
+        "firmware.elf": {
+          "bytes": 11535172,
+          "sha256": "71f34555245357f14a8cd59790e180e19957f72d2ead197c715ba8aca8db98b4"
+        },
+        "firmware.map": {
+          "bytes": 15236647,
+          "sha256": "67525c7494a29d0613c578c5d9649b5ee44912de8f7b7ef57978ec742c5c10fe"
+        },
+        "partitions.bin": {
+          "bytes": 3072,
+          "sha256": "1d9cca96de0fe07ad7fc0648b9878ddecd9ce565e38b589ad20fea698ed4c80c"
+        }
+      },
+      "log_sha256": "fb7c518c17d09b4c0900f2717ca9a2524e69504efe954e6002a182634db7a11d",
+      "returncode": 0,
+      "target": "mtbench_xiao_s3_wio"
+    }
+  ],
+  "rf_qualified": false,
+  "schema": "meshticulum.raw-firmware-source-build-summary.v1",
+  "scope": "One fresh pinned preparation and successful compilation for each target on the recorded host. No independent reproduction, deployment, RF qualification or complete notice closure.",
+  "source_manifest_sha256": "f9da4ff556dcde50ca924d6e476ec0eb38a37552394bb068a880307ceb5b4422"
+}
