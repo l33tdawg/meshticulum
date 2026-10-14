@@ -5,6 +5,7 @@
 #include <cstring>
 #include <deque>
 #include <vector>
+#define IRAM_ATTR
 inline uint64_t fake_time=1000000;
 inline void delay(unsigned ms) { fake_time+=ms*1000; }
 struct FakeSerial {

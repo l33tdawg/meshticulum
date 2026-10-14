@@ -43,6 +43,9 @@ static void enqueue(const Frame& frame) {
 static void receivedDuringDecode() {
     radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE; Serial.read_hook=nullptr;
 }
+static void receiveWakeDuringDecode() {
+    receivedDuringDecode();assert(radio.dio1_action);radio.dio1_action();
+}
 
 int main(int argc,char** argv) {
     assert(argc==2); const std::string mode=argv[1];
@@ -69,6 +72,36 @@ int main(int argc,char** argv) {
     }
     assert(ready && !armed && !radio.starts && u64(boot+8)==18);
     assert(Serial.begun && serialReady && Serial.rx_capacity==2048);
+    if(mode=="radio_notify_wakeup") {
+        assert(radio.dio1_action==radioWake && radioServiceTask==fake_loop_task);
+        const auto time=fake_time;
+        radio.dio1_action();assert(fake_notifications==1 && fake_notify_yields==1);
+        assert(!armed && !radio.starts && !attempted && !reservedUs);
+        loop();assert(fake_time==time && fake_notifications==0 && fake_notify_waits==1);
+        loop();assert(fake_time==time+1000 && fake_notify_waits==2);
+        assert(!armed && !radio.starts && !attempted && !reservedUs);return 0;
+    }
+    if(mode=="radio_notify_decode") {
+        command(armRequest());assert(armed);drain();
+        const auto time=fake_time,end=deadlineUs,mutation=lastMutation;
+        enqueue(request(STATUS,3));Serial.read_hook=receiveWakeDuringDecode;
+        loop();assert(fake_time==time && fake_notifications==0 && !attempted && !reservedUs);
+        loop();auto rows=drain();unsigned receive=0;
+        for(const auto& row:rows) if(row.type==RECEIVE) receive++;
+        assert(receive==1 && armed && !fenced && deadlineUs==end && lastMutation==mutation);
+        assert(!radio.starts && !attempted && !reservedUs && fake_time==time+1000);return 0;
+    }
+    if(mode=="radio_notify_serial_failure") {
+        armAndTx();const auto count=attempted,maximum=capCount;
+        const auto paid=reservedUs,end=deadlineUs,mutation=lastMutation,budget=capUs;
+        Serial.forced_read_count=size_t(-1);radio.dio1_action();loop();
+        assert(!serialReady && fenced && !armed && !transmitting && previousResult.body[0]==UNKNOWN);
+        enqueue(armRequest(3));enqueue(txRequest(4));const size_t queued=Serial.input.size();
+        radio.flags=RADIOLIB_SX126X_IRQ_TX_DONE;radio.dio1_action();loop();
+        assert(Serial.input.size()==queued && previousResult.body[0]==UNKNOWN && radio.starts==1);
+        assert(attempted==count && reservedUs==paid && deadlineUs==end && lastMutation==mutation
+            && capCount==maximum && capUs==budget);return 0;
+    }
     if(mode=="usb_rx_read_error_idle" || mode=="usb_rx_read_error_started"
         || mode=="usb_rx_read_error_oversized" || mode=="usb_rx_read_error_standby_failure"
         || mode=="usb_rx_read_error_backpressure") {

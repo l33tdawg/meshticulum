@@ -35,6 +35,7 @@ def native(tmp_path_factory):
 
 
 @pytest.mark.parametrize('scenario', [
+    'radio_notify_wakeup','radio_notify_decode','radio_notify_serial_failure',
     'usb_rx_allocation_failure','usb_rx_escaped_burst','usb_rx_queue_bound','usb_rx_legacy_queue_overflow',
     'usb_rx_read_error_idle','usb_rx_read_error_started','usb_rx_read_error_oversized',
     'usb_rx_read_error_standby_failure','usb_rx_read_error_backpressure',
