@@ -5,13 +5,14 @@ synchronous flow handover occurs only after the entire bounded framed packet
 is accepted by the local kernel; peer receipt still requires a valid ACK.
 """
 from collections import Counter,deque
+import hashlib
 from types import SimpleNamespace
 
 from ..flow.flow import ReliableFlow,FlowLimits,parse_frame,KIND_ACK,MIN_FRAME_BYTES
 from ..flow.carrier import Delivery
 from .authority import IpAuthority
 from .state import SessionStore
-from .wire import IpCipher,FrameKind,IpError,require
+from .wire import IpCipher,FrameKind,IpError,READY_MODE,require
 from .worker import TcpWorker
 
 
@@ -59,6 +60,8 @@ class IpFlow:
         self.endpoint='a' if self.sends else 'b'
         self.received=bytearray();self.counts=Counter();self.events=deque(maxlen=64)
         self.closed=False;self.started=False
+        self._ready_mode=authority.grant.startup_mode==READY_MODE
+        self._ready_sent=False;self._ready_received=False
         self.link=_TcpLink(self);caps=authority.grant.limits
         self.flow=ReliableFlow(self.endpoint,self.link,FlowLimits(
           frame_payload_bytes=min(caps.max_plaintext-MIN_FRAME_BYTES,self.expected_bytes),window_frames=caps.window_frames,
@@ -69,22 +72,46 @@ class IpFlow:
           flow_id=1,generation=1,sends=self.sends,receive=not self.sends,startup=None)
 
     def service_fresh(self):
-        return not self.started and not self.closed and not self.events and not self.received and not self.flow.queued_bytes()
+        return not self.started and not self.closed and not self._ready_sent and not self._ready_received and not self.events and not self.received and not self.flow.queued_bytes()
 
     def send(self,payload):
         require(self.sends and not self.started and not self.closed,'ip_flow_send_not_fresh')
-        self.authority.require_dispatch();self.flow.send(payload);self.started=True
+        if not self._ready_mode:
+            self.authority.require_dispatch();self.flow.send(payload);self.started=True
+            return
+        try:
+            self.authority.require_dispatch()
+            grant=self.authority.grant
+            require(type(payload) is bytes and len(payload)==grant.object_bytes
+              and hashlib.sha256(payload).digest()==grant.object_sha256,'ip_ready_object_mismatch')
+            self.flow.send(payload);self.started=True
+            require(self.worker.owned(),'ip_worker_not_owned')
+            packet=self.cipher.seal(grant.digest,FrameKind.READY,authorize=self.authority.live)
+            self.worker.transmit(packet,'READY',self.authority)
+            self.counts['tx_READY']+=1;self._ready_sent=True
+            self.authority.require_dispatch()
+            require(self.worker.owned(),'ip_worker_not_owned')
+        except BaseException:self.close();raise
 
     def step(self):
         require(not self.closed,'ip_flow_closed')
         try:
             with self.authority.application_lease():
                 require(self.worker.owned(),'ip_worker_not_owned')
+                if self._ready_mode:require(not self.flow.failure,'ip_reliable_flow_failed')
                 for _ in range(64):
                     packet=self.worker.receive(self.authority)
                     if packet is None:break
                     try:
                         verified=self.cipher.open(packet,authorize=self.authority.live)
+                        if verified.kind is FrameKind.READY:
+                            require(self._ready_mode and not self.sends and not self._ready_received
+                              and verified.counter==1 and verified.payload==self.authority.grant.digest,'invalid_ip_sender_ready')
+                            self.authority.require_dispatch();require(self.worker.owned(),'ip_worker_not_owned')
+                            self._ready_received=True;self.counts['rx_READY']+=1
+                            self.events.append({'event':'rx','kind':'READY','counter':verified.counter})
+                            continue
+                        require(not self._ready_mode or (self._ready_sent if self.sends else self._ready_received),'ip_sender_not_ready')
                         parsed=parse_frame(verified.payload)
                         require(parsed is not None and parsed['flow_id']==1 and parsed['generation']==1,'invalid_ip_inner_frame')
                         expected=FrameKind.ACK if parsed['kind']==KIND_ACK else FrameKind.DATA
@@ -97,6 +124,11 @@ class IpFlow:
                     # A valid terminal receipt is final. Do not consume a later
                     # TCP EOF in this batch and turn that receipt into failure.
                     if self.sends and self.flow.complete:break
+                if self._ready_mode and not (self._ready_sent if self.sends else self._ready_received):
+                    require(not self.flow.failure,'ip_reliable_flow_failed')
+                    self.authority.require_dispatch()
+                    require(self.worker.owned(),'ip_worker_not_owned')
+                    return False
                 if not self.sends and self.flow.delivered:
                     data=self.flow.consume(len(self.flow.delivered))
                     require(len(self.received)+len(data)<=self.expected_bytes,'ip_receive_limit')

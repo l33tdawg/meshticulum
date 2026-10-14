@@ -26,8 +26,12 @@ from ..contracts.negotiation import (CapabilityLimits, Feature,
 from ..scheduler.scheduler import DispatchGrant, LeaseScope
 from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
-from .admission import RadioAdmission
+from .admission import RadioAdmission,GfskAdmission,Gfsk250Admission
+from .gfsk_profile import GfskProfile,radio_airtime_us,radio_is_fast,radio_is_sf5
+from .gfsk250_profile import Gfsk250Profile
 from .wire import BenchGrant, require
+from .public_block import (PUBLIC32_MARKER,REPRESENTATION_MARKER,TRANSPORT_DESCRIPTOR_MARKER,
+                          public32_service,public_mb1_service,object_limit)
 
 
 SERVICE_FORMATS = {
@@ -60,7 +64,7 @@ def _open(path, flags=os.O_RDONLY):
 
 class RunAuthority:
     def __init__(self, directory, *, expected_unit, host_boot_id, clock, owner_probe, radio_admission=None):
-        require(type(radio_admission) is RadioAdmission, 'explicit_native_radio_admission_required')
+        require(type(radio_admission) in (RadioAdmission,GfskAdmission,Gfsk250Admission), 'explicit_native_radio_admission_required')
         self.path = Path(directory).absolute()
         _private_info(self.path.lstat(), directory=True)
         self.fds, self.held = {}, {}
@@ -84,20 +88,29 @@ class RunAuthority:
             is_service = p['schema'] == 'meshticulum.service-run.v1'
             local_deadline_field = 'application_deadline_monotonic_us'
             extras = {'service'} if is_service else set()
+            if p.get('radio_modem') in ('gfsk125','gfsk250'):extras.add('radio_modem')
             if is_service and local_deadline_field in p:
                 extras.add(local_deadline_field)
             require(set(p) == fields | extras, 'invalid_bench_plan')
             self.service_kind, self.service_format = ServiceKind.KNOWLEDGE, None
+            self.public32 = False
+            self.mb1_descriptor_sha256 = None
             self.application_expires_epoch_us = p['expires_epoch_us']
             if is_service:
                 service = p['service']
-                require(type(service) is dict and set(service) ==
-                        {'kind', 'format', 'application_expires_epoch_us'}, 'invalid_service_plan')
+                require(type(service) is dict and set(service) in (
+                        {'kind', 'format', 'application_expires_epoch_us'},
+                        {'kind', 'format', 'application_expires_epoch_us', PUBLIC32_MARKER},
+                        {'kind', 'format', 'application_expires_epoch_us', PUBLIC32_MARKER,
+                         REPRESENTATION_MARKER,TRANSPORT_DESCRIPTOR_MARKER}),
+                        'invalid_service_plan')
                 require(type(service['format']) is str and service['format'] in SERVICE_FORMATS
                         and service['kind'] == SERVICE_FORMATS[service['format']].value,
                         'service_format_mismatch')
                 self.service_kind = SERVICE_FORMATS[service['format']]
                 self.service_format = service['format']
+                self.public32 = public32_service(service)
+                self.mb1_descriptor_sha256 = public_mb1_service(service)
                 self.application_expires_epoch_us = service['application_expires_epoch_us']
                 require(type(self.application_expires_epoch_us) is int
                         and p['issued_epoch_us'] < self.application_expires_epoch_us <= p['expires_epoch_us'],
@@ -114,12 +127,22 @@ class RunAuthority:
             self.sends = p['sender_unit'] == expected_unit
             require(self.local_peer == (session.initiator if self.sends else session.responder),
                     'bench_endpoint_role_mismatch')
-            self.profile = RadioProfile(**p['profile'])
+            if p.get('radio_modem')=='gfsk125':
+                require(type(radio_admission) is GfskAdmission,'explicit_gfsk_admission_required')
+                self.profile=GfskProfile.from_dict(p['profile'],board_id=1)
+            elif p.get('radio_modem')=='gfsk250':
+                require(type(radio_admission) is Gfsk250Admission,'explicit_gfsk250_admission_required')
+                self.profile=Gfsk250Profile.from_dict(p['profile'],board_id=1)
+            else:
+                require(type(radio_admission) is RadioAdmission,'wrong_radio_admission_modem')
+                self.profile = RadioProfile(**p['profile'])
             self.profile.encode(board_id=1)
             radio_admission.check(p['country'], p['antenna_confirmed'], self.profile)
             obj = p['object']
             require(type(obj) is dict and set(obj) == {'sha256', 'bytes', 'chunk_index', 'object_id'}
-                    and type(obj['bytes']) is int and 1 <= obj['bytes'] <= 16384
+                    and type(obj['bytes']) is int and 1 <= obj['bytes'] <= object_limit(p.get('service',{}))
+                    and (not self.public32 or self.service_format != 'MR1.response'
+                         or self.mb1_descriptor_sha256 is not None or obj['bytes'] == 32768)
                     and type(obj['chunk_index']) is int and 0 <= obj['chunk_index'] < 64,
                     'invalid_bench_object_descriptor')
             for name in ('sha256', 'object_id'):
@@ -128,11 +151,19 @@ class RunAuthority:
             secret = os.pread(self.fds['secret.bin'], 33, 0)
             self.route_record = {k: p[k] for k in ('initiator', 'responder', 'session_id', 'generation',
                                                   'profile', 'object', 'sender_unit', 'country')}
+            if p.get('radio_modem') in ('gfsk125','gfsk250'):self.route_record['radio_modem']=p['radio_modem']
             if is_service:
                 self.route_record['service'] = p['service']
             route_digest = hashlib.sha256(canonical(self.route_record)).digest()
             self.grant = BenchGrant(session, 'bench_transfer', route_digest,
                 p['issued_epoch_us'], p['expires_epoch_us'], 208, p['max_frames'], secret)
+            # Retain the original admitted bytes and immutable service/object
+            # values. A later mutation of plan or route is never a new grant.
+            service_binding=(self.service_kind,self.service_format,self.public32,self.mb1_descriptor_sha256,
+                             (obj['bytes'],obj['sha256']),self.grant.digest)
+            refs=(self.plan,self.plan_bytes,self.route_record,self.grant,
+                  canonical(self.plan),canonical(self.route_record),service_binding)
+            self._admission_refs=refs;self._captured_admission=lambda:refs
             require(self.grant.max_frames <= 512
                     and self.grant.expires_epoch_us - self.grant.issued_epoch_us <= 240000000,
                     'bench_grant_too_large')
@@ -175,13 +206,23 @@ class RunAuthority:
             raise
 
     def _contract(self, epoch, mono):
-        profile_digest = hashlib.sha256(canonical(asdict(self.profile))).digest()
-        air = estimated_airtime_us(self.profile, 255) * 1.10 / 1000000 + .001
-        ack_air = estimated_airtime_us(self.profile, 70) * 1.10 / 1000000 + .001
+        profile_digest = hashlib.sha256(canonical(self.profile.to_dict() if type(self.profile) in (GfskProfile,Gfsk250Profile) else asdict(self.profile))).digest()
+        air = radio_airtime_us(self.profile, 255) * 1.10 / 1000000 + .001
+        ack_air = radio_airtime_us(self.profile, 70) * 1.10 / 1000000 + .001
         exchange = air + ack_air
-        burst = 4 if self.profile.bandwidth_hz >= 250000 else 1
+        burst = 4 if radio_is_fast(self.profile) else 1
         initial_rto = max(.5, 3 * exchange + .15, (burst + 1) * air + 2 * ack_air + .15)
         minimum_rto = max(.25, 2 * exchange + .10, burst * air + ack_air + .10)
+        if radio_is_sf5(self.profile):
+            # The fast PHY does not remove held-source, journal and host-driver
+            # work. Clean native four-frame/ACK rounds exceeded the former
+            # 500ms PHY-only estimate. Keep the retry floor explicit in the
+            # supported carrier profile; do not alter the frozen retry engine.
+            # Allow four 250ms host/frame opportunities, the existing 500ms
+            # repeated-ACK interval and 250ms bounded control turnaround.
+            # These are adapter bounds, not added RF airtime or a new lease.
+            initial_rto = max(initial_rto, 1.75)
+            minimum_rto = max(minimum_rto, 1.75)
         # SOURCE_FIXTURE is the frozen API's label for unmeasured source cost.
         # Receipts explicitly call this a calculation, never measured RF time.
         self.carrier_profile = CarrierProfile(CarrierKind.BINARY, 255, 31, 16, profile_digest,
@@ -195,12 +236,30 @@ class RunAuthority:
         self.deadlines = DeadlineSet(min(mono / 1000000 + duration, self.application_deadline_us / 1000000),
                                     self.deadline_us / 1000000,
                                     self.grant.expires_epoch_us / 1000000)
-        limits = CapabilityLimits(208, 832, 16384, 0, 4, 16384, 4, 1, 1, 128, 32)
+        maximum = object_limit(self.plan.get('service',{}))
+        limits = CapabilityLimits(208, 832, maximum, 0, 4, maximum, 4, 1, 1,
+                                  256 if self.public32 and self.service_format == 'MR1.response' else 128, 32)
         private = self.service_kind is ServiceKind.MESSAGE
         feature = Feature.PROTECTED_MESSAGE_V2 if private else Feature.OBJECT_RESUME
         self.contract = NegotiatedContract(1, frozenset({Feature.BYTE_CREDIT, Feature.SELECTIVE_ACK_32,
             feature}), limits, route, self.deadlines,
             TrafficClass.INTERACTIVE if private else TrafficClass.BULK, 1, self.owner_id)
+
+    def _admission_current(self):
+        try:
+            refs=self._captured_admission();binding=refs[6]
+            return (self._admission_refs is refs and type(refs) is tuple and len(refs)==7
+                and self.plan is refs[0] and self.plan_bytes is refs[1]
+                and self.route_record is refs[2] and self.grant is refs[3]
+                and canonical(self.plan)==refs[4] and canonical(self.route_record)==refs[5]
+                and (self.service_kind,self.service_format,self.public32,self.mb1_descriptor_sha256,
+                     (self.plan['object']['bytes'],self.plan['object']['sha256']),self.grant.digest)==binding)
+        except (TypeError,ValueError,AttributeError,KeyError,IndexError):return False
+
+    def admitted_service_binding(self):
+        """Original immutable service/object values; refuses any current drift."""
+        require(self._admission_current(),'bench_admitted_plan_changed')
+        return self._captured_admission()[6]
 
     def live(self):
         if self.closed:
@@ -211,6 +270,7 @@ class RunAuthority:
             require(self.grant.issued_epoch_us <= epoch < self.grant.expires_epoch_us
                     and mono < self.deadline_us and epoch < self.application_expires_epoch_us
                     and mono < self.application_deadline_us, 'bench_authority_expired')
+            require(self._admission_current(),'bench_admitted_plan_changed')
             for name, fd in self.fds.items():
                 current = (self.path / name).lstat()
                 _private_info(current)
