@@ -1,6 +1,6 @@
 """Durable TCP stream-byte reservations, never radio-airtime estimates.
 
-Every DATA/ACK/retry reservation remains charged for this grant's lifetime.
+Every DATA/ACK/opt-in READY/retry reservation remains charged for this grant's lifetime.
 Kernel acceptance does not prove peer receipt. Unresolved process recovery is
 UNKNOWN and fences new dispatch. Payload and keys are never journaled.
 """
@@ -13,7 +13,7 @@ import sqlite3
 import stat
 import threading
 
-from .wire import IpGrant,require,integer
+from .wire import IpGrant,READY_MODE,HEADER,PREFIX,TAG_BYTES,require,integer
 
 
 def private(info,directory=False):
@@ -108,7 +108,9 @@ class IpJournal:
             except (OSError,TypeError,ValueError,sqlite3.Error):return False
 
     def reserve(self,packet,lane):
-        require(type(packet) is bytes and 1<=len(packet)<=4100 and lane in ('DATA','ACK'),'invalid_ip_attempt')
+        require(type(packet) is bytes and 1<=len(packet)<=4100 and
+          (lane in ('DATA','ACK') or (lane=='READY' and self.grant.startup_mode==READY_MODE
+            and len(packet)==PREFIX.size+HEADER.size+TAG_BYTES+32)),'invalid_ip_attempt')
         with self.transaction():
             self._owner()
             count,total=self.db.execute('SELECT count(*),coalesce(sum(bytes),0) FROM attempts').fetchone()

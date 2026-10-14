@@ -1,6 +1,6 @@
 # Authenticated TCP source prototype
 
-Historical Core commit IDs below identify private development snapshots. They are retained as execution provenance and are not ancestors of this clean proposed public history. Their results remain bound to those original inputs.
+Historical Core commit IDs below identify development snapshots. Their results remain bound to those original inputs. The public project retains its extraction history with the owner's approval; see [repository history](https://github.com/l33tdawg/meshticulum/blob/main/docs/REPOSITORY_HISTORY.md).
 
 The `meshticulum.ip` package carries the unchanged MT05 reliable flow over an explicitly admitted TCP connection. It adds larger authenticated frames and durable stream-byte accounting without reusing the radio airtime ledger. Real loopback controls cover public MR1 request/reply, signed-pack chunk verification, malformed frames, replay, revocation, original deadlines and uncertain process/write recovery.
 
@@ -20,7 +20,7 @@ A separate earlier fresh failure/resume campaign at the same historical pins obs
 
 At that checkpoint, a Lantern lease-sizing fix had **22 focused source controls passing** and was undeployed. The later native campaign below records a separate execution of the corrected runtime; it does not overwrite or relabel the earlier refusal.
 
-Device policy and operator evidence stay in [Lantern’s pilot guide](https://github.com/l33tdawg/sage-lantern/blob/c596664b41e6ae1bd37cf64591fb7bd827533900/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md) and its [evidence/cleanup section](https://github.com/l33tdawg/sage-lantern/blob/c596664b41e6ae1bd37cf64591fb7bd827533900/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md#evidence-and-cleanup). This is finite public delivery evidence, not a sustained-goodput benchmark or private production qualification. No firmware flash or full source/deployed-image equivalence was proved; measured RF airtime, energy and EIRP, review of comparisons with published MeshCore/Reticulum figures, license/notice closure and clean-history publication remain open.
+Device policy and operator evidence stay in [Lantern’s pilot guide](https://github.com/l33tdawg/sage-lantern/blob/c596664b41e6ae1bd37cf64591fb7bd827533900/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md) and its [evidence/cleanup section](https://github.com/l33tdawg/sage-lantern/blob/c596664b41e6ae1bd37cf64591fb7bd827533900/docs/lantern/MESHTICULUM_PUBLIC_PILOT.md#evidence-and-cleanup). This is finite public delivery evidence, not a sustained-goodput benchmark or private production qualification. No firmware flash or full source/deployed-image equivalence was proved; measured RF airtime, energy and EIRP, review of comparisons with published MeshCore/Reticulum figures and license/notice closure remain open.
 
 ## Recorded native public resume and IP return
 
@@ -38,7 +38,7 @@ Ten sessions ended with **twenty terminal, retired native children** and **three
 
 The resumed LoRa piece took **54.349727 seconds** from request to independent verification; the fresh IP sample took **9.529958 seconds**. These are two tiny service transaction samples including controller/management preparation and final radio ACK windows. They support that campaign’s measured path decision, not sustained RF/IP capacity, one-way latency or a matched upstream speed comparison. Actual RF airtime, energy and EIRP remain unmeasured.
 
-The earlier four-hop mixed milestone and 90-second lease refusal remain historical at their own pins above. Private native owner/consent and transport, review of published MeshCore/Reticulum comparisons, firmware source/deployed-image equivalence, notice/source/relinking closure, clean public history and release review remain open. **The alpha is not ready.**
+The earlier four-hop mixed milestone and 90-second lease refusal remain historical at their own pins above. Private native owner/consent and transport, review of published MeshCore/Reticulum comparisons, firmware source/deployed-image equivalence, notice/source/relinking closure and release review remain open. **The alpha is not ready.**
 
 ## Bindings and ownership
 
@@ -55,6 +55,18 @@ Each bounded packet has a four-byte stream length, a typed session/counter heade
 The [IP session store](../src/meshticulum/ip/state.py) adapts the existing durable nonce/replay implementation for IP grants. Transmit counters commit before encryption; receive replay admission commits before plaintext is returned. The store retains the original boot, declared monotonic deadline and application epoch expiry. Missing state, a changed boot, retired state or a different declared deadline cannot silently restart it. Filesystem deletion/rollback protection is still the native deployment's responsibility.
 
 [`IpFlow`](../src/meshticulum/ip/flow.py) uses the frozen `ReliableFlow`, including its receiver-issued startup credit, bounded window, receipt revisions, selective ACKs and retries. Its byte/reassembly bounds enforce the exact admitted object. Unmeasured socket serialization adds no invented queue delay; explicit source RTO bounds remain policy to qualify, not a measured network optimum.
+
+## Explicit sender readiness
+
+A relay can connect its TCP hop before the preceding radio hop has delivered the complete object. Starting receiver credit at connection time can exhaust the flow's startup allowance while the sender still has no object to send. The optional readiness mode delays that credit exchange until the sender has validated its complete admitted object.
+
+Both endpoints must select `schema: meshticulum.ip-service-run.v2` and `startup_mode: sender_ready_v1` in the original admitted plan. The mode is bound into the grant digest, directional keys and authenticated frame header. Legacy v1 plans keep their original wire format and refuse READY frames.
+
+The sender's first frame is READY: a 32-byte grant digest, authenticated in direction 0 at counter 1. Its **83 framed stream bytes** and one attempt consume the existing journal limits. Sending it requires the held application authority, current socket ownership, exact object size and digest, and the original deadlines. An uncertain write retains its reservation and fences the run.
+
+Until READY is verified, the receiver checks live authority and expiry but emits no startup ACK. It rejects early DATA or ACK frames; duplicate or replayed READY cannot restart the flow. After READY, the unchanged reliable flow issues ordinary receiver credit before DATA can move. READY grants no permission, credit or delivery receipt. Waiting does not extend a deadline or enlarge a byte, frame or retry allowance.
+
+This mode has source and loopback controls. Lantern owns native provisioning and must explicitly admit v2 before deploying it; the existing native v1 pilot is not upgraded by installing this library. These controls do not qualify a physical radio path or private backend.
 
 ## Byte accounting and uncertainty
 
@@ -89,7 +101,7 @@ The [runtime builder and hash-verified launcher](https://github.com/l33tdawg/sag
 Run the carrier and lifecycle controls with:
 
 ```sh
-python -m pytest tests/test_ip_transport.py tests/test_ip_ownership.py tests/test_mixed_carriers.py tests/test_mixed_resume.py
+python -m pytest tests/test_ip_transport.py tests/test_ip_sender_readiness.py tests/test_ip_ownership.py tests/test_mixed_carriers.py tests/test_mixed_resume.py
 ```
 
 These generic carrier controls use actual loopback TCP, synthetic admitted peers and modeled radio workers. Lantern owns the separate finite-job and native integration controls. Child-process tests with stubbed device/root facts do not qualify actual host ownership or a native backend. The generic controls cover:
