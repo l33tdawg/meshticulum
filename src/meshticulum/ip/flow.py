@@ -1,14 +1,14 @@
 """Frozen MT05 reliable flow over authenticated, byte-budgeted TCP dispatch.
 
-No airtime ledger or RF completion token is reused for IP. The ordinary
-synchronous flow handover occurs only after the entire bounded framed packet
-is accepted by the local kernel; peer receipt still requires a valid ACK.
+No airtime ledger or RF completion token is reused for IP. A flow handover is
+settled at the guarded TCP dispatch return, after kernel acceptance; peer
+receipt still requires a valid ACK.
 """
 from collections import Counter,deque
 import hashlib
 from types import SimpleNamespace
 
-from ..flow.flow import ReliableFlow,FlowLimits,parse_frame,KIND_ACK,MIN_FRAME_BYTES
+from ..flow.flow import ReliableFlow,FlowLimits,parse_frame,KIND_ACK,MIN_FRAME_BYTES,DEFERRED
 from ..flow.carrier import Delivery
 from .authority import IpAuthority
 from .state import SessionStore
@@ -22,7 +22,7 @@ class _TcpLink:
         # Unknown serialization rate; frozen flow's zero-rate branch adds no
         # made-up queue delay. RTO bounds are explicit source policy below.
         self.view=SimpleNamespace(capacity_bytes_per_second=0.0)
-        self.pending=[]
+        self.pending=[];self.handovers=[]
 
     def incarnation(self,endpoint):return 1
     def profile(self,endpoint):return self.view
@@ -40,8 +40,20 @@ class _TcpLink:
         frame_kind=FrameKind.ACK if kind=='ack' else FrameKind.DATA
         packet=owner.cipher.seal(payload,frame_kind,authorize=owner.authority.live)
         owner.worker.transmit(packet,frame_kind.name,owner.authority)
+        self.handovers.append((kind,payload,parsed.get('seq'),owner.clock()[1]/1e6))
         owner.counts['tx_'+frame_kind.name]+=1
-        return True
+        # Let the frozen caller first record its deferred emission. Its public
+        # handover API can then settle the real return time, not pump's earlier
+        # observation. The TCP operation itself is still synchronous.
+        return DEFERRED
+
+    def settle(self):
+        handovers,self.handovers=self.handovers,[]
+        for kind,frame,seq,at in handovers:
+            accepted=(self.owner.flow.ack_handover(frame,at=at) if kind=='ack'
+                      else self.owner.flow.handover(seq,at=at))
+            require(accepted,'tcp_flow_handover_refused')
+        return any(kind=='data' for kind,_,_,_ in handovers)
 
 
 class IpFlow:
@@ -142,8 +154,7 @@ class IpFlow:
                     data=self.flow.consume(len(self.flow.delivered))
                     require(len(self.received)+len(data)<=self.expected_bytes,'ip_receive_limit')
                     self.received.extend(data)
-                self.link.now=self.clock()[1]/1e6
-                self.flow.pump(self.link.now,max_frames=self.authority.grant.limits.window_frames,drain=False)
+                self._pump()
                 require(not self.flow.failure,'ip_reliable_flow_failed')
                 self.authority.require_dispatch()
                 return self.flow.complete
@@ -158,13 +169,23 @@ class IpFlow:
         require(not self.closed and not self.sends and self.flow.complete, 'ip_receive_not_complete')
         with self.authority.application_lease():
             require(self.worker.owned(), 'ip_worker_not_owned')
-            self.link.now=self.clock()[1]/1e6
-            self.flow.pump(self.link.now,max_frames=self.authority.grant.limits.window_frames,drain=False)
+            self._pump()
             self.authority.require_dispatch()
             return not self.flow._ack_dirty
 
+    def _pump(self):
+        self.link.now=self.clock()[1]/1e6
+        # DEFERRED yields after one fresh DATA offer. Preserve the original
+        # window-sized opportunity, using the same original expiry observation
+        # throughout this boundary; each actual handover keeps its own time.
+        for _ in range(self.authority.grant.limits.window_frames):
+            self.flow.pump(self.link.now,max_frames=1,drain=False)
+            require(not self.flow.failure,'ip_reliable_flow_failed')
+            if not self.link.settle():break
+
     def close(self):
         if not self.closed:self.closed=True;self.flow.cancel()
+        self.link.handovers.clear()
         # The dispatcher owns the worker, journal and session store lifecycle.
 
     def snapshot(self):
