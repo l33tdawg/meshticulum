@@ -6,7 +6,7 @@ import pytest
 from meshticulum.bench.services import ServiceTransfer, resource
 from meshticulum.flow.flow import build_ack_frame
 from meshticulum.ip.authority import revoke
-from meshticulum.ip.wire import FrameKind, IpError, READY_MODE
+from meshticulum.ip.wire import FrameKind, IpError, IpLimits, READY_MODE
 from tests.test_ip_transport import pair
 
 
@@ -106,6 +106,109 @@ def test_opening_credit_never_skips_original_live_guard(tmp_path, monkeypatch, f
         with pytest.raises(IpError):
             a.step()
         assert a.closed and a.counts['tx_DATA'] == 0
+        assert a.authority.application_deadline_us == deadline
+        after = workers[0].journal.snapshot()
+        assert after['attempts'] == before['attempts']
+        assert after['reserved_stream_bytes'] == before['reserved_stream_bytes']
+
+
+def multi_window_payload():
+    request = resource.encode_request('/packs/' + 'a' * 64 + '/manifest.json', 0, 1000)
+    return resource.BlockServer(lambda _: b'x' * 1000).handle(request)
+
+
+@pytest.mark.parametrize('mode', [None, READY_MODE])
+def test_accepted_progress_sends_next_window_before_queued_repeat_acks(tmp_path, mode):
+    data = multi_window_payload()
+    limits = IpLimits(max_plaintext=256, window_frames=4)
+    with pair(tmp_path/'next-window', data, 'MR1.response', limits,
+              startup_mode=mode) as (flows, workers, stores, clock):
+        a, b = flows
+        source, target = ServiceTransfer(a), ServiceTransfer(b)
+        source.send(data)
+        deadlines = [flow.authority.application_deadline_us for flow in flows]
+        b.step()
+        a.step()
+        assert a.flow._total == 5
+        assert a.counts['tx_DATA'] == 4 and a.flow.in_flight() == 4
+        assert a.flow.queued_bytes() > 0 and a.flow._peer_credit == 4
+        b.step()
+        clock.advance(10000)
+        b.step()
+        for _ in range(3):
+            clock.advance(500000)
+            b.step()
+        assert b.counts['tx_ACK'] == 5 and a.counts['rx_ACK'] == 1
+        assert a.step() is False
+        assert a.counts['rx_ACK'] == 2 and a.counts['tx_DATA'] == 5
+        assert a.flow.acked_frames() == 4 and a.flow.in_flight() == 1
+        assert a.flow.queued_bytes() == 0 and a.flow.retransmits == 0
+        assert stores[0]._db.execute('SELECT high FROM state').fetchone() == (2,)
+        assert select.select([workers[0].sock], [], [], 0)[0]
+        assert b.step() is True
+        clock.advance(10000)
+        assert b.finish_receive_ack() is True
+        assert a.step() is True
+        assert a.counts['rx_ACK'] == 6
+        assert target.received() == data
+        assert workers[1].journal.snapshot()['lanes']['ACK'] == 6
+        assert [flow.authority.application_deadline_us for flow in flows] == deadlines
+
+
+def test_rejected_progress_and_zero_credit_cannot_shortcut_next_window(tmp_path):
+    data = multi_window_payload()
+    limits = IpLimits(max_plaintext=256, window_frames=4)
+    with pair(tmp_path/'next-refused', data, 'MR1.response', limits) as (flows, workers, stores, clock):
+        a, b = flows
+        ServiceTransfer(a).send(data)
+        b.step()
+        a.step()
+        assert a.counts['tx_DATA'] == 4 and a.flow.in_flight() == 4
+        queue_ack(b, credit=0, revision=2)
+        queue_ack(b, credit=4, revision=1, ack_seq=4)
+        queue_ack(b, credit=4, revision=3, ack_seq=7)
+        queue_ack(b, credit=4, revision=2, ack_seq=4)
+        queue_ack(b, credit=4, revision=3, ack_seq=4, corrupt=True)
+        assert a.step() is False
+        assert a.counts['rx_ACK'] == 5 and a.counts['rx_refused'] == 1
+        assert a.flow._peer_credit == 0 and a.flow.in_flight() == 4
+        assert a.flow.stale_grants == a.flow.impossible_acks == a.flow.conflicting_grants == 1
+        assert a.counts['tx_DATA'] == 4 and a.flow.queued_bytes() > 0
+        assert not select.select([workers[0].sock], [], [], 0)[0]
+        queue_ack(b, credit=4, revision=3, ack_seq=4)
+        queue_ack(b, credit=4, revision=3, ack_seq=4)
+        assert a.step() is False
+        assert a.counts['rx_ACK'] == 6 and a.counts['tx_DATA'] == 5
+        assert select.select([workers[0].sock], [], [], 0)[0]
+
+
+@pytest.mark.parametrize('failure', ['expiry', 'revocation'])
+def test_next_window_credit_never_skips_original_live_guard(tmp_path, monkeypatch, failure):
+    data = multi_window_payload()
+    limits = IpLimits(max_plaintext=256, window_frames=4)
+    with pair(tmp_path/'next-live', data, 'MR1.response', limits) as (flows, workers, stores, clock):
+        a, b = flows
+        ServiceTransfer(a).send(data)
+        b.step()
+        a.step()
+        assert a.counts['tx_DATA'] == 4 and a.flow.in_flight() == 4
+        queue_ack(b, credit=4, revision=2, ack_seq=4)
+        deadline = a.authority.application_deadline_us
+        before = workers[0].journal.snapshot()
+        original = a.flow.absorb
+
+        def absorb(frame, now):
+            original(frame, now)
+            assert a.flow.acked_frames() == 4 and a.flow.in_flight() == 0
+            if failure == 'expiry':
+                clock.advance(60000000)
+            else:
+                (a.authority.path/'active').write_bytes(b'retired\n')
+
+        monkeypatch.setattr(a.flow, 'absorb', absorb)
+        with pytest.raises(IpError):
+            a.step()
+        assert a.closed and a.counts['tx_DATA'] == 4
         assert a.authority.application_deadline_us == deadline
         after = workers[0].journal.snapshot()
         assert after['attempts'] == before['attempts']
