@@ -119,15 +119,16 @@ class IpFlow:
                     except IpError:
                         self.counts['rx_refused']+=1;continue
                     at=self.clock()[1]/1e6;self.link.now=at
-                    previous_credit=self.flow._peer_credit
+                    previous_receipt=(self.flow._peer_grant_rev,self.flow.repeat_grants)
                     self.flow.absorb(parsed,at);self.counts['rx_'+verified.kind.name]+=1
                     self.events.append({'event':'rx','kind':verified.kind.name,'counter':verified.counter})
                     # A valid terminal receipt is final. Do not consume a later
                     # TCP EOF in this batch and turn that receipt into failure.
                     if self.sends and self.flow.complete:break
-                    # An accepted grant that opens send credit must reach the
-                    # pump before queued repeat grants can monopolize this step.
-                    if self.sends and verified.kind is FrameKind.ACK and previous_credit<=0<self.flow._peer_credit:break
+                    # A freshly accepted receipt that permits queued DATA must
+                    # reach the pump before repeat ACKs monopolize this step.
+                    accepted_receipt=(self.flow._peer_grant_rev,self.flow.repeat_grants)!=previous_receipt
+                    if self.sends and verified.kind is FrameKind.ACK and accepted_receipt and self.flow.queued_bytes()>0 and self.flow.in_flight()<min(self.flow.limits.window_frames,self.flow._peer_credit):break
                 if self._ready_mode and not (self._ready_sent if self.sends else self._ready_received):
                     require(not self.flow.failure,'ip_reliable_flow_failed')
                     self.authority.require_dispatch()
