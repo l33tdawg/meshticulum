@@ -67,10 +67,13 @@ class TcpWorker:
             require(self.grant.startup_mode==READY_MODE and direction==0 and counter==1 and length==32,'invalid_tcp_ready_frame')
         framed=PREFIX.pack(len(packet))+packet
         token=self.journal.reserve(framed,lane);done=0;invoked=False
-        stop=min(time.monotonic()+.25,authority.application_deadline_us/1e6)
+        stop=None
         try:
             while done<len(framed):
                 self._guard(authority)
+                # Start one socket-write budget after the first fresh guard;
+                # later guards and retries spend it, never renew it.
+                if stop is None:stop=min(time.monotonic()+.25,authority.application_deadline_us/1e6)
                 if time.monotonic()>=stop:raise IpError('tcp_write_timeout')
                 try:
                     invoked=True;count=self.sock.send(memoryview(framed)[done:])
