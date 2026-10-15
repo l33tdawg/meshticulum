@@ -120,11 +120,15 @@ class IpFlow:
                         self.counts['rx_refused']+=1;continue
                     at=self.clock()[1]/1e6;self.link.now=at
                     previous_receipt=(self.flow._peer_grant_rev,self.flow.repeat_grants)
+                    previous_ack_work=self.flow._ack_work_gen
                     self.flow.absorb(parsed,at);self.counts['rx_'+verified.kind.name]+=1
                     self.events.append({'event':'rx','kind':verified.kind.name,'counter':verified.counter})
                     # A valid terminal receipt is final. Do not consume a later
                     # TCP EOF in this batch and turn that receipt into failure.
                     if self.sends and self.flow.complete:break
+                    # Frozen receive work must reach the guarded ACK pump before
+                    # queued DATA or retries can monopolize this receive batch.
+                    if not self.sends and self.flow._ack_work_gen!=previous_ack_work:break
                     # A freshly accepted receipt that permits queued DATA must
                     # reach the pump before repeat ACKs monopolize this step.
                     accepted_receipt=(self.flow._peer_grant_rev,self.flow.repeat_grants)!=previous_receipt
