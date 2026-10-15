@@ -109,7 +109,9 @@ The generic public-resource CLI help is safe to inspect:
 meshticulum-seed --help
 ```
 
-A device service run needs Lantern's separately provisioned finite grant and trusted exclusive worker. Follow [Hardware](docs/HARDWARE.md) for the boundary and [Lantern integration](docs/SAGE_INTEGRATION.md) for the owning repository. Meshticulum does not provide a product-pilot CLI or a SAGE installation extra. Source tests use synthetic identities and explicit source models; they do not flash radios or start production services.
+For your own Linux radio hardware, the [encrypted file example](examples/README.md) consumes your application's approved finite grants and composes the public crypto, durable journals, workers and verified chunks. Start with [app-only flashing and rollback](docs/FLASHING.md) if you need to install a compatible firmware image. Model controls establish source behavior; physical completion and throughput require separate measurement.
+
+A Lantern device service run needs Lantern's separately provisioned finite grant and trusted exclusive worker. Follow [Hardware](docs/HARDWARE.md) for the boundary and [Lantern integration](docs/SAGE_INTEGRATION.md) for the owning repository. Meshticulum does not provide a product-pilot CLI or a SAGE installation extra. Source tests use synthetic identities and explicit source models; they do not flash radios or start production services.
 
 ## Repository map
 
