@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include <esp_timer.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <mbedtls/sha256.h>
 #include <target.h>
 #include "protocol.hpp"
@@ -18,6 +20,21 @@ static constexpr size_t USB_RX_BYTES=2048, USB_RX_DRAIN_BYTES=128;
 static_assert(USB_RX_BYTES>=2*MAX_ENCODED,"USB RX must hold two maximum encoded frames");
 static bool serialReady=false;
 static bool serialContainmentPending=false;
+static TaskHandle_t radioServiceTask=nullptr;
+static_assert(configUSE_TASK_NOTIFICATIONS==1,"radio wake requires task notifications");
+static_assert(configTICK_RATE_HZ==1000,"retain the pinned one-millisecond periodic service");
+static void IRAM_ATTR radioWake() {
+    // An edge is only a wake hint. SPI, IRQ interpretation and every radio
+    // action stay in the original loop task and its checked periodic path.
+    if(radioServiceTask==nullptr) return;
+    BaseType_t woke=pdFALSE;
+    vTaskNotifyGiveFromISR(radioServiceTask,&woke);
+    if(woke==pdTRUE) portYIELD_FROM_ISR();
+}
+static void waitForRadioOrTick() {
+    if(radioServiceTask!=nullptr) ulTaskNotifyTake(pdTRUE,1);
+    else delay(1);
+}
 static uint8_t boot[16]={}, profile[47]={}, previousPacket[255]={}, previousDigest[32]={};
 static uint64_t previousRequest=0, lastMutation=0, deadlineUs=0, startedUs=0, reservedUs=0, capUs=0;
 static uint32_t attempted=0, capCount=0, droppedRx=0;
@@ -254,6 +271,10 @@ void setup() {
     state.end(); put64(boot+8,generation+1);
     ready=radio_init();
     if(ready && idleRadio()!=RADIOLIB_ERR_NONE) ready=false;
+    if(ready) {
+        radioServiceTask=xTaskGetCurrentTaskHandle();
+        if(radioServiceTask!=nullptr) radio.setDio1Action(radioWake);
+    }
     // No Mesh instance, background advertising, automatic forwarding or RF ACK.
 }
 
@@ -314,16 +335,16 @@ void loop() {
         // Preserve output evidence and retry checked containment even when RX
         // is unusable. A later standby success never upgrades UNKNOWN.
         if(serialContainmentPending) serialContainmentPending=idleRadio()!=RADIOLIB_ERR_NONE;
-        output.flush(Serial); delay(1); return;
+        output.flush(Serial); waitForRadioOrTick(); return;
     }
     serviceRadio(); // Drain RX_DONE before a queued TX can clear it or overwrite its FIFO.
     Frame frame;
     uint8_t bytes[USB_RX_DRAIN_BYTES];
     const size_t count=Serial.read(bytes,sizeof(bytes));
     if(count>sizeof(bytes)) {
-        serialReadFailed(); output.flush(Serial); delay(1); return;
+        serialReadFailed(); output.flush(Serial); waitForRadioOrTick(); return;
     }
     for(size_t n=0;n<count;n++) if(decoder.feed(bytes[n],frame)) command(frame);
     output.flush(Serial);
-    delay(1);
+    waitForRadioOrTick();
 }

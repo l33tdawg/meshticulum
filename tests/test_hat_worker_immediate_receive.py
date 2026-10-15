@@ -1,7 +1,6 @@
 """Durable TX/RX handoff controls; modeled SPI is not native RF evidence."""
 from types import SimpleNamespace
-import hashlib
-from pathlib import Path
+import subprocess
 import types
 
 import pytest
@@ -256,11 +255,8 @@ def settlement_ack_model(tmp_path,worker_type,*,settlement_us=35000,authorize_us
 
 
 def test_reverse_ack_during_result_fsync_is_received_and_deaf_gap_excludes_fsync(tmp_path):
-    # Retain the exact historical source so this control also runs from an
-    # archive or a clone containing only the public main branch.
-    raw=(Path(__file__).parent/'fixtures'/'hat_worker_6e55cb1.py').read_bytes()
-    assert hashlib.sha256(raw).hexdigest()=='ecefade896f41f6f70f21fbcc8160b8fe194266c7a8c71dedee219d15dc873bc'
-    source=raw.decode('utf-8')
+    # Use the exact baseline worker with the same current chip/driver model.
+    source=subprocess.check_output(['git','show','6e55cb11672b6294abdd480554d604ce324b9806:src/meshticulum/bench/hat_worker.py'],text=True)
     baseline=types.ModuleType('meshticulum.bench._early_rx_baseline')
     baseline.__package__='meshticulum.bench';exec(compile(source,'_early_rx_baseline.py','exec'),baseline.__dict__)
     old=settlement_ack_model(tmp_path/'baseline',baseline.HATWorker)

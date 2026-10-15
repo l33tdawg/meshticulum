@@ -290,3 +290,4 @@ def test_cleanup_after_expiry_never_reads_live_permission(rig, monkeypatch):
             patch.setattr(Clock, '__call__', no_authority)
             assert foreign_call(lambda: rig.relay.close_delegated(token)) == (True, True)
         assert counters(incoming, outgoing) == before
+

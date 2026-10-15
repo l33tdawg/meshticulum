@@ -24,6 +24,8 @@ struct FakeBoard {
 };
 inline FakeBoard board;
 struct FakeRadio {
+    void (*dio1_action)()=nullptr;
+    void setDio1Action(void (*action)()) { dio1_action=action; }
     int16_t standby_error=0, clear_error=0, start_error=0, finish_error=0, receive_error=0, config_error=0, read_error=0, irq_error=0, warm_error=0;
     uint32_t flags=0, starts=0, receive_starts=0;
     bool warm=false;

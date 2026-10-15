@@ -1,0 +1,117 @@
+Crypto 0.4.0: exact leading comments from the locked source/header files.
+Full source is retained in the separate review materials; this collection does not assign a blanket license or applicability.
+
+Source files: vendor/crypto/AES.h, vendor/crypto/AES128.cpp, vendor/crypto/AES256.cpp
+/*
+ * Copyright (C) 2015,2018 Southern Storm Software, Pty Ltd.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
+Source files: vendor/crypto/AES192.cpp, vendor/crypto/AESCommon.cpp, vendor/crypto/AuthenticatedCipher.cpp, vendor/crypto/AuthenticatedCipher.h, vendor/crypto/BLAKE2b.cpp, vendor/crypto/BLAKE2b.h, vendor/crypto/BLAKE2s.cpp, vendor/crypto/BLAKE2s.h, vendor/crypto/BigNumberUtil.cpp, vendor/crypto/BigNumberUtil.h, vendor/crypto/BlockCipher.cpp, vendor/crypto/BlockCipher.h, vendor/crypto/CTR.cpp, vendor/crypto/CTR.h, vendor/crypto/ChaCha.cpp, vendor/crypto/ChaCha.h, vendor/crypto/ChaChaPoly.cpp, vendor/crypto/ChaChaPoly.h, vendor/crypto/Cipher.cpp, vendor/crypto/Cipher.h, vendor/crypto/Crypto.cpp, vendor/crypto/Crypto.h, vendor/crypto/Curve25519.cpp, vendor/crypto/Curve25519.h, vendor/crypto/EAX.cpp, vendor/crypto/EAX.h, vendor/crypto/Ed25519.cpp, vendor/crypto/Ed25519.h, vendor/crypto/GCM.cpp, vendor/crypto/GCM.h, vendor/crypto/GHASH.cpp, vendor/crypto/GHASH.h, vendor/crypto/Hash.cpp, vendor/crypto/Hash.h, vendor/crypto/KeccakCore.cpp, vendor/crypto/KeccakCore.h, vendor/crypto/NoiseSource.cpp, vendor/crypto/NoiseSource.h, vendor/crypto/Poly1305.cpp, vendor/crypto/Poly1305.h, vendor/crypto/RNG.cpp, vendor/crypto/RNG.h, vendor/crypto/SHA224.cpp, vendor/crypto/SHA224.h, vendor/crypto/SHA256.cpp, vendor/crypto/SHA256.h, vendor/crypto/SHA3.cpp, vendor/crypto/SHA3.h, vendor/crypto/SHA384.cpp, vendor/crypto/SHA384.h, vendor/crypto/SHA512.cpp, vendor/crypto/SHA512.h, vendor/crypto/utility/EndianUtil.h, vendor/crypto/utility/LimbUtil.h, vendor/crypto/utility/ProgMemUtil.h, vendor/crypto/utility/RotateUtil.h
+/*
+ * Copyright (C) 2015 Southern Storm Software, Pty Ltd.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
+Source files: vendor/crypto/AESEsp32.cpp
+/*
+ * Copyright (C) 2018 Southern Storm Software, Pty Ltd.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
+Source files: vendor/crypto/GF128.cpp, vendor/crypto/GF128.h, vendor/crypto/OMAC.cpp, vendor/crypto/OMAC.h, vendor/crypto/P521.cpp, vendor/crypto/P521.h, vendor/crypto/SHAKE.cpp, vendor/crypto/SHAKE.h, vendor/crypto/XOF.cpp, vendor/crypto/XOF.h, vendor/crypto/XTS.cpp, vendor/crypto/XTS.h
+/*
+ * Copyright (C) 2016 Southern Storm Software, Pty Ltd.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
+Source files: vendor/crypto/HKDF.cpp, vendor/crypto/HKDF.h
+/*
+ * Copyright (C) 2022 Southern Storm Software, Pty Ltd.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
