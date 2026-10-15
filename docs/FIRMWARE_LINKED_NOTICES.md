@@ -4,6 +4,34 @@ The [artifact audit](../provenance/FIRMWARE_LINKED_NOTICE_AUDIT.json), schema `m
 
 This advances the [firmware recipe's](FIRMWARE_RECIPE.md) input/build evidence into linked-content review. It does not establish exact source correspondence for every object, a distribution-wide license result or native qualification. This isolated package candidate is `1.0.0a1`; no alpha publication or device action follows from this record.
 
+## Current IRQ020 application artifacts
+
+The separate [IRQ020 inventory](../provenance/FIRMWARE_IRQ020_LINKED_NOTICES.json) binds application source `2b9db9e71dfa7d115d4e465225893b828c760171`, source tag `mtb1-020e287255`, the four application hashes, recipe/input-lock hashes and both actual ELF/map pairs. The older build-05 inventory above remains historical evidence.
+
+| Target | Application bytes | Contributing archives | Allocated object rows |
+| --- | ---: | ---: | ---: |
+| `mtbench_heltec_v4` | 391,600 | 49 | 4,404 |
+| `mtbench_xiao_s3_wio` | 385,264 | 49 | 4,289 |
+
+The inventory records each application binary's SHA-256, ELF/map hashes, archive/member hashes and direct object hashes. The current SDK archives match the 39 distinct upstream blobs in the retained SDK review. The four compiler/runtime archive hashes and their 93 selected members also match the earlier bounded runtime review. These byte matches preserve those reviews' limits; they do not resolve the dirty SDK build or establish per-file license applicability.
+
+The [source-material inventory](../provenance/FIRMWARE_IRQ020_SOURCE_MATERIALS.json) lists 833 retained source/header/configuration files, 460 generated dependency records and 210 linker LOAD input paths across both targets. The separate local review packet retains those exact bytes, complete source-file comments, current artifacts and applicable collected notice texts. This material collection has **not** been established as a complete usable corresponding-source or relinking kit. The source inventory is a manifest, not delivery of every upstream source archive. Bootloader and partition output hashes are recorded; their linked-content notice review is outside this application-image inventory.
+
+### Additional retained source notices
+
+These notices are copied from the exact locked preparation. Their source paths, input archive IDs, lengths and hashes are in the current inventory.
+
+| Retained text | Scope |
+| --- | --- |
+| [MeshCore](../firmware/meshticulum-bench/notices/MeshCore-license.txt), [nested ed25519](../firmware/meshticulum-bench/notices/MeshCore-ed25519-license.txt) | Separate original notices. The nested notice is retained for the supplied BSP source; loaded-but-discarded objects do not become allocated contributors. |
+| [RadioLib](../firmware/meshticulum-bench/notices/RadioLib-license.txt) | Exact radio-library notice. |
+| [RTClib](../firmware/meshticulum-bench/notices/RTClib-license.txt), [Melopero RV3028](../firmware/meshticulum-bench/notices/MeloperoRV3028-LICENSE), [Adafruit BusIO](../firmware/meshticulum-bench/notices/AdafruitBusIO-LICENSE), [CayenneLPP](../firmware/meshticulum-bench/notices/CayenneLPP-LICENSE.md), [ArduinoJson](../firmware/meshticulum-bench/notices/ArduinoJson-LICENSE.txt) | Preserve each input's own text; input presence alone does not prove an allocated contribution. |
+| [Crypto 0.4.0 source headers](../firmware/meshticulum-bench/notices/Crypto-0.4.0-source-headers.txt) | Exact leading comments with source-file names. That archive has no root license file; full source files remain in the review material. This collection does not replace per-file review. |
+
+The existing GNU runtime-exception, GPL/LGPL, newlib, SDK and framework patch texts remain unchanged. The framework's [overall LGPL text](../firmware/meshticulum-bench/patches/LICENSE.arduino-esp32) remains separate from HWCDC.cpp's Apache-2.0 per-file grant. In particular, the retained `FunctionalInterrupt.cpp` and framework `main.cpp` do not supply explicit file-level grant headers; their applicable scope still needs review. The existing historical modified-Print relink demonstration does not establish a complete distribution kit for IRQ020.
+
+`full_notice_closure`, `corresponding_source_complete`, `usable_relink_kit_complete` and `legal_compliance_asserted` remain false. The concrete outstanding inputs are the exact dirty SDK source/configuration/patch mapping, the vendor source and original grant/exception headers behind the 93 selected GNU/newlib members, the remaining per-file/header applicability review, and a reviewed, delivered corresponding-source/relinking set for the intended distribution.
+
 ## What the inventory counts
 
 | Target | Contributing archives | Selected allocated object rows |

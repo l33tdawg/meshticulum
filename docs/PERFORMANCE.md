@@ -1,8 +1,8 @@
 # Performance and measurement
 
-The latest documented finite public reply delivered **16,356 verified resource bytes at 1.071 kB/s**, measured from sender start through reliable-flow acknowledgement. An earlier, separate encrypted bench recorded **30 RF transfers** with directional medians around **1.2 kB/s**. The programme targets **1–1.5 kB/s sustained useful encrypted delivery**, followed by a **4–5 kB/s stretch target**. Neither target is a completed sustained-capacity qualification.
+The current GFSK larger-file test completed **100,000 verified bytes**, with **1,185.6 B/s during active DATA** and **945.7 B/s including sender startup**. An earlier LoRa public reply delivered **16,356 verified resource bytes at 1.071 kB/s**, measured from sender start through reliable-flow acknowledgement. An earlier, separate encrypted bench recorded **30 RF transfers** with directional medians around **1.2 kB/s**. The programme targets **1–1.5 kB/s sustained useful encrypted delivery**, followed by a **4–5 kB/s stretch target**. Neither target is a completed sustained-capacity qualification.
 
-This page separates the earlier distribution from **seven accepted finite native public samples**. Source controls, loopback runs and prepared larger-bundle fixtures have separate evidence boundaries. Publishing the project does not close the [alpha release gates](RELEASE_READINESS.md).
+This page separates the earlier distribution, **seven accepted finite LoRa public samples** and the later GFSK file campaign. Source controls, loopback runs and prepared larger-bundle fixtures have separate evidence boundaries. Publishing the project does not close the [alpha release gates](RELEASE_READINESS.md).
 
 ## Retained radio results
 
@@ -45,6 +45,23 @@ The latest listed execution uses Core `6e722812c2efbfcdd18b56e3994588d18f9f7adc`
 The modem settings were **SF7/BW500/CR4/5, 921.375 MHz, eight-symbol preamble and 0 dBm chip setting**. Actual RF airtime, energy and EIRP remain **null**. The [sanitized success record](../benchmarks/2026-10-11-native-public/successes.json) keeps each paired Core/Lantern commit, archive/manifest and source-result hash, byte counts, timing, retries and sample/campaign status. The accepted B→C response was part of a larger campaign that did not wholly complete; the other six request/reply campaigns completed. The latest response acknowledged all **85 DATA frames with 85 RF_DONE attempts and zero DATA retries**. All four native drivers disarmed and all 21 management RPC clients completed; application start through cleanup took **136.779 seconds within the original 180-second window**. The two consecutive results of **1,036.9 and 1,071.3 B/s (1.037 and 1.071 kB/s)** meet the **1,000 B/s minimum for these finite samples**, while the preceding 996.7 B/s sample did not. Their Core transport source is unchanged; the **3.3% difference is observed run variation**. Two finite samples do not establish sustained goodput or a completion distribution. Full transport, sustained-goodput and native private forward-secrecy qualification remain open. This record leaves the earlier 30-sample report and verifier unchanged.
 
 The latest **1,071.3 B/s** useful result is numerically **2.61×** the **410 B/s** contributor result in [MeshCore issue #3404](https://github.com/meshcore-dev/MeshCore/issues/3404). That issue reports 25 individually acknowledged 128-byte frames at SF7/BW500; this sample is a bounded resource reply with windowed flow and independent publisher verification. The workloads and timing boundaries differ, so the ratio is not a general network ranking. The RNode author's [Reticulum guide](https://unsigned.io/rnode_bootstrap_console/guides/loracomms.html) reports **3.1 kb/s on-air bitrate** at SF8/BW125/CR4/5 and 7 dBm, rather than encrypted application goodput. Neither comparison establishes overall encryption or security superiority.
+
+## A complete 100 kB file: 2026-10-15
+
+The current IRQ-firmware campaign delivered **100,000 useful decoded bytes** from an Orange Pi 5 Plus SX1262 HAT to a Heltec V4 MCU. The recipient verified all five signed MB1 parts, the publisher and the whole-file SHA-256. The modem was **GFSK at 250 kb/s**, 921.375 MHz and a 0 dBm chip setting. This is a separate finite bench sample from the LoRa measurements above.
+
+| Timing boundary | Seconds | Useful decoded B/s |
+| --- | ---: | ---: |
+| First DATA-worker call → flow ACK, summed over five responses | 84.349 | **1,185.6** |
+| Sender start → flow ACK, summed over five responses | 105.746 | **945.7** |
+| Request → independent publisher verification, summed over five parts | 337.564 | **296.2** |
+| Whole controller, including setup, verification and cleanup | 934.451 | **107.0** |
+
+The DATA interval includes host work, reverse ACKs and retries. Each component interval uses one host's monotonic clock; the part intervals are summed. The full controller time retains provisioning, scheduling waits, verification and cleanup. These boundaries need to accompany any quoted rate.
+
+All ten radio links completed and disarmed, twenty child jobs retired and fifty management RPC clients closed successfully within the original whole and phase windows. The [sanitized measurement record](../benchmarks/2026-10-15-gfsk250-100k/result.json) retains exact source/runtime/firmware pins, part counts, timing and the original lab-result hash. The original operator capture stays in the lab; this published transcription does not independently attest the hardware.
+
+**The startup-inclusive result is still below the 1,000 B/s alpha floor.** This completed larger-file test needs repetition and further improvement before sustained-goodput qualification. The public CLI example also needs its own physical check. Distance, measured RF airtime, energy and EIRP remain unavailable; broader native/private and firmware/source/notice gates remain open.
 
 ## Earlier bench conditions: 2026-10-09
 

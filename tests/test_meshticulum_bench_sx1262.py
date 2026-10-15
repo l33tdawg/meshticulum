@@ -120,6 +120,132 @@ def test_bad_modes_and_command_errors_still_rejected(value):
         SX1262._valid_status(value)
 
 
+@pytest.mark.parametrize('packet', [
+    b'\xc0\0', b'\x1d\x07\x40\0\0', b'\x1e\0\0\0',
+    b'\x11\0\0', b'\x12\0\0\0', b'\x13\0\0\0',
+    b'\x14\0\0\0\0', b'\x17\0\0\0'])
+def test_documented_reads_have_no_fixed_sleep_with_busy_low(packet):
+    chip, radio = configured()
+    started = chip.time
+    checks, sleeps = [], []
+    original_busy, original_sleep = chip.busy, chip.sleep
+    def busy():
+        checks.append(chip.time)
+        return original_busy()
+    def sleep(seconds):
+        sleeps.append(seconds)
+        original_sleep(seconds)
+    chip.busy, chip.sleep = busy, sleep
+    assert len(radio._transfer(packet)) == len(packet)
+    assert checks == [started, started] and not sleeps
+    assert chip.time == started
+
+
+def test_internal_irq_busy_after_read_is_waited_before_the_next_spi_command():
+    chip, radio = configured()
+    original = chip.transfer
+    busy_until = chip.time
+    def busy():
+        return chip.time < busy_until
+    def transfer(packet):
+        nonlocal busy_until
+        assert not busy(), 'SPI command issued while internal IRQ holds BUSY'
+        reply = original(packet)
+        if packet[0] == 0x12:
+            busy_until = chip.time + 0.00035
+        return reply
+    chip.busy, chip.transfer = busy, transfer
+    started = chip.time
+    assert radio.irq() == 0
+    assert chip.time - started >= 0.00035
+    radio.status()
+    assert chip.commands[-2:] == [b'\x12\0\0\0', b'\xc0\0']
+
+
+def test_write_waits_for_delayed_busy_then_rejects_completed_command_error():
+    chip, radio = configured()
+    original = chip.transfer
+    pending = None
+    def busy():
+        return pending is not None and pending[0] <= chip.time < pending[1]
+    def transfer(packet):
+        nonlocal pending
+        if packet[0] == 0x8C:
+            pending = (chip.time + 0.0000006, chip.time + 0.00035)
+            original(packet)
+            # The write MISO reports a previous successful command. It must
+            # never replace the status of this completed command.
+            return bytes([0x22]) * len(packet)
+        if packet[0] == 0xC0 and pending is not None:
+            assert chip.time >= pending[1], 'GetStatus queried before write completion'
+            original(packet)
+            return b'\0\xaa'
+        return original(packet)
+    chip.busy, chip.transfer = busy, transfer
+    with pytest.raises(HardwareError, match='sx1262_bad_status_0xaa'):
+        radio.start_transmit(b'packet', authority_deadline=160, antenna_confirmed=True)
+    assert not chip.tx_calls and radio.fenced and chip.resets[-1] is False
+    assert radio.attempts == 1 and radio.reserved_us == estimated_airtime_us(PROFILE, 6)
+
+
+def test_standby_uses_one_fresh_completed_status_and_checks_its_mode():
+    chip, radio = configured()
+    offset = len(chip.commands)
+    radio.standby()
+    assert chip.commands[offset:] == [b'\x80\0', b'\xc0\0']
+    original = chip.transfer
+    def transfer(packet):
+        reply = original(packet)
+        # A valid command status alone is insufficient: standby must confirm
+        # the RC mode from the completed command's GetStatus response.
+        return b'\0\x62' if packet[0] == 0xC0 else reply
+    chip.transfer = transfer
+    with pytest.raises(HardwareError, match='sx1262_standby_failed'):
+        radio.start_transmit(b'packet', authority_deadline=160, antenna_confirmed=True)
+    assert not chip.tx_calls and radio.fenced and chip.resets[-1] is False
+
+
+def test_unknown_opcode_retains_write_settle_delay():
+    chip, radio = configured()
+    chip.transfer = lambda packet: bytes(len(packet))
+    started = chip.time
+    radio._transfer(b'\xfe\0')
+    assert chip.time - started == pytest.approx(0.000002)
+
+
+def test_busy_timeout_after_tx_irq_keeps_attempt_unknown_and_fenced():
+    chip, radio = configured()
+    original = chip.transfer
+    def transfer(packet):
+        reply = original(packet)
+        if packet[0] == 0x12 and chip.tx:
+            chip.fault = 'busy'
+        return reply
+    chip.transfer = transfer
+    radio.start_transmit(b'packet', authority_deadline=160, antenna_confirmed=True)
+    result = radio.poll_transmit()
+    assert result.outcome is Outcome.UNKNOWN and radio.fenced
+    assert chip.tx_calls == radio.attempts == 1 and chip.resets[-1] is False
+
+
+def test_time_spent_in_spi_does_not_extend_the_original_tx_deadline():
+    chip, radio = configured()
+    original = chip.transfer
+    def transfer(packet):
+        reply = original(packet)
+        if packet[0] == 0x0E:
+            chip.time += 0.20
+        return reply
+    chip.transfer = transfer
+    data = b'packet'
+    estimate = estimated_airtime_us(PROFILE, len(data))
+    deadline = chip.time + (estimate * 1.10 + 100000) / 1000000 + 0.055
+    with pytest.raises(HardwareError, match='sx1262_authority_deadline'):
+        radio.start_transmit(data, authority_deadline=deadline, antenna_confirmed=True)
+    assert not chip.tx_calls and radio.fenced and chip.resets[-1] is False
+    assert radio.attempts == 1 and radio.reserved_us == estimate
+
+
 def finish(chip, radio):
     for _ in range(5000):
         result = radio.poll_transmit()
@@ -250,6 +376,17 @@ def test_500khz_modulation_erratum_and_ldro_at_slow_phy():
         assert next(c for c in chip.commands if c[0] == 0x8B)[-1] == low_rate
 
 
+def test_sf5_500khz_profile_has_a_measurable_airtime_budget_without_transmitting():
+    profile = replace(PROFILE, frequency_hz=921375000, bandwidth_hz=500000,
+                      spreading_factor=5)
+    chip = Chip(); radio = SX1262(chip); radio.configure(profile)
+    modulation = next(command for command in chip.commands if command[0] == 0x8B)
+    assert modulation[1:] == bytes((5, 6, 1, 0))
+    assert estimated_airtime_us(profile, 255) == 34384
+    assert 193 * 1000000 / estimated_airtime_us(profile, 255) > 5500
+    assert chip.tx_calls == radio.attempts == 0
+
+
 def test_spi_worker_reserves_before_set_tx_and_records_unknown_on_failure(tmp_path):
     tmp_path.chmod(0o700)
     chip = Chip()
@@ -259,7 +396,8 @@ def test_spi_worker_reserves_before_set_tx_and_records_unknown_on_failure(tmp_pa
         max_airtime_us=10000000, create=True)
     try:
         worker = HATWorker(chip, journal=journal, profile=PROFILE, context_digest=context,
-            authorize=lambda: True, authority_deadline=200, antenna_confirmed=True)
+            authorize=lambda: True, authority_deadline=200, antenna_confirmed=True,
+        monotonic=lambda: chip.time, time_basis='model-monotonic')
         original = chip.transfer
         def checked_transfer(command):
             if command[0] == 0x83:
@@ -274,3 +412,113 @@ def test_spi_worker_reserves_before_set_tx_and_records_unknown_on_failure(tmp_pa
         assert chip.tx_calls == 1
     finally:
         journal.close()
+
+
+@pytest.mark.parametrize('late',['before','during_standby','after_standby'])
+def test_completed_receive_is_preserved_before_transmit_even_during_standby(late):
+    chip,radio=configured();radio.start_receive(authority_deadline=160)
+    original=chip.transfer;entered_standby=False
+    def transfer(command):
+        nonlocal entered_standby
+        reply=original(command)
+        if command[0]==0x80:
+            entered_standby=True
+            if late=='during_standby':chip.flags=2
+        if late=='after_standby' and entered_standby and command[0]==0xc0:chip.flags=2
+        return reply
+    chip.transfer=transfer
+    if late=='before':chip.flags=2
+    start=len(chip.commands)
+    assert radio.start_transmit(b'outbound',authority_deadline=160,antenna_confirmed=True) is False
+    assert not chip.tx_calls and radio.receive_pending and not radio.transmitting
+    assert chip.mode==2 and not radio.receiving
+    assert not any(c[0] in (0x02,0x0e,0x83) for c in chip.commands[start:])
+    assert radio.attempts==int(late!='before')  # retain a late refusal's paid local attempt
+    if late!='before':
+        assert not radio.receiving and chip.mode==2
+        chip.transfer=original
+    assert radio.poll_receive().packet==bytes(range(255))
+    assert not radio.receive_pending
+    radio.start_receive(authority_deadline=160)
+    assert radio.start_transmit(b'outbound',authority_deadline=160,antenna_confirmed=True) is True
+    assert chip.tx_calls==1
+
+
+@pytest.mark.parametrize('flags',[0x20,0x40,0x22,0x42,0x202])
+def test_header_crc_or_timeout_irq_does_not_block_transmit(flags):
+    chip,radio=configured();radio.start_receive(authority_deadline=160);chip.flags=flags
+    assert radio.start_transmit(b'outbound',authority_deadline=160,antenna_confirmed=True) is True
+    assert chip.tx_calls==1 and not radio.receive_pending
+
+
+@pytest.mark.parametrize('late',['before','during_standby','after_standby'])
+def test_worker_settles_pending_receive_refusal_and_drains_it_under_same_lease(tmp_path,late):
+    tmp_path.chmod(0o700);chip=Chip();context=b'c'*32
+    journal=AttemptJournal(tmp_path/'attempts.sqlite',binding=journal_binding(context,chip.boot_id,PROFILE),
+        max_attempts=20,max_airtime_us=10000000,create=True)
+    try:
+        worker=HATWorker(chip,journal=journal,profile=PROFILE,context_digest=context,
+            authorize=lambda:True,authority_deadline=200,antenna_confirmed=True,
+            monotonic=lambda:chip.time,time_basis='model-monotonic')
+        worker.receive();original_end=worker.lease_deadline;original=chip.transfer;entered_standby=False
+        def transfer(command):
+            nonlocal entered_standby
+            reply=original(command)
+            if command[0]==0x80:
+                entered_standby=True
+                if late=='during_standby':chip.flags=2
+            if late=='after_standby' and entered_standby and command[0]==0xc0:chip.flags=2
+            return reply
+        chip.transfer=transfer
+        if late=='before':chip.flags=2
+        result=worker.transmit(b'outbound')
+        assert result.outcome=='NOT_SENT' and result.driver is None and chip.tx_calls==0
+        state=journal.snapshot();assert state['attempts']==1 and not state['fenced']
+        assert state['reserved_estimated_airtime_us']==result.reserved_estimated_us>0
+        assert journal.db.execute('SELECT state FROM attempts').fetchone()[0]=='NOT_SENT'
+        chip.transfer=original
+        _,received=worker.receive();assert received.packet==bytes(range(255))
+        assert worker.radio.receiving and not worker.radio.receive_pending
+        assert worker.lease_deadline==original_end
+        assert worker.transmit(b'new-outbound').outcome=='RF_DONE' and chip.tx_calls==1
+    finally:journal.close()
+
+
+def test_pending_receive_fifo_stays_frozen_during_not_sent_settlement(tmp_path):
+    tmp_path.chmod(0o700);chip=Chip();context=b'c'*32
+    journal=AttemptJournal(tmp_path/'attempts.sqlite',binding=journal_binding(context,chip.boot_id,PROFILE),
+        max_attempts=20,max_airtime_us=10000000,create=True)
+    try:
+        worker=HATWorker(chip,journal=journal,profile=PROFILE,context_digest=context,
+            authorize=lambda:True,authority_deadline=200,antenna_confirmed=True,
+            monotonic=lambda:chip.time,time_basis='model-monotonic')
+        worker.receive();chip.flags=2;expected=chip.rx;settle=journal.settle
+        def incoming_during_settlement(*args):
+            if chip.mode==5:chip.rx=b'later packet overwrote the unread FIFO'
+            chip.sleep(.035)
+            return settle(*args)
+        journal.settle=incoming_during_settlement
+        assert worker.transmit(b'outbound').outcome=='NOT_SENT'
+        assert chip.mode==2 and worker.radio.receive_pending
+        assert worker.receive()[1].packet==expected
+        assert chip.tx_calls==0 and journal.snapshot()['attempts']==1
+    finally:journal.close()
+
+
+@pytest.mark.parametrize('failure',['standby','irq_changed','irq_failure'])
+def test_freezing_pending_receive_failure_contains_without_transmit(failure):
+    chip,radio=configured();radio.start_receive(authority_deadline=160);chip.flags=2
+    original=chip.transfer;entered=False
+    def transfer(command):
+        nonlocal entered
+        reply=original(command)
+        if command[0]==0x80:
+            entered=True
+            if failure=='irq_changed':chip.flags=0
+        if entered and command[0]==0xc0 and failure=='standby':return b'\0\x62'
+        if entered and command[0]==0x12 and failure=='irq_failure':raise OSError('unproved IRQ')
+        return reply
+    chip.transfer=transfer
+    with pytest.raises((HardwareError,OSError)):
+        radio.start_transmit(b'outbound',authority_deadline=160,antenna_confirmed=True)
+    assert radio.fenced and chip.resets[-1] is False and not chip.tx_calls

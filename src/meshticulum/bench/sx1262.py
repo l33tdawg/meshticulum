@@ -20,22 +20,46 @@ from .serial_worker import estimated_airtime_us
 TX_DONE, RX_DONE, HEADER_ERROR, CRC_ERROR, TIMEOUT = 1, 2, 0x20, 0x40, 0x200
 RX_MASK = RX_DONE | HEADER_ERROR | CRC_ERROR | TIMEOUT
 BW_CODES = {62500: 3, 125000: 4, 250000: 5, 500000: 6}
+# Datasheet read commands used by this driver. Unknown commands retain the
+# write settle delay; a read never starts the command-processing state machine.
+_READ_OPCODES = frozenset((0xC0, 0x1D, 0x1E, 0x11, 0x12, 0x13, 0x14, 0x17))
 
 
 class SX1262:
-    def __init__(self, transport):
+    _airtime = staticmethod(estimated_airtime_us)
+
+    def __init__(self, transport, *, monotonic=None):
         self.io = transport
+        original_airtime=self._airtime
+        hook_names=('_rx_tail_us','_receive_evidence','_packet')
+        hooks=tuple((getattr(self,name).__self__,getattr(self,name).__func__) for name in hook_names)
+        def same_hooks():
+            return all(getattr(getattr(self,name),'__self__',None) is owner
+                       and getattr(getattr(self,name),'__func__',None) is function
+                       for name,(owner,function) in zip(hook_names,hooks))
+        clock = transport.monotonic if monotonic is None else monotonic
+        require(callable(clock), 'invalid_sx1262_clock')
+        # HATWorker supplies its captured host clock. Direct driver model users
+        # retain their explicit transport time basis; this layer grants no authority.
+        def now():
+            require(self.io is transport and self._airtime is original_airtime and same_hooks(), 'sx1262_transport_changed')
+            value = clock()
+            require(type(value) in (int, float) and math.isfinite(value), 'invalid_sx1262_clock')
+            require(self.io is transport and self._airtime is original_airtime and same_hooks(), 'sx1262_transport_changed')
+            return value
+        self._now = now
         self.profile = None
         self.fenced = False
         self.receiving = self.transmitting = False
+        self.receive_pending = False
         self.attempts = self.reserved_us = 0
         self.rx_errors = 0
         self.tx_estimate = self.tx_started = self.tx_deadline = 0
 
     def _ready(self):
-        end = self.io.monotonic() + 0.150
+        end = self._now() + 0.150
         while self.io.busy():
-            require(self.io.monotonic() < end, 'sx1262_busy_timeout')
+            require(self._now() < end, 'sx1262_busy_timeout')
             self.io.sleep(0.0002)
 
     def _transfer(self, packet):
@@ -43,7 +67,11 @@ class SX1262:
         self._ready()
         result = self.io.transfer(packet)
         require(type(result) is bytes and len(result) == len(packet), 'sx1262_short_reply')
-        self.io.sleep(0.0002)  # let BUSY assert after command processing starts
+        # DS2.2 section 8.3.1: writes assert BUSY within 600 ns after NSS
+        # rises; reads do not assert it. Keep a 2 us minimum settle and both BUSY
+        # gates, including the post-read gate for an asynchronous internal IRQ.
+        if packet[0] not in _READ_OPCODES:
+            self.io.sleep(0.000002)
         self._ready()
         return result
 
@@ -62,7 +90,7 @@ class SX1262:
 
     def _write(self, opcode, body=b''):
         self._transfer(bytes([opcode]) + body)
-        self.status()  # status of the completed command, not an unchecked MISO byte
+        return self.status()  # completed command, not an unchecked write MISO byte
 
     def _read(self, opcode, size, prefix=b''):
         value = self._transfer(bytes([opcode]) + prefix + bytes(size + 1))
@@ -98,8 +126,8 @@ class SX1262:
         require(self.irq() == 0, 'sx1262_stale_irq')
 
     def standby(self):
-        self._write(0x80, b'\0')
-        require((self.status() >> 4) & 7 == 2, 'sx1262_standby_failed')
+        value = self._write(0x80, b'\0')
+        require((value >> 4) & 7 == 2, 'sx1262_standby_failed')
         self.io.receive_switch(True)
         self.receiving = False
 
@@ -158,33 +186,66 @@ class SX1262:
 
     def _room(self, deadline, seconds):
         require(type(deadline) in (int, float) and math.isfinite(deadline)
-                and self.io.monotonic() + seconds < deadline, 'sx1262_authority_deadline')
+                and self._now() + seconds < deadline, 'sx1262_authority_deadline')
 
     def start_transmit(self, packet, *, authority_deadline, antenna_confirmed):
+        """Start TX, or return False while a valid completed RX awaits draining.
+
+        False proves no TX command/FIFO write was issued by this call. A late
+        RX completion after standby may already have consumed the local paid
+        attempt; that charge is deliberately retained.
+        """
         require(antenna_confirmed is True, 'sx1262_antenna_not_confirmed')
         require(self.profile is not None and not self.transmitting and not self.fenced,
                 'sx1262_not_ready')
         require(type(packet) is bytes and 1 <= len(packet) <= 255, 'sx1262_invalid_packet')
-        estimate = estimated_airtime_us(self.profile, len(packet))
+        estimate = self._airtime(self.profile, len(packet))
         timeout_us = math.ceil(estimate * 1.10) + 100000
         self._room(authority_deadline, timeout_us / 1000000 + 0.05)
         require(self.attempts < self.profile.max_boot_attempts
                 and self.reserved_us + estimate <= self.profile.max_boot_estimated_airtime_us,
                 'sx1262_attempt_budget')
+        was_receiving = self.receiving or self.receive_pending
+        if was_receiving:
+            flags = self.irq()
+            if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
+                try:
+                    # Freeze the shared FIFO across host permission checks and
+                    # durable NOT_SENT settlement. Even a receive backend in
+                    # continuous mode cannot overwrite this completed packet.
+                    self.standby()
+                    flags = self.irq()
+                    require(flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT),
+                            'sx1262_pending_receive_changed')
+                    self.receive_pending = True
+                    return False
+                except BaseException:
+                    self.contain()
+                    raise
         self.attempts += 1
         self.reserved_us += estimate
-        self.tx_estimate, self.tx_started = estimate, self.io.monotonic()
+        self.tx_estimate, self.tx_started = estimate, self._now()
         self.transmitting = True
         try:
             self.standby()
+            # A packet can finish between the first IRQ sample and standby.
+            # Once standby completes, its FIFO is stable. Preserve it before
+            # ClearIrqStatus/WriteBuffer, for the worker's next receive pass.
+            if was_receiving:
+                flags = self.irq()
+                if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
+                    self.transmitting = False
+                    self.receive_pending = True
+                    return False
             self.clear_irq()
             self._packet(len(packet))
             self._write(0x0E, b'\0' + packet)
             self._write(0x08, struct.pack('!HHHH', TX_DONE | TIMEOUT, TX_DONE | TIMEOUT, 0, 0))
             self.io.receive_switch(False)
             self._room(authority_deadline, timeout_us / 1000000 + 0.05)
-            self.tx_deadline = self.io.monotonic() + timeout_us / 1000000 + 0.05
+            self.tx_deadline = self._now() + timeout_us / 1000000 + 0.05
             self._write(0x83, self._rtc_steps(timeout_us))
+            return True
         except BaseException:
             self.contain()
             raise
@@ -196,22 +257,23 @@ class SX1262:
             flags = self.irq()
             require(not flags & ~(TX_DONE | TIMEOUT), 'sx1262_unexpected_tx_irq')
             if flags & TX_DONE and not flags & TIMEOUT:
-                elapsed = max(0, math.ceil((self.io.monotonic() - self.tx_started) * 1000000))
+                elapsed = max(0, math.ceil((self._now() - self.tx_started) * 1000000))
                 self.standby()
                 self._device_errors()
                 self.transmitting = False
                 return TxEvidence(Outcome.RF_DONE, self.tx_estimate, elapsed, flags, 0)
-            if flags & TIMEOUT or self.io.monotonic() >= self.tx_deadline:
+            if flags & TIMEOUT or self._now() >= self.tx_deadline:
                 raise HardwareError('sx1262_tx_timeout')
             return None
         except (OSError, HardwareError):
-            elapsed = max(0, math.ceil((self.io.monotonic() - self.tx_started) * 1000000))
+            elapsed = max(0, math.ceil((self._now() - self.tx_started) * 1000000))
             self.contain()
             return TxEvidence(Outcome.UNKNOWN, self.tx_estimate, elapsed, flags, -1)
 
     def start_receive(self, *, authority_deadline):
         require(self.profile is not None and not self.transmitting and not self.fenced,
                 'sx1262_not_ready')
+        require(not self.receive_pending, 'sx1262_completed_receive_pending')
         self._room(authority_deadline, 0.020)
         try:
             self.standby()
@@ -219,11 +281,11 @@ class SX1262:
             self._packet(255)
             self._write(0x08, struct.pack('!HHHH', RX_MASK, RX_MASK, 0, 0))
             self.io.receive_switch(True)
-            available_us = int((authority_deadline - self.io.monotonic() - 0.01) * 1000000)
+            available_us = int((authority_deadline - self._now() - 0.01) * 1000000) - self._rx_tail_us()
             # Allow preamble acquisition across a maximum-frame-sized gap.
             # In explicit-header LoRa mode the finite RX timer stops after a
             # valid header; reception can then extend by the bounded payload.
-            window_us = min(math.ceil(estimated_airtime_us(self.profile, 255) * 1.10)
+            window_us = min(math.ceil(self._airtime(self.profile, 255) * 1.10)
                             + 250000, available_us)
             require(window_us > 0, 'sx1262_authority_deadline')
             self._write(0x82, self._rtc_steps(window_us))
@@ -233,7 +295,7 @@ class SX1262:
             raise
 
     def poll_receive(self):
-        require(self.receiving and not self.fenced, 'sx1262_not_receiving')
+        require((self.receiving or self.receive_pending) and not self.fenced, 'sx1262_not_receiving')
         try:
             flags = self.irq()
             if not flags & RX_MASK:
@@ -247,21 +309,29 @@ class SX1262:
                 length, offset = self._read(0x13, 2)
                 require(1 <= length <= 255, 'sx1262_invalid_received_size')
                 data = self._read(0x1E, length, bytes([offset]))
-                rssi, snr, _signal_rssi = self._read(0x14, 3)
-                signed_snr = snr - 256 if snr >= 128 else snr
-                packet = RawReceive(-rssi / 2, signed_snr / 4, data)
+                packet = self._receive_evidence(data, self._read(0x14, 3))
             elif flags & (CRC_ERROR | HEADER_ERROR):
                 self.rx_errors += 1
             self.clear_irq()
+            self.receive_pending = False
             return packet
         except BaseException:
             self.contain()
             raise
 
+    def _rx_tail_us(self):
+        return 0  # Preserve the legacy LoRa receive timing contract.
+
+    def _receive_evidence(self, data, status):
+        rssi, snr, _signal_rssi = status
+        signed_snr = snr - 256 if snr >= 128 else snr
+        return RawReceive(-rssi / 2, signed_snr / 4, data)
+
     def contain(self):
         """Contain ambiguous hardware outcome by holding RESET low, then fence."""
         self.fenced = True
         self.receiving = self.transmitting = False
+        self.receive_pending = False
         try:
             self.io.reset(False)
         finally:

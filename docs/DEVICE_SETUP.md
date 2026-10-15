@@ -38,7 +38,7 @@ build/firmware-work/project/.pio/build/<target>/
     firmware.map
 ```
 
-Retain the ELF, map, source/input lock and hashes. `firmware.bin` is an **application image**, not a universal whole-flash image. The `mtb1-9816f92488` tag identifies the application's two source files, not the complete BSP/toolchain or binary.
+Retain the ELF, map, source/input lock and hashes. `firmware.bin` is an **application image**, not a universal whole-flash image. The historical `mtb1-9816f92488` tag identifies the earlier two-file application. The current recipe includes `main.cpp`, `protocol.hpp`, `gfsk_profile.hpp` and `gfsk250_profile.hpp` in the application manifest and derives its tag from those exact bytes. Use that build's `SOURCE.json`; neither tag identifies the complete BSP/toolchain or binary.
 
 ## Understand the recorded flash layout
 

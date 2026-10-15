@@ -1,0 +1,114 @@
+{
+  "application": {
+    "gfsk250_profile.hpp": "379c0023940a6091a93c20f2199f2dcb0f70e7678c680681107622ea71cd6aba",
+    "gfsk_profile.hpp": "eae3b0883490663c89bdd6b636aa054e0031e294651185e52cf4ebd292cb4d82",
+    "main.cpp": "45eef0423fbc364204f3d6e764f176d2a7eb3be4e42e8c3e217c6111269a5eea",
+    "protocol.hpp": "9664157bd3c526739317e18f6120c332f078026012bdb1271bd6254fe3419ad7"
+  },
+  "application_identity": "mtb1-4f6cfc6b63",
+  "artifact_comparisons": [
+    {
+      "artifacts": {
+        "bootloader.bin": {
+          "bytes": 15104,
+          "sha256": "2a71d69b471e20c2bac7fb469f3c6a807b3ebee780e348e5889db0da849ca363"
+        },
+        "firmware.bin": {
+          "bytes": 391424,
+          "sha256": "73d44a3194dec9493a101c8e041beb61a410e1e781d741e7ecc9d4cf7e1e0b5d"
+        },
+        "firmware.elf": {
+          "bytes": 12069852,
+          "sha256": "ec5a17b8772dd28156aca391dda31a2e07e37657a6e1d6053f378d77579010c2"
+        },
+        "firmware.map": {
+          "bytes": 15231353,
+          "sha256": "0334eb4b970ede3ca17ac772ed371c58c9831beea50f7086e87c35adf6bc709b"
+        },
+        "partitions.bin": {
+          "bytes": 3072,
+          "sha256": "bd0f7954aca2ef7d925ee21aaa1f3dc8822d1d6ce5cbbd26a135e5886bfff6ce"
+        }
+      },
+      "matching_artifacts": [
+        "firmware.bin",
+        "firmware.elf",
+        "bootloader.bin",
+        "partitions.bin"
+      ],
+      "normalized_map_sha256": "9fad03c829ad22b24eaf3a23371806ef8d2744d93b1ffaf33841ea810635968c",
+      "normalized_maps_match": true,
+      "raw_maps_match": false,
+      "second_raw_map": {
+        "bytes": 16210423,
+        "sha256": "9f4ce931260598d450d0a676bd07068f3e75ce466e7ac7a8fa61e10f3e7900c0"
+      },
+      "target": "mtbench_heltec_v4"
+    },
+    {
+      "artifacts": {
+        "bootloader.bin": {
+          "bytes": 15104,
+          "sha256": "1776e4dd896a69d0a5c2e79957b0e2a88aa4129b1381d6478683515a1f6af343"
+        },
+        "firmware.bin": {
+          "bytes": 385088,
+          "sha256": "af6326359f962133cda5caba066224ea41bdf5ac8a389959f3a6b1992acdf493"
+        },
+        "firmware.elf": {
+          "bytes": 11535172,
+          "sha256": "71f34555245357f14a8cd59790e180e19957f72d2ead197c715ba8aca8db98b4"
+        },
+        "firmware.map": {
+          "bytes": 15236647,
+          "sha256": "67525c7494a29d0613c578c5d9649b5ee44912de8f7b7ef57978ec742c5c10fe"
+        },
+        "partitions.bin": {
+          "bytes": 3072,
+          "sha256": "1d9cca96de0fe07ad7fc0648b9878ddecd9ce565e38b589ad20fea698ed4c80c"
+        }
+      },
+      "matching_artifacts": [
+        "firmware.bin",
+        "firmware.elf",
+        "bootloader.bin",
+        "partitions.bin"
+      ],
+      "normalized_map_sha256": "6ddd9d401beeb4dd79a5fa3afb0b80fa3bed435ca3726bb938b07effe231fbc6",
+      "normalized_maps_match": true,
+      "raw_maps_match": false,
+      "second_raw_map": {
+        "bytes": 16216819,
+        "sha256": "3cc60adcc9e8994f3ee961b11e20485e5d02f02de03561816472c46d69e38e79"
+      },
+      "target": "mtbench_xiao_s3_wio"
+    }
+  ],
+  "cross_host_reproduction": false,
+  "date": "2026-10-14",
+  "deployment_qualified": false,
+  "first_build_record_sha256": "c26b89b9f233ca4c2e20406c9718821bfa276c889a528f44c6053fe4154571c7",
+  "first_source_manifest_sha256": "f9da4ff556dcde50ca924d6e476ec0eb38a37552394bb068a880307ceb5b4422",
+  "flashed": false,
+  "input_lock_sha256": "9d2d534dbf784db3c13b729ab91d20832e0dd536dd8edf7ce2ccd79985c6dfb2",
+  "map_library_directory_rule": "sha1(library absolute source path) first3 hex digits",
+  "map_normalizations": [
+    "exact old/new absolute build root to <BUILD_ROOT>",
+    "only .pio/build/<exact target>/lib[0-9a-f]{3}/ to lib<PATH_HASH>/"
+  ],
+  "native_application_qualified": false,
+  "notices_complete": false,
+  "platformio_map_rule_source_sha256": "2cf8297440c62637d3e9d3f99f34f418c9cfb8612712a5ea3687743013dbfdf0",
+  "prepared_source_member_count": 18958,
+  "process_groups_closed": true,
+  "public_source_commit": "36091801f8e182d678195ad6b205c9aa1e3d0640",
+  "recipe_sha256": "92eab8413b0e4dce22ff57ff3dc3abf4aa0909a7f30f1d269b7a79bb58116805",
+  "reference_summary_sha256": "fab8134f90840eb0b0958aa4d9d14df4d73ddcb457e36a31e6a3d057499459be",
+  "rf_qualified": false,
+  "same_host_reproduction": true,
+  "schema": "meshticulum.raw-firmware-reproduction-summary.v1",
+  "scope": "Two independent fresh preparations and both-target compilations on the same Darwin arm64 host using the same 14 checksum-pinned archives and PlatformIO Core 6.1.19. This proves same-host source-build reproduction for the four matching artifact types, not cross-host, native, RF, deployment or notice qualification.",
+  "second_build_record_sha256": "e3568639d3dc423ea86a89369eeba7b2d5f1d10da7a8ed283d78196251d130f3",
+  "second_source_manifest_sha256": "a06451074dd60c052df1fbfc8f2ce21a830b020acf1daf95980626bd345dc9a1",
+  "verified_input_archive_count": 14
+}

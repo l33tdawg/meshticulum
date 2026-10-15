@@ -2,7 +2,7 @@
 
 ## Project preview — development source
 
-The Meshticulum source, documentation, architecture diagrams and project website are prepared for a public project announcement. The development package remains `0.1.0`. A packaged alpha release will follow its own readiness review; no `v1.0.0-alpha` tag or release has been published. See [the preview scope](docs/PROJECT_PREVIEW.md).
+The Meshticulum source, documentation, architecture diagrams and project website are public. The original preview used package version `0.1.0`; this source candidate uses `1.0.0a1` metadata while the alpha remains unreleased. A packaged alpha release will follow its own readiness review; no `v1.0.0-alpha` tag or release is created by this source update. See [the preview scope](docs/PROJECT_PREVIEW.md) and [the current source update](docs/TRANSPORT_SOURCE_UPDATE.md).
 
 ## Proposed 1.0.0-alpha (`1.0.0a1`) — unreleased
 

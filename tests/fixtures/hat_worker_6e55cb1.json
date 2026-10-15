@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/l33tdawg/meshticulum",
+  "revision": "6e55cb11672b6294abdd480554d604ce324b9806",
+  "path": "src/meshticulum/bench/hat_worker.py",
+  "sha256": "ecefade896f41f6f70f21fbcc8160b8fe194266c7a8c71dedee219d15dc873bc",
+  "purpose": "Unmodified historical negative control for ACK reception during result persistence; never installed as runtime code."
+}

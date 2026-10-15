@@ -102,7 +102,9 @@ The key is a disposable example publisher, not an enrolled network identity. App
 | `mr.BlockServer(read).handle(request)` | Serve an explicitly supplied public-resource allowlist. |
 | `mr.BlockReader(exchange, max_block=512)(path, limit, deadline)` | Read a bounded resource through the caller's exchange, under one absolute monotonic deadline. |
 
-`BlockReader` is **callable**; it has no `get()` or `read()` method. Its constructor defaults to **1,024 bytes per block**; the preview codec permits an explicitly chosen block size up to **16,384 bytes**. That resource cap differs from the **255-byte radio packet**: an admitted reliable flow fragments data into packets. Newer 32 KiB and proper-bundle candidates have separate source/native qualification and are not APIs to assume in this snapshot.
+`BlockReader` is **callable**; it has no `get()` or `read()` method. Its constructor defaults to **1,024 bytes per block**; the default codec permits an explicitly chosen block size up to **16,384 bytes**. The optional `public32=True` codec accepts up to **32,740 block bytes**, leaving room for the 28-byte response header in a 32 KiB response. Both ends and the underlying flow must explicitly admit that capability. It does not widen an existing grant. These resource caps differ from the **255-byte radio packet**: an admitted reliable flow fragments data into packets.
+
+The source also includes [byte bundles](../src/meshticulum/resources/byte_bundle.py), [bundle transport](../src/meshticulum/resources/bundle_transport.py) and an [opaque MPF2 relay](../src/meshticulum/privacy/forward_relay.py). These are experimental library components; native qualification remains separate. See [the transport source update](TRANSPORT_SOURCE_UPDATE.md) for their scope.
 
 The reader can reconstruct a host-side batch wrapper to reuse the resource verifier. That does not authorize arbitrary files or carry an HTTP server inside the radio.
 

@@ -1,6 +1,6 @@
 # Authenticated TCP transport
 
-Historical Core commit IDs below identify private development snapshots. They are retained as execution provenance and are not ancestors of this clean proposed public history. Their results remain bound to those original inputs.
+Historical Core commit IDs below identify development snapshots. Their results remain bound to those original inputs. The public project retains its extraction history with the owner's approval; see [repository history](REPOSITORY_HISTORY.md).
 
 The `meshticulum.ip` package carries the unchanged MT05 reliable flow over an explicitly admitted TCP connection. It adds larger authenticated frames and durable stream-byte accounting without reusing the radio airtime ledger. Real loopback controls cover public MR1 request/reply, signed-pack chunk verification, malformed frames, replay, revocation, original deadlines and uncertain process/write recovery.
 
@@ -54,6 +54,18 @@ The [IP session store](../src/meshticulum/ip/state.py) adapts the existing durab
 
 [`IpFlow`](../src/meshticulum/ip/flow.py) uses the frozen `ReliableFlow`, including its receiver-issued startup credit, bounded window, receipt revisions, selective ACKs and retries. Its byte/reassembly bounds enforce the exact admitted object. Unmeasured socket serialization adds no invented queue delay; explicit source RTO bounds remain policy to qualify, not a measured network optimum.
 
+## Explicit sender readiness
+
+A relay can connect its TCP hop before the preceding radio hop has delivered the complete object. Starting receiver credit at connection time can exhaust the flow's startup allowance while the sender still has no object to send. The optional readiness mode delays that credit exchange until the sender has validated its complete admitted object.
+
+Both endpoints must select `schema: meshticulum.ip-service-run.v2` and `startup_mode: sender_ready_v1` in the original admitted plan. The mode is bound into the grant digest, directional keys and authenticated frame header. Legacy v1 plans keep their original wire format and refuse READY frames.
+
+The sender's first frame is READY: a 32-byte grant digest, authenticated in direction 0 at counter 1. Its **83 framed stream bytes** and one attempt consume the existing journal limits. Sending it requires the held application authority, current socket ownership, exact object size and digest, and the original deadlines. An uncertain write retains its reservation and fences the run.
+
+Until READY is verified, the receiver checks live authority and expiry but emits no startup ACK. It rejects early DATA or ACK frames; duplicate or replayed READY cannot restart the flow. After READY, the unchanged reliable flow issues ordinary receiver credit before DATA can move. READY grants no permission, credit or delivery receipt. Waiting does not extend a deadline or enlarge a byte, frame or retry allowance.
+
+This mode has source and loopback controls. Lantern owns native provisioning and must explicitly admit v2 before deploying it; the existing native v1 pilot is not upgraded by installing this library. These controls do not qualify a physical radio path or private backend.
+
 ## Byte accounting and uncertainty
 
 [`IpJournal`](../src/meshticulum/ip/journal.py) owns a separate SQLite/WAL journal under an exclusive file lock. It checks the live lock descriptor as well as the journal and owner-file identities before every transaction. Losing or replacing that descriptor permanently refuses further use of the instance; reopening a file does not repair its ownership. Closing from another thread waits for an active transaction, and closing inside that transaction is refused. Cleanup avoids closing an unrelated descriptor that has reused the old descriptor number. It reserves the whole framed packet before a socket write. DATA, ACKs and retransmissions all consume the same finite lifetime transmit-byte budget. Known partial kernel writes are recorded; errors, interruption or an unresolved process-recovery reservation remain UNKNOWN and fence new dispatch. Closing or cancelling a flow does not refund the reservation.
@@ -87,7 +99,7 @@ The [runtime builder and hash-verified launcher](https://github.com/l33tdawg/sag
 Run the carrier and lifecycle controls with:
 
 ```sh
-python -m pytest tests/test_ip_transport.py tests/test_ip_ownership.py tests/test_mixed_carriers.py tests/test_mixed_resume.py
+python -m pytest tests/test_ip_transport.py tests/test_ip_sender_readiness.py tests/test_ip_ownership.py tests/test_mixed_carriers.py tests/test_mixed_resume.py
 ```
 
 These generic carrier controls use actual loopback TCP, synthetic admitted peers and modeled radio workers. Lantern owns the separate finite-job and native integration controls. Child-process tests with stubbed device/root facts do not qualify actual host ownership or a native backend. The generic controls cover:

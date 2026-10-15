@@ -1,0 +1,138 @@
+{
+  "all_management_rpc_clients_terminal": true,
+  "all_radio_links_completed_and_disarmed": true,
+  "boundaries": {
+    "data_worker_to_flow_ACK": {
+      "elapsed_seconds": 84.348986,
+      "useful_decoded_Bps": 1185.5507071537293
+    },
+    "request_to_verification": {
+      "elapsed_seconds": 337.563893,
+      "useful_decoded_Bps": 296.24021429329827
+    },
+    "sender_start_to_flow_ACK": {
+      "elapsed_seconds": 105.745943,
+      "useful_decoded_Bps": 945.6627570099781
+    },
+    "whole_controller": {
+      "elapsed_seconds": 934.451128,
+      "useful_decoded_Bps": 107.01469237244048
+    }
+  },
+  "date": "2026-10-15",
+  "direction": "C-HAT to A-MCU",
+  "distance_metres": null,
+  "finite_campaign_complete": true,
+  "full_transport_qualification_complete": false,
+  "limitations": [
+    "One finite bench file, not a repeated distribution or long-range/range measurement.",
+    "Part intervals sum five response sessions using each sender or requester clock separately; no cross-host clock subtraction.",
+    "DATA interval includes host work, ACKs and retries; not measured RF airtime.",
+    "Sender-start boundary is 945.66 useful B/s, below the 1000 B/s sustained alpha floor; active DATA alone is insufficient for alpha qualification.",
+    "Full controller elapsed includes native provisioning, management scheduling, verification and cleanup.",
+    "Published metadata is an allowlisted transcription of lab records, not independent hardware attestation; original protected operator capture stays in the lab.",
+    "No matched MeshCore/Reticulum campaign or causal firmware-only speedup is claimed.",
+    "Current public CLI and linked firmware/source/notice release gates remain separate."
+  ],
+  "management_rpc_clients": 50,
+  "measured_RF_airtime_us": null,
+  "measured_eirp_dbm": null,
+  "measured_energy_joules": null,
+  "native_private_forward_secrecy_qualified": false,
+  "one_way_latency_seconds": null,
+  "part_useful_bytes": [
+    23900,
+    23900,
+    23900,
+    23900,
+    4400
+  ],
+  "parts": [
+    {
+      "DATA_attempt_events": 128,
+      "acked_DATA_frames": 128,
+      "data_goodput_Bps": 1293.1810186132575,
+      "data_worker_to_flow_ACK_us": 18481558,
+      "decoded_bytes": 23900,
+      "index": 0,
+      "request_to_verification_us": 68600930,
+      "sender_start_to_flow_ACK_us": 22732987
+    },
+    {
+      "DATA_attempt_events": 128,
+      "acked_DATA_frames": 128,
+      "data_goodput_Bps": 1224.9316959635478,
+      "data_worker_to_flow_ACK_us": 19511292,
+      "decoded_bytes": 23900,
+      "index": 1,
+      "request_to_verification_us": 69077878,
+      "sender_start_to_flow_ACK_us": 23655441
+    },
+    {
+      "DATA_attempt_events": 129,
+      "acked_DATA_frames": 128,
+      "data_goodput_Bps": 1167.3664515684081,
+      "data_worker_to_flow_ACK_us": 20473434,
+      "decoded_bytes": 23900,
+      "index": 2,
+      "request_to_verification_us": 70389576,
+      "sender_start_to_flow_ACK_us": 24670077
+    },
+    {
+      "DATA_attempt_events": 129,
+      "acked_DATA_frames": 128,
+      "data_goodput_Bps": 1116.0930057580126,
+      "data_worker_to_flow_ACK_us": 21413986,
+      "decoded_bytes": 23900,
+      "index": 3,
+      "request_to_verification_us": 71885708,
+      "sender_start_to_flow_ACK_us": 25308018
+    },
+    {
+      "DATA_attempt_events": 27,
+      "acked_DATA_frames": 27,
+      "data_goodput_Bps": 984.6228760118119,
+      "data_worker_to_flow_ACK_us": 4468716,
+      "decoded_bytes": 4400,
+      "index": 4,
+      "request_to_verification_us": 57609801,
+      "sender_start_to_flow_ACK_us": 9379420
+    }
+  ],
+  "pins": {
+    "core_commit": "2b9db9e71dfa7d115d4e465225893b828c760171",
+    "lantern_commit": "32d9452d329039beb122320dd528529a6e8ce985",
+    "receiver_firmware": "mtb1-020e287255",
+    "receiver_firmware_image_sha256": "eca7772095cc9c9e63c9f6e6d9fe48ba3c376cd6bfef557ffcc441621a846fa2",
+    "runtime_archive_sha256": "171800a1ea00ecf45830889beac5a2229e11d0a902cf621c3da0b90ba3ac631a",
+    "runtime_manifest_sha256": "7015f4b775db7c8bcb16577e1eefd1953f594421a6b37c53842dd0c84747ceb7",
+    "source_result_sha256": "4cf9b6b70fa2854ccc18b7637008c0986b1826b0c67744e86b4ea8ea762e0236"
+  },
+  "public_cli_example_physically_qualified": false,
+  "publisher_verified": true,
+  "radio_links": 10,
+  "receiver_hardware": "Heltec V4 SX1262 MCU",
+  "representation": "MB1 signed public-resource bundle inside authenticated encrypted session",
+  "rf_profile": {
+    "bit_rate_bps": 250000,
+    "chip_power_dbm": 0,
+    "deviation_hz": 62500,
+    "frequency_hz": 921375000,
+    "lease_ms": 90000,
+    "max_boot_attempts": 256,
+    "max_boot_estimated_airtime_us": 60000000,
+    "preamble_bits": 32,
+    "rx_bandwidth_hz": 467000,
+    "schema": "meshticulum.gfsk250-profile.v2",
+    "shaping_code": 9,
+    "sync_word_hex": "4d544746534b3031"
+  },
+  "schema": "meshticulum.published-gfsk250-file-sample.v1",
+  "sender_hardware": "Orange Pi 5 Plus SX1262 HAT",
+  "sustained_goodput_qualified": false,
+  "useful_decoded_bytes": 100000,
+  "whole_file_sha256": "2aaa9db69e9f2e9f180ad194c19883cf6969e660f023bdfb456487f885ae6435",
+  "whole_file_verified": true,
+  "within_original_phase": true,
+  "within_original_whole": true
+}

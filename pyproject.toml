@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "meshticulum"
-version = "0.1.0"
+version = "1.0.0a1"
 description = "Bounded authenticated transport and verified resources for mixed radio and IP networks"
 readme = "README.md"
 requires-python = ">=3.11"

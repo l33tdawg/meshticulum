@@ -13,7 +13,7 @@ import threading
 import uuid
 
 from ..contracts.identity import DeadlineSet,PeerID,SessionKey
-from .wire import IpGrant,IpLimits,require
+from .wire import IpGrant,IpLimits,READY_MODE,require
 from .journal import private
 
 
@@ -22,14 +22,21 @@ def canonical(value):return json.dumps(value,sort_keys=True,separators=(',',':')
 
 def grant_from_plan(p, secret, *, local_peer, host_boot_id):
     """Pure native-plan validation; grants no operation or single-use claim."""
-    require(type(p) is dict and set(p)=={'schema','host_boot_id','local_peer','session','format','object','route_binding_digest',
-      'issued_epoch_us','expires_epoch_us','application_expires_epoch_us','application_deadline_monotonic_us','initiator_address','responder_address','limits'},'invalid_ip_plan')
-    require(p['schema']=='meshticulum.ip-service-run.v1' and p['host_boot_id']==host_boot_id and PeerID(**p['local_peer'])==local_peer,'wrong_ip_host')
+    keys={'schema','host_boot_id','local_peer','session','format','object','route_binding_digest',
+      'issued_epoch_us','expires_epoch_us','application_expires_epoch_us','application_deadline_monotonic_us','initiator_address','responder_address','limits'}
+    require(type(p) is dict,'invalid_ip_plan')
+    startup_mode=None
+    if p.get('schema')=='meshticulum.ip-service-run.v2':
+        require(set(p)==keys|{'startup_mode'} and p['startup_mode']==READY_MODE and type(p['startup_mode']) is str,'invalid_ip_plan')
+        startup_mode=p['startup_mode']
+    else:
+        require(set(p)==keys and p['schema']=='meshticulum.ip-service-run.v1','invalid_ip_plan')
+    require(p['host_boot_id']==host_boot_id and PeerID(**p['local_peer'])==local_peer,'wrong_ip_host')
     s=p['session'];require(type(s) is dict and set(s)=={'initiator','responder','session_id','generation'},'invalid_ip_session_plan')
     session=SessionKey(PeerID(**s['initiator']),PeerID(**s['responder']),bytes.fromhex(s['session_id']),bytes.fromhex(s['generation']))
     require(type(p['object']) is dict and set(p['object'])=={'bytes','sha256'},'invalid_ip_object_plan')
     grant=IpGrant(session,p['format'],p['object']['bytes'],bytes.fromhex(p['object']['sha256']),bytes.fromhex(p['route_binding_digest']),
-      p['issued_epoch_us'],p['expires_epoch_us'],p['application_expires_epoch_us'],tuple(p['initiator_address']),tuple(p['responder_address']),IpLimits(**p['limits']),secret)
+      p['issued_epoch_us'],p['expires_epoch_us'],p['application_expires_epoch_us'],tuple(p['initiator_address']),tuple(p['responder_address']),IpLimits(**p['limits']),secret,startup_mode)
     grant.direction(local_peer)
     return grant
 
