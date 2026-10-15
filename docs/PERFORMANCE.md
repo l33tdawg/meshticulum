@@ -1,6 +1,6 @@
 # Performance and measurement
 
-The current GFSK larger-file test completed **100,000 verified bytes**, with **1,185.6 B/s during active DATA** and **945.7 B/s including sender startup**. An earlier LoRa public reply delivered **16,356 verified resource bytes at 1.071 kB/s**, measured from sender start through reliable-flow acknowledgement. An earlier, separate encrypted bench recorded **30 RF transfers** with directional medians around **1.2 kB/s**. The programme targets **1–1.5 kB/s sustained useful encrypted delivery**, followed by a **4–5 kB/s stretch target**. Neither target is a completed sustained-capacity qualification.
+The latest recorded GFSK larger-file test completed **100,000 verified bytes**, with **1,185.6 B/s during active DATA** and **945.7 B/s including sender startup**. An earlier LoRa public reply delivered **16,356 verified resource bytes at 1.071 kB/s**, measured from sender start through reliable-flow acknowledgement. An earlier, separate encrypted bench recorded **30 RF transfers** with directional medians around **1.2 kB/s**. The alpha floor is sustained useful encrypted delivery **above 1,000 B/s including sender startup**, with reliable completion and deployable SDK/firmware. The broader 1–1.5 kB/s goal and optional later 4–5 kB/s stretch remain in the [roadmap](ROADMAP.md). Sustained qualification remains open.
 
 This page separates the earlier distribution, **seven accepted finite LoRa public samples** and the later GFSK file campaign. Source controls, loopback runs and prepared larger-bundle fixtures have separate evidence boundaries. Publishing the project does not close the [alpha release gates](RELEASE_READINESS.md).
 
@@ -48,7 +48,7 @@ The latest **1,071.3 B/s** useful result is numerically **2.61×** the **410 B/s
 
 ## A complete 100 kB file: 2026-10-15
 
-The current IRQ-firmware campaign delivered **100,000 useful decoded bytes** from an Orange Pi 5 Plus SX1262 HAT to a Heltec V4 MCU. The recipient verified all five signed MB1 parts, the publisher and the whole-file SHA-256. The modem was **GFSK at 250 kb/s**, 921.375 MHz and a 0 dBm chip setting. This is a separate finite bench sample from the LoRa measurements above.
+The recorded IRQ-firmware campaign delivered **100,000 useful decoded bytes** from an Orange Pi 5 Plus SX1262 HAT to a Heltec V4 MCU. The recipient verified all five signed MB1 parts, the publisher and the whole-file SHA-256. The modem was **GFSK at 250 kb/s**, 921.375 MHz and a 0 dBm chip setting. This is a separate finite bench sample from the LoRa measurements above.
 
 | Timing boundary | Seconds | Useful decoded B/s |
 | --- | ---: | ---: |
@@ -61,7 +61,7 @@ The DATA interval includes host work, reverse ACKs and retries. Each component i
 
 All ten radio links completed and disarmed, twenty child jobs retired and fifty management RPC clients closed successfully within the original whole and phase windows. The [sanitized measurement record](../benchmarks/2026-10-15-gfsk250-100k/result.json) retains exact source/runtime/firmware pins, part counts, timing and the original lab-result hash. The original operator capture stays in the lab; this published transcription does not independently attest the hardware.
 
-**The startup-inclusive result is still below the 1,000 B/s alpha floor.** This completed larger-file test needs repetition and further improvement before sustained-goodput qualification. The public CLI example also needs its own physical check. Distance, measured RF airtime, energy and EIRP remain unavailable; broader native/private and firmware/source/notice gates remain open.
+**The startup-inclusive result is still below the 1,000 B/s alpha floor.** This completed larger-file test needs repetition and further improvement before sustained-goodput qualification. The public CLI example also needs its own physical check. Later TCP scheduling fixes and passing source tests supply no new radio result. Distance, measured RF airtime, energy and EIRP remain unavailable; broader native/private and firmware/source/notice gates remain open.
 
 ## Earlier bench conditions: 2026-10-09
 

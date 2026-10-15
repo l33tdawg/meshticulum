@@ -6,7 +6,7 @@
 
 A [SAGE Foundation](https://sage-foundation.net/) project, created and maintained by [Dhillon Andrew Kannabhiran (@l33tdawg)](https://github.com/l33tdawg). Part of the broader [SAGE project](https://github.com/l33tdawg/sage/).
 
-**Project preview.** Meshticulum is in active development. The source, architecture and measured results are available for review; `1.0.0-alpha` is planned and has not been released. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current scope](docs/PROJECT_PREVIEW.md).
+**Project preview.** The public source and project website are live. `1.0.0-alpha` and its downloadable SDK/firmware assets have not been published. The alpha target is reliable verified delivery, deployable SDK and firmware, and sustained useful encrypted goodput above **1,000 B/s including sender startup**. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current work and roadmap](docs/ROADMAP.md).
 
 Meshticulum is an experimental transport and resource system for networks that mix LoRa and IP. We are building it to close the gap between practical embedded radio meshes and richer, secure networking across different transports—and to move more useful encrypted data through the radio time we have.
 
@@ -59,7 +59,7 @@ Below them, admission binds each transfer to its peers, service, object and orig
 
 [Architecture](docs/ARCHITECTURE.md) follows a transfer through these boundaries and shows the intended mixed-path topology.
 
-**Post-quantum status:** the default protocols use classical cryptography. A tested hybrid prototype in [draft PR #5](https://github.com/l33tdawg/meshticulum/pull/5) combines X25519 + ML-KEM-768 and requires both Ed25519 and ML-DSA-65 signatures. It is unmerged and has no device integration yet. [The status guide](docs/POST_QUANTUM.md) explains its design, radio overhead and how to try it.
+**Post-quantum status:** the default protocols use classical cryptography. A tested hybrid prototype in [draft PR #5](https://github.com/l33tdawg/meshticulum/pull/5) combines X25519 + ML-KEM-768 and requires both Ed25519 and ML-DSA-65 signatures. It is unmerged and has no device integration yet. This is future feasibility research, not an alpha dependency. [The status guide](docs/POST_QUANTUM.md) explains its design, radio overhead and how to try it.
 
 ## How we aim to make it faster
 
@@ -67,7 +67,9 @@ The goal is higher **useful encrypted goodput**: application bytes delivered und
 
 For public resources, the path policy uses local verified request timings and shared-bottleneck information. It can retain verified chunks and select among explicitly supplied routes; it does not equate an interface name with a fast path. The [authenticated TCP prototype](docs/IP_TRANSPORT.md) supports MR1 request/reply, and the later finite native campaign observed fresh-LoRa resume and return to a currently measured faster IP path. Its tiny service samples include management and final-ACK windows; they do not establish sustained carrier capacity or a speed ranking against MeshCore or Reticulum.
 
-Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s median useful encrypted goodput** across C→A, C→B and A→B LoRa links, with 30 completed RF samples. That is evidence from an earlier experimental runtime. Seven later native public resource samples recorded **782, 708, 975, 996.7, 1,036.9 and 1,071.3 B/s** for 16,356 useful bytes, and **936.7 B/s with zero retries** for an 8,164-byte piece. The two latest 16,356-byte responses completed at **1.037 and 1.071 kB/s with zero DATA retries or duplicates**. Both finite samples meet the 1,000 B/s minimum; sustained qualification remains open. These rates end at the sender's reliable-flow ACK; publisher/content verification is separately required. [Current native samples and exact pins](docs/PERFORMANCE.md#native-public-resource-transfers-2026-10-11) remain distinct from the older distribution. Sustained capacity and native private forward-secrecy qualification remain open. The programme target is **1–1.5 kB/s**, with an owner-requested **4–5 kB/s stretch target** that requires a supported faster PHY and fresh admission; range at any faster profile is unmeasured. Comparison with published MeshCore/Reticulum figures is recorded with its conditions and limits in [Performance](docs/PERFORMANCE.md#comparison-with-published-figures).
+The latest completed larger-file campaign delivered **100,000 decoded bytes** in five signed MB1 parts over GFSK at 250 kb/s, with publisher and whole-file verification. Useful goodput was **1,185.6 B/s from first DATA-worker call to flow ACK**, **945.7 B/s including sender startup**, **296.2 B/s from request to independent publisher verification**, and **107.0 B/s over the whole controller operation**. The first three rates sum the five part intervals; the controller rate includes setup, verification and cleanup. DATA timing includes host work, ACKs and retries, rather than measured RF airtime. **Startup-inclusive performance remains below the alpha floor**, and this single finite run is not sustained qualification. [The full timing boundaries and conditions](docs/PERFORMANCE.md#a-complete-100-kb-file-2026-10-15) accompany these results.
+
+Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/s median**, and two later 16,356-byte public responses reached **1.037 and 1.071 kB/s** through reliable-flow ACK with zero DATA retries or duplicates. [Performance](docs/PERFORMANCE.md) retains those historical conditions and scoped upstream comparisons. The immediate target is sustained useful encrypted delivery above **1,000 B/s including startup**, with reliable completion and deployable code. **4–5 kB/s is an optional later stretch**, not an alpha release gate. Source scheduling improvements need their own physical measurements.
 
 [Performance](docs/PERFORMANCE.md) explains the available evidence, units, measurement boundaries and the scope of comparisons with published upstream figures.
 
@@ -77,7 +79,7 @@ Retained single-radio bench runs from 2026-10-09 recorded about **1.2 kB/s media
 | --- | --- | --- |
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
 | Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
-| Public resources | Finite native mixed request/reply verified 977 bytes; a later loss/LoRa-resume/IP-return campaign verified four pieces / 3,908 bytes under one original expiry | Broader Meshticulum performance qualification, published-comparison review and release review |
+| Public resources | A finite GFSK campaign verified five signed parts / 100,000 decoded bytes; earlier mixed-path and loss/resume campaigns retain their own scope | Sustained startup-inclusive goodput, public CLI hardware qualification, broader mixed-path coverage and release review |
 | Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
 | Standalone packaging | Canonical Python package and standalone source suite | Candidate artifact review and separately qualified Lantern deployment |
 
