@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101d1b">
+  <meta name="description" content="The path to a usable Meshticulum alpha: sustained useful encrypted delivery, reliable completion, and deployable firmware and SDK.">
+  <meta property="og:title" content="Roadmap · Meshticulum">
+  <meta property="og:description" content="The path to a usable Meshticulum alpha: sustained useful encrypted delivery, reliable completion, and deployable firmware and SDK.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://l33tdawg.github.io/meshticulum/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Meshticulum. Small radios, bigger possibilities. A SAGE Foundation project.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://l33tdawg.github.io/meshticulum/assets/social-card.png">
+  <meta name="twitter:image:alt" content="Meshticulum. Small radios, bigger possibilities. A SAGE Foundation project.">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:url" content="https://l33tdawg.github.io/meshticulum/roadmap.html">
+  <link rel="canonical" href="https://l33tdawg.github.io/meshticulum/roadmap.html">
+  <title>Roadmap · Meshticulum</title>
+  <link rel="icon" type="image/svg+xml" href="assets/meshticulum-logo.svg">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js" defer></script>
+  <noscript><style>@media(max-width:780px){.header-inner{flex-wrap:wrap;padding-block:18px;gap:14px}.menu-toggle{display:none}.site-header nav{display:flex;position:static;border:0;padding:0;width:100%;gap:20px}.site-header nav .nav-source{margin-left:auto}}</style></noscript>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Meshticulum home"><img class="brand-logo" src="assets/meshticulum-logo.svg" width="34" height="34" alt="">meshticulum<span class="brand-period">.</span></a>
+      <button class="menu-toggle" aria-expanded="false" aria-controls="navigation">Menu <span aria-hidden="true">+</span></button>
+      <nav id="navigation" aria-label="Main navigation">
+        <a href="index.html#why">Why</a><a href="index.html#architecture">Architecture</a><a href="index.html#evidence">Evidence</a>
+        <a href="technical.html">Docs</a><a href="roadmap.html" aria-current="page">Roadmap</a><a class="nav-source" href="https://github.com/l33tdawg/meshticulum">Source code <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="roadmap-page">
+    <section class="docs-hero"><div class="container"><p class="eyebrow">Project roadmap / 15 October 2026</p><h1>A usable alpha.<br><em>Measured on radio.</em></h1><p>The next release needs sustained useful encrypted delivery above 1 kB/s, reliable verified completion, and firmware and an SDK you can set up on your own hardware. The public source and website are live. The alpha is still in preparation.</p></div></section>
+    <div class="docs-tabs"><nav class="container" aria-label="Documentation pages"><a href="technical.html">Technical overview</a><a href="comparison.html">Comparison</a><a href="getting-started.html">Getting started</a><a href="roadmap.html" aria-current="page">Roadmap</a></nav></div>
+    <section class="section paper docs-body"><div class="container docs-grid">
+      <aside class="docs-toc" aria-label="On this page"><span>On this page</span><a href="#now">Where we are</a><a href="#alpha">The alpha work</a><a href="#later">After the baseline</a><a href="#release">Release preparation</a><a href="#family">Project boundaries</a></aside>
+      <div class="docs-prose">
+        <section id="now">
+          <p class="eyebrow">Recorded / A complete 100 kB file</p>
+          <h2>A complete file.<br>More work before alpha.</h2>
+          <p>A finite GFSK250 run delivered 100,000 decoded bytes from a Linux SX1262 HAT sender to a Heltec V4 MCU receiver. The recipient verified all five signed MB1 parts, the publisher and the whole-file SHA-256. All radio links completed and disarmed; the child jobs retired within the original bounds.</p>
+          <p>The rate changes with the timing boundary. All four figures below describe that same run, with decimal kB/s (1 kB = 1,000 bytes). The table scrolls on smaller screens.</p>
+          <div class="table-scroll" role="region" aria-labelledby="sample-caption" tabindex="0">
+            <table class="roadmap-table">
+              <caption id="sample-caption">15 October 2026 finite sample. Component intervals use one host's monotonic clock and are summed over the five parts.</caption>
+              <thead><tr><th scope="col">Timing boundary</th><th scope="col">Useful decoded rate</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">First DATA-worker call through flow ACK</th><td>1.186 kB/s</td></tr>
+                <tr><th scope="row">Sender start through flow ACK, including startup</th><td>0.946 kB/s</td></tr>
+                <tr><th scope="row">Request through independent publisher verification</th><td>0.296 kB/s</td></tr>
+                <tr><th scope="row">Whole controller, including setup, verification and cleanup</th><td>0.107 kB/s</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="docs-note"><strong>Startup-inclusive delivery is still below the alpha floor.</strong><p>The DATA interval includes host work, reverse ACKs and retries. A single finite result does not establish sustained delivery. Later source fixes are not new radio measurements; the public CLI example still needs its own physical check.</p></div>
+          <p>The sample used GFSK at 250 kb/s, 921.375 MHz and a 0 dBm chip setting. Distance, measured RF airtime, energy and EIRP are unavailable. The earlier LoRa sample and published upstream observations retain their own conditions on the <a href="comparison.html#published-observations">comparison page</a>.</p>
+          <p class="source-line"><a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/PERFORMANCE.md#a-complete-100-kb-file-2026-10-15">Read the timing definitions</a> · <a href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-15-gfsk250-100k/result.json">Inspect the sanitized 100 kB record</a></p>
+        </section>
+        <section id="alpha">
+          <p class="eyebrow">In progress / The next release</p>
+          <h2>The next gate is a usable alpha.</h2>
+          <p>Speed matters when the transfer finishes correctly. The alpha floor is above 1,000 useful encrypted bytes per second with sender startup included, on a declared supported path. Setup, verification and cleanup time must also remain visible.</p>
+          <ul class="roadmap-work" role="list" aria-label="Alpha workstreams">
+            <li><span class="roadmap-state">Performance</span><h3>Repeat useful delivery above the floor.</h3><p>Reduce startup and coordination cost, then repeat complete verified transfers on the supported hardware. Report useful decoded bytes, ACK and retry cost, completion and latency within the original deadlines. Keep unsuccessful samples in the record.</p></li>
+            <li><span class="roadmap-state">Reliability</span><h3>Finish safely when a link fails.</h3><p>Exercise loss, final-ACK recovery, expiry, replay refusal and interruption. Preserve verified work, original peer and boot bindings, and attempt debt. Prove disarm and ownership closure; an uncertain write keeps its reservation.</p></li>
+            <li><span class="roadmap-state">Deployment</span><h3>Make firmware and the SDK usable together.</h3><p>Validate the public Linux radio examples on hardware, with the exact source, firmware and package versions. Keep app-only backup and rollback instructions, clean package installation, required notices, corresponding source and relinking materials with the artifacts.</p></li>
+            <li><span class="roadmap-state">Qualification</span><h3>Keep each advertised path within its evidence.</h3><p>Extend radio and authenticated TCP coverage, including mixed-path failure and resume. Native private owner, consent, replay and forward-secrecy qualification remain open. The consuming application must qualify its integration; source tests cannot stand in for it.</p></li>
+          </ul>
+          <p class="source-line"><a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/RELEASE_READINESS.md">Read the full alpha requirements</a> · <a href="getting-started.html">Build and use the public source</a></p>
+        </section>
+        <section id="later">
+          <p class="eyebrow">Later / Beyond the alpha baseline</p>
+          <h2>Measure the next step.</h2>
+          <div class="roadmap-later">
+            <article><span class="roadmap-state">Optional stretch</span><h3>4 to 5 kB/s useful delivery.</h3><p>Pursue faster profiles only with verified radio and firmware support. Measure completion, range, retries and power alongside throughput. This stretch target is separate from the alpha floor and has no promised date.</p></article>
+            <article><span class="roadmap-state">Feasibility work</span><h3>Post-quantum and hybrid protocols.</h3><p>Study handshake size, fragmentation, memory, processing cost and key distribution before choosing a deployment path. The current default protocols use classical cryptography. A prototype or a passing source test is not a security qualification.</p><p><a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/POST_QUANTUM.md">Read the post-quantum work</a></p></article>
+          </div>
+          <p>Published MeshCore and Reticulum figures help define questions worth measuring. Their hardware, workload, encryption and timing conditions belong beside any comparison. A faster number on one path does not establish a general speed or security ranking.</p>
+        </section>
+        <section id="release">
+          <p class="eyebrow">Not published / Alpha artifacts</p>
+          <h2>Release after the checks pass.</h2>
+          <p>The repository and GitHub Pages site are public. An alpha tag, package release and firmware release assets have not been published. The checkout's <code>1.0.0a1</code> metadata prepares a candidate; it does not mark acceptance.</p>
+          <p>A release needs an exact source revision, reviewed package and firmware contents, reproducible build records, required license materials and installation instructions that match the supplied artifacts. The existing qualification and release requirements stay in force.</p>
+          <div class="guide-card"><span>Follow the work</span><a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/ROADMAP.md">Read the detailed project roadmap <span aria-hidden="true">↗</span></a><p>Requirements determine release readiness. This page does not assign release dates.</p></div>
+        </section>
+        <section id="family">
+          <p class="eyebrow">One family / Separate projects</p>
+          <h2>A transport others can build on.</h2>
+          <p>Meshticulum is the reusable protocol, cryptography, reliable flow, drivers and verified-resource SDK. <a href="https://github.com/l33tdawg/sage-lantern">SAGE Lantern</a> owns its product, STL and printing files, private SAGE adapters, device policy and deployment. Lantern's launch is separate; the dependency runs from Lantern to Meshticulum.</p>
+          <p>Created and maintained by <a href="https://github.com/l33tdawg">Dhillon Andrew Kannabhiran (l33tdawg)</a> under the <a href="https://sage-foundation.net/">SAGE Foundation</a>. <a href="https://l33tdawg.github.io/sage/">SAGE</a> supplies the wider memory and governance project.</p>
+        </section>
+        <div class="docs-next"><span>Continue reading</span><a href="getting-started.html">Set up the source and SDK <span aria-hidden="true">↗</span></a><a href="comparison.html">Read the scoped comparisons <span aria-hidden="true">↗</span></a></div>
+      </div>
+    </div></section>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><a class="brand" href="index.html">meshticulum<span class="brand-period">.</span></a><p>A <a href="https://sage-foundation.net/">SAGE Foundation</a> project.<br>© 2026 Dhillon Andrew Kannabhiran · <a href="https://github.com/l33tdawg/meshticulum/blob/main/LICENSE">Apache 2.0</a></p><a href="getting-started.html">Developer guide <span aria-hidden="true">↗</span></a><a href="roadmap.html">Project roadmap <span aria-hidden="true">↗</span></a><a href="https://l33tdawg.github.io/sage/">Discover SAGE <span aria-hidden="true">↗</span></a></div></footer>
+</body>
+</html>

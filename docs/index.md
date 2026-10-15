@@ -7,6 +7,7 @@ Meshticulum brings bounded radio transfers, authenticated service boundaries and
 | Guide | What it explains |
 | --- | --- |
 | [Project preview](PROJECT_PREVIEW.md) | The public source and website scope, measured claims and the later alpha release |
+| [Roadmap](ROADMAP.md) | Current evidence, work required for alpha and plans after alpha |
 | [Repository history](REPOSITORY_HISTORY.md) | Preserved extraction history and the current Meshticulum/Lantern boundary |
 | [Attribution and project family](PROJECT_FAMILY.md) | SAGE Foundation stewardship, the main SAGE repository and the separate Lantern product repository |
 | [Why Meshticulum](WHY.md) | The gap we are trying to close and the priorities drawn from embedded radio meshes and secure networking |
@@ -40,7 +41,7 @@ The flow history includes references to lab receipts in the original SAGE checko
 
 ## Follow qualification
 
-The [roadmap](ROADMAP.md) retains the full programme: finite public-radio qualification, authenticated IP transport, C→A LoRa→B IP, loss and verified-piece resume, return to a locally measured faster path, native private integration, our performance qualification and comparisons with published MeshCore/Reticulum figures.
+The [roadmap](ROADMAP.md) separates current evidence, alpha requirements and later work. Alpha targets sustained useful encrypted delivery above 1,000 B/s including sender startup, reliable verified completion and deployable SDK/firmware. Real mixed/native and private integration, security, firmware/source/notices and release checks remain required. The optional 4–5 kB/s stretch and post-quantum feasibility work belong after alpha.
 
 Read [Performance](PERFORMANCE.md) alongside that roadmap. Source controls, modeled workers and loopback transfers provide useful implementation evidence. Physical RF completion, peer receipt, publisher verification and production application acceptance need their respective observations.
 
