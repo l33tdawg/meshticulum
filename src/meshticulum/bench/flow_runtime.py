@@ -250,6 +250,7 @@ class BenchFlow:
             # Read the frozen flow's receive-work generation, without mutating
             # it. Authentication alone does not make an invalid DATA admitted.
             receive_work_before = self.flow._ack_work_gen
+            previous_receipt = (self.flow._peer_grant_rev, self.flow.repeat_grants)
             self.flow.absorb(parsed, at)
             self.last_activity_us = self.clock()[1]
             if (not self.sends and self.burst_frames > 1 and verified.kind is FrameKind.DATA
@@ -273,6 +274,14 @@ class BenchFlow:
                 'outer_counter': verified.counter, 'outer_kind': verified.kind.name,
                 'packet_sha256': hashlib.sha256(raw.packet).hexdigest(),
                 'bytes': len(raw.packet), 'rssi_dbm': raw.rssi_dbm, 'snr_db': raw.snr_db})
+            # Reach the guarded DATA pump when a genuine receipt permits work.
+            # Repeated ACKs stay queued instead of consuming the peer's bounded
+            # startup/control window while each native receive is checked.
+            accepted_receipt = (self.flow._peer_grant_rev, self.flow.repeat_grants) != previous_receipt
+            if (self.sends and verified.kind is FrameKind.ACK and accepted_receipt
+                    and self.flow.queued_bytes() > 0
+                    and self.flow.in_flight() < min(self.flow.limits.window_frames, self.flow._peer_credit)):
+                break
         if not self.sends and self.flow.delivered:
             data = self.flow.consume(len(self.flow.delivered))
             require(len(self.received) + len(data) <= self.maximum_bytes, 'bench_receive_limit')
