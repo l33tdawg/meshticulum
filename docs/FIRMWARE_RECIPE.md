@@ -18,7 +18,7 @@ This experimental recipe prepares and compiles Meshticulum's raw LoRa coprocesso
 | `mtbench_heltec_v4` | `Heltec_lora32_v4` | 1 |
 | `mtbench_xiao_s3_wio` | `Xiao_S3_WIO` | 2 |
 
-The recipe keeps upstream source trees and the notices present in those archives. It adds the unchanged project-authored `main.cpp`/`protocol.hpp` and explicit target configuration. It applies no Lantern/MeshCore donor patches. Board support and radio wrapper use do not make the application's raw protocol wire-compatible with MeshCore or Reticulum.
+The recipe keeps upstream source trees and the notices present in those archives. It adds the project-authored `main.cpp`, `protocol.hpp`, `gfsk_profile.hpp` and `gfsk250_profile.hpp` and explicit target configuration. It applies no Lantern/MeshCore donor patches. Board support and radio wrapper use do not make the application's raw protocol wire-compatible with MeshCore or Reticulum.
 
 The [`requirements-firmware.txt`](../firmware/meshticulum-bench/requirements-firmware.txt) file pins the observed host CLI package versions. These are external build tools, not a statement that every package is firmware-linked or a hash-locked Python-wheel distribution. The builder independently checks PlatformIO Core's version.
 
@@ -78,6 +78,8 @@ The [validation record](../provenance/FIRMWARE_RECIPE_VALIDATION.json), schema `
 
 The first primary-input attempt failed on PlatformIO registration of the pinned RISC-V tool; both target failures and log hashes remain in the record. Registration was corrected in a fresh preparation. Older controls using copied dependencies, and the unnormalized primary iteration, produced different binaries. They are separate evidence rather than equivalent deployed images.
 
-The application source tag **`mtb1-9816f92488`** identifies the raw-radio application's two source files; it is not the identity of the full BSP, framework, compiler or binary. Use the input/source manifests and each output hash for those identities. Compilation alone proves no reproduction; the observed pair establishes only its stated scope. It proves no RF behavior, peer/application delivery, sustained goodput or complete upstream notices. Physical/notice qualifications remain false until separately proved.
+The historical runs above used application source tag `mtb1-9816f92488`; their hashes do not describe a later application revision. For a fresh preparation, read **`identity` from that output's `SOURCE.json`** and supply it as the worker's exact `expected_version`. The current recipe derives this tag from the four application files listed above. It does not identify the full BSP, framework, compiler or binary; retain the source manifest and individual output hashes for those identities. Compilation alone proves no reproduction; the observed pair establishes only its stated scope. It proves no RF behavior, peer/application delivery, sustained goodput or complete upstream notices. Physical/notice qualifications remain false until separately proved.
+
+For your own compatible board, follow [app-only flashing and rollback](FLASHING.md), then the [public encrypted file example](../examples/README.md). The public serial runtime requires a Linux root owner and a stable `/dev/serial/by-id` path; the recipe's build host is a separate requirement.
 
 Fresh native operation belongs to [Lantern](https://github.com/l33tdawg/sage-lantern), under current finite ownership and bounded cleanup. Historical [performance results](PERFORMANCE.md) stay bound to their earlier runtime; they cannot be transferred to these outputs. See [hardware ownership](HARDWARE.md), [release readiness](RELEASE_READINESS.md) and [the roadmap](ROADMAP.md).
