@@ -2,6 +2,7 @@
 
 Also runnable without pytest: PYTHONPATH=src python tests/test_open_watch.py
 """
+import ctypes
 import errno
 import os
 from pathlib import Path
@@ -29,6 +30,8 @@ class SyntheticWatch(unittest.TestCase):
         self.watch.paths, self.watch.directories, self.watch.watches = {}, {}, {3}
         self.watch.device_stat = os.fstat(self.read)
         self.watch.scan = lambda info: []
+        self.watch.watch_lines = (b'synthetic descriptor-source fixture',)
+        self.watch._fdinfo_watch_lines = lambda **kwargs: self.watch.watch_lines
 
     def tearDown(self):
         self.watch.close()
@@ -227,6 +230,42 @@ class LinuxWatch(unittest.TestCase):
         self.assertEqual(os.waitstatus_to_exitcode(status), 0)
         self.assertFalse(watch.current())
         self.assertEqual(watch.failed, 'owner_forked')
+
+    def test_new_empty_inotify_at_same_fd_is_refused_and_not_closed(self):
+        watch = self.watch()
+        fd = watch.fd
+        library = ctypes.CDLL(None, use_errno=True)
+        initialize = library.inotify_init1
+        initialize.argtypes, initialize.restype = [ctypes.c_int], ctypes.c_int
+        replacement = initialize(os.O_NONBLOCK | os.O_CLOEXEC)
+        self.assertGreaterEqual(replacement, 0)
+        try:
+            os.dup2(replacement, fd, inheritable=False)
+            # This is the regression: anon-inode fstat and flags alone can be
+            # identical for the old and this unrelated empty inotify instance.
+            self.assertEqual(module._identity(os.fstat(fd)), module._identity(watch.watch_stat))
+            self.assertFalse(watch.current())
+            watch.close()
+            os.fstat(fd)  # A known recycled descriptor belongs to its new owner.
+        finally:
+            os.close(replacement)
+            os.close(fd)
+
+    def test_external_watch_fd_close_has_safe_idempotent_cleanup(self):
+        watch = self.watch()
+        os.close(watch.fd)
+        self.assertFalse(watch.current())
+        watch.close()
+        watch.close()
+
+    def test_real_node_deletion_still_releases_original_watch(self):
+        watch = self.watch()
+        fd = watch.fd
+        self.node.unlink()
+        self.assertFalse(watch.current())
+        watch.close()
+        with self.assertRaises(OSError):
+            os.fstat(fd)
 
     def test_close_is_idempotent_and_releases_watch_fd(self):
         watch = self.watch()

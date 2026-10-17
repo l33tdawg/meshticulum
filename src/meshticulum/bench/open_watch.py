@@ -13,6 +13,7 @@ import fcntl
 import os
 from pathlib import Path
 import platform
+import re
 import struct
 import weakref
 
@@ -40,6 +41,7 @@ _DIRECTORY_EVENTS = _INVALIDATION | _IN_MOVED_FROM | _IN_MOVED_TO | _IN_CREATE |
 _DEVICE_EVENTS = _INVALIDATION | _IN_OPEN
 _UNSUPPORTED = {errno.ENOSYS, errno.ENOTSUP, errno.EOPNOTSUPP}
 _ACTIVE = weakref.WeakSet()
+_WATCH_LINE = re.compile(rb'inotify wd:([0-9a-f]+) ino:([0-9a-f]+) sdev:([0-9a-f]+) mask:([0-9a-f]+) ignored_mask:([0-9a-f]+)(?: .*)?')
 
 
 def _forked():
@@ -83,6 +85,7 @@ class OpenCollisionWatch:
         self.root = Path(device_root)
         self.scan = opener_scan or _existing_openers
         self.paths, self.directories, self.watches, self.aliases = {}, {}, set(), set()
+        self.watch_lines, self.watch_inodes, self.anchor_wd = None, {}, None
         try:
             if platform.system() == 'Linux':
                 self._start()
@@ -115,6 +118,7 @@ class OpenCollisionWatch:
             self._inventory(self.root, add)
             if not self.aliases:
                 raise HardwareError('device_watch_node_not_found')
+            self.watch_lines = self._fdinfo_watch_lines()
         except OSError as error:
             if error.errno not in _UNSUPPORTED:
                 raise
@@ -124,6 +128,8 @@ class OpenCollisionWatch:
             self.directories.clear()
             self.watches.clear()
             self.aliases.clear()
+            self.watch_inodes.clear()
+            self.watch_lines = None
 
     def _watch(self, path, info, mask, add):
         wd = add(self.fd, os.fsencode(path), mask | _IN_MASK_ADD)
@@ -135,6 +141,9 @@ class OpenCollisionWatch:
         if _identity(path.stat()) != _identity(info):
             raise HardwareError('device_watch_path_changed')
         self.watches.add(wd)
+        self.watch_inodes[wd] = info.st_ino
+        if path == self.root:
+            self.anchor_wd = wd
         self.paths[path] = _identity(info)
 
     def _inventory(self, path, add):
@@ -157,6 +166,53 @@ class OpenCollisionWatch:
                         info.st_mode & 0o170000) == (self.device_stat.st_mode & 0o170000):
                     self._watch(child, info, _DEVICE_EVENTS, add)
                     self.aliases.add(child)
+
+    def _fdinfo_watch_lines(self, *, allow_removed=False):
+        # Anonymous inotify fds can share the same fstat inode and flags. Bind
+        # the actual watch set too, so an empty/recycled inotify fd cannot pass.
+        # This is one bounded procfs file, not a process/descriptor-table scan.
+        fd = os.open(f'/proc/self/fdinfo/{self.fd}', os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW)
+        try:
+            chunks, size = [], 0
+            while True:
+                raw = os.read(fd, 65536)
+                if not raw:
+                    break
+                size += len(raw)
+                if size > 2097152:
+                    raise HardwareError('device_watch_fdinfo_too_large')
+                chunks.append(raw)
+        finally:
+            os.close(fd)
+        lines, watches = [], {}
+        for line in b''.join(chunks).splitlines():
+            if not line.startswith(b'inotify'):
+                continue
+            match = _WATCH_LINE.fullmatch(line)
+            if match is None:
+                raise HardwareError('device_watch_fdinfo_malformed')
+            wd, inode = int(match[1], 16), int(match[2], 16)
+            if wd in watches or self.watch_inodes.get(wd) != inode:
+                raise HardwareError('device_watch_fdinfo_rebound')
+            watches[wd] = inode
+            lines.append(line)
+        if (not allow_removed and set(watches) != self.watches) or (
+                allow_removed and self.anchor_wd not in watches):
+            raise HardwareError('device_watch_fdinfo_rebound')
+        return tuple(sorted(lines))
+
+    def _descriptor_current(self, *, allow_removed=False):
+        if (_identity(os.fstat(self.fd)) != _identity(self.watch_stat)
+                or not fcntl.fcntl(self.fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC
+                or not fcntl.fcntl(self.fd, fcntl.F_GETFL) & os.O_NONBLOCK):
+            return False
+        lines = self._fdinfo_watch_lines(allow_removed=allow_removed)
+        if allow_removed:
+            # Teardown may follow a real node deletion. Its removed watch is
+            # expected then, but the original directory anchor must remain and
+            # every surviving inode/mask line must belong to the retained set.
+            return bool(lines) and set(lines) <= set(self.watch_lines)
+        return lines == self.watch_lines
 
     def _fail(self, reason):
         if self.failed is None:
@@ -197,9 +253,7 @@ class OpenCollisionWatch:
                 return self._fail('device_watch_process_changed')
             if self.fd is None:
                 return not self.scan(self.device_stat) or self._fail('radio_open_collision')
-            if (_identity(os.fstat(self.fd)) != _identity(self.watch_stat)
-                    or not fcntl.fcntl(self.fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC
-                    or not fcntl.fcntl(self.fd, fcntl.F_GETFL) & os.O_NONBLOCK):
+            if not self._descriptor_current():
                 return self._fail('device_watch_fd_changed')
             if not self._events_current():
                 return False
@@ -216,6 +270,20 @@ class OpenCollisionWatch:
     def close(self):
         self.closed = True
         _ACTIVE.discard(self)
-        fd, self.fd = self.fd, None
-        if fd is not None:
-            os.close(fd)
+        fd = self.fd
+        if fd is None:
+            return
+        try:
+            # A caller may already have closed or recycled this fd integer.
+            # Do not close a known replacement; containment is a latched
+            # refusal and relinquishing this stale reference.
+            owned = (self.watch_lines is None or self._descriptor_current(allow_removed=True))
+        except (OSError, ValueError, HardwareError):
+            owned = False
+        self.fd = None
+        if owned:
+            try:
+                os.close(fd)
+            except OSError as error:
+                if error.errno != errno.EBADF:
+                    raise
