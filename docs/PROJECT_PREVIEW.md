@@ -1,10 +1,10 @@
 # Project preview
 
-Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project created and maintained by [Dhillon Andrew Kannabhiran](https://github.com/l33tdawg). The source and project website introduce the design, invite review and share measured results while development continues. A packaged `1.0.0-alpha` release will follow its own readiness review.
+Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project created and maintained by [Dhillon Andrew Kannabhiran](https://github.com/l33tdawg). The source and project website introduce the design, invite review and share measured results while development continues. The [experimental `1.0.0-alpha` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) is now public.
 
 ## Scope of the announcement
 
-The repository contains reusable protocol, crypto, reliable flow, radio/IP drivers and verified public-resource code. It includes architecture diagrams, comparisons with published upstream figures, source tests and benchmark metadata. The original preview used `0.1.0`; the current development package uses `1.0.0a1`. The source and project website are public, while the alpha tag, release and downloadable SDK/firmware assets remain unpublished.
+The repository contains reusable protocol, crypto, reliable flow, radio/IP drivers and verified public-resource code. It includes architecture diagrams, comparisons with published upstream figures, source tests and benchmark metadata. The original preview used `0.1.0`; the current package uses `1.0.0a1`. The source-build alpha is published from source `673eb60` as a GitHub prerelease with the SDK wheel, normalized source archive and firmware source-build materials. Optional prebuilt firmware is not included.
 
 [SAGE](https://github.com/l33tdawg/sage/) supplies the broader agent-memory project. [SAGE Lantern](https://github.com/l33tdawg/sage-lantern) owns product UI, protected SAGE adapters, native device/profile policy, provisioning, pilot control and deployment. Lantern consumes Meshticulum. Those product implementations and private deployment materials belong in Lantern's separate repository.
 
@@ -23,4 +23,4 @@ The repository contains reusable protocol, crypto, reliable flow, radio/IP drive
 
 The [roadmap](ROADMAP.md) separates current evidence, alpha work and later research. The immediate target is sustained useful encrypted delivery above **1,000 B/s including sender startup**, reliable completion and deployable SDK/firmware. Repeated larger-file measurements, latency, native private admission and firmware qualification remain open; 4–5 kB/s is an optional later stretch. [Release readiness](RELEASE_READINESS.md) retains the artifact and alpha requirements.
 
-The public repository and website retain their reviewed source/package boundary and attribution. Earlier Lantern-containing extraction commits remain as [development history](REPOSITORY_HISTORY.md), while the current package stays separate. Exact release-tree, artifact, history, notices and unintended-data review still applies before publishing an alpha. The [website source](../website/index.html) and [logo](../website/assets/meshticulum-logo.svg) live in this repository.
+The public repository and website retain their reviewed source/package boundary and attribution. Earlier Lantern-containing extraction commits remain as [development history](REPOSITORY_HISTORY.md), while the current package stays separate. The exact release tree, selected package contents, history and notices were reviewed for the published prerelease; broader qualification remains visible in the roadmap. The [website source](../website/index.html) and [logo](../website/assets/meshticulum-logo.svg) live in this repository.

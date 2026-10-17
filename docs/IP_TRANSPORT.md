@@ -36,7 +36,7 @@ Ten sessions ended with **twenty terminal, retired native children** and **three
 
 The resumed LoRa piece took **54.349727 seconds** from request to independent verification; the fresh IP sample took **9.529958 seconds**. These are two tiny service transaction samples including controller/management preparation and final radio ACK windows. They support that campaign’s measured path decision, not sustained RF/IP capacity, one-way latency or a matched upstream speed comparison. Actual RF airtime, energy and EIRP remain unmeasured.
 
-These results establish a finite mixed-path milestone and a separate loss/resume/IP-return campaign at their own source pins. They do not close broader private, lifecycle or sustained-performance qualification. The public project can launch while that work continues; **1.0.0-alpha readiness remains a separate decision** in [release readiness](RELEASE_READINESS.md).
+These results establish a finite mixed-path milestone and a separate loss/resume/IP-return campaign at their own source pins. They do not close broader private, lifecycle or sustained-performance qualification. The source-build [`1.0.0-alpha` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) is public while that work continues; [release readiness](RELEASE_READINESS.md) records its tested scope and remaining programme requirements.
 
 ## Bindings and ownership
 

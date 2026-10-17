@@ -1,6 +1,6 @@
 # Transport source update
 
-The current measured public SDK source is [`da247a1`](https://github.com/l33tdawg/meshticulum/commit/da247a1bb74601973f0bb72f51c268a412714719). It includes the reusable transport and firmware from the earlier `2b9db9e` source checkpoint, the public examples, and later host-side ownership and receipt-confirmation repairs. The package keeps **`1.0.0a1`** metadata; the alpha remains unreleased.
+The current measured public SDK source is [`da247a1`](https://github.com/l33tdawg/meshticulum/commit/da247a1bb74601973f0bb72f51c268a412714719). It includes the reusable transport and firmware from the earlier `2b9db9e` source checkpoint, the public examples, and later host-side ownership and receipt-confirmation repairs. Package version **`1.0.0a1`** is published from source `673eb60` as the [`v1.0.0-alpha` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha).
 
 On 17 October, that exact SDK source completed **two fresh 100 kB files at 1.95–2.03 kB/s including sender startup** and a separate fresh 23,900-byte file at **2.535 kB/s**. All used direct GFSK250 at about one metre. The [measurement report](RADIO_SDK_MEASUREMENTS.md) records whole-file timing, receiver confirmations and the remaining limits. No firmware was flashed for these samples. [Source CI for `da247a1`](https://github.com/l33tdawg/meshticulum/actions/runs/39028024473) passed on Python 3.11, 3.12 and 3.13; a later release candidate still needs its own exact checks and artifacts.
 
