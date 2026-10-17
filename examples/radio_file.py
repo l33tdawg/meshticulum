@@ -25,7 +25,7 @@ from meshticulum.bench.hat_worker import Gfsk250HATWorker, journal_binding as ha
 from meshticulum.bench.linux_hat import LinuxHAT, _existing_openers
 from meshticulum.bench.objects import VerifiedChunks
 from meshticulum.bench.serial_port import ExclusiveSerial, usb_identity
-from meshticulum.bench.serial_protocol import Frame, Message
+from meshticulum.bench.serial_protocol import Frame, Message, Gfsk250Status
 from meshticulum.bench.serial_worker import Gfsk250SerialWorker, journal_binding
 from meshticulum.bench.state import SessionStore
 from meshticulum.bench.wire import SessionCipher, require
@@ -141,11 +141,29 @@ def inspect_usb(args):
         request, deadline = secrets.randbits(63) or 1, channel.monotonic() + 2
         worker._send(Frame(Message.STATUS, identity.boot, request), deadline)
         reply = worker._wait(request, deadline)
-        require(reply.type is Message.STATUS_REPLY and reply.boot == identity.boot
-                and reply.request == request and len(reply.body) == 49,
-                'example_expected_unconfigured_status')
-        attempts, airtime, dropped = struct.unpack('!IQI', reply.body[30:46])
-        require(reply.body[46:] == bytes(3), 'example_board_not_disarmed_and_unfenced')
+        require(reply.boot == identity.boot and reply.request == request
+                and channel.monotonic() < deadline, 'example_unbound_status')
+        if reply.type is Message.REFUSED and reply.body == b'\x01':
+            # Current firmware refuses LoRa STATUS in GFSK mode (BAD_COMMAND).
+            # Query that modem without reconfiguring it or renewing this deadline.
+            request += 1
+            worker._send(Frame(Message.GFSK250_STATUS, identity.boot, request), deadline)
+            reply = worker._wait(request, deadline)
+            require(reply.type is Message.GFSK250_STATUS_REPLY, 'example_expected_gfsk250_status')
+        require(reply.boot == identity.boot and reply.request == request
+                and channel.monotonic() < deadline, 'example_unbound_status')
+        if reply.type is Message.GFSK250_STATUS_REPLY:
+            status = Gfsk250Status.from_reply(reply, boot=identity.boot,
+                request=request, board_id=identity.board_id)
+            require(not status.armed and not status.transmitting and not status.fenced,
+                    'example_board_not_disarmed_and_unfenced')
+            attempts, airtime, dropped = (status.boot_attempts,
+                status.boot_reserved_estimated_airtime_us, status.dropped_receive)
+        else:
+            require(reply.type is Message.STATUS_REPLY and len(reply.body) == 49,
+                    'example_expected_unconfigured_or_gfsk250_status')
+            attempts, airtime, dropped = struct.unpack('!IQI', reply.body[30:46])
+            require(reply.body[46:] == bytes(3), 'example_board_not_disarmed_and_unfenced')
         return dict(firmware=version, boot=identity.boot.hex(), board_id=identity.board_id,
                     boot_attempts=attempts, boot_reserved_airtime_us=airtime,
                     dropped_receive=dropped, armed=False, transmitting=False, fenced=False)
