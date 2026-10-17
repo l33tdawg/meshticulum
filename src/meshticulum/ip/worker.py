@@ -4,6 +4,7 @@ The caller supplies a connected socket from its separately authorized network
 setup. Adoption detaches that descriptor from the caller. No listening, DNS,
 connect, radio work, or application acceptance occurs in this worker.
 """
+import errno
 import os
 import select
 import socket
@@ -11,6 +12,7 @@ import time
 
 from .authority import IpAuthority
 from .journal import IpJournal
+from .socket_identity import socket_identity
 from .wire import IpGrant,IpError,FrameKind,MAGIC,HEADER,PREFIX,TAG_BYTES,READY_MODE,require
 
 
@@ -34,20 +36,31 @@ class TcpWorker:
             owned=socket.socket(fileno=fd);owned.setblocking(False)
             owned.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
             info=os.fstat(owned.fileno())
+            kernel_identity=socket_identity(owned,info)
         except BaseException:
             if owned is not None:owned.close()
             else:os.close(fd)
             raise
         self.sock=owned;self.identity=(info.st_dev,info.st_ino)
+        self.kernel_identity=kernel_identity
         self.binding=(grant.digest,local_peer);self.closed=False
         self.buffer=bytearray();self.expected=None
+        self.write_shutdown=False;self.receive_eof=False
 
     def owned(self):
         if self.closed or not self.journal.owned():return False
         try:
             info=os.fstat(self.sock.fileno())
-            return ((info.st_dev,info.st_ino)==self.identity and self.binding==(self.grant.digest,self.local_peer)
-              and self.sock.getsockname()[:2]==self.local and self.sock.getpeername()[:2]==self.remote)
+            if not ((info.st_dev,info.st_ino)==self.identity
+                    and socket_identity(self.sock,info)==self.kernel_identity
+                    and self.binding==(self.grant.digest,self.local_peer)
+                    and self.sock.getsockname()[:2]==self.local):return False
+            try:return self.sock.getpeername()[:2]==self.remote
+            except OSError as error:
+                # A completed, locally half-closed stream can lose peer metadata
+                # after the peer's FIN. The exact original kernel socket remains
+                # required; this never permits normal ingress or transmission.
+                return self.write_shutdown and error.errno in (errno.ENOTCONN,errno.EINVAL)
         except OSError:return False
 
     def _guard(self,authority):
@@ -57,6 +70,7 @@ class TcpWorker:
 
     def transmit(self,packet,lane,authority):
         self._guard(authority)
+        require(not self.write_shutdown,'tcp_terminal_drain_started')
         require(type(packet) is bytes and HEADER.size+TAG_BYTES<len(packet)<=HEADER.size+TAG_BYTES+self.grant.limits.max_plaintext,'invalid_tcp_packet')
         magic,version,kind,direction,session,counter,length=HEADER.unpack(packet[:HEADER.size])
         require(magic==MAGIC and version==self.grant.wire_version and direction==self.direction and session==self.grant.session.session_id
@@ -93,6 +107,7 @@ class TcpWorker:
 
     def receive(self,authority):
         self._guard(authority)
+        require(not self.write_shutdown,'tcp_terminal_drain_started')
         try:
             target=PREFIX.size if self.expected is None else PREFIX.size+self.expected
             while len(self.buffer)<target:
@@ -118,6 +133,40 @@ class TcpWorker:
                 return self.receive(authority)
             packet=bytes(self.buffer[PREFIX.size:]);self.buffer.clear();self.expected=None
             self._guard(authority);return packet
+        except BaseException:
+            try:self.journal.fence()
+            finally:self.close()
+            raise
+
+    def finish_stream(self,authority):
+        """Half-close a complete flow, charging discarded trailing bytes.
+
+        The caller must have completed its authenticated flow. A receiver must
+        also have handed its final ACK to the kernel. One nonblocking read per
+        call preserves the original deadline and revocation checks while the
+        peer closes.
+        No trailing bytes enter the cipher, flow or application.
+        """
+        self._guard(authority)
+        require(not self.buffer and self.expected is None,
+                'tcp_receive_not_at_terminal_boundary')
+        try:
+            if not self.write_shutdown:
+                self.sock.shutdown(socket.SHUT_WR)
+                self.write_shutdown=True
+                self._guard(authority)
+            if self.receive_eof:return True
+            maximum=self.journal.reserve_receive(4100)
+            try:
+                self._guard(authority)
+                part=self.sock.recv(maximum)
+            except BlockingIOError:
+                self.journal.settle_receive(0);self._guard(authority);return False
+            self.journal.settle_receive(len(part))
+            self.test_rx_bytes+=len(part)
+            self._guard(authority)
+            self.receive_eof=not part
+            return self.receive_eof
         except BaseException:
             try:self.journal.fence()
             finally:self.close()
