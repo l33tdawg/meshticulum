@@ -91,24 +91,35 @@ def gpio_request():
 
 
 def _existing_openers(device_stat):
-    """Root-only best-effort collision check in addition to ownership locks."""
+    """Fresh root-only collision scan, including alternate nodes for this rdev.
+
+    ``DirEntry.stat`` follows each procfs descriptor just as Path.stat did, but
+    avoids constructing and reparsing a Python Path for every open descriptor.
+    This is deliberately still a full scan on every call: an inode-only event
+    watch would miss a second character-device node with the same device ID.
+    Ownership locks remain necessary; procfs is not a privileged-open interlock.
+    """
     owners = []
-    for proc in Path('/proc').iterdir():
-        if not proc.name.isdigit() or int(proc.name) == os.getpid():
-            continue
-        try:
-            for fd in (proc / 'fd').iterdir():
-                try:
-                    info = fd.stat()
-                    if stat.S_ISCHR(info.st_mode) and info.st_rdev == device_stat.st_rdev:
-                        owners.append(int(proc.name))
-                        break
-                except FileNotFoundError:
-                    pass
-        except FileNotFoundError:
-            pass
-        except PermissionError:
-            raise HardwareError('cannot_inspect_radio_ownership') from None
+    own_pid = os.getpid()
+    with os.scandir('/proc') as processes:
+        for proc in processes:
+            if not proc.name.isdigit() or int(proc.name) == own_pid:
+                continue
+            try:
+                with os.scandir(proc.path + '/fd') as descriptors:
+                    for fd in descriptors:
+                        try:
+                            info = fd.stat(follow_symlinks=True)
+                            if (stat.S_ISCHR(info.st_mode)
+                                    and info.st_rdev == device_stat.st_rdev):
+                                owners.append(int(proc.name))
+                                break
+                        except FileNotFoundError:
+                            pass
+            except FileNotFoundError:
+                pass
+            except PermissionError:
+                raise HardwareError('cannot_inspect_radio_ownership') from None
     return owners
 
 
