@@ -106,7 +106,7 @@ class IpFlow:
         except BaseException:self.close();raise
 
     def step(self):
-        require(not self.closed,'ip_flow_closed')
+        require(not self.closed and not self.worker.write_shutdown,'ip_flow_closed')
         try:
             with self.authority.application_lease():
                 require(self.worker.owned(),'ip_worker_not_owned')
@@ -163,15 +163,23 @@ class IpFlow:
     def finish_receive_ack(self):
         """Flush the pending final receipt before a finite TCP owner closes.
 
-        No further reads are needed once the complete admitted object arrived.
+        No further application reads are needed once the admitted object arrived.
         This is kernel acceptance of the ACK, not evidence the peer received it.
         """
-        require(not self.closed and not self.sends and self.flow.complete, 'ip_receive_not_complete')
+        require(not self.closed and not self.sends and self.flow.complete
+                and not self.worker.write_shutdown, 'ip_receive_not_complete')
         with self.authority.application_lease():
             require(self.worker.owned(), 'ip_worker_not_owned')
             self._pump()
             self.authority.require_dispatch()
             return not self.flow._ack_dirty
+
+    def finish_stream(self):
+        """Keep terminal receipts readable while both peers close their streams."""
+        require(not self.closed and self.flow.complete
+                and (self.sends or not self.flow._ack_dirty),'ip_flow_not_complete')
+        with self.authority.application_lease():
+            return self.worker.finish_stream(self.authority)
 
     def _pump(self):
         self.link.now=self.clock()[1]/1e6
