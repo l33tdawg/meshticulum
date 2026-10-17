@@ -6,8 +6,8 @@ Meshticulum brings bounded radio transfers, authenticated service boundaries and
 
 | Guide | What it explains |
 | --- | --- |
-| [Project preview](PROJECT_PREVIEW.md) | The public source and website scope, measured claims and the later alpha release |
-| [Roadmap](ROADMAP.md) | Current evidence, work required for alpha and plans after alpha |
+| [Project preview](PROJECT_PREVIEW.md) | The public source and website scope, measured claims and published alpha |
+| [Roadmap](ROADMAP.md) | Current evidence, the published alpha scope and plans after alpha |
 | [Repository history](REPOSITORY_HISTORY.md) | Preserved extraction history and the current Meshticulum/Lantern boundary |
 | [Attribution and project family](PROJECT_FAMILY.md) | SAGE Foundation stewardship, the main SAGE repository and the separate Lantern product repository |
 | [Why Meshticulum](WHY.md) | The gap we are trying to close and the priorities drawn from embedded radio meshes and secure networking |
@@ -33,7 +33,7 @@ Start with [installation and the standalone test command](../README.md#install-a
 | [Lantern's SAGE integration](SAGE_INTEGRATION.md) | Understand the separate owning repository for protected capture, replay and private inbox admission |
 | [Extraction and provenance](EXTRACTION.md) | Trace code to its original snapshot, inspect frozen flow pins or understand package bridges |
 | [Coordinated public pilot](HARDWARE_PILOT.md) | Follow native provisioning, relay provenance, publisher verification and the remaining physical checks |
-| [Alpha release readiness](RELEASE_READINESS.md) | Check the proposed 1.0.0-alpha scope, artifacts and public-release gates |
+| [Alpha release status](RELEASE_READINESS.md) | Check the published 1.0.0-alpha scope, artifacts and remaining qualification |
 | [Third-party inventory](THIRD_PARTY.md) | Identify runtime and firmware dependencies and outstanding redistribution requirements |
 | [Repository instructions](../AGENTS.md) | Change transport or integration behavior while preserving its contracts and writer ownership |
 | [Frozen flow history](../src/meshticulum/flow/README.md) | Inspect the accepted candidate's revisions, invariants and historical source controls |

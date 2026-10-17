@@ -4,7 +4,7 @@ Meshticulum is a public experimental transport and resource project. The next mi
 
 ## Current status
 
-The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) are live. The checkout uses Python version `1.0.0a1`, but the alpha tag, release and downloadable SDK/firmware assets have **not been published**. You can [install from source](../README.md#install-and-explore) and review the existing examples.
+The [public repository](https://github.com/l33tdawg/meshticulum), [project website](https://l33tdawg.github.io/meshticulum/) and [experimental `1.0.0-alpha` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) are live. The release is published from source `673eb60` and provides the tested SDK wheel, normalized source archive and firmware source-build materials. You can [install from source](../README.md#install-and-explore) or review the release assets.
 
 The measured SDK source, `da247a1`, has [passing source CI on Python 3.11, 3.12 and 3.13](https://github.com/l33tdawg/meshticulum/actions/runs/39028024473). The hardware samples below supply separate physical evidence. A later release candidate needs its own exact source checks and artifacts.
 
@@ -20,7 +20,7 @@ Each 100 kB interval includes all five sequential parts and coordination gaps. A
 
 **These samples exceed the startup-inclusive alpha floor for the tested path.** Two fresh 100 kB files provide an initial repeat, rather than a sustained-capacity or completion distribution. GFSK is separate from LoRa modulation; the one-metre setup does not measure field range. [The measurement report](RADIO_SDK_MEASUREMENTS.md) records exact durations, source hashes and limits. The [earlier 15 October campaign](PERFORMANCE.md#a-complete-100-kb-file-2026-10-15) remains in the historical record.
 
-A separate [clean installed-wheel check](RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) completed another fresh 100 kB file at **1,739.9 B/s including startup and a five-second pause between verified parts**, or **1,613.3 B/s through endpoint closure**. Both normal virtual environments matched all 67 runtime files to candidate `673eb60`; all five confirmations and all ten endpoint exits passed under the unchanged original window. The record retains the earlier incomplete 95,600-byte installed trial. This establishes the stated installation and verified-piece continuation check, with final selected-artifact review pending.
+A separate [clean installed-wheel check](RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) completed another fresh 100 kB file at **1,739.9 B/s including startup and a five-second pause between verified parts**, or **1,613.3 B/s through endpoint closure**. Both normal virtual environments matched all 67 runtime files to release source `673eb60`; all five confirmations and all ten endpoint exits passed under the unchanged original window. The record retains the earlier incomplete 95,600-byte installed trial. This finite check supports the published source-build alpha and does not establish in-flight crash recovery.
 
 Earlier native milestones demonstrated [mixed LoRa/IP delivery, loss, verified-piece retention, fresh LoRa resume and return to a locally measured faster IP path](IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return). Their original scope and failed attempts remain part of the record. Current source tests and later firmware builds do not requalify those physical results.
 

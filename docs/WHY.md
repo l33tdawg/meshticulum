@@ -56,4 +56,4 @@ Finite native public campaigns have demonstrated a coordinated LoRa-to-IP transf
 
 A faster transfer only counts when it delivers the intended verified object under those constraints. The [architecture](ARCHITECTURE.md), [hardware guide](HARDWARE.md), [performance record](PERFORMANCE.md) and [roadmap](ROADMAP.md) track that work. [Lantern](https://github.com/l33tdawg/sage-lantern) consumes Meshticulum and owns its native device policy, deployment and protected SAGE adapters; the dependency runs **Lantern → Meshticulum**.
 
-The project source and documentation can be published while qualification continues. A public repository or project announcement does not certify deployment or release **1.0.0-alpha**; those gates remain in [release readiness](RELEASE_READINESS.md).
+The project source, documentation and source-build **`1.0.0-alpha`** can be released while wider qualification continues. The published prerelease does not certify private production or field deployment; those gates remain in [release readiness](RELEASE_READINESS.md).

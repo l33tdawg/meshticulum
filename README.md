@@ -6,7 +6,7 @@
 
 A [SAGE Foundation](https://sage-foundation.net/) project, created and maintained by [Dhillon Andrew Kannabhiran (@l33tdawg)](https://github.com/l33tdawg). Part of the broader [SAGE project](https://github.com/l33tdawg/sage/).
 
-**Project preview.** The public source and project website are live. `1.0.0-alpha` and its downloadable SDK/firmware assets have not been published. The alpha target is reliable verified delivery, deployable SDK and firmware, and sustained useful encrypted goodput above **1,000 B/s including sender startup**. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current work and roadmap](docs/ROADMAP.md).
+**Experimental `1.0.0-alpha` is public.** The [GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) provides the tested SDK wheel, normalized source archive, firmware source-build guide, notices and proof records from source `673eb60`. The alpha scope is reliable verified delivery, a deployable SDK and firmware build path, and useful encrypted goodput above **1,000 B/s including sender startup** on the declared tested path. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current work and roadmap](docs/ROADMAP.md).
 
 Meshticulum is an experimental transport and resource system for networks that mix LoRa and IP. We are building it to close the gap between practical embedded radio meshes and richer, secure networking across different transports—and to move more useful encrypted data through the radio time we have.
 

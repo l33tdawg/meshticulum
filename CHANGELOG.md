@@ -1,10 +1,10 @@
 # Release notes
 
-## Project preview — development source
+## 1.0.0-alpha (`1.0.0a1`) — 2026-10-17
 
-The Meshticulum source, documentation, architecture diagrams and project website are public. The original preview used package version `0.1.0`; this source candidate uses `1.0.0a1` metadata while the alpha remains unreleased. A packaged alpha release will follow its own readiness review; no `v1.0.0-alpha` tag or release is created by this source update. See [the preview scope](docs/PROJECT_PREVIEW.md) and [the current source update](docs/TRANSPORT_SOURCE_UPDATE.md).
+[Download the GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha). It is published from source `673eb60d24dc60f67371e24bc5c9caeec3a68508` and contains the tested SDK wheel, normalized source distribution, firmware source-build guide, project notices, public proof records, release manifest and checksums. No prebuilt firmware or third-party dependency wheels are included.
 
-## Proposed 1.0.0-alpha (`1.0.0a1`) — unreleased
+## Alpha contents and measured scope
 
 Meshticulum is a SAGE Foundation project created and maintained by Dhillon Andrew
 Kannabhiran (@l33tdawg). It brings bounded authenticated transfers and verified
@@ -52,7 +52,7 @@ completed two fresh five-part 100 kB files at **2,030.2 and 1,949.2 useful B/s
 including sender startup**, or **1,856.0 and 1,755.7 B/s through endpoint closure**.
 A separate fresh 23,900-byte file reached **2,534.6 B/s** through authenticated
 receipt. These are near-bench GFSK250 samples at about one metre. This initial
-repeat leaves sustained capacity, field range and alpha acceptance open. See
+repeat does not establish sustained capacity or field range. See
 [the exact measurement scope](docs/RADIO_SDK_MEASUREMENTS.md).
 
 A separate installed-wheel check at `673eb60` completed a fresh 100 kB file
@@ -66,15 +66,15 @@ The explicit firmware recipe reproduced current application BIN/ELF outputs for
 both named targets through locked vendor inputs on the recorded build host.
 The retained Heltec application-span check and later runtime-tag continuity
 remain distinct from fresh full-device readback and physical Xiao acceptance.
-The selected SDK/source-build package has passed its content/notice coverage
-review; optional prebuilt firmware has a separate distribution checklist.
-Final selected-artifact, current release-tree and release approval remain open. Retained extraction history is disclosed in
+The selected SDK/source-build package passed its content/notice coverage
+review and was published as the `v1.0.0-alpha` prerelease. Optional prebuilt
+firmware retains its separate distribution checklist. Retained extraction history is disclosed in
 [repository history](docs/REPOSITORY_HISTORY.md). Private native owner/consent and transport still require
-qualification. This draft represents no public alpha or production activation;
+qualification. The public alpha does not activate private production;
 MeshCore/Reticulum wire interoperability and overall speed/security superiority are unsupported. The competitive goal is faster useful transfers and stronger security than both; comparison uses [published figures and their conditions](docs/PERFORMANCE.md#comparison-with-published-figures), without requiring counterpart benchmark campaigns.
 
-The alpha will permit wire/API changes. Candidate validation and artifact hashes
-must be tied to its exact commit before these notes become a release. See
+The alpha permits wire/API changes. Validation and artifact hashes are tied to
+source `673eb60d24dc60f67371e24bc5c9caeec3a68508` and the published release assets. See
 [release readiness](docs/RELEASE_READINESS.md).
 
-The later alpha candidate remains subject to its own exact source, artifact and release review. Project publication does not establish a new qualified Lantern dependency pair or deploy a runtime to devices.
+The prerelease does not establish a qualified Lantern dependency pair or deploy a runtime to devices. Larger files, wider recovery, mixed-path qualification and sustained-performance work continue separately.

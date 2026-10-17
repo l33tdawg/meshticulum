@@ -40,11 +40,11 @@
     <section class="hero">
       <div class="container hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>A SAGE Foundation project / In development</p>
+          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>A SAGE Foundation project / Experimental alpha published</p>
           <h1>Small radios.<br><em>Bigger possibilities.</em></h1>
           <p class="hero-description">Encrypted messages. Verified resources. A transport designed to make more of every radio link, and use faster paths when they become available.</p>
-          <div class="hero-actions"><a class="button button-amber" href="https://github.com/l33tdawg/meshticulum">Explore the source <span aria-hidden="true">↗</span></a><a class="text-link" href="#architecture">See how it works <span aria-hidden="true">↓</span></a></div>
-          <p class="hero-footnote">Experimental, open source, Apache 2.0.<br>Standalone core. Built for applications beyond Lantern.</p>
+          <div class="hero-actions"><a class="button button-amber" href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha">Download 1.0.0-alpha <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum">Explore the source <span aria-hidden="true">↗</span></a></div>
+          <p class="hero-footnote">Experimental source-build alpha, Apache 2.0.<br>Standalone core. Built for applications beyond Lantern.</p>
         </div>
         <figure class="hero-figure">
           <img src="assets/network.svg" width="620" height="550" alt="Illustrative network: verified resources and encrypted messages pass between radio peers, with an optional faster IP path.">
@@ -94,7 +94,7 @@
         </div>
         <div class="evidence-columns">
           <article><h3>A comparison you can inspect</h3><p>The earlier LoRa sample at 1,071.3 B/s is numerically <strong>2.61×</strong> the <strong>410 B/s</strong> contributed test in <a href="https://github.com/meshcore-dev/MeshCore/issues/3404">MeshCore issue #3404</a>. That test used 25 individually acknowledged 128-byte frames at SF7/BW500. Ours used a windowed resource reply. Different workloads and timing boundaries prevent a general speed ranking.</p></article>
-          <article><h3>Installed and continued.</h3><p>A separate clean installed-wheel check completed another 100 kB file at <strong>1.74 kB/s</strong>, including sender startup and a five-second pause between verified parts. All ten endpoint processes closed successfully. <a href="roadmap.html#installed-sdk">Read the installation and continuation check</a>. Field range, wider recovery and native private qualification remain open; an alpha has not been published.</p></article>
+          <article><h3>Installed and continued.</h3><p>A separate clean installed-wheel check completed another 100 kB file at <strong>1.74 kB/s</strong>, including sender startup and a five-second pause between verified parts. All ten endpoint processes closed successfully. <a href="roadmap.html#installed-sdk">Read the installation and continuation check</a>. Field range, wider recovery and native private qualification remain open; the finite source-build alpha is <a href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha">published as a prerelease</a>.</p></article>
         </div>
         <div class="evidence-links"><a class="text-link" href="roadmap.html#now">Read the whole-file timing boundaries <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-17-public-sdk/results.json">Inspect the sample records <span aria-hidden="true">↗</span></a></div>
       </div>
@@ -116,12 +116,12 @@
       <div class="container"><div class="section-heading"><div><p class="eyebrow">For developers</p><h2>Read the design.<br>Build on the core.</h2></div><p>Start with a local resource exchange. Follow the protocol boundaries before bringing a radio or a native application into the transfer.</p></div><div class="developer-grid">
         <a href="technical.html"><span class="small-number">01 / Inside the protocol</span><h3>Technical overview <span aria-hidden="true">↗</span></h3><p>Cryptography, reliable flow, verified resources and path selection, with a diagram of the stack.</p></a>
         <a href="comparison.html"><span class="small-number">02 / Different designs</span><h3>Compare the projects <span aria-hidden="true">↗</span></h3><p>MeshCore, Reticulum and Meshticulum side by side, with security properties and scoped performance evidence.</p></a>
-        <a href="getting-started.html"><span class="small-number">03 / Try the source</span><h3>SDK and device setup <span aria-hidden="true">↗</span></h3><p>Verified Python APIs, a local block example, pinned firmware builds and the application-owned flashing workflow.</p></a>
+        <a href="getting-started.html"><span class="small-number">03 / Get the alpha</span><h3>SDK and device setup <span aria-hidden="true">↗</span></h3><p>Verified Python APIs, release assets, a local block example, pinned firmware builds and the application-owned flashing workflow.</p></a>
       </div></div>
     </section>
 
     <section class="get-started paper">
-      <div class="container start-grid"><div><p class="eyebrow">Explore the work</p><h2>Open code.<br>Explicit evidence.</h2><p>Read the design, inspect the results, or help build the next piece.</p></div><div class="start-actions"><a class="button button-dark" href="https://github.com/l33tdawg/meshticulum">Open the repository <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/docs/index.md">Read the documentation <span aria-hidden="true">↗</span></a><a class="text-link" href="roadmap.html">See the roadmap <span aria-hidden="true">↗</span></a></div></div>
+      <div class="container start-grid"><div><p class="eyebrow">Explore the work</p><h2>Open code.<br>Explicit evidence.</h2><p>Download the experimental alpha, read the design, inspect the results, or help build the next piece.</p></div><div class="start-actions"><a class="button button-dark" href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha">Download the alpha <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum">Open the repository <span aria-hidden="true">↗</span></a><a class="text-link" href="roadmap.html">See the roadmap <span aria-hidden="true">↗</span></a></div></div>
     </section>
   </main>
   <footer class="site-footer"><div class="container footer-inner"><a class="brand" href="#">meshticulum<span class="brand-period">.</span></a><p>A <a href="https://sage-foundation.net/">SAGE Foundation</a> project.<br>© 2026 Dhillon Andrew Kannabhiran · <a href="https://github.com/l33tdawg/meshticulum/blob/main/LICENSE">Apache 2.0</a></p><a href="getting-started.html">Developer guide <span aria-hidden="true">↗</span></a><a href="roadmap.html">Project roadmap <span aria-hidden="true">↗</span></a><a href="https://l33tdawg.github.io/sage/">Discover SAGE <span aria-hidden="true">↗</span></a></div></footer>
