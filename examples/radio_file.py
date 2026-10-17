@@ -321,6 +321,10 @@ class ChunkTransfer:
                 'example_no_room_for_ack_retirement')
         self.completed_at = None
 
+    def enable_receipt_confirmation(self, context):
+        self.endpoint.enable_receipt_confirmation(context,
+            receiver_ready=None if self.endpoint.sends else lambda: self.completed_at is not None)
+
     def send(self, payload):
         self.endpoint.send(payload)
 
@@ -330,6 +334,8 @@ class ChunkTransfer:
         if not complete:
             return False
         if self.endpoint.sends:
+            if self.endpoint.receipt_confirmation_enabled:
+                self.endpoint.confirm_receipt()
             return True
         if self.completed_at is None:
             require(self.authority.application_live(), 'example_commit_authority_expired')
@@ -338,7 +344,8 @@ class ChunkTransfer:
             self.completed_at = self.clock()[1]
         # Repeated authenticated final DATA can still receive its original ACK.
         # This start is never renewed, and the original grant still bounds step.
-        return self.clock()[1] - self.completed_at >= ACK_GRACE_US
+        return (self.endpoint.receipt_confirmed
+                or self.clock()[1] - self.completed_at >= ACK_GRACE_US)
 
     def close(self):
         self.endpoint.close()
@@ -434,6 +441,8 @@ def run_object(args, raw, admission, version, payload, window, factory):
         result = {'chunk': args.chunk, 'sender_peer_receipt': authority.sends,
                   'receiver_chunk_verified': not authority.sends,
                   'whole_file_verified': False, 'attempt_journal': journal.snapshot()}
+        if session.endpoint.receipt_confirmation_enabled:
+            result['receipt_confirmation'] = session.endpoint.receipt_confirmation_snapshot()
     except BaseException as error:
         errors.append(error)
     finally:

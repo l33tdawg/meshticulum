@@ -9,6 +9,7 @@ This module opens no IP data channel and does not import personal SAGE code.
 from collections import Counter, deque
 import hashlib
 import importlib
+import json
 import math
 from pathlib import Path
 import sys
@@ -55,6 +56,10 @@ class BenchFlow:
         self.authority, self.worker, self.cipher = authority, worker, cipher
         self.journal, self.clock, self.ledger = journal, clock, ledger
         self.sends = sends
+        self._receipt_payload = self._receipt_link = self._receipt_ready = None
+        self._receipt_dispatching = self._receipt_requested = self._receipt_attempted = False
+        self.receipt_confirmed = False
+        self.receipt_confirmation_outcome = None
         self.events = deque(maxlen=512)
         self.counts = Counter()
         self.received = bytearray()
@@ -103,6 +108,19 @@ class BenchFlow:
             # corresponding live objects for this finite run so allocator ID
             # reuse cannot be mistaken for a duplicate completion. The author's
             # source remains unchanged; this compatibility bound is explicit.
+            def offer(owner, frame, *, kind):
+                # Only this opt-in adapter record extends the frozen owner's
+                # strict MT05 parser. Its existing CONTROL candidate, handle,
+                # leases and settlement path account the exact bytes unchanged.
+                if self._receipt_payload is not None and frame == self._receipt_payload:
+                    if (kind != port.CONTROL_KIND or not self._receipt_dispatching
+                            or not self.sends or not self.flow.complete
+                            or len(frame) > min(owner.bound, owner.contract.limits.max_control_bytes)):
+                        raise ContractError('receipt_confirmation_not_sendable')
+                    owner._armed = owner._candidate_for({}, frame, FrameRole.CONTROL, port.CONTROL_KIND)
+                    return FrameRole.CONTROL
+                return super().offer(frame, kind=kind)
+
             def prepare(owner, *args, **kwargs):
                 if len(owner.retained) >= 1024:
                     raise ContractError('bench_handle_retention_limit')
@@ -158,11 +176,18 @@ class BenchFlow:
         # The authority checks exact object identity of both currently held
         # leases and the immutable request, as well as the OS radio owner.
         self.authority.require_dispatch(frame)
-        parsed = self.parse_frame(frame.payload)
-        require(parsed is not None, 'invalid_inner_transmit')
-        kind = FrameKind.ACK if parsed['kind'] == self.ack_kind else FrameKind.DATA
-        require((frame.request.role is FrameRole.CONTROL) == (kind is FrameKind.ACK),
-                'inner_lane_mismatch')
+        if self._receipt_payload is not None and frame.payload == self._receipt_payload:
+            require(self._receipt_dispatching and self.sends and self.flow.complete
+                    and not self._receipt_attempted and frame.request.role is FrameRole.CONTROL,
+                    'invalid_receipt_confirmation_transmit')
+            self._receipt_attempted = True
+            kind = FrameKind.CONTROL
+        else:
+            parsed = self.parse_frame(frame.payload)
+            require(parsed is not None, 'invalid_inner_transmit')
+            kind = FrameKind.ACK if parsed['kind'] == self.ack_kind else FrameKind.DATA
+            require((frame.request.role is FrameRole.CONTROL) == (kind is FrameKind.ACK),
+                    'inner_lane_mismatch')
         packet = self.cipher.seal(frame.payload, kind, authorize=self.authority.live)
         worker_started_us = self.clock()[1]
         result = self.worker.transmit(packet)
@@ -185,6 +210,14 @@ class BenchFlow:
             'driver_irq_flags': driver.irq_flags if driver is not None else None,
             'driver_error': driver.driver_error if driver is not None else None})
         self.last_activity_us = self.clock()[1]
+        if kind is FrameKind.CONTROL:
+            self.receipt_confirmation_outcome = result.outcome
+            if result.outcome == 'RF_DONE':
+                return CommitOutcome.ACCEPTED
+            if result.outcome in ('REFUSED', 'NOT_SENT'):
+                return CommitOutcome.REFUSED_CARRIER
+            self.owner.settle_sending()
+            return CommitOutcome.UNKNOWN
         # A single half-duplex radio needs time to hear the reverse ACK before
         # another DATA start. This is an explicit initial bench pacing policy,
         # not a measured optimum or a permanent protocol stop-and-wait rule.
@@ -214,6 +247,70 @@ class BenchFlow:
         self.owner.settle_sending()
         return CommitOutcome.UNKNOWN
 
+    @property
+    def receipt_confirmation_enabled(self):
+        return self._receipt_payload is not None
+
+    def enable_receipt_confirmation(self, context, *, receiver_ready=None):
+        """Opt in before RF work; a sender receipt can shorten receiver grace.
+
+        The caller binds its shared original resource/file-window context. The
+        grant already binds peers, incarnation, route, object and deadlines.
+        Receipt is useful only after the receiver has durably accepted bytes.
+        """
+        require(not self.closed and self._receipt_payload is None and not self.counts
+                and type(context) is bytes and len(context) == 32
+                and (receiver_ready is None if self.sends else callable(receiver_ready)),
+                'invalid_receipt_confirmation_setup')
+        _, port = _flow_modules()
+        flow_key = self.authority.flow_key
+        sender_direction = self.cipher.direction if self.sends else 1 - self.cipher.direction
+        binding = dict(schema='meshticulum.radio-receipt-confirmation.v1',
+            grant_sha256=self.cipher.grant.digest.hex(), flow_id=flow_key.flow_id,
+            flow_initiator=dict(chain_id=flow_key.initiator.chain_id, agent_id=flow_key.initiator.agent_id),
+            generation=self.flow.generation, sender_direction=sender_direction,
+            application_context_sha256=context.hex())
+        digest = hashlib.sha256(b'meshticulum.radio-receipt-confirmation.v1\0'
+            + json.dumps(binding, sort_keys=True, separators=(',', ':')).encode()).digest()
+        # The existing negotiated control-record bound is 32 bytes. This keeps
+        # a domain tag and a 224-bit context digest inside that unchanged bound.
+        payload = b'MRC1' + digest[:28]
+        require(len(payload) <= self.owner.contract.limits.max_control_bytes,
+                'receipt_confirmation_exceeds_control_bound')
+        self._receipt_payload, self._receipt_ready = payload, receiver_ready
+        if self.sends:
+            self._receipt_link = port.FlowPortLink(scheduler=self.scheduler, owner=self.owner,
+                flow=flow_key, authorize=self.authority.service_lease, broker=self.authority.broker_lease,
+                carrier=self._send, monotonic_us=lambda: self.clock()[1],
+                epoch_clock=lambda: self.clock()[0] / 1000000)
+
+    def confirm_receipt(self):
+        """Offer at most one accounted confirmation after authenticated ACK.
+
+        No confirmation ACK is needed: loss preserves the receiver's existing
+        finite grace. Unknown writes/fences still fail this command.
+        """
+        require(self.receipt_confirmation_enabled and self.sends and not self.closed
+                and self.flow.complete and self.authority.application_live(),
+                'receipt_confirmation_before_receipt')
+        if not self._receipt_requested:
+            self._receipt_requested = True
+            self.owner.resume_sending()
+            self._receipt_dispatching = True
+            try:
+                self._receipt_link.send('receipt-confirmation', self._receipt_payload, kind='ack')
+            finally:
+                self._receipt_dispatching = False
+            if not self._receipt_attempted:
+                self.receipt_confirmation_outcome = 'NOT_DISPATCHED'
+        self._check_flow()
+        require(self.authority.application_live(), 'receipt_confirmation_authority_expired')
+        return self.receipt_confirmation_outcome == 'RF_DONE'
+
+    def receipt_confirmation_snapshot(self):
+        return dict(enabled=self.receipt_confirmation_enabled, attempted=self._receipt_attempted,
+            outcome=self.receipt_confirmation_outcome, peer_receipt_confirmed=self.receipt_confirmed)
+
     def send(self, data):
         require(self.sends and type(data) is bytes and 0 < len(data) <= self.maximum_bytes,
                 'invalid_bench_object')
@@ -231,6 +328,19 @@ class BenchFlow:
             at, raw = item
             try:
                 verified = self.cipher.open(raw.packet, authorize=self.authority.live)
+                if verified.kind is FrameKind.CONTROL:
+                    require(self.receipt_confirmation_enabled and not self.sends
+                            and not self.receipt_confirmed and self.flow.complete
+                            and verified.payload == self._receipt_payload
+                            and self._receipt_ready() is True
+                            and self.authority.application_live(), 'invalid_receipt_confirmation')
+                    self.receipt_confirmed = True
+                    self.counts['rx_CONTROL'] += 1
+                    self.events.append({'event': 'rx', 'mono_us': self.clock()[1],
+                        'outer_counter': verified.counter, 'outer_kind': 'CONTROL',
+                        'packet_sha256': hashlib.sha256(raw.packet).hexdigest(),
+                        'bytes': len(raw.packet), 'rssi_dbm': raw.rssi_dbm, 'snr_db': raw.snr_db})
+                    continue
                 parsed = self.parse_frame(verified.payload)
                 require(parsed is not None, 'invalid_authenticated_inner_frame')
                 expected = FrameKind.ACK if parsed['kind'] == self.ack_kind else FrameKind.DATA
@@ -282,6 +392,9 @@ class BenchFlow:
                     and self.flow.queued_bytes() > 0
                     and self.flow.in_flight() < min(self.flow.limits.window_frames, self.flow._peer_credit)):
                 break
+        if self.receipt_confirmed:
+            self._check_flow()
+            return self.flow.complete
         if not self.sends and self.flow.delivered:
             data = self.flow.consume(len(self.flow.delivered))
             require(len(self.received) + len(data) <= self.maximum_bytes, 'bench_receive_limit')
@@ -318,7 +431,7 @@ class BenchFlow:
         require(len(self.owner.retained) < 1024, 'bench_handle_retention_limit')
 
     def snapshot(self):
-        return {'complete': self.flow.complete, 'received_bytes': len(self.received),
+        value = {'complete': self.flow.complete, 'received_bytes': len(self.received),
             'counts': dict(self.counts), 'retransmits': self.flow.retransmits,
             'acked_frames': self.flow.acked_frames(), 'duplicates': self.flow.duplicates,
             'startup_pending': self.flow.startup_pending, 'rto_seconds': self.flow.rto,
@@ -331,6 +444,9 @@ class BenchFlow:
                              'control_rate_us_per_second': self.scheduler.policy.control_rate_us_per_second},
             'attempt_journal': self.journal.snapshot(), 'events': list(self.events),
             'scheduler': self.scheduler.snapshot()}
+        if self.receipt_confirmation_enabled:
+            value['receipt_confirmation'] = self.receipt_confirmation_snapshot()
+        return value
 
     def close(self):
         if not self.closed:
