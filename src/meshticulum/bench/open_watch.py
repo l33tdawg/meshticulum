@@ -4,8 +4,9 @@ This replaces repeated best-effort procfs scans, not kernel device exclusivity.
 The owner holds its original driver locks and descriptors and must not fork or
 pass those descriptors. Host root remains trusted: a privileged process can
 bypass locks, transfer a descriptor, or make a new device alias outside /dev.
-All existing /dev aliases are watched. Changes within /dev or to its retained
-directories invalidate the watch instead of authorizing a replacement node.
+All existing /dev aliases are watched. Device-tree changes invalidate the
+watch. Mutable shm/mqueue contents are exempt only on verified nodev mounts;
+the retained mount table and existing alias inodes remain freshly checked.
 """
 import ctypes
 import errno
@@ -14,6 +15,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import stat
 import struct
 import weakref
 
@@ -36,11 +38,13 @@ _IN_ONLYDIR = 0x01000000
 _IN_DONT_FOLLOW = 0x02000000
 _IN_MASK_ADD = 0x20000000
 _IN_ISDIR = 0x40000000
-_INVALIDATION = (_IN_ATTRIB | _IN_DELETE_SELF | _IN_MOVE_SELF | _IN_UNMOUNT | _IN_IGNORED)
+_SELF_INVALIDATION = _IN_DELETE_SELF | _IN_MOVE_SELF | _IN_UNMOUNT | _IN_IGNORED
+_INVALIDATION = _IN_ATTRIB | _SELF_INVALIDATION
 _DIRECTORY_EVENTS = _INVALIDATION | _IN_MOVED_FROM | _IN_MOVED_TO | _IN_CREATE | _IN_DELETE
 _DEVICE_EVENTS = _INVALIDATION | _IN_OPEN
 _UNSUPPORTED = {errno.ENOSYS, errno.ENOTSUP, errno.EOPNOTSUPP}
 _ACTIVE = weakref.WeakSet()
+_NODEV_NAMESPACES = frozenset({'shm', 'mqueue'})
 _WATCH_LINE = re.compile(rb'inotify wd:([0-9a-f]+) ino:([0-9a-f]+) sdev:([0-9a-f]+) mask:([0-9a-f]+) ignored_mask:([0-9a-f]+)(?: .*)?')
 
 
@@ -69,6 +73,43 @@ def _entries(path):
                             for entry in entries))
 
 
+def _mountinfo():
+    # Bind the full table, including nested mounts and per-mount nodev flags.
+    # A new bind mount below a nodev namespace must never inherit its exemption.
+    with open('/proc/self/mountinfo', 'rb') as source:
+        raw = source.read(2097153)
+    if not raw or len(raw) > 2097152:
+        raise HardwareError('device_watch_mountinfo_invalid')
+    return raw
+
+
+def _nodev_namespace(raw, path):
+    path = os.fsencode(path)
+    covering = []
+    nested = []
+    for line in raw.splitlines():
+        fields = line.split()
+        try:
+            separator = fields.index(b'-', 6)
+        except ValueError:
+            raise HardwareError('device_watch_mountinfo_invalid') from None
+        if separator + 4 != len(fields) or not fields[4].startswith(b'/'):
+            raise HardwareError('device_watch_mountinfo_invalid')
+        # mountinfo quotes spaces, tabs, newlines and backslashes as octal.
+        point = re.sub(rb'\\([0-7]{3})', lambda match: bytes([int(match[1], 8)]), fields[4])
+        if b'\x00' in point:
+            raise HardwareError('device_watch_mountinfo_invalid')
+        nodev = b'nodev' in fields[5].split(b',')
+        if point == b'/' or path == point or path.startswith(point + b'/'):
+            covering.append((len(point), nodev))
+        elif point.startswith(path + b'/'):
+            nested.append(nodev)
+    if not covering:
+        raise HardwareError('device_watch_mountinfo_unbound')
+    depth = max(length for length, nodev in covering)
+    return all(nodev for length, nodev in covering if length == depth) and all(nested)
+
+
 class OpenCollisionWatch:
     """Fresh event/inode checks; never a cached RF or grant authorization.
 
@@ -86,6 +127,7 @@ class OpenCollisionWatch:
         self.scan = opener_scan or _existing_openers
         self.paths, self.directories, self.watches, self.aliases = {}, {}, set(), set()
         self.watch_lines, self.watch_inodes, self.anchor_wd = None, {}, None
+        self.mountinfo = None
         try:
             if platform.system() == 'Linux':
                 self._start()
@@ -130,6 +172,7 @@ class OpenCollisionWatch:
             self.aliases.clear()
             self.watch_inodes.clear()
             self.watch_lines = None
+            self.mountinfo = None
 
     def _watch(self, path, info, mask, add):
         wd = add(self.fd, os.fsencode(path), mask | _IN_MASK_ADD)
@@ -148,6 +191,20 @@ class OpenCollisionWatch:
 
     def _inventory(self, path, add):
         info = path.stat()
+        if (path.parent == self.root and path.name in _NODEV_NAMESPACES
+                and (stat.S_ISCHR(self.device_stat.st_mode) or stat.S_ISBLK(self.device_stat.st_mode))):
+            raw = _mountinfo()
+            if _nodev_namespace(raw, path):
+                if self.mountinfo is not None and raw != self.mountinfo:
+                    raise HardwareError('device_watch_mountinfo_changed')
+                self.mountinfo = raw
+                # No child create/delete/attribute subscription here: these
+                # namespaces contain normal mutable IPC files. nodev prevents
+                # usable new special-file aliases; symlink opens still reach
+                # a watched target inode. Keep the boundary itself pinned.
+                self._watch(path, info, _SELF_INVALIDATION | _IN_ONLYDIR | _IN_DONT_FOLLOW, add)
+                self._inventory_nodev_aliases(path, add)
+                return
         self._watch(path, info, _DIRECTORY_EVENTS | _IN_ONLYDIR | _IN_DONT_FOLLOW, add)
         snapshot = _entries(path)
         self.directories[path] = snapshot
@@ -166,6 +223,23 @@ class OpenCollisionWatch:
                         info.st_mode & 0o170000) == (self.device_stat.st_mode & 0o170000):
                     self._watch(child, info, _DEVICE_EVENTS, add)
                     self.aliases.add(child)
+
+    def _inventory_nodev_aliases(self, path, add):
+        # Discover existing aliases even in the exempt subtree. Matching
+        # symlinks may point out of its nodev mount and must retain IN_OPEN.
+        for name, unused_inode, directory, symlink in _entries(path):
+            child = path / name
+            if directory:
+                self._inventory_nodev_aliases(child, add)
+                continue
+            try:
+                info = child.stat()
+            except FileNotFoundError:
+                continue
+            if info.st_rdev == self.device_stat.st_rdev and (
+                    stat.S_IFMT(info.st_mode) == stat.S_IFMT(self.device_stat.st_mode)):
+                self._watch(child, info, _DEVICE_EVENTS, add)
+                self.aliases.add(child)
 
     def _fdinfo_watch_lines(self, *, allow_removed=False):
         # Anonymous inotify fds can share the same fstat inode and flags. Bind
@@ -253,6 +327,8 @@ class OpenCollisionWatch:
                 return self._fail('device_watch_process_changed')
             if self.fd is None:
                 return not self.scan(self.device_stat) or self._fail('radio_open_collision')
+            if self.mountinfo is not None and _mountinfo() != self.mountinfo:
+                return self._fail('device_watch_mountinfo_changed')
             if not self._descriptor_current():
                 return self._fail('device_watch_fd_changed')
             if not self._events_current():

@@ -30,6 +30,7 @@ class SyntheticWatch(unittest.TestCase):
         self.watch.paths, self.watch.directories, self.watch.watches = {}, {}, {3}
         self.watch.device_stat = os.fstat(self.read)
         self.watch.scan = lambda info: []
+        self.watch.mountinfo = None
         self.watch.watch_lines = (b'synthetic descriptor-source fixture',)
         self.watch._fdinfo_watch_lines = lambda **kwargs: self.watch.watch_lines
 
@@ -100,6 +101,50 @@ class SyntheticWatch(unittest.TestCase):
         self.assertEqual(len(calls), 3)
         self.assertFalse(self.watch.current())
         self.assertEqual(len(calls), 3)
+
+
+class NodevMountBinding(unittest.TestCase):
+    def table(self, *, child_options=b'rw,nodev', nested=b''):
+        return (b'1 0 0:1 / / rw - ext4 root rw\n'
+                b'2 1 0:2 / /dev/shm ' + child_options + b' - tmpfs tmpfs rw\n' + nested)
+
+    def test_covering_mount_and_all_nested_mounts_must_be_nodev(self):
+        self.assertTrue(module._nodev_namespace(self.table(), Path('/dev/shm')))
+        self.assertTrue(module._nodev_namespace(self.table(), Path('/dev/shm/child')))
+        self.assertFalse(module._nodev_namespace(self.table(child_options=b'rw'), Path('/dev/shm')))
+        self.assertFalse(module._nodev_namespace(self.table(nested=
+            b'3 2 0:3 / /dev/shm/bind rw - tmpfs source rw\n'), Path('/dev/shm')))
+        self.assertTrue(module._nodev_namespace(self.table(nested=
+            b'3 2 0:3 / /dev/shm/bind rw,nodev - tmpfs source rw\n'), Path('/dev/shm')))
+
+    def test_mount_point_escaping_and_component_boundaries(self):
+        raw = self.table() + b'3 1 0:3 / /space\\040here rw,nodev - tmpfs source rw\n'
+        self.assertTrue(module._nodev_namespace(raw, Path('/space here/child')))
+        self.assertFalse(module._nodev_namespace(raw, Path('/dev/shm-other')))
+
+    def test_malformed_or_unbound_mountinfo_refuses(self):
+        for raw in (b'', b'bad', b'1 0 0:1 / / rw - ext4 root',
+                    b'1 0 0:1 / /other rw,nodev - tmpfs source rw\n'):
+            with self.subTest(raw=raw), self.assertRaises(HardwareError):
+                module._nodev_namespace(raw, Path('/dev/shm'))
+
+    def test_fresh_mount_change_and_read_fault_latch_refusal(self):
+        # Use the portable descriptor fixture: no mount operation is performed.
+        fixture = SyntheticWatch()
+        fixture.setUp()
+        try:
+            watch = fixture.watch
+            watch.mountinfo = self.table()
+            with mock.patch.object(module, '_mountinfo', return_value=self.table(child_options=b'rw')):
+                self.assertFalse(watch.current())
+            self.assertEqual(watch.failed, 'device_watch_mountinfo_changed')
+            watch.failed = None
+            with mock.patch.object(module, '_mountinfo', side_effect=OSError(errno.EIO, 'control')):
+                self.assertFalse(watch.current())
+            self.assertEqual(watch.failed, 'device_watch_probe_failed')
+            self.assertFalse(watch.current())
+        finally:
+            fixture.tearDown()
 
 
 @unittest.skipUnless(platform.system() == 'Linux', 'requires actual Linux inotify')
@@ -275,6 +320,104 @@ class LinuxWatch(unittest.TestCase):
         self.assertFalse(watch.current())
         with self.assertRaises(OSError):
             os.fstat(fd)
+
+
+@unittest.skipUnless(platform.system() == 'Linux', 'requires Linux nodev and inotify')
+class LinuxNodevNamespace(unittest.TestCase):
+    def setUp(self):
+        # These are disposable IPC files and /dev/null aliases; never a radio.
+        if not Path('/dev/shm').is_dir() or not module._nodev_namespace(module._mountinfo(), Path('/dev/shm')):
+            self.skipTest('requires nodev /dev/shm')
+        self.folder = tempfile.TemporaryDirectory(prefix='meshticulum-nodev-watch-', dir='/dev/shm')
+        self.root = Path(self.folder.name)
+        self.shm = self.root / 'shm'
+        self.shm.mkdir()
+        self.alias = self.root / 'device'
+        self.alias.symlink_to('/dev/null')
+        self.nested = self.shm / 'retained'
+        self.nested.mkdir()
+        self.nested_alias = self.nested / 'alias'
+        self.nested_alias.symlink_to('/dev/null')
+        self.watches = []
+        self.child = subprocess.Popen([sys.executable, '-u', '-c',
+            "import os,sys\nfor line in sys.stdin:\n fd=os.open(line.rstrip('\\n'),os.O_RDONLY); os.close(fd); print('opened',flush=True)"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    def tearDown(self):
+        if not hasattr(self, 'child'):
+            return
+        for watch in self.watches:
+            watch.close()
+        self.child.communicate(timeout=5)
+        self.assertEqual(self.child.returncode, 0)
+        self.folder.cleanup()
+
+    def watch(self):
+        watch = module.OpenCollisionWatch(Path('/dev/null').stat(), device_root=self.root,
+                                         opener_scan=lambda info: [])
+        self.watches.append(watch)
+        self.assertIsNotNone(watch.fd)
+        self.assertIsNotNone(watch.mountinfo)
+        self.assertNotIn(self.shm, watch.directories)
+        return watch
+
+    def child_open_close(self, path):
+        self.child.stdin.write(os.fsencode(path) + b'\n')
+        self.child.stdin.flush()
+        self.assertTrue(select.select([self.child.stdout], [], [], 5)[0])
+        self.assertEqual(self.child.stdout.readline(), b'opened\n')
+
+    def test_normal_shm_file_and_directory_churn_does_not_refuse(self):
+        watch = self.watch()
+        for index in range(5):
+            path = self.shm / ('.org.chromium.Chromium.' + str(index))
+            path.write_bytes(b'IPC fixture')
+            path.chmod(0o600)
+            path.unlink()
+            temporary = self.shm / ('temporary-' + str(index))
+            temporary.mkdir()
+            temporary.rmdir()
+            self.assertTrue(watch.current(), watch.failed)
+
+    def test_existing_nested_symlink_alias_open_is_still_latched(self):
+        watch = self.watch()
+        self.assertIn(self.nested_alias, watch.aliases)
+        self.child_open_close(self.nested_alias)
+        self.assertFalse(watch.current())
+        self.assertEqual(watch.failed, 'device_watch_event')
+        self.assertFalse(watch.current())
+
+    def test_new_symlink_alias_open_reaches_watched_device_inode(self):
+        watch = self.watch()
+        alias = self.shm / 'new-symlink'
+        alias.symlink_to('/dev/null')
+        self.child_open_close(alias)
+        alias.unlink()
+        self.assertFalse(watch.current())
+
+    def test_existing_alias_replacement_is_refused(self):
+        watch = self.watch()
+        self.nested_alias.unlink()
+        self.nested_alias.symlink_to('/dev/zero')
+        self.assertFalse(watch.current())
+        self.assertEqual(watch.failed, 'device_watch_path_changed')
+
+    def test_namespace_boundary_identity_change_is_refused(self):
+        watch = self.watch()
+        self.shm.chmod(0o700)
+        self.assertFalse(watch.current())
+
+    def test_nodev_prevents_opening_a_new_special_file_alias(self):
+        watch = self.watch()
+        alias = self.shm / 'special-file-alias'
+        try:
+            os.mknod(alias, 0o20600, Path('/dev/null').stat().st_rdev)
+        except PermissionError:
+            self.skipTest('mknod capability unavailable')
+        with self.assertRaises(PermissionError):
+            os.open(alias, os.O_RDONLY | os.O_NONBLOCK)
+        alias.unlink()
+        self.assertTrue(watch.current(), watch.failed)
 
 
 if __name__ == '__main__':
