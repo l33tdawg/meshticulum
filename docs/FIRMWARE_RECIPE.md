@@ -2,7 +2,9 @@
 
 This experimental recipe prepares and compiles Meshticulum's raw LoRa coprocessor from explicitly selected, checksum-pinned upstream inputs. It has no Lantern donor, home-directory toolchain default, SSH connection, upload or device command. Lantern owns fleet/deployment tools and native qualification; a build is not radio authority.
 
-**Validated scope:** two independent fresh preparations/builds of the corrected producer on one macOS arm64 host, with Python 3.12.8 and PlatformIO Core 6.1.19, completed both ESP32-S3 targets. Per target, the application binary, ELF, bootloader and partitions matched byte-for-byte; maps differed because they contain workspace paths. The [validation record](../provenance/FIRMWARE_RECIPE_VALIDATION.json) binds the final recipe/lock to runs 05/06 and preserves the first failed attempt. This is reproduction on that pinned host, not cross-host reproducibility, deployed-image equivalence, physical qualification or complete license closure. This isolated package candidate is `1.0.0a1`, with no firmware release implied.
+**Historical validated scope (runs 05/06):** two independent fresh preparations/builds of the corrected producer on one macOS arm64 host, with Python 3.12.8 and PlatformIO Core 6.1.19, completed both ESP32-S3 targets. Per target, the application binary, ELF, bootloader and partitions matched byte-for-byte; maps differed because they contain workspace paths. The [validation record](../provenance/FIRMWARE_RECIPE_VALIDATION.json) binds the final recipe/lock to runs 05/06 and preserves the first failed attempt. This is reproduction on that pinned host, not cross-host reproducibility, deployed-image equivalence, physical qualification or complete license closure. This isolated package candidate is `1.0.0a1`, with no firmware release implied.
+
+The later [MCU020 proof](../provenance/PUBLIC_MCU020_PROOF.json) records current application BIN/ELF reproduction and the selected SDK/source-build coverage review for candidate `673eb60`. Its retained Heltec installation check covers an application span; later runtime-tag continuity supplies no fresh full-device readback. It establishes no physical acceptance for Xiao or approval of optional prebuilt firmware.
 
 ## Pinned inputs and targets
 
@@ -27,7 +29,7 @@ The [`requirements-firmware.txt`](../firmware/meshticulum-bench/requirements-fir
 Run from the Meshticulum checkout, on the supported host. Choose your own archive, isolated output and CLI environment locations. The example uses local `build/` paths; the recipe does not search another workspace or the user's home for missing inputs.
 
 ```sh
-python3 -m venv build/firmware-cli
+python3.12 -m venv build/firmware-cli
 build/firmware-cli/bin/python -m pip install \
   -r firmware/meshticulum-bench/requirements-firmware.txt
 
