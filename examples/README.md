@@ -43,6 +43,30 @@ python3 -m venv .venv
 Use a pinned checkout and retain its revision. The example is a checkout file,
 not an installed console command. Package installation performs no device work.
 
+## Prepare the firmware identity offline
+
+The firmware build's `SOURCE.json` can contain a large source inventory. Make a
+compact identity file before passing it to the hardware commands, whose metadata
+reader accepts at most 64 KiB. Use the independently checked SHA-256 of the full
+manifest:
+
+```sh
+mkdir -m 700 firmware-identity
+.venv/bin/python examples/radio_file.py firmware-identity \
+  --firmware-source SOURCE.json --firmware-source-sha256 "$SOURCE_SHA256" \
+  --output firmware-identity/identity.json
+sha256sum firmware-identity/identity.json
+```
+
+The offline command accepts a regular manifest up to 8 MiB, checks its supplied
+hash and application identity, and creates the output once. It retains the
+original manifest hash as `source_manifest_sha256`. It does not verify a build,
+read a device or establish that the firmware is installed. Keep the full
+manifest and build evidence alongside it. In the commands below, set
+`FIRMWARE_IDENTITY` to this compact file and `FIRMWARE_IDENTITY_SHA256` to its
+SHA-256 (also returned as `firmware_source_sha256` by the command). The output
+must be a new file in an owner-only `0700` directory.
+
 ## Prepare the file and approve the sessions
 
 The manifest format can describe up to 1 MiB; that is **not** the runnable
@@ -125,7 +149,8 @@ sudo .venv/bin/python examples/radio_file.py transfer \
   --grant-sha256 "$RECEIVER_GRANT_SHA256" \
   --manifest file.json --manifest-sha256 "$MANIFEST_SHA256" \
   --admission admission.json --admission-sha256 "$ADMISSION_SHA256" \
-  --firmware-source SOURCE.json --firmware-source-sha256 "$SOURCE_SHA256" \
+  --firmware-source "$FIRMWARE_IDENTITY" \
+  --firmware-source-sha256 "$FIRMWARE_IDENTITY_SHA256" \
   --file-issued-epoch-us "$ORIGINAL_ISSUED_US" \
   --file-expires-epoch-us "$ORIGINAL_EXPIRES_US" \
   --chunk 0 --chunks "$PRIVATE_CHUNK_CACHE"
@@ -139,7 +164,8 @@ sudo .venv/bin/python examples/radio_file.py transfer \
   --grant-sha256 "$SENDER_GRANT_SHA256" --input input.bin \
   --manifest file.json --manifest-sha256 "$MANIFEST_SHA256" \
   --admission admission.json --admission-sha256 "$ADMISSION_SHA256" \
-  --firmware-source SOURCE.json --firmware-source-sha256 "$SOURCE_SHA256" \
+  --firmware-source "$FIRMWARE_IDENTITY" \
+  --firmware-source-sha256 "$FIRMWARE_IDENTITY_SHA256" \
   --file-issued-epoch-us "$ORIGINAL_ISSUED_US" \
   --file-expires-epoch-us "$ORIGINAL_EXPIRES_US" \
   --chunk 0 --chunks "$PRIVATE_CHUNK_CACHE"
