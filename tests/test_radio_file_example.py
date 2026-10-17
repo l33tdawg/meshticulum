@@ -377,6 +377,9 @@ def test_partial_arm_failure_contains_then_retires_and_closes(tmp_path, monkeypa
         def current(self):
             return True  # Explicit model ownership; never the production callback.
 
+        def close(self):
+            pass
+
     class Worker:
         def __init__(self, channel):
             pass

@@ -23,7 +23,8 @@ from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.gfsk250_profile import Gfsk250Profile
 from meshticulum.bench.hat_worker import Gfsk250HATWorker, journal_binding as hat_binding
-from meshticulum.bench.linux_hat import LinuxHAT, _existing_openers
+from meshticulum.bench.linux_hat import LinuxHAT
+from meshticulum.bench.open_watch import OpenCollisionWatch
 from meshticulum.bench.objects import VerifiedChunks
 from meshticulum.bench.serial_port import ExclusiveSerial, usb_identity
 from meshticulum.bench.serial_protocol import Frame, Message, Gfsk250Status
@@ -259,7 +260,11 @@ class FileWindow:
 
 
 class HeldHardware:
-    """A fresh OS ownership probe for an already exclusive public driver."""
+    """Fresh cooperative OS ownership checks for an already exclusive driver.
+
+    The SDK process must not fork or pass its held device descriptors. Host
+    root is trusted; this probe does not isolate the radio from host root.
+    """
     def __init__(self, transport, *, by_id=None, usb_serial=None):
         self.transport, self.by_id, self.usb_serial = transport, by_id, usb_serial
         self.boot, self.pid = host_boot(), os.getpid()
@@ -267,6 +272,10 @@ class HeldHardware:
             'spi_fd', 'chip_fd', 'lines_fd', 'lock_fd')
         self.fds = tuple((name, getattr(transport, name), os.fstat(getattr(transport, name)))
                          for name in names)
+        self.opens = OpenCollisionWatch(self.fds[0][2])
+
+    def close(self):
+        self.opens.close()
 
     def current(self):
         try:
@@ -281,14 +290,14 @@ class HeldHardware:
                         original.st_mode, original.st_uid):
                     return False
             radio = self.fds[0][2]
-            if _existing_openers(radio):
-                return False
             if self.by_id is not None:
                 node = Path(self.by_id).resolve(strict=True)
-                return (node.stat().st_rdev == radio.st_rdev
-                        and usb_identity(node.name) == ('303a', '1001', self.usb_serial))
-            return (Path('/dev/spidev0.0').stat().st_rdev == radio.st_rdev
-                    and self.transport.boot_id == self.boot)
+                bound = (node.stat().st_rdev == radio.st_rdev
+                         and usb_identity(node.name) == ('303a', '1001', self.usb_serial))
+            else:
+                bound = (Path('/dev/spidev0.0').stat().st_rdev == radio.st_rdev
+                         and self.transport.boot_id == self.boot)
+            return bound and self.opens.current()
         except (OSError, ValueError):
             return False
 
@@ -380,6 +389,7 @@ def run_object(args, raw, admission, version, payload, window, factory):
     try:
         owner = HeldHardware(transport, by_id=args.device if args.interface == 'usb' else None,
                              usb_serial=args.usb_serial)
+        cleanup.append(owner.close)
         authority = RunAuthority(args.grant_directory, expected_unit=args.unit,
             host_boot_id=host_boot(), clock=clock, owner_probe=lambda: owner.current() and window.current(), radio_admission=admission)
         cleanup.append(authority.close)

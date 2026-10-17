@@ -32,6 +32,17 @@ exclusive ownership and refuse another opener. Arrange that ownership before
 running; the example neither stops services nor takes over an occupied device.
 The build recipe's macOS-arm64 host is separate from these Linux runtime hosts.
 
+While the SDK holds the device, its process must not fork or pass the device
+file descriptors to another process. Keep device aliases inside `/dev` and do
+not change the device filesystem during a transfer. Host root remains trusted;
+these cooperative ownership checks do not isolate hardware from host root.
+On Linux, the SDK installs an open-event watch before its initial full procfs
+collision scan. It watches existing `/dev` aliases and checks the retained
+nodes and directory inventories on every ownership probe. An open, changed
+node, lost watch, queue overflow or probe error latches a refusal. The watch is
+closed with the held transport. Kernels without inotify keep a fresh full
+procfs scan on every probe. Neither path caches grant or deadline decisions.
+
 Install the checked-out Python package on each host:
 
 ```sh
