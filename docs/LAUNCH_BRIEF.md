@@ -12,13 +12,13 @@ Its reusable core covers reliable flow, cryptography, drivers and verified publi
 
 ## Facts to use
 
-- The latest accepted finite radio response delivered 16,356 verified resource bytes at **1.071 kB/s** from sender start to final flow ACK, with zero DATA retries or duplicates. The full request-to-publisher-verification interval was **80.731 seconds**, or **202.6 B/s**.
-- **2.61×** is the numerical ratio to the **410 B/s** MeshCore test published by Dhillon in [issue #3404](https://github.com/meshcore-dev/MeshCore/issues/3404). Both state SF7/BW500, but use different workloads, devices and timing boundaries. Phrase it as a scoped comparison between published observations.
+- The public SDK completed **two fresh 100,000-byte files at 1.95–2.03 kB/s including sender startup** on 17 October. Each file crossed five signed parts over a direct GFSK250 link about one metre long; publisher and whole-file verification passed. The runs took **49.256 and 51.303 seconds through final authenticated receipt**, or **53.879 and 56.957 seconds through endpoint closure** (**1.76–1.86 kB/s**). All ten receiver confirmations were accepted, with zero and one DATA retransmissions respectively and zero new drops. A separate fresh 23,900-byte file reached **2.535 kB/s** through authenticated receipt. This is an initial two-file repeat; use [the measurement report](RADIO_SDK_MEASUREMENTS.md) for the exact source, timing and limits.
+- For the earlier 16,356-byte LoRa response at 1,071.3 B/s, **2.61×** is the numerical ratio to the **410 B/s** MeshCore test published by Dhillon in [issue #3404](https://github.com/meshcore-dev/MeshCore/issues/3404). Both state SF7/BW500, but use different workloads, devices and timing boundaries. Phrase it as a scoped comparison between published observations.
 - Thirty earlier radio samples recorded about **1.2 kB/s median** useful encrypted goodput. That experiment used an earlier runtime; it is separate from the latest native service samples.
 - Finite public campaigns have demonstrated LoRa/IP delivery, verified-piece retention through IP loss, fresh LoRa resume and return to a locally measured faster IP path.
 - Compact private envelopes preserve the existing encrypted and signed content while removing text-carrier overhead. Public resources use publisher-signed manifests and content hashes.
 
-Link numerical claims to [Performance](PERFORMANCE.md) and security claims to [Comparison](COMPARISON.md). Sustained whole-file throughput, successful 100 kB/1 MB radio bundles, native private forward secrecy, autonomous routing and better overall speed/security than both upstream projects remain development goals. Reticulum's cited LoRa bitrate is in **kb/s**, not **kB/s**, and is not a comparable encrypted application result.
+Link numerical claims to [Performance](PERFORMANCE.md) and security claims to [Comparison](COMPARISON.md). Two fresh 100 kB files have completed; sustained-capacity evidence, 1 MB radio bundles, native private forward secrecy, autonomous routing and better overall speed/security than both upstream projects remain development goals. Reticulum's cited LoRa bitrate is in **kb/s**, not **kB/s**, and is not a comparable encrypted application result.
 
 ## A short announcement draft
 

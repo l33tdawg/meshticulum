@@ -1,0 +1,154 @@
+{
+  "schema": "meshticulum.published-sdk-file-samples.v1",
+  "date": "2026-10-17",
+  "core_commit": "da247a1bb74601973f0bb72f51c268a412714719",
+  "modulation": "GFSK",
+  "modem_bit_rate_bps": 250000,
+  "sender_hardware": "Orange Pi 5 Plus SX1262 HAT",
+  "receiver_hardware": "Heltec V4 SX1262 MCU",
+  "topology": "direct single radio link",
+  "approximate_separation_metres": 1,
+  "distance_method": "owner estimate; near-bench placement",
+  "measured_range_metres": null,
+  "measured_RF_airtime_us": null,
+  "measured_energy_joules": null,
+  "measured_eirp_dbm": null,
+  "native_private_qualified": false,
+  "sustained_goodput_qualified": false,
+  "alpha_accepted": false,
+  "samples": [
+    {
+      "useful_decoded_bytes": 23900,
+      "part_useful_bytes": [
+        23900
+      ],
+      "fresh_files_measured": 1,
+      "receiver_retirement_mode": "default-20-second-receiver-grace",
+      "receiver_confirmations_accepted": 0,
+      "default_receiver_grace_us": 20000000,
+      "publisher_and_whole_file_independently_verified": true,
+      "within_original_file_window": true,
+      "endpoint_children": {
+        "total": 2,
+        "exit_zero": 2,
+        "forced_cleanup": 0
+      },
+      "services_and_boot_unchanged": true,
+      "data_retransmissions": 1,
+      "new_receiver_drops": 0,
+      "preexisting_cached_parts": 0,
+      "boundaries": {
+        "first_sender_startup_to_final_authenticated_receipt": {
+          "elapsed_us": 9429571,
+          "useful_decoded_Bps": 2534.579780988976
+        },
+        "first_DATA_worker_call_to_final_authenticated_receipt": {
+          "elapsed_us": 8168009,
+          "useful_decoded_Bps": 2926.0496652244137
+        },
+        "scope_issue_to_both_endpoints_closed": {
+          "elapsed_us": 34064723,
+          "useful_decoded_Bps": 701.6055876925816
+        }
+      },
+      "source_result_sha256": "0e993964ab94bfccdf7fac3f8095b81ab33af823e83f58a4d1f12b43a2ef4f15",
+      "verified_summary_sha256": "260be65cfc3a29760bb341e876b5ffa8b053d7e97244cd6272ca35ae24084aec",
+      "sample_id": "23900-default-grace",
+      "useful_sha256": "2258214053d5d730f6f2e575bba1b8ae46249c43b84250fc8a96939f0f848aa0"
+    },
+    {
+      "useful_decoded_bytes": 100000,
+      "part_useful_bytes": [
+        23900,
+        23900,
+        23900,
+        23900,
+        4400
+      ],
+      "fresh_files_measured": 1,
+      "receiver_retirement_mode": "authenticated-sender-receipt-confirmation",
+      "receiver_confirmations_accepted": 5,
+      "default_receiver_grace_us": 20000000,
+      "publisher_and_whole_file_independently_verified": true,
+      "within_original_file_window": true,
+      "endpoint_children": {
+        "total": 10,
+        "exit_zero": 10,
+        "forced_cleanup": 0
+      },
+      "services_and_boot_unchanged": true,
+      "data_retransmissions": 0,
+      "new_receiver_drops": 0,
+      "preexisting_cached_parts": 0,
+      "boundaries": {
+        "first_sender_startup_to_final_authenticated_receipt": {
+          "elapsed_us": 49255870,
+          "useful_decoded_Bps": 2030.2148759122517
+        },
+        "first_DATA_worker_call_to_final_authenticated_receipt": {
+          "elapsed_us": 48154962,
+          "useful_decoded_Bps": 2076.6291955541365
+        },
+        "scope_issue_to_both_endpoints_closed": {
+          "elapsed_us": 53879126,
+          "useful_decoded_Bps": 1856.0063502143669
+        }
+      },
+      "source_result_sha256": "cd11867f50aa4a915dea25542de87f2e423c321233435bcc152814296fc39c0e",
+      "verified_summary_sha256": "878d2d13136a7977b6607030a7469d5c05f2be52031d9e215d2697e0d950496c",
+      "sample_id": "100000-confirmed-1",
+      "useful_sha256": "00a7af7d4294795abb9701d5bd0dd0a1f5ea4039e1e85d840d1626fc3782b9b0"
+    },
+    {
+      "useful_decoded_bytes": 100000,
+      "part_useful_bytes": [
+        23900,
+        23900,
+        23900,
+        23900,
+        4400
+      ],
+      "fresh_files_measured": 1,
+      "receiver_retirement_mode": "authenticated-sender-receipt-confirmation",
+      "receiver_confirmations_accepted": 5,
+      "default_receiver_grace_us": 20000000,
+      "publisher_and_whole_file_independently_verified": true,
+      "within_original_file_window": true,
+      "endpoint_children": {
+        "total": 10,
+        "exit_zero": 10,
+        "forced_cleanup": 0
+      },
+      "services_and_boot_unchanged": true,
+      "data_retransmissions": 1,
+      "new_receiver_drops": 0,
+      "preexisting_cached_parts": 0,
+      "boundaries": {
+        "first_sender_startup_to_final_authenticated_receipt": {
+          "elapsed_us": 51302845,
+          "useful_decoded_Bps": 1949.209639348461
+        },
+        "first_DATA_worker_call_to_final_authenticated_receipt": {
+          "elapsed_us": 50360284,
+          "useful_decoded_Bps": 1985.6917407376018
+        },
+        "scope_issue_to_both_endpoints_closed": {
+          "elapsed_us": 56957045,
+          "useful_decoded_Bps": 1755.7090611003432
+        }
+      },
+      "source_result_sha256": "4eeec34fdebf7543d02b9a4a841a89ecc1ce558a39831737ad92df46384afd9d",
+      "verified_summary_sha256": "9bc47541da2deb1d409fa6ee8084e1b35ef7b65a57a1f6dfa750e95a17734c5d",
+      "sample_id": "100000-confirmed-2",
+      "useful_sha256": "cb2bd8754a20636a34929be540940a3d64211ec1d0feccff30366a2e3ac08515"
+    }
+  ],
+  "limitations": [
+    "Two fresh 100 kB files and one fresh 23,900-byte file; an initial repeat, not a sustained-capacity or completion distribution.",
+    "GFSK250 near-bench results; not LoRa modulation, a long-range test or a multihop measurement.",
+    "100 kB timing spans all five sequential parts and coordination gaps, not a sum of selected active intervals.",
+    "Default 20-second receiver grace is included in 23,900-byte scope-to-closure timing, but excluded from the sender-receipt boundary.",
+    "Original operator captures remain in the lab; these allowlisted values and capture hashes do not independently attest hardware.",
+    "No firmware flash during these samples, new native/private qualification, upstream ranking or alpha acceptance is claimed."
+  ]
+}

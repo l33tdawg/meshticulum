@@ -3,8 +3,11 @@
 [`radio_file.py`](radio_file.py) composes the existing public SDK. It uses
 ChaCha20-Poly1305 DATA and ACK frames, durable nonce/replay state, durable attempt
 reservations, bounded reliable flow, and verified file chunks. It imports no
-Lantern or SAGE application code. This is an experimental source example; its
-model controls do not establish physical delivery or useful throughput.
+Lantern or SAGE application code. The [17 October public SDK measurements](../docs/RADIO_SDK_MEASUREMENTS.md)
+record a fresh 23,900-byte file and two fresh five-part 100,000-byte files on the direct
+GFSK250 HAT-to-MCU path at about one metre. Repetition, installation and recovery
+on other setups, field range and release qualification remain open. Model
+controls alone do not establish physical delivery or useful throughput.
 
 For the 100 kB HAT-sender/MCU-receiver starter, prefer the existing
 [signed byte-bundle/MB1 path](BUNDLE.md): five parts instead of seven, using the

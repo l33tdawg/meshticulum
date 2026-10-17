@@ -6,7 +6,11 @@ frames, durable journals and `byte_bundle.Receiver`. Its baseline path needs no
 firmware, RF cap, retry limit or frozen-flow change. The hardware and ownership
 requirements are the same as the [generic example](README.md): the verified
 Orange Pi 5 Plus SX1262 HAT sends DATA; a Heltec V4 receives and sends ACKs.
-This is a source-tested candidate, not a physical deployment or throughput result.
+On 17 October, this public SDK path completed **two fresh five-part 100,000-byte
+files at 2,030.2 and 1,949.2 useful B/s including sender startup**, with independent
+publisher and whole-file verification. Both endpoints used receipt confirmation
+on a direct GFSK250 link about one metre long. [The measurement report](../docs/RADIO_SDK_MEASUREMENTS.md)
+records the exact source and timing; broader repetition and deployment remain open.
 
 ## Why five transfers
 
@@ -49,8 +53,10 @@ An uncertain write or failed cleanup remains a command failure.
 Successful confirmations avoid the five sequential waits in the normal case.
 The preflight still reserves all remaining graces so that loss retains the
 original fallback. Always measure actual DATA/ACK delivery, verified-file
-availability and complete command closure separately. This source-tested
-adapter is not a physical throughput result.
+availability and complete command closure separately. In the two recorded 100 kB
+samples, all ten receiver confirmations were accepted. Both endpoints closed
+in **53.879 and 56.957 seconds from scope issue**, or **1,856.0 and 1,755.7 useful B/s**.
+This initial repeat does not establish a capacity distribution or a guarantee for another setup.
 
 ## Build and authenticate the public bundle offline
 

@@ -44,13 +44,22 @@ loss/LoRa-resume/measured-IP-return campaign. The latter independently verified
 four 977-byte pieces under one unchanged expiry; see the [exact execution pins
 and scope](docs/IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return).
 These service results do not establish sustained capacity or matched upstream
-performance. Historical RF medians are about **1.2 kB/s** useful payload;
-**1.5 kB/s** remains a target. See [performance](docs/PERFORMANCE.md).
+performance. Historical LoRa RF medians are about **1.2 kB/s** useful payload;
+they retain their original runtime and conditions. See [performance](docs/PERFORMANCE.md).
+
+On 17 October, the public SDK at `da247a1bb74601973f0bb72f51c268a412714719`
+completed two fresh five-part 100 kB files at **2,030.2 and 1,949.2 useful B/s
+including sender startup**, or **1,856.0 and 1,755.7 B/s through endpoint closure**.
+A separate fresh 23,900-byte file reached **2,534.6 B/s** through authenticated
+receipt. These are near-bench GFSK250 samples at about one metre. This initial
+repeat leaves sustained capacity, field range and alpha acceptance open. See
+[the exact measurement scope](docs/RADIO_SDK_MEASUREMENTS.md).
 
 The explicit firmware recipe reproduced both target outputs in fresh workspaces
 on one pinned build host. Full source/deployed-image correspondence, exact
-artifact notices and source/relinking closure, clean public history and release
-review remain open. Private native owner/consent and transport still require
+artifact notices and source/relinking closure, current release-tree review and
+release approval remain open. Retained extraction history is disclosed in
+[repository history](docs/REPOSITORY_HISTORY.md). Private native owner/consent and transport still require
 qualification. This draft represents no public alpha or production activation;
 MeshCore/Reticulum wire interoperability and overall speed/security superiority are unsupported. The competitive goal is faster useful transfers and stronger security than both; comparison uses [published figures and their conditions](docs/PERFORMANCE.md#comparison-with-published-figures), without requiring counterpart benchmark campaigns.
 

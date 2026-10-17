@@ -2,9 +2,11 @@
 
 The project preview provides reusable Python libraries for authenticated transport, bounded resource exchange and offline encrypted envelopes. You can explore signed public resources without a radio, Lantern or the SAGE SDK. Native deployment and protected SAGE integration belong to the separate [Lantern repository](https://github.com/l33tdawg/sage-lantern).
 
+The [public radio examples](../examples/README.md) now have three finite GFSK near-bench file measurements, including two fresh five-part 100 kB bundles. [The report](RADIO_SDK_MEASUREMENTS.md) gives the exact source, rates and remaining qualification limits. The offline walkthrough below has its own scope.
+
 ## Install from the checkout
 
-Use Python **3.11 or later**. The current source package version is **0.1.0**, a project preview; a **1.0.0-alpha** release has not been published.
+Use Python **3.11 or later**. The current source package version is **1.0.0a1**, an unreleased alpha candidate; a **1.0.0-alpha** release has not been published.
 
 ```sh
 git clone https://github.com/l33tdawg/meshticulum.git

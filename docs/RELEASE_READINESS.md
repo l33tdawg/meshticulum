@@ -1,6 +1,8 @@
 # Prospective 1.0.0-alpha readiness
 
-**Status on 2026-10-15: public experimental project; `1.0.0-alpha` remains unreleased.** The source was published on 2026-10-11 with its retained development history. [Repository history](https://github.com/l33tdawg/meshticulum/blob/main/docs/REPOSITORY_HISTORY.md) explains that separation. This checkout uses Python version `1.0.0a1`; version metadata and public source availability do not establish alpha acceptance. Exact candidate source/tests/artifacts and the paired Lantern dependency require their own records.
+**Status on 2026-10-17: public experimental project; `1.0.0-alpha` remains unreleased.** The source was published on 2026-10-11 with its retained development history. [Repository history](https://github.com/l33tdawg/meshticulum/blob/main/docs/REPOSITORY_HISTORY.md) explains that separation. This checkout uses Python version `1.0.0a1`; version metadata and public source availability do not establish alpha acceptance. Exact candidate source/tests/artifacts and the paired Lantern dependency require their own records.
+
+The [17 October public SDK radio samples](RADIO_SDK_MEASUREMENTS.md) completed two fresh five-part 100,000-byte files at **2,030.2 and 1,949.2 useful B/s**, including sender startup through the final authenticated receipt. Full scope-to-closure rates were **1,856.0 and 1,755.7 B/s**. All ten receiver confirmations were accepted and all twenty endpoint children exited successfully; the files had zero and one DATA retransmissions, with zero new receiver drops. A separate fresh 23,900-byte file reached **2,534.6 B/s** through receipt. All used near-bench GFSK250 at approximately one metre. This initial repeat does not establish sustained capacity, wider deployment, alpha acceptance or new native/private qualification. The inherited gates below remain open.
 
 ## What this alpha would mean
 
