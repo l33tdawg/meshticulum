@@ -48,16 +48,17 @@ performance. Historical LoRa RF medians are about **1.2 kB/s** useful payload;
 they retain their original runtime and conditions. See [performance](docs/PERFORMANCE.md).
 
 On 17 October, the public SDK at `da247a1bb74601973f0bb72f51c268a412714719`
-completed two fresh five-part 100 kB files at **2,030.2 and 1,949.2 useful B/s
-including sender startup**, or **1,856.0 and 1,755.7 B/s through endpoint closure**.
-A separate fresh 23,900-byte file reached **2,534.6 B/s** through authenticated
+completed two fresh five-part 100 kB files at **2.03 and 1.95 kB/s
+(16.24 and 15.59 kbit/s) including sender startup**, or **1.86 and 1.76 kB/s
+(14.85 and 14.05 kbit/s) through endpoint closure**.
+A separate fresh 23,900-byte file reached **2.53 kB/s (20.28 kbit/s)** through authenticated
 receipt. These are near-bench GFSK250 samples at about one metre. This initial
 repeat does not establish sustained capacity or field range. See
 [the exact measurement scope](docs/RADIO_SDK_MEASUREMENTS.md).
 
 A separate installed-wheel check at `673eb60` completed a fresh 100 kB file
-at **1,739.9 B/s including sender startup and a five-second pause between verified
-parts**, or **1,613.3 B/s through endpoint closure**. Both normal virtual environments
+at **1.74 kB/s (13.92 kbit/s) including sender startup and a five-second pause between verified
+parts**, or **1.61 kB/s (12.91 kbit/s) through endpoint closure**. Both normal virtual environments
 matched all 67 runtime files; all five confirmations and all ten child exits passed.
 The [installed-SDK record](provenance/PUBLIC_INSTALLED_SDK_PROOF.json) retains the
 earlier incomplete installed trial and exact scope.
