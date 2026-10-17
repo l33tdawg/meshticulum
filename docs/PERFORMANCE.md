@@ -1,8 +1,10 @@
 # Performance and measurement
 
-The latest recorded GFSK larger-file test completed **100,000 verified bytes**, with **1,185.6 B/s during active DATA** and **945.7 B/s including sender startup**. An earlier LoRa public reply delivered **16,356 verified resource bytes at 1.071 kB/s**, measured from sender start through reliable-flow acknowledgement. An earlier, separate encrypted bench recorded **30 RF transfers** with directional medians around **1.2 kB/s**. The alpha floor is sustained useful encrypted delivery **above 1,000 B/s including sender startup**, with reliable completion and deployable SDK/firmware. The broader 1–1.5 kB/s goal and optional later 4–5 kB/s stretch remain in the [roadmap](ROADMAP.md). Sustained qualification remains open.
+The latest public SDK radio samples completed **two fresh 100,000-byte files at 2,030.2 and 1,949.2 B/s including sender startup**, plus a **23,900-byte file at 2,534.6 B/s**. They used **GFSK at 250 kb/s**, on a direct HAT-to-MCU link about one metre apart. Both 100 kB intervals include all five sequential parts and coordination gaps. Scope issue through endpoint closure reached **1,856.0 and 1,755.7 B/s**. [The 17 October report](RADIO_SDK_MEASUREMENTS.md) gives the exact source, elapsed boundaries, confirmations and sanitized record.
 
-This page separates the earlier distribution, **seven accepted finite LoRa public samples** and the later GFSK file campaign. Source controls, loopback runs and prepared larger-bundle fixtures have separate evidence boundaries. Publishing the project does not close the [alpha release gates](RELEASE_READINESS.md).
+These finite samples exceed the **1,000 B/s startup-inclusive alpha floor for that path**. A sustained-throughput distribution, broader repetition, deployable artifact review and the remaining [alpha release gates](RELEASE_READINESS.md) are still open. The optional later 4–5 kB/s stretch remains in the [roadmap](ROADMAP.md).
+
+This page retains the earlier 30-sample LoRa distribution, seven finite native LoRa public samples and the 15 October GFSK campaign at their original source pins and timing boundaries. The new GFSK measurements are separate from the LoRa evidence and upstream comparison below.
 
 ## Retained radio results
 
@@ -61,7 +63,7 @@ The DATA interval includes host work, reverse ACKs and retries. Each component i
 
 All ten radio links completed and disarmed, twenty child jobs retired and fifty management RPC clients closed successfully within the original whole and phase windows. The [sanitized measurement record](../benchmarks/2026-10-15-gfsk250-100k/result.json) retains exact source/runtime/firmware pins, part counts, timing and the original lab-result hash. The original operator capture stays in the lab; this published transcription does not independently attest the hardware.
 
-**The startup-inclusive result is still below the 1,000 B/s alpha floor.** This completed larger-file test needs repetition and further improvement before sustained-goodput qualification. The public CLI example also needs its own physical check. Later TCP scheduling fixes and passing source tests supply no new radio result. Distance, measured RF airtime, energy and EIRP remain unavailable; broader native/private and firmware/source/notice gates remain open.
+**This historical startup-inclusive result was below the 1,000 B/s alpha floor.** The [17 October public SDK samples](RADIO_SDK_MEASUREMENTS.md) later exceeded that floor under separate near-bench GFSK conditions. They do not rewrite this earlier campaign or establish sustained qualification. Distance for this 15 October run, measured RF airtime, energy and EIRP remain unavailable; broader native/private and firmware/source/notice gates remain open.
 
 ## Earlier bench conditions: 2026-10-09
 
@@ -146,7 +148,7 @@ The recorded finite public campaigns exercised IP forwarding and separate origin
 
 ## Reproduce the published figure and arithmetic
 
-The published JSON contains each sample's payload size, sender interval, goodput, retries and matching packet counts. Check the arithmetic and per-direction summaries with:
+The earlier radio JSON contains each sample's payload size, sender interval, goodput, retries and matching packet counts. The new [public SDK file record](../benchmarks/2026-10-17-public-sdk/results.json) keeps its own whole-file boundaries and conditions. Check both reports with:
 
 ```sh
 python tools/verify_benchmark_report.py

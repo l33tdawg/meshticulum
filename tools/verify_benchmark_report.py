@@ -57,11 +57,72 @@ def verify(record):
         require(record[field] is None,'missing measurement invented: '+field)
 
 
+
+def verify_sdk_files(record):
+    require(record['schema']=='meshticulum.published-sdk-file-samples.v1','unsupported SDK report')
+    require(re.fullmatch('[0-9a-f]{40}',record['core_commit']) is not None,'invalid source pin')
+    require(record['modulation']=='GFSK' and record['modem_bit_rate_bps']==250000,'wrong modulation scope')
+    require(record['configured_profile']=={
+        'class':'Gfsk250Profile','frequency_hz':921375000,'chip_power_dbm':0,
+        'bit_rate_bps':250000,'deviation_hz':62500,'rx_bandwidth_hz':467000,
+        'preamble_bits':32},'tested profile mismatch')
+    require(record['scope_to_closure_includes']==['grant delivery','endpoint startup','coordination','verification','endpoint cleanup']
+            and record['scope_to_closure_excludes']==['offline file generation','signing','build','staging'],
+            'scope-to-closure timing scope mismatch')
+    for field in ('measured_range_metres','measured_RF_airtime_us','measured_energy_joules','measured_eirp_dbm'):
+        require(record[field] is None,'missing measurement invented: '+field)
+    for field in ('native_private_qualified','sustained_goodput_qualified','alpha_accepted'):
+        require(record[field] is False,'finite samples relabeled as qualification: '+field)
+    seen_ids=set();seen_files=set()
+    boundaries=('first_sender_startup_to_final_authenticated_receipt',
+                'first_DATA_worker_call_to_final_authenticated_receipt',
+                'scope_issue_to_both_endpoints_closed')
+    require(bool(record['samples']),'empty SDK samples')
+    for row in record['samples']:
+        require(row['sample_id'] not in seen_ids,'duplicate sample')
+        seen_ids.add(row['sample_id'])
+        require(row['useful_sha256'] not in seen_files,'fresh input reused')
+        seen_files.add(row['useful_sha256'])
+        require(row['fresh_files_measured']==1 and row['preexisting_cached_parts']==0,'fresh-file denominator mismatch')
+        parts=row['part_useful_bytes'];size=row['useful_decoded_bytes']
+        require(type(size) is int and size>0 and parts and all(type(x) is int and 0<x<=23900 for x in parts),'invalid file/part size')
+        require(sum(parts)==size,'file/part length mismatch')
+        require(row['publisher_and_whole_file_independently_verified'] is True and row['within_original_file_window'] is True,'missing verified completion')
+        children=row['endpoint_children']
+        require(children['total']==children['exit_zero']==2*len(parts) and children['forced_cleanup']==0,'endpoint completion mismatch')
+        require(row['services_and_boot_unchanged'] is True,'service/boot state changed')
+        for field in ('data_retransmissions','new_receiver_drops'):
+            require(type(row[field]) is int and row[field]>=0,'invalid '+field)
+        require(row['default_receiver_grace_us']==20000000,'changed fallback grace')
+        mode=row['receiver_retirement_mode']
+        require(mode in ('default-20-second-receiver-grace','authenticated-sender-receipt-confirmation'),'unknown retirement mode')
+        require(row['receiver_confirmations_accepted']==(len(parts) if mode=='authenticated-sender-receipt-confirmation' else 0),'confirmation count mismatch')
+        require(set(row['boundaries'])==set(boundaries),'timing boundary mismatch')
+        for interval in row['boundaries'].values():
+            elapsed=interval['elapsed_us']
+            require(type(elapsed) is int and elapsed>0,'invalid elapsed interval')
+            require(close(interval['useful_decoded_Bps'],size*1000000/elapsed),'SDK goodput arithmetic mismatch')
+        intervals=row['boundaries']
+        require(intervals[boundaries[1]]['elapsed_us']<=intervals[boundaries[0]]['elapsed_us']<=intervals[boundaries[2]]['elapsed_us'],'inverted timing boundaries')
+        for field in ('useful_sha256','source_result_sha256','verified_summary_sha256'):
+            require(re.fullmatch('[0-9a-f]{64}',row[field]) is not None,'invalid '+field)
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('report',nargs='?',type=Path,default=Path(__file__).resolve().parents[1]/'benchmarks/2026-10-09-radio/radio-results.json')
-    args=parser.parse_args();verify(json.loads(args.report.read_text()))
-    print('Verified 30 unique RF samples, separate directional distributions and 1 retained setup failure. Missing metrics remain null.')
+    parser.add_argument('report',nargs='?',type=Path)
+    args=parser.parse_args()
+    root=Path(__file__).resolve().parents[1]
+    paths=[args.report] if args.report else [root/'benchmarks/2026-10-09-radio/radio-results.json',
+                                           root/'benchmarks/2026-10-17-public-sdk/results.json']
+    for path in paths:
+        record=json.loads(path.read_text())
+        if record['schema']=='meshticulum.published-sdk-file-samples.v1':
+            verify_sdk_files(record)
+            print('Verified '+str(len(record['samples']))+' distinct fresh SDK files, part/confirmation/endpoint counts and all whole-file timing arithmetic. Qualification remains open.')
+        else:
+            verify(record)
+            print('Verified 30 unique RF samples, separate directional distributions and 1 retained setup failure. Missing metrics remain null.')
 
 
 if __name__=='__main__':main()

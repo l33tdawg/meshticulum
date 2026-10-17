@@ -3,8 +3,11 @@
 [`radio_file.py`](radio_file.py) composes the existing public SDK. It uses
 ChaCha20-Poly1305 DATA and ACK frames, durable nonce/replay state, durable attempt
 reservations, bounded reliable flow, and verified file chunks. It imports no
-Lantern or SAGE application code. This is an experimental source example; its
-model controls do not establish physical delivery or useful throughput.
+Lantern or SAGE application code. The [17 October public SDK measurements](../docs/RADIO_SDK_MEASUREMENTS.md)
+record a fresh 23,900-byte file and two fresh five-part 100,000-byte files on the direct
+GFSK250 HAT-to-MCU path at about one metre. Repetition, installation and recovery
+on other setups, field range and release qualification remain open. Model
+controls alone do not establish physical delivery or useful throughput.
 
 For the 100 kB HAT-sender/MCU-receiver starter, prefer the existing
 [signed byte-bundle/MB1 path](BUNDLE.md): five parts instead of seven, using the
@@ -31,6 +34,22 @@ Run the hardware command as root. `ExclusiveSerial` and `LinuxHAT` require
 exclusive ownership and refuse another opener. Arrange that ownership before
 running; the example neither stops services nor takes over an occupied device.
 The build recipe's macOS-arm64 host is separate from these Linux runtime hosts.
+
+While the SDK holds the device, its process must not fork or pass the device
+file descriptors to another process. Keep device aliases inside `/dev` and do
+not change device aliases or mounts during a transfer. Host root remains trusted;
+these cooperative ownership checks do not isolate hardware from host root.
+On Linux, the SDK installs an open-event watch before its initial full procfs
+collision scan. It watches existing `/dev` aliases and checks the retained
+nodes and directory inventories on every ownership probe. For character/block
+radios, normal file churn inside `/dev/shm` or `/dev/mqueue` is exempt only when
+Linux reports their covering and nested mounts as `nodev`. The full mount table
+is freshly compared on every probe; any mount or flag change refuses ownership.
+Existing matching aliases inside those namespaces still have inode/open watches,
+including symlinks to devices on other mounts. An open, changed node, lost watch,
+queue overflow or probe error latches a refusal. The watch is
+closed with the held transport. Kernels without inotify keep a fresh full
+procfs scan on every probe. Neither path caches grant or deadline decisions.
 
 Install the checked-out Python package on each host:
 

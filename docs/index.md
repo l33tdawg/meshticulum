@@ -13,6 +13,7 @@ Meshticulum brings bounded radio transfers, authenticated service boundaries and
 | [Why Meshticulum](WHY.md) | The gap we are trying to close and the priorities drawn from embedded radio meshes and secure networking |
 | [Architecture](ARCHITECTURE.md) | Component diagrams, service separation, a transfer's lifecycle and the intended mixed-path topology |
 | [MeshCore and Reticulum comparison](COMPARISON.md) | The upstream designs, their strengths, and what Meshticulum implements differently |
+| [Public SDK radio measurements](RADIO_SDK_MEASUREMENTS.md) | Inspect the 17 October GFSK file samples, whole-file timing and confirmation results |
 | [Performance and measurement](PERFORMANCE.md) | Useful encrypted goodput, reported results, exact units and the conditions for a fair comparison |
 | [Post-quantum status](POST_QUANTUM.md) | The classical default, hybrid prototype, radio overhead and remaining device work |
 

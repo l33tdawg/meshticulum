@@ -46,7 +46,7 @@ def service_for(entry, response, expires):
 class BundleTransfer(base.ChunkTransfer):
     """Existing service and publisher verification inside the original grace."""
     def __init__(self, authority, worker, journal, cipher, entry, manifest_digest,
-                 index, receiver, window, *, clock):
+                 index, receiver, window, *, clock, confirm_receipt=False):
         super().__init__(authority, worker, journal, cipher, authority.plan['object'], self, clock=clock)
         self.service = ServiceTransfer(self.endpoint)
         self.entry, self.index, self.receiver, self.window = entry, index, receiver, window
@@ -55,6 +55,13 @@ class BundleTransfer(base.ChunkTransfer):
                 and self.service.mb1_descriptor_sha256 == transport_pin(entry,
                     authority.plan['object']['bytes'], authority.plan['object']['sha256']),
                 'example_bundle_transport_binding_mismatch')
+        require(type(confirm_receipt) is bool, 'invalid_receipt_confirmation_option')
+        if confirm_receipt:
+            context = kp.canonical_json(dict(schema='meshticulum.bundle-receipt-context.v1',
+                manifest=window.record['manifest'], part=index,
+                issued_epoch_us=window.record['issued_epoch_us'],
+                expires_epoch_us=window.record['expires_epoch_us']))
+            self.enable_receipt_confirmation(base.hashlib.sha256(context).digest())
 
     def send(self, payload):
         self.service.send(payload)
@@ -143,7 +150,8 @@ def transfer(args):
                 'example_bundle_sender_object_mismatch')
         result = base.run_object(args, raw, admission, version, payload, window,
             lambda a, w, j, c: BundleTransfer(a, w, j, c, entry, args.manifest_sha256,
-                                            index, None, window, clock=base.clock))
+                                            index, None, window, clock=base.clock,
+                                            confirm_receipt=getattr(args, 'confirm_receipt', False)))
         window.check()
         base.publish(args.state / ('sent-' + str(index) + '.json'), kp.canonical_json(
             dict(manifest_sha256=args.manifest_sha256, file_window_sha256=base.sha(window.raw), part=index)))
@@ -156,7 +164,8 @@ def transfer(args):
         require(receiver.reused == index, 'example_bundle_parts_must_be_ordered')
         result = base.run_object(args, raw, admission, version, None, window,
             lambda a, w, j, c: BundleTransfer(a, w, j, c, entry, args.manifest_sha256,
-                                            index, receiver, window, clock=base.clock))
+                                            index, receiver, window, clock=base.clock,
+                                            confirm_receipt=getattr(args, 'confirm_receipt', False)))
         window.check()
         if index == count - 1:
             result['whole_file'] = receiver.finish()
@@ -183,6 +192,8 @@ def main():
         sub.add_argument('--trust-root-sha256', required=True)
         sub.add_argument('--part', required=True, type=int)
         sub.add_argument('--file-expires-epoch-us', required=True, type=int)
+    run.add_argument('--confirm-receipt', action='store_true',
+        help='send/accept an authenticated sender receipt to shorten ACK grace; loss keeps the original grace')
     run.add_argument('--file-issued-epoch-us', required=True, type=int)
     run.add_argument('--grant-directory', required=True, type=Path)
     run.add_argument('--grant-sha256', required=True)

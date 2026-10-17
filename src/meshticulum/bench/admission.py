@@ -65,17 +65,20 @@ class GfskAdmission:
     max_boot_estimated_airtime_us: int
 
     def __post_init__(self):
+        self._validate_limits(GfskProfile, 256, 60000000)
+
+    def _validate_limits(self, profile_type, max_attempts, max_airtime_us):
         require(type(self.country) is str and len(self.country)==2 and self.country.isascii()
                 and self.country.isalpha() and self.country.isupper(),'invalid_gfsk_admission_country')
         require(type(self.frequencies_hz) is tuple and 0<len(self.frequencies_hz)<=16
                 and type(self.powers_dbm) is tuple and 0<len(self.powers_dbm)<=16
                 and all(type(v) is int for v in self.frequencies_hz+self.powers_dbm),'invalid_gfsk_admission_waveforms')
         require(all(type(v) is int for v in (self.min_lease_ms,self.max_lease_ms,self.max_boot_attempts,self.max_boot_estimated_airtime_us))
-                and 1000<=self.min_lease_ms<=self.max_lease_ms<=180000 and 1<=self.max_boot_attempts<=256
-                and 1<=self.max_boot_estimated_airtime_us<=60000000,'invalid_gfsk_admission_limits')
+                and 1000<=self.min_lease_ms<=self.max_lease_ms<=180000 and 1<=self.max_boot_attempts<=max_attempts
+                and 1<=self.max_boot_estimated_airtime_us<=max_airtime_us,'invalid_gfsk_admission_limits')
         for hz in self.frequencies_hz:
             for power in self.powers_dbm:
-                GfskProfile(hz,power,self.max_lease_ms,self.max_boot_attempts,self.max_boot_estimated_airtime_us).encode(board_id=1)
+                profile_type(hz,power,self.max_lease_ms,self.max_boot_attempts,self.max_boot_estimated_airtime_us).encode(board_id=1)
 
     def check(self,country,antenna_confirmed,profile):
         require(country==self.country and antenna_confirmed is True,'gfsk_country_or_antenna_unconfirmed')
@@ -93,11 +96,10 @@ from .gfsk250_profile import Gfsk250Profile
 class Gfsk250Admission(GfskAdmission):
     """Separate application-supplied 250 kbps limits; no default upgrade."""
     def __post_init__(self):
-        super().__post_init__()
-        for hz in self.frequencies_hz:
-            for power in self.powers_dbm:
-                Gfsk250Profile(hz, power, self.max_lease_ms, self.max_boot_attempts,
-                               self.max_boot_estimated_airtime_us).encode(board_id=1)
+        # These are cumulative boot ceilings, including already paid attempts.
+        # Keep the caller's lease window and the legacy 125 kbps admission
+        # bounds unchanged while validating against the 250 kbps record.
+        self._validate_limits(Gfsk250Profile, 100000, 300000000)
 
     def check(self, country, antenna_confirmed, profile):
         require(country == self.country and antenna_confirmed is True, 'gfsk_country_or_antenna_unconfirmed')

@@ -45,7 +45,7 @@ class FaultWorker(ModelWorker):
         return result
 
 
-def open_pair(path, published, index, clock, window, receiver, mcu_counter, fault):
+def open_pair(path, published, index, clock, window, receiver, mcu_counter, fault, *, confirm_receipt=False):
     _, _, _, _, digest, manifest, chunks = published
     entry = manifest['chunks'][index]
     payload = bundle.response_for(digest, entry, kp.chunk_bytes(chunks[entry['sha256']]))
@@ -77,7 +77,7 @@ def open_pair(path, published, index, clock, window, receiver, mcu_counter, faul
                              boot_id=BOOT, clock=clock, create=True)
         transfer = bundle.BundleTransfer(authority, worker, journal,
             SessionCipher(authority.grant, authority.local_peer, store), entry, digest,
-            index, receiver if direction else None, window, clock=clock)
+            index, receiver if direction else None, window, clock=clock, confirm_receipt=confirm_receipt)
         worker.endpoint = transfer.endpoint
         transfers.append(transfer)
         workers.append(worker)

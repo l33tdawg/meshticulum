@@ -2,11 +2,15 @@
 
 [`radio_bundle.py`](radio_bundle.py) uses the public SDK's existing
 `byte_bundle`, MB1 encoding, `ServiceTransfer`, reliable flow, authenticated
-frames, durable journals and `byte_bundle.Receiver`. No SDK, firmware, RF cap,
-retry limit or frozen-flow change is needed. The hardware and ownership
+frames, durable journals and `byte_bundle.Receiver`. Its baseline path needs no
+firmware, RF cap, retry limit or frozen-flow change. The hardware and ownership
 requirements are the same as the [generic example](README.md): the verified
 Orange Pi 5 Plus SX1262 HAT sends DATA; a Heltec V4 receives and sends ACKs.
-This is a source-tested candidate, not a physical deployment or throughput result.
+On 17 October, this public SDK path completed **two fresh five-part 100,000-byte
+files at 2,030.2 and 1,949.2 useful B/s including sender startup**, with independent
+publisher and whole-file verification. Both endpoints used receipt confirmation
+on a direct GFSK250 link about one metre long. [The measurement report](../docs/RADIO_SDK_MEASUREMENTS.md)
+records the exact source and timing; broader repetition and deployment remain open.
 
 ## Why five transfers
 
@@ -27,6 +31,32 @@ The command rejects `part_count × 20 seconds >= original interval`, and rejects
 remaining graces that cannot fit the actual remaining original monotonic time,
 **before hardware is opened or a grant is claimed**. Data and setup need further
 time. No timer or lease is extended to finish a part or a grace.
+
+## Optional sender receipt confirmation
+
+Pass `--confirm-receipt` on both endpoints to let the receiver close its ACK
+grace as soon as the sender confirms receipt. The sender offers one authenticated
+CONTROL packet only after the existing reliable flow has accepted the final ACK.
+The receiver accepts it only after verifying and durably accepting that part.
+The confirmation binds the original session, peers, direction, flow, object,
+resource and file window. It uses the same scheduler, authority leases, durable
+nonce state, attempt journal and radio worker as DATA and ACKs.
+
+This adds one 79-byte wire packet and one charged sender attempt per part; the
+32-byte control payload fits the existing negotiated bound. `RF_DONE` proves
+that local transmission completed, not that the receiver heard it. If the
+confirmation is lost, unsupported or invalid, the receiver keeps its original
+20-second grace. It never restarts that grace or extends a lease. With the flag
+off, behavior stays the same. Mixed settings also keep the full receiver grace.
+An uncertain write or failed cleanup remains a command failure.
+
+Successful confirmations avoid the five sequential waits in the normal case.
+The preflight still reserves all remaining graces so that loss retains the
+original fallback. Always measure actual DATA/ACK delivery, verified-file
+availability and complete command closure separately. In the two recorded 100 kB
+samples, all ten receiver confirmations were accepted. Both endpoints closed
+in **53.879 and 56.957 seconds from scope issue**, or **1,856.0 and 1,755.7 useful B/s**.
+This initial repeat does not establish a capacity distribution or a guarantee for another setup.
 
 ## Build and authenticate the public bundle offline
 
@@ -101,31 +131,38 @@ a wall-clock rollback cannot renew it. Do not edit, delete or reuse this state
 to bypass a failure or deadline. The receiver's existing SDK quarantine also
 retains its publisher binding and original boot/deadlines.
 
+Prepare the [compact firmware identity](README.md#prepare-the-firmware-identity-offline)
+and set `FIRMWARE_IDENTITY` and `FIRMWARE_IDENTITY_SHA256` before running either
+endpoint. The full build manifest can exceed the hardware reader's 64 KiB limit.
+
 Start each receiver command first, then its HAT sender promptly:
 
 ```sh
 sudo .venv/bin/python examples/radio_bundle.py transfer \
   --interface usb --device "$BY_ID" --usb-serial "$USB_SERIAL" \
+  --confirm-receipt \
   --unit "$RECEIVER_UNIT" --grant-directory "$RECEIVER_GRANT" \
   --grant-sha256 "$RECEIVER_GRANT_SHA256" --state "$PRIVATE_STATE" \
   --pack received-pack --manifest-sha256 "$MANIFEST_SHA256" \
   --trust-root trust.json --trust-root-sha256 "$TRUST_SHA256" \
   --admission admission.json --admission-sha256 "$ADMISSION_SHA256" \
-  --firmware-source SOURCE.json --firmware-source-sha256 "$SOURCE_SHA256" \
+  --firmware-source "$FIRMWARE_IDENTITY" \
+  --firmware-source-sha256 "$FIRMWARE_IDENTITY_SHA256" \
   --file-issued-epoch-us "$ORIGINAL_ISSUED_US" \
   --file-expires-epoch-us "$ORIGINAL_EXPIRES_US" --part 0
 ```
 
 On the sender, use the corresponding sender grant, `--interface hat`, sender
-unit, sender state directory and full `--pack new-pack`; omit `--device` and
+unit, sender state directory, `--confirm-receipt` and full `--pack new-pack`; omit `--device` and
 `--usb-serial`. Keep all hashes, original clocks and part index consistent.
 No additional `--input` is used: the signed canonical source chunk supplies DATA.
 The command arms its hardware and may transmit encrypted DATA or ACKs.
 
 The receiver verifies AEAD, exact MR1 response binding, MB1 reconstruction,
 publisher signature/content address and the original whole-file descriptor.
-It durably accepts the part, then continues the same flow for the existing
-20-second ACK grace. The grace start is never renewed. Cleanup disarms and
+It durably accepts the part, then continues the same flow until a valid sender
+receipt confirmation arrives or the existing 20-second ACK grace ends. The
+grace start is never renewed. Cleanup disarms and
 retires the session; uncertain attempts and failed cleanup remain failures.
 After both commands close successfully, coordinate the next approved pair
 through your application/operator channel. Parts must arrive in order; local
