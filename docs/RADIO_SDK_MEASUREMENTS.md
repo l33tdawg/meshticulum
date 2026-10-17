@@ -2,7 +2,7 @@
 
 The public SDK completed **two fresh 100,000-byte files at 2,030.2 and 1,949.2 useful B/s**, from each file's first sender startup through its final authenticated receipt. Both five-part files and their publishers were independently verified. A separate **23,900-byte file reached 2,534.6 useful B/s** at the same timing boundary.
 
-All three samples used source `da247a1bb74601973f0bb72f51c268a412714719`, an Orange Pi 5 Plus SX1262 HAT sender and a Heltec V4 MCU receiver about **one metre apart**. The modem used **GFSK at 250 kb/s**. These are direct, near-bench GFSK results; they provide no LoRa-modulation, multihop or field-range measurement. No new firmware was flashed for these samples.
+The three samples above used source `da247a1bb74601973f0bb72f51c268a412714719`, an Orange Pi 5 Plus SX1262 HAT sender and a Heltec V4 MCU receiver about **one metre apart**. The modem used **GFSK at 250 kb/s**. These are direct, near-bench GFSK results; they provide no LoRa-modulation, multihop or field-range measurement. No new firmware was flashed for these samples.
 
 The tested [`Gfsk250Profile`](https://github.com/l33tdawg/meshticulum/blob/da247a1bb74601973f0bb72f51c268a412714719/src/meshticulum/bench/gfsk250_profile.py) used **921,375,000 Hz**, **0 dBm configured chip power**, a **250,000 bit/s** rate, **62,500 Hz** frequency deviation, **467,000 Hz** receive bandwidth and a **32-bit** preamble. Configured chip power is not a measurement of EIRP; measured EIRP remains unavailable.
 
@@ -28,13 +28,33 @@ The 100 kB intervals span all five sequential parts, including coordination betw
 
 Each 100 kB file used four 23,900-byte parts and one 4,400-byte part. Both endpoints enabled `--confirm-receipt`: after accepting the final flow ACK, the sender transmits an authenticated confirmation that lets the receiver close its ACK grace early. **All ten receiver confirmations were physically accepted across the two files.** Missing or invalid confirmation still leaves the original 20-second fallback; the option does not extend a lease, reset a deadline or refund attempt debt. See the [bundle example](../examples/BUNDLE.md#optional-sender-receipt-confirmation).
 
-The first 100 kB run had **zero DATA retransmissions**; the second had **one**. Both had **zero new receiver drops**. All twenty endpoint children exited successfully, with no forced cleanup and unchanged services and boot identity. The smaller sample had one DATA retransmission and zero new receiver drops. Publisher and whole-file verification were required separately from sender receipt. The two 100 kB inputs have different SHA-256 identities, recorded in the public JSON. No parts were cached before any run. Verified earlier parts were reused only within each file's own original window.
+The first 100 kB run had **zero DATA retransmissions**; the second had **one**. Both had **zero new receiver drops**. All twenty endpoint children exited successfully, with no forced cleanup and unchanged services and boot identity. The smaller sample had one DATA retransmission and zero new receiver drops. Publisher and whole-file verification were required separately from sender receipt. The two 100 kB inputs have different SHA-256 identities, recorded in the public JSON. Each receiver began with fresh verified state. The common staging pack contained source chunks on both hosts, but receiver acceptance used the bytes delivered through `ServiceTransfer`, publisher verification and whole-file hashing; staged source chunks were not used to accept the received file. Verified earlier parts were reused only within each file's own original window.
+
+## Clean installation and verified-piece continuation
+
+A separate fresh **100,000-byte file completed from an installed candidate wheel** on the same near-bench GFSK250 path. The receiver used Python **3.11.2** and the sender **3.14.4**, both Linux aarch64. Each normal virtual environment imported the installed distribution in isolated Python mode, with no editable checkout, SDK zip or system site packages. The check matched all **67 runtime files** to the wheel from source `673eb60d24dc60f67371e24bc5c9caeec3a68508`. Its wheel SHA-256 is `dce5127fed0956e5b3d2cd9ce7dd859a2a4f6af8cdd491bfaf9ba5723e495c1c`.
+
+The environments used hash-pinned wheels for `cryptography 50.0.2`, `PyNaCl 1.6.2`, `cffi 2.1.1` and `pycparser 3.11`. Installation and dependency acquisition finished before the radio window. These dependency versions differ from the earlier source-staged samples; the installed check has its own record.
+
+After part 0 was verified and both endpoint processes had closed, the coordinator paused for **5.010819 seconds on its monotonic clock**, then opened fresh processes for parts 1–4. The receiver reopened and checked the verified prefix, reusing four earlier parts by final assembly. All work retained the original grants and **240-second window**, with no deadline extension or attempt refund. This demonstrates continuation from a completed verified piece. It does not demonstrate resuming an in-flight session after a crash.
+
+| Installed-wheel whole-file boundary | Elapsed seconds, including the pause | Useful decoded B/s |
+| --- | ---: | ---: |
+| First sender startup → final authenticated receipt | 57.475095 | **1,739.9** |
+| First DATA-worker call → final authenticated receipt | 56.690410 | 1,764.0 |
+| Scope issue → both endpoints closed | 61.983317 | **1,613.3** |
+
+All five authenticated receiver confirmations were accepted. The file had one DATA retransmission and zero new raw receive discards. All ten endpoint children exited successfully with no forced cleanup; owned endpoints were closed and disarmed, with services and host lifetimes unchanged. Separate reviews checked the signed publisher manifest, reconstructed file, installed runtime files, original window, journals and endpoint captures. The recorded remote final-file readback matched the input. These checks do not independently reverify raw RF ciphertext, which was not retained; the exact SDK receipts and matching packet hashes provide the RF authentication evidence. Owned-endpoint cleanup does not establish global quiescence.
+
+An earlier installed-wheel trial stopped after **four verified parts / 95,600 bytes** when a harness condition required no change in the raw receive-discard counter; that counter rose from two to three. All eight started children exited successfully, but the fifth part never started and no whole-file completion or rate is claimed. The harness now records discard changes as diagnostics while still requiring authenticated receipts, publisher/hash checks, settled journals and the original window. The successful run used a fresh file and window; the earlier attempt debt remains retained.
+
+[The sanitized installed-SDK record](../provenance/PUBLIC_INSTALLED_SDK_PROOF.json) contains the package and dependency hashes, timing arithmetic, continuation conditions and earlier incomplete attempt. It is separate from the two uninterrupted files in the headline.
 
 ## What changed, and what remains
 
 The SDK now checks fresh kernel open-event evidence alongside descriptor, inode, mount and ownership bindings, avoiding repeated scans of every process descriptor during normal packet work. Verified `nodev` IPC namespaces allow ordinary shared-memory file churn without invalidating device ownership. Initial collision scans, existing-alias watches and fault refusal remain. These are host-side changes; these samples do not isolate a firmware speedup.
 
-These startup-inclusive samples exceed the **1,000 B/s alpha floor for their stated path**. Two fresh 100 kB files provide an initial repeat, not a sustained-throughput or completion distribution or a guarantee on another installation. Continue repeating complete bundles, check installation and recovery on the declared supported path, and finish the exact artifact, firmware/source/notice and release reviews. Native/private integration and security qualification remain separate. **An alpha has not been accepted or published.**
+These startup-inclusive samples exceed the **1,000 B/s alpha floor for their stated path**. The installed-wheel run adds a real installation and verified-piece continuation check. These finite files do not establish a sustained-throughput or completion distribution or a guarantee on another installation. Final review of the selected SDK/source-build artifacts remains pending. Native/private integration, wider recovery and security qualification remain separate programme work. **An alpha has not been accepted or published.**
 
 Measured RF airtime, energy, EIRP and field range remain unavailable. GFSK results do not replace the [earlier LoRa measurements and scoped upstream comparisons](PERFORMANCE.md). No general speed or security ranking against MeshCore or Reticulum follows from these samples.
 
@@ -44,6 +64,7 @@ Measured RF airtime, energy, EIRP and field range remain unavailable. GFSK resul
 
 ```sh
 python tools/verify_benchmark_report.py benchmarks/2026-10-17-public-sdk/results.json
+python tools/verify_benchmark_report.py provenance/PUBLIC_INSTALLED_SDK_PROOF.json
 ```
 
 See the [roadmap](ROADMAP.md) for the next work and [release readiness](RELEASE_READINESS.md) for the remaining gates.

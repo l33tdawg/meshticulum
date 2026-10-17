@@ -1,0 +1,226 @@
+{
+  "schema": "meshticulum.published-sdk-file-samples.v1",
+  "date": "2026-10-17",
+  "modulation": "GFSK",
+  "modem_bit_rate_bps": 250000,
+  "configured_profile": {
+    "class": "Gfsk250Profile",
+    "frequency_hz": 921375000,
+    "chip_power_dbm": 0,
+    "bit_rate_bps": 250000,
+    "deviation_hz": 62500,
+    "rx_bandwidth_hz": 467000,
+    "preamble_bits": 32
+  },
+  "sender_hardware": "Orange Pi 5 Plus SX1262 HAT",
+  "receiver_hardware": "Heltec V4 SX1262 MCU",
+  "topology": "direct single radio link",
+  "approximate_separation_metres": 1,
+  "distance_method": "owner estimate; near-bench placement",
+  "measured_range_metres": null,
+  "measured_RF_airtime_us": null,
+  "measured_energy_joules": null,
+  "measured_eirp_dbm": null,
+  "native_private_qualified": false,
+  "sustained_goodput_qualified": false,
+  "alpha_accepted": false,
+  "scope_to_closure_includes": [
+    "grant delivery",
+    "endpoint startup",
+    "coordination",
+    "verification",
+    "endpoint cleanup"
+  ],
+  "scope_to_closure_excludes": [
+    "offline file generation",
+    "signing",
+    "build",
+    "staging"
+  ],
+  "record_kind": "clean-installed-sdk-and-verified-piece-continuation",
+  "core_commit": "673eb60d24dc60f67371e24bc5c9caeec3a68508",
+  "installation": {
+    "package_version": "1.0.0a1",
+    "sdk_wheel_sha256": "dce5127fed0956e5b3d2cd9ce7dd859a2a4f6af8cdd491bfaf9ba5723e495c1c",
+    "method": "normal virtual environments with hash-pinned dependency wheels",
+    "editable": false,
+    "system_site_packages": false,
+    "isolated_python": true,
+    "imports_from_installed_distribution": true,
+    "source_checkout_or_sdk_zip_on_import_path": false,
+    "runtime_files_verified_per_host": 67,
+    "runtime_inventory_sha256": "132908d6279f7d8d05e0d467c056629459b79f9808a9091293e6909755394090",
+    "installed_before_radio_window": true,
+    "hosts": [
+      {
+        "role": "receiver",
+        "architecture": "aarch64",
+        "python_version": "3.11.2",
+        "dependency_wheels": [
+          {
+            "name": "cryptography",
+            "version": "50.0.2",
+            "wheel_sha256": "79def8d059362e7831389ed3be0ecdf58a89386e1271e35dd9f5af84e81bffd0"
+          },
+          {
+            "name": "PyNaCl",
+            "version": "1.6.2",
+            "wheel_sha256": "8845c0631c0be43abdd865511c41eab235e0be69c81dc66a50911594198679b0"
+          },
+          {
+            "name": "cffi",
+            "version": "2.1.1",
+            "wheel_sha256": "3311ed60d36f83378794e1009ac6258bafbf81f7888b4caa7b35a521e3f95813"
+          },
+          {
+            "name": "pycparser",
+            "version": "3.11",
+            "wheel_sha256": "51d5a8ba2be0bbe440b99d2112604c95bbbc3c2748a64260186c541e1729cd80"
+          }
+        ]
+      },
+      {
+        "role": "sender",
+        "architecture": "aarch64",
+        "python_version": "3.14.4",
+        "dependency_wheels": [
+          {
+            "name": "cryptography",
+            "version": "50.0.2",
+            "wheel_sha256": "79def8d059362e7831389ed3be0ecdf58a89386e1271e35dd9f5af84e81bffd0"
+          },
+          {
+            "name": "PyNaCl",
+            "version": "1.6.2",
+            "wheel_sha256": "8845c0631c0be43abdd865511c41eab235e0be69c81dc66a50911594198679b0"
+          },
+          {
+            "name": "cffi",
+            "version": "2.1.1",
+            "wheel_sha256": "58acb8ab8e295e6c5ea12f888cbb13cf21511ef2a3303a23f4325c29d17fe5c1"
+          },
+          {
+            "name": "pycparser",
+            "version": "3.11",
+            "wheel_sha256": "51d5a8ba2be0bbe440b99d2112604c95bbbc3c2748a64260186c541e1729cd80"
+          }
+        ]
+      }
+    ]
+  },
+  "continuation": {
+    "mode": "verified-piece continuation after a quiescent pause",
+    "after_completed_part": 0,
+    "requested_pause_seconds": 5,
+    "observed_pause_monotonic_us": 5010819,
+    "observed_pause_epoch_us": 5010867,
+    "no_endpoint_child_running_during_pause": true,
+    "existing_scope_and_grants_retained": true,
+    "original_file_window_seconds": 240,
+    "window_extended": false,
+    "old_paid_history_unchanged": true,
+    "reused_verified_parts": 4,
+    "fresh_endpoint_children_after_pause": 8,
+    "in_flight_retry": false,
+    "pause_included_in_all_reported_whole_file_intervals": true
+  },
+  "samples": [
+    {
+      "sample_id": "100000-installed-wheel-verified-piece-continuation",
+      "useful_decoded_bytes": 100000,
+      "part_useful_bytes": [
+        23900,
+        23900,
+        23900,
+        23900,
+        4400
+      ],
+      "fresh_files_measured": 1,
+      "receiver_retirement_mode": "authenticated-sender-receipt-confirmation",
+      "receiver_confirmations_accepted": 5,
+      "default_receiver_grace_us": 20000000,
+      "publisher_and_whole_file_independently_verified": true,
+      "within_original_file_window": true,
+      "endpoint_children": {
+        "total": 10,
+        "exit_zero": 10,
+        "forced_cleanup": 0
+      },
+      "services_and_boot_unchanged": true,
+      "data_retransmissions": 1,
+      "new_receiver_drops": 0,
+      "preexisting_cached_parts": 0,
+      "boundaries": {
+        "first_sender_startup_to_final_authenticated_receipt": {
+          "elapsed_us": 57475095,
+          "useful_decoded_Bps": 1739.8840315096477
+        },
+        "first_DATA_worker_call_to_final_authenticated_receipt": {
+          "elapsed_us": 56690410,
+          "useful_decoded_Bps": 1763.966780272007
+        },
+        "scope_issue_to_both_endpoints_closed": {
+          "elapsed_us": 61983317,
+          "useful_decoded_Bps": 1613.3373436597465
+        }
+      },
+      "source_result_sha256": "c6996e89c0f953f6403359ad1022377f77dcf4653c63f22667b5d5e113508509",
+      "verified_summary_sha256": "e70db1030521470ca81a2f6d77b1b3272b8503b2bce7fd4eb1a4cf1ce8769741",
+      "useful_sha256": "237ed7e5afb49dd78a828fc5682b9ae71972bb4a90ee4391155444b0f6e5dba0"
+    }
+  ],
+  "source_capture_sha256": {
+    "staging": "b1912c9e92075c17e0aa971d298e9b9e07b6460a6836987c3aefd37e513d2b45",
+    "independent_verification_receipt": "509c2a2f16e2e0eae8c627b22a53d08f77eae5bd73541f5e25674b33b4de8d42",
+    "independent_verifier": "1b434aa5acbda712def8825e0723c2ed650200b5dd6bcf8ad41b25ed0840c67f",
+    "independent_acceptance_summary": "82522c8c166be4f2a5ffe25ae439d141f8e39f0f8e7d1e38fbf402e1b066fdbc"
+  },
+  "independent_review": {
+    "verification_complete": true,
+    "no_new_device_or_RF_calls": true,
+    "unknown_paid_attempts": 0,
+    "owned_endpoint_cleanup_verified": true,
+    "global_quiescence_proven": false,
+    "remote_final_file_readback_matches": true,
+    "publisher_signature_independently_verified": true,
+    "raw_RF_ciphertext_retained": false,
+    "raw_RF_ciphertext_independently_reverified": false,
+    "RF_authentication_evidence": "exact public SDK endpoint receipts and matching packet hashes"
+  },
+  "earlier_installed_trial": {
+    "source_result_sha256": "25b4ec5a1c0b50775d41113ec546e9e8eaec56a106ffcb576209c46455a05dd6",
+    "requested_useful_bytes": 100000,
+    "verified_piece_bytes": 95600,
+    "verified_pieces": 4,
+    "whole_file_complete": false,
+    "whole_file_goodput_Bps": null,
+    "endpoint_children": {
+      "total": 8,
+      "exit_zero": 8,
+      "forced_cleanup": 0
+    },
+    "fifth_part_started": false,
+    "receiver_raw_discard_before": 2,
+    "receiver_raw_discard_after": 3,
+    "stop_reason": "harness zero-new-raw-discard equality stopped after the fourth verified piece",
+    "correction": "receive-discard changes are diagnostics; authenticated receipts, publisher/hash checks, journals and original windows remain required",
+    "protocol_or_candidate_runtime_changed_for_correction": false,
+    "old_attempt_debt_retained": true,
+    "reused_for_successful_file": false
+  },
+  "limitations": [
+    "Finite near-bench GFSK250 measurements; no LoRa-modulation, multihop or field-range result.",
+    "Continuation starts after a completed verified piece with both endpoints closed; no in-flight crash-recovery claim.",
+    "Installation, dependency acquisition, offline file generation, signing and staging precede the radio window.",
+    "Allowlisted transcription and capture hashes do not independently attest the physical hardware.",
+    "No alpha tag/release, native private/product acceptance or global quiescence is established by this record.",
+    "The common pack staged source chunks on both hosts; the receiver accepted received ServiceTransfer bytes through fresh verified state, not those staged source chunks."
+  ],
+  "receiver_initial_state": {
+    "verified_parts": 0,
+    "source_pack_staged_on_both_hosts": true,
+    "staged_source_chunks_used_for_receiver_acceptance": false,
+    "acceptance_source": "received ServiceTransfer bytes, publisher verification and whole-file hash",
+    "preexisting_cached_parts_field_scope": "verified receiver state; does not assert absence of staged source bytes"
+  }
+}

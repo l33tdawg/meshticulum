@@ -2,7 +2,7 @@
 
 The Python [SDK](SDK_GUIDE.md) can be explored offline first. A device deployment additionally needs a matching board/image, an exclusive host connection and application-owned radio admission. Meshticulum supplies reusable drivers and a build recipe; [Lantern](https://github.com/l33tdawg/sage-lantern) owns its native device jobs, provisioning, fleet installation and rollback.
 
-There is **no prebuilt alpha firmware release** in this project preview. The recorded primary-input builds reproduce on one macOS arm64 host; they have not established that these fresh outputs match the deployed lab images or are physically qualified. [Firmware validation](../provenance/FIRMWARE_RECIPE_VALIDATION.json) and [release readiness](RELEASE_READINESS.md) record that scope.
+There is **no prebuilt alpha firmware release** in this project preview. The [current MCU020 proof](../provenance/PUBLIC_MCU020_PROOF.json) ties both targets’ application BIN/ELF outputs to the locked recipe on the recorded macOS arm64 host. The retained Heltec installation has an application-span ROM-MD5 check and later runtime-tag continuity; it has completed the [installed-SDK radio check](../provenance/PUBLIC_INSTALLED_SDK_PROOF.json). This supplies no fresh full-device SHA-256 readback or physical Xiao acceptance. [Firmware validation](../provenance/FIRMWARE_RECIPE_VALIDATION.json) and [release readiness](RELEASE_READINESS.md) retain the distinct build, installation and distribution scopes.
 
 ## Choose the correct hardware path
 

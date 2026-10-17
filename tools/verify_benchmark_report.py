@@ -114,7 +114,8 @@ def main():
     args=parser.parse_args()
     root=Path(__file__).resolve().parents[1]
     paths=[args.report] if args.report else [root/'benchmarks/2026-10-09-radio/radio-results.json',
-                                           root/'benchmarks/2026-10-17-public-sdk/results.json']
+                                           root/'benchmarks/2026-10-17-public-sdk/results.json',
+                                           root/'provenance/PUBLIC_INSTALLED_SDK_PROOF.json']
     for path in paths:
         record=json.loads(path.read_text())
         if record['schema']=='meshticulum.published-sdk-file-samples.v1':
