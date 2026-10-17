@@ -131,6 +131,10 @@ a wall-clock rollback cannot renew it. Do not edit, delete or reuse this state
 to bypass a failure or deadline. The receiver's existing SDK quarantine also
 retains its publisher binding and original boot/deadlines.
 
+Prepare the [compact firmware identity](README.md#prepare-the-firmware-identity-offline)
+and set `FIRMWARE_IDENTITY` and `FIRMWARE_IDENTITY_SHA256` before running either
+endpoint. The full build manifest can exceed the hardware reader's 64 KiB limit.
+
 Start each receiver command first, then its HAT sender promptly:
 
 ```sh
@@ -142,7 +146,8 @@ sudo .venv/bin/python examples/radio_bundle.py transfer \
   --pack received-pack --manifest-sha256 "$MANIFEST_SHA256" \
   --trust-root trust.json --trust-root-sha256 "$TRUST_SHA256" \
   --admission admission.json --admission-sha256 "$ADMISSION_SHA256" \
-  --firmware-source SOURCE.json --firmware-source-sha256 "$SOURCE_SHA256" \
+  --firmware-source "$FIRMWARE_IDENTITY" \
+  --firmware-source-sha256 "$FIRMWARE_IDENTITY_SHA256" \
   --file-issued-epoch-us "$ORIGINAL_ISSUED_US" \
   --file-expires-epoch-us "$ORIGINAL_EXPIRES_US" --part 0
 ```
