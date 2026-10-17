@@ -1,0 +1,327 @@
+{
+  "candidate_commit": "673eb60d24dc60f67371e24bc5c9caeec3a68508",
+  "canonical_runtime_firmware_and_example_python_identical_to_physical_source": true,
+  "firmware_identity": "mtb1-020e287255",
+  "limits": [
+    "The retained application install receipt and ROM-MD5 check cover a written application span, not the full device image or all framework contents.",
+    "Install boot suffix 37 differs from later profile/speed boot suffix 38. Later linkage is runtime-tag continuity only; no fresh ROM access was performed for this review.",
+    "No full-device SHA-256 or whole-framework deployed readback attestation is available here.",
+    "Exact source-to-build reconstruction for every vendor-precompiled SDK/compiler component is not established; source selection A does not redistribute those binaries.",
+    "No equivalent physical acceptance or throughput/range result for the Xiao target is inferred from its matching build.",
+    "The source-only coverage PASS does not change the original build records false notice/flash/RF flags, grant RF authority, establish device installation/recovery acceptance, approve selection B or authorize a release."
+  ],
+  "physically_tested_transport_commit": "da247a1bb74601973f0bb72f51c268a412714719",
+  "preparation": {
+    "existing_reviewed_records_only": true,
+    "network_fetches": 0,
+    "new_builds": 0,
+    "new_device_actions": 0,
+    "new_relinks": 0,
+    "new_research": false,
+    "publication_performed": false
+  },
+  "project_attribution": [
+    "SAGE Foundation",
+    "Dhillon Andrew Kannabhiran",
+    "Meshticulum contributors",
+    "SAGE Commons contributors"
+  ],
+  "repeated_build_evidence": {
+    "demonstrated_host": {
+      "architecture": "arm64",
+      "platformio_core": "6.1.19",
+      "system": "macOS (Darwin)"
+    },
+    "identical_outputs_in_both_runs": {
+      "mtbench_heltec_v4": {
+        "firmware.bin": {
+          "bytes": 391600,
+          "sha256": "eca7772095cc9c9e63c9f6e6d9fe48ba3c376cd6bfef557ffcc441621a846fa2"
+        },
+        "firmware.elf": {
+          "bytes": 12070868,
+          "sha256": "0fb4a8c777c7d2f30d3e21439e6c959add702676f17e3028207235b5249827d1"
+        }
+      },
+      "mtbench_xiao_s3_wio": {
+        "firmware.bin": {
+          "bytes": 385264,
+          "sha256": "205000a1d5e8fe0c57630291c4f429f9b51cf901c7315796f9c591369f4fcc47"
+        },
+        "firmware.elf": {
+          "bytes": 11536184,
+          "sha256": "a5371bd9993a2988f04a2b22bf89886137d48179d54008c88be514c08f74c839"
+        }
+      }
+    },
+    "map_difference_scope": "Retained build paths differ; the BIN/ELF comparison excludes maps.",
+    "map_files_byte_identical": false,
+    "original_record_flags_preserved": {
+      "build_notices_complete": false,
+      "flashed": false,
+      "rf_qualified": false,
+      "source_notices_complete": false
+    },
+    "records": [
+      {
+        "both_targets_build_exit_zero": true,
+        "build_record": {
+          "bytes": 2239,
+          "sha256": "f17fd745de786f52a8a1c0a8092ab4c91e92b7c9e4d37eca52d354ba20e083a6"
+        },
+        "label": "original",
+        "source_manifest": {
+          "bytes": 2909880,
+          "sha256": "73b3bbd6fc62b97bfa49ff34c6f083a3b5c9115b294dec3fb3e6fc2a35556645"
+        },
+        "targets": [
+          "mtbench_heltec_v4",
+          "mtbench_xiao_s3_wio"
+        ]
+      },
+      {
+        "both_targets_build_exit_zero": true,
+        "build_record": {
+          "bytes": 2239,
+          "sha256": "3727db379dbf032b34dba02990d94b804b12f11626b5fb1d3cf221324239d2f6"
+        },
+        "label": "separate_recipe_preparation",
+        "source_manifest": {
+          "bytes": 2909880,
+          "sha256": "9e99b7486914452bb770be28933407bfac2905e004e109ceab94f9f02c32dd2b"
+        },
+        "targets": [
+          "mtbench_heltec_v4",
+          "mtbench_xiao_s3_wio"
+        ]
+      }
+    ],
+    "scope": "Original preparation and separate recipe preparation on the demonstrated host; BIN/ELF byte-identical per target. This does not establish cross-host reproducibility."
+  },
+  "retained_heltec_application_installation": {
+    "application": {
+      "bytes": 391600,
+      "runtime_tag": "mtb1-020e287255",
+      "sha256": "eca7772095cc9c9e63c9f6e6d9fe48ba3c376cd6bfef557ffcc441621a846fa2"
+    },
+    "boot_lifetime_changed": true,
+    "checked_install_span_bytes": 393216,
+    "checked_install_span_md5": "108d11f4a0667352797f811d8504797c",
+    "full_device_readback": false,
+    "full_device_sha256": null,
+    "install_boot_suffix": 37,
+    "later_run_binding": "Runtime-tag continuity only; no fresh ROM access or full-device/framework SHA attestation.",
+    "later_run_boot_suffix": 38,
+    "later_runtime_tag": "mtb1-020e287255",
+    "later_runtime_tag_statement": "Retained later profile/speed records report this tag. Runtime-tag continuity is not a fresh ROM check or full-device/framework attestation.",
+    "new_device_actions": 0,
+    "new_flash_commands": 0,
+    "outside_ranges_unchanged_asserted_by_apply": true,
+    "physical_acceptance_for_xiao_inferred": false,
+    "receipt_sha256": "ac484f0400a4e158c421ace0249d659d392f50643011ad626700615a303bdb37",
+    "retained_review_candidate_commit": "d5fe3c2666f1111e53b79d1628a59c2ae39a2600",
+    "review_record_sha256": "82cbe3e41526c2548bbe03d3d1896703afb585106afc6e92f3bbaad8e2b3eb1f",
+    "target": "mtbench_heltec_v4"
+  },
+  "review_date": "2026-10-17",
+  "schema": "meshticulum.public-mcu020-proof.v1",
+  "selection_A_source_coverage": {
+    "artifacts": {
+      "LICENSE": {
+        "bytes": 10778,
+        "sha256": "ba61a1c596f3e771e379455f68124f793985196b84be0a6a41d2c489050facef"
+      },
+      "NOTICE": {
+        "bytes": 974,
+        "sha256": "387c1c228cbaf7a40b6729ae692603402387ac7308810709524bbde44d86e26c"
+      },
+      "sdk/meshticulum-1.0.0a1-py3-none-any.whl": {
+        "bytes": 260715,
+        "sha256": "dce5127fed0956e5b3d2cd9ce7dd859a2a4f6af8cdd491bfaf9ba5723e495c1c"
+      },
+      "sdk/meshticulum-1.0.0a1.tar.gz": {
+        "bytes": 842199,
+        "sha256": "757c240e95c4d0939272c8337efa7b3c6a83e6357d835a2933eec3c4cee055e7"
+      }
+    },
+    "blanket_legal_compliance_asserted": false,
+    "inventory_record": {
+      "bytes": 80531,
+      "sha256": "6d95b12c3ad80677f35e6f0e9aaea1ff3b931a8e267f5db901cbda2dde2e9989"
+    },
+    "notice_directory": "firmware/meshticulum-bench/notices/",
+    "optional_B_binary_distribution_review_included": false,
+    "project_license": "Apache-2.0",
+    "project_license_file": {
+      "bytes": 10778,
+      "path": "LICENSE",
+      "sha256": "ba61a1c596f3e771e379455f68124f793985196b84be0a6a41d2c489050facef"
+    },
+    "project_notice_file": {
+      "bytes": 974,
+      "path": "NOTICE",
+      "sha256": "387c1c228cbaf7a40b6729ae692603402387ac7308810709524bbde44d86e26c"
+    },
+    "retained_firmware_notice_files": [
+      "AdafruitBusIO-LICENSE",
+      "ArduinoJson-LICENSE.txt",
+      "CayenneLPP-LICENSE.md",
+      "Crypto-0.4.0-source-headers.txt",
+      "MeloperoRV3028-LICENSE",
+      "MeshCore-ed25519-license.txt",
+      "MeshCore-license.txt",
+      "RTClib-license.txt",
+      "RadioLib-license.txt",
+      "esp-idf-v4.4.7-LICENSE",
+      "esp-phy-lib-LICENSE",
+      "esp32-wifi-lib-LICENSE",
+      "esp32c3-bt-lib-LICENSE",
+      "mbedtls-LICENSE",
+      "toolchain-gcc-COPYING.RUNTIME",
+      "toolchain-gcc-COPYING3",
+      "toolchain-gcc-COPYING3.LIB",
+      "toolchain-newlib-COPYING.NEWLIB"
+    ],
+    "review_record": {
+      "bytes": 5513,
+      "sha256": "b4bcb40bb97b94db047faba33a5a90ff24091e80368177aa772581571ae7b0e6"
+    },
+    "scope": "SDK wheel/sdist plus project LICENSE/NOTICE. The fourteen vendor archives and pip dependencies are obtained separately by recipients; no compiled firmware/vendor objects or dependency wheels are bundled.",
+    "sdist_exact_tracked_source_files": 266,
+    "sdist_regular_files": 274,
+    "third_party_patch": {
+      "copyright": "Copyright 2015-2024 Espressif Systems (Shanghai) PTE LTD",
+      "file_license": "Apache-2.0",
+      "framework_package_license_is_separate": "LGPL-2.1-or-later",
+      "modification_and_attribution_note": "firmware/meshticulum-bench/patches/README.md",
+      "path": "firmware/meshticulum-bench/patches/hwcdc-2.0.17.patch",
+      "sha256": "1bdb1339485c3c76c89f292cdf443b022deb4ffb1ce5b0a819f9c12e19fc0bc0",
+      "target": "cores/esp32/HWCDC.cpp",
+      "upstream_commit": "2ecad233178bfbba9c584ffd9f67e941d84adbb7"
+    },
+    "upstream_terms": "Upstream copyright, per-file grants and notices are retained; the project Apache license does not relicense vendor components.",
+    "verdict": "PASS for shipped source, license, notice and required recipe/input coverage; no missing file identified.",
+    "wheel_runtime_files": 67
+  },
+  "source_bindings": {
+    "application": {
+      "firmware/meshticulum-bench/gfsk250_profile.hpp": {
+        "bytes": 2587,
+        "sha256": "379c0023940a6091a93c20f2199f2dcb0f70e7678c680681107622ea71cd6aba"
+      },
+      "firmware/meshticulum-bench/gfsk_profile.hpp": {
+        "bytes": 3058,
+        "sha256": "eae3b0883490663c89bdd6b636aa054e0031e294651185e52cf4ebd292cb4d82"
+      },
+      "firmware/meshticulum-bench/main.cpp": {
+        "bytes": 18974,
+        "sha256": "d52db685d92cffad86a6245fe5818ab35cf258b9606d8dee44d5b2481f2e5062"
+      },
+      "firmware/meshticulum-bench/protocol.hpp": {
+        "bytes": 5075,
+        "sha256": "9664157bd3c526739317e18f6120c332f078026012bdb1271bd6254fe3419ad7"
+      }
+    },
+    "input_lock": {
+      "bytes": 7470,
+      "path": "firmware/meshticulum-bench/inputs.lock.json",
+      "sha256": "9d2d534dbf784db3c13b729ab91d20832e0dd536dd8edf7ce2ccd79985c6dfb2"
+    },
+    "primary_input_inventory": [
+      {
+        "bytes": 246321254,
+        "filename": "framework-arduinoespressif32-3.20017.241212+sha.dcc1105b.tar.gz",
+        "id": "framework",
+        "sha256": "7dbcfb86f9dfd5ecf6c881ed8226239d9ef63f27e1e1a2ddd87a87762e2ffbc9"
+      },
+      {
+        "bytes": 483365,
+        "filename": "tool-scons-4.40801.0.tar.gz",
+        "id": "scons",
+        "sha256": "289b1abf389b730ab5a1018ed9fc84e22d301e0d16c64548eb9db5bf8ba59d06"
+      },
+      {
+        "bytes": 518547,
+        "filename": "tool-esptoolpy-1.40501.0.tar.gz",
+        "id": "esptool",
+        "sha256": "691d750c68455056348fafdff137354233e9c9b1b21dae4839e0c5e6151b0a76"
+      },
+      {
+        "bytes": 916165,
+        "filename": "espressif32-6.11.0.tar.gz",
+        "id": "platform",
+        "sha256": "1c3ea866082d6e752f91fd2a9f76d4cb67417e3208a839b88ab387f5a612a7bd"
+      },
+      {
+        "bytes": 162696,
+        "filename": "Crypto-0.4.0.tar.gz",
+        "id": "crypto",
+        "sha256": "1867740aad0d61bdcbac25f6dbc8eefe6eed9e7b37f48d9d0b9d80500ad431e0"
+      },
+      {
+        "bytes": 35749,
+        "filename": "RTClib-2.1.4.tar.gz",
+        "id": "rtc",
+        "sha256": "9939e87c696879d7b34751ab6bd85d111e4a94f59698291c4c7979005ed53070"
+      },
+      {
+        "bytes": 8767,
+        "filename": "MeloperoRV3028-1.2.0.tar.gz",
+        "id": "rv3028",
+        "sha256": "ca7784016fee8d451274890c471f3652d73e852c2af89942cf60183e12d7f7d8"
+      },
+      {
+        "bytes": 23086,
+        "filename": "AdafruitBusIO-1.17.4.tar.gz",
+        "id": "busio",
+        "sha256": "406146081ca584ffa30264235f270521b1335d69d7b760807c650e502c323862"
+      },
+      {
+        "bytes": 19817,
+        "filename": "CayenneLPP-1.6.1.tar.gz",
+        "id": "cayenne",
+        "sha256": "e3717ac5f6c17ee617cc129506989973acdd40ada8724c7cd1fad8c21e784423"
+      },
+      {
+        "bytes": 72355,
+        "filename": "ArduinoJson-7.4.3.tar.gz",
+        "id": "json",
+        "sha256": "5a6a61292733a365e9384ce6a3d61dbedf7125a814b1424a3417e3135dc25190"
+      },
+      {
+        "bytes": 962573,
+        "filename": "MeshCore-d9296435.tar.gz",
+        "id": "meshcore",
+        "sha256": "280fb4e6a2704185a3ef2102887a0632b66611e68b2f6f25764709905fa3ba0a"
+      },
+      {
+        "bytes": 5183312,
+        "filename": "RadioLib-6d8934836678d8894e3d556550475b37dce3e2b6.tar.gz",
+        "id": "radiolib",
+        "sha256": "f282d20332432989dfc790e7e958f46bdd7b61a6bc7afe32d996ba65afe22fb7"
+      },
+      {
+        "bytes": 66791095,
+        "filename": "xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch5-macos-arm64.tar.gz",
+        "id": "compiler",
+        "sha256": "c64b05be25d26916c65dcfe11de9e60b96d58980b2df706d3074cb70b1ef6cb9"
+      },
+      {
+        "bytes": 196616149,
+        "filename": "toolchain-riscv32-esp-darwin_x86_64-8.4.0+2021r2-patch5.tar.gz",
+        "id": "riscv",
+        "sha256": "d0cea8c9a5a1661e98156d907a3037f9c3f2f46419523be1ad2540c900a7637c"
+      }
+    ],
+    "primary_inventory_matches_retained_archive_verification": true,
+    "recipe": {
+      "bytes": 12737,
+      "path": "firmware/meshticulum-bench/prepare_firmware.py",
+      "sha256": "92eab8413b0e4dce22ff57ff3dc3abf4aa0909a7f30f1d269b7a79bb58116805"
+    },
+    "retained_source_build_review": {
+      "bytes": 27307,
+      "sha256": "04f5b92bae9d44efa74be965c5795f787251200b446470f9a058ece323e17df8"
+    }
+  }
+}

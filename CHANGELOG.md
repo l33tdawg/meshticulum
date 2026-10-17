@@ -55,10 +55,20 @@ receipt. These are near-bench GFSK250 samples at about one metre. This initial
 repeat leaves sustained capacity, field range and alpha acceptance open. See
 [the exact measurement scope](docs/RADIO_SDK_MEASUREMENTS.md).
 
-The explicit firmware recipe reproduced both target outputs in fresh workspaces
-on one pinned build host. Full source/deployed-image correspondence, exact
-artifact notices and source/relinking closure, current release-tree review and
-release approval remain open. Retained extraction history is disclosed in
+A separate installed-wheel check at `673eb60` completed a fresh 100 kB file
+at **1,739.9 B/s including sender startup and a five-second pause between verified
+parts**, or **1,613.3 B/s through endpoint closure**. Both normal virtual environments
+matched all 67 runtime files; all five confirmations and all ten child exits passed.
+The [installed-SDK record](provenance/PUBLIC_INSTALLED_SDK_PROOF.json) retains the
+earlier incomplete installed trial and exact scope.
+
+The explicit firmware recipe reproduced current application BIN/ELF outputs for
+both named targets through locked vendor inputs on the recorded build host.
+The retained Heltec application-span check and later runtime-tag continuity
+remain distinct from fresh full-device readback and physical Xiao acceptance.
+The selected SDK/source-build package has passed its content/notice coverage
+review; optional prebuilt firmware has a separate distribution checklist.
+Final selected-artifact, current release-tree and release approval remain open. Retained extraction history is disclosed in
 [repository history](docs/REPOSITORY_HISTORY.md). Private native owner/consent and transport still require
 qualification. This draft represents no public alpha or production activation;
 MeshCore/Reticulum wire interoperability and overall speed/security superiority are unsupported. The competitive goal is faster useful transfers and stronger security than both; comparison uses [published figures and their conditions](docs/PERFORMANCE.md#comparison-with-published-figures), without requiring counterpart benchmark campaigns.

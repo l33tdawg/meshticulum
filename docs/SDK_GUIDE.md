@@ -2,7 +2,7 @@
 
 The project preview provides reusable Python libraries for authenticated transport, bounded resource exchange and offline encrypted envelopes. You can explore signed public resources without a radio, Lantern or the SAGE SDK. Native deployment and protected SAGE integration belong to the separate [Lantern repository](https://github.com/l33tdawg/sage-lantern).
 
-The [public radio examples](../examples/README.md) now have three finite GFSK near-bench file measurements, including two fresh five-part 100 kB bundles. [The report](RADIO_SDK_MEASUREMENTS.md) gives the exact source, rates and remaining qualification limits. The offline walkthrough below has its own scope.
+The [public radio examples](../examples/README.md) have two fresh five-part 100 kB measurements at **1.95–2.03 kB/s including sender startup**. A separate clean installed-wheel check completed another 100 kB file at **1.74 kB/s**, including startup and a five-second pause between verified parts. All used a direct near-bench GFSK250 path. [The report](RADIO_SDK_MEASUREMENTS.md) gives the exact packages, conditions and limits. The offline walkthrough below has its own scope.
 
 ## Install from the checkout
 
@@ -13,10 +13,17 @@ git clone https://github.com/l33tdawg/meshticulum.git
 cd meshticulum
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e .
+python -m pip install .
 ```
 
-The package dependencies are `cryptography` and `PyNaCl`, with the supported ranges in [pyproject.toml](../pyproject.toml). Install the optional `dev` extra to run the standalone tests:
+Check that Python resolves the installed package, then display the public CLI:
+
+```sh
+python -I -c "from importlib.metadata import version; import meshticulum; print(version('meshticulum')); print(meshticulum.__file__)"
+meshticulum-seed --help
+```
+
+The [installed-wheel record](../provenance/PUBLIC_INSTALLED_SDK_PROOF.json) used normal virtual environments on Linux aarch64 with Python 3.11.2 and 3.14.4, hash-pinned dependency wheels and all 67 runtime files checked against candidate `673eb60`. It does not make a downloadable alpha available; the release remains under review. The package dependencies are `cryptography` and `PyNaCl`, with the supported ranges in [pyproject.toml](../pyproject.toml). For development, install the optional `dev` extra in editable mode to run the standalone tests:
 
 ```sh
 python -m pip install -e '.[dev]'

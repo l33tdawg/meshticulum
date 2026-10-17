@@ -172,5 +172,12 @@
     "Default 20-second receiver grace is included in 23,900-byte scope-to-closure timing, but excluded from the sender-receipt boundary.",
     "Original operator captures remain in the lab; these allowlisted values and capture hashes do not independently attest hardware.",
     "No firmware flash during these samples, new native/private qualification, upstream ranking or alpha acceptance is claimed."
-  ]
+  ],
+  "receiver_initial_state": {
+    "verified_parts": 0,
+    "source_pack_staged_on_both_hosts": true,
+    "staged_source_chunks_used_for_receiver_acceptance": false,
+    "acceptance_source": "received ServiceTransfer bytes, publisher verification and whole-file hash",
+    "preexisting_cached_parts_field_scope": "verified receiver state; does not assert absence of staged source bytes"
+  }
 }
