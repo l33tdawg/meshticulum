@@ -304,6 +304,12 @@ class BenchFlow:
             if not self._receipt_attempted:
                 self.receipt_confirmation_outcome = 'NOT_DISPATCHED'
         self._check_flow()
+        # Carrier exceptions are settled UNKNOWN by the scheduler even when a
+        # worker fails to raise its own fence. A completed DATA receipt cannot
+        # turn that unresolved confirmation attempt into command success.
+        dispatch = self._receipt_link.last_result
+        require(dispatch is None or dispatch.outcome is not CommitOutcome.UNKNOWN,
+                'receipt_confirmation_write_unknown')
         require(self.authority.application_live(), 'receipt_confirmation_authority_expired')
         return self.receipt_confirmation_outcome == 'RF_DONE'
 
