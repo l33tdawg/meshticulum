@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """A bounded own-hardware file example; see examples/README.md before `transfer`.
 
-`manifest` and `assemble` use no hardware. `transfer` consumes already approved
-RunAuthority grants. It neither provisions grants nor discovers RF permission.
+`manifest`, `assemble` and `firmware-identity` use no hardware. `transfer`
+consumes already approved RunAuthority grants. It neither provisions grants nor
+discovers RF permission.
 No application or fleet integration is imported by this example.
 """
 import argparse
@@ -33,6 +34,7 @@ from meshticulum.scheduler.budget import BudgetPolicy, Ledger
 
 CHUNK_BYTES, MAX_FILE_BYTES, ACK_GRACE_US = 16384, 64 * 16384, 20000000
 FILE_SCHEMA = 'meshticulum.example-radio-file.v1'
+MAX_FIRMWARE_SOURCE_BYTES = 8 * 1024 * 1024
 
 
 def sha(data):
@@ -120,16 +122,35 @@ def host_boot():
     return Path('/proc/sys/kernel/random/boot_id').read_text().strip()
 
 
-def firmware_identity(path, pin):
-    source = json.loads(read_file(path, 65536, pin=pin))
-    require(source.get('schema') == 'meshticulum.raw-firmware-prepared.v1'
-            and set(source.get('application', {})) == {
+def firmware_source_identity(source):
+    require(type(source) is dict
+            and source.get('schema') == 'meshticulum.raw-firmware-prepared.v1'
+            and type(source.get('application')) is dict
+            and set(source['application']) == {
                 'main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp'}
             and all(type(value) is str and re.fullmatch('[0-9a-f]{64}', value)
                     for value in source['application'].values())
             and source.get('identity') == 'mtb1-' + sha(json.dumps(
                 source['application'], sort_keys=True).encode())[:10], 'example_firmware_source_mismatch')
     return source['identity']
+
+
+def firmware_identity(path, pin):
+    return firmware_source_identity(json.loads(read_file(path, 65536, pin=pin)))
+
+
+def compact_firmware_identity(args):
+    """Retain an exact full-manifest digest; do not verify a build or source tree."""
+    pin = args.firmware_source_sha256
+    require(type(pin) is str and re.fullmatch('[0-9a-f]{64}', pin), 'invalid_example_digest')
+    source = json.loads(read_file(args.firmware_source, MAX_FIRMWARE_SOURCE_BYTES, pin=pin))
+    identity = firmware_source_identity(source)
+    compact = {key: source[key] for key in ('schema', 'identity', 'application')}
+    compact['source_manifest_sha256'] = pin
+    data = json.dumps(compact, sort_keys=True, separators=(',', ':')).encode() + b'\n'
+    publish(args.output, data)
+    return dict(output=str(args.output), identity=identity,
+                firmware_source_sha256=sha(data), source_manifest_sha256=pin)
 
 
 def inspect_usb(args):
@@ -421,6 +442,9 @@ def main():
     commands = parser.add_subparsers(dest='command', required=True)
     create = commands.add_parser('manifest', help='describe a local file; no hardware')
     create.add_argument('input', type=Path)
+    compact = commands.add_parser('firmware-identity',
+        help='write compact identity from a pinned SOURCE.json; no hardware')
+    compact.add_argument('--output', required=True, type=Path)
     assemble = commands.add_parser('assemble', help='verify and publish all chunks; no hardware')
     inspect = commands.add_parser('inspect', help='read HELLO/capabilities/initial STATUS after boot; no ARM or TX')
     run = commands.add_parser('transfer', help='consume one preapproved grant; arms radio and transmits DATA or ACK')
@@ -436,7 +460,7 @@ def main():
     run.add_argument('--file-issued-epoch-us', required=True, type=int)
     run.add_argument('--admission', required=True, type=Path)
     run.add_argument('--admission-sha256', required=True)
-    for sub in (run, inspect):
+    for sub in (run, inspect, compact):
         sub.add_argument('--firmware-source', required=True, type=Path)
         sub.add_argument('--firmware-source-sha256', required=True)
     inspect.add_argument('--device', type=Path, required=True)
@@ -449,6 +473,8 @@ def main():
     args = parser.parse_args()
     if args.command == 'manifest':
         value = manifest(read_file(args.input, MAX_FILE_BYTES))
+    elif args.command == 'firmware-identity':
+        value = compact_firmware_identity(args)
     elif args.command == 'assemble':
         file = load_manifest(args.manifest, args.manifest_sha256)
         data = VerifiedChunks(args.chunks).assemble(file['chunks'])
