@@ -4,6 +4,15 @@
   "core_commit": "da247a1bb74601973f0bb72f51c268a412714719",
   "modulation": "GFSK",
   "modem_bit_rate_bps": 250000,
+  "configured_profile": {
+    "class": "Gfsk250Profile",
+    "frequency_hz": 921375000,
+    "chip_power_dbm": 0,
+    "bit_rate_bps": 250000,
+    "deviation_hz": 62500,
+    "rx_bandwidth_hz": 467000,
+    "preamble_bits": 32
+  },
   "sender_hardware": "Orange Pi 5 Plus SX1262 HAT",
   "receiver_hardware": "Heltec V4 SX1262 MCU",
   "topology": "direct single radio link",
@@ -16,6 +25,19 @@
   "native_private_qualified": false,
   "sustained_goodput_qualified": false,
   "alpha_accepted": false,
+  "scope_to_closure_includes": [
+    "grant delivery",
+    "endpoint startup",
+    "coordination",
+    "verification",
+    "endpoint cleanup"
+  ],
+  "scope_to_closure_excludes": [
+    "offline file generation",
+    "signing",
+    "build",
+    "staging"
+  ],
   "samples": [
     {
       "useful_decoded_bytes": 23900,

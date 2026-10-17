@@ -4,6 +4,8 @@ The public SDK completed **two fresh 100,000-byte files at 2,030.2 and 1,949.2 u
 
 All three samples used source `da247a1bb74601973f0bb72f51c268a412714719`, an Orange Pi 5 Plus SX1262 HAT sender and a Heltec V4 MCU receiver about **one metre apart**. The modem used **GFSK at 250 kb/s**. These are direct, near-bench GFSK results; they provide no LoRa-modulation, multihop or field-range measurement. No new firmware was flashed for these samples.
 
+The tested [`Gfsk250Profile`](https://github.com/l33tdawg/meshticulum/blob/da247a1bb74601973f0bb72f51c268a412714719/src/meshticulum/bench/gfsk250_profile.py) used **921,375,000 Hz**, **0 dBm configured chip power**, a **250,000 bit/s** rate, **62,500 Hz** frequency deviation, **467,000 Hz** receive bandwidth and a **32-bit** preamble. Configured chip power is not a measurement of EIRP; measured EIRP remains unavailable.
+
 ## Useful bytes and elapsed time
 
 Rates use decimal bytes: **1 kB = 1,000 bytes**. The numerator is the original decoded file length, excluding manifests, framing and encoded representation bytes. The elapsed intervals include transport overhead, host work, ACKs and any retries.
@@ -20,7 +22,7 @@ Rates use decimal bytes: **1 kB = 1,000 bytes**. The numerator is the original d
 | Same second file | First DATA-worker call → final authenticated receipt | 50.360284 | 1,985.7 |
 | Same second file | Scope issue → both endpoints closed | 56.957045 | **1,755.7** |
 
-The 100 kB intervals span all five sequential parts, including coordination between them. They are whole-file elapsed intervals, rather than sums of selected busy periods. Scope-to-closure also includes preparation and endpoint cleanup. The 23,900-byte sample keeps the default receiver grace: its 20-second wait appears in scope-to-closure time, after the sender has received its authenticated ACK.
+The 100 kB intervals span all five sequential parts, including coordination between them. They are whole-file elapsed intervals, rather than sums of selected busy periods. Scope-to-closure includes grant delivery, endpoint startup, coordination, verification and endpoint cleanup. Offline file generation, signing, build and staging happened before scope issue and are excluded from this interval; it does not measure a complete cold deployment. The 23,900-byte sample keeps the default receiver grace: its 20-second wait appears in scope-to-closure time, after the sender has received its authenticated ACK.
 
 ## Completion and receiver confirmation
 

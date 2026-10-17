@@ -62,6 +62,13 @@ def verify_sdk_files(record):
     require(record['schema']=='meshticulum.published-sdk-file-samples.v1','unsupported SDK report')
     require(re.fullmatch('[0-9a-f]{40}',record['core_commit']) is not None,'invalid source pin')
     require(record['modulation']=='GFSK' and record['modem_bit_rate_bps']==250000,'wrong modulation scope')
+    require(record['configured_profile']=={
+        'class':'Gfsk250Profile','frequency_hz':921375000,'chip_power_dbm':0,
+        'bit_rate_bps':250000,'deviation_hz':62500,'rx_bandwidth_hz':467000,
+        'preamble_bits':32},'tested profile mismatch')
+    require(record['scope_to_closure_includes']==['grant delivery','endpoint startup','coordination','verification','endpoint cleanup']
+            and record['scope_to_closure_excludes']==['offline file generation','signing','build','staging'],
+            'scope-to-closure timing scope mismatch')
     for field in ('measured_range_metres','measured_RF_airtime_us','measured_energy_joules','measured_eirp_dbm'):
         require(record[field] is None,'missing measurement invented: '+field)
     for field in ('native_private_qualified','sustained_goodput_qualified','alpha_accepted'):
