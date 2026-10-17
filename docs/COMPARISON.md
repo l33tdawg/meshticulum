@@ -43,7 +43,7 @@ There is also an intentional difference in identity policy. Meshticulum's curren
 
 ## Published performance comparison
 
-The latest **1,071.3 B/s** Meshticulum finite resource result is numerically **2.61×** the **410 B/s** contributor measurement in [MeshCore issue #3404](https://github.com/meshcore-dev/MeshCore/issues/3404). Both state SF7/BW500, but the MeshCore report times individually acknowledged 128-byte frames and our result times a windowed resource reply. This supports a scoped comparison between published observations, not a general speed or security ranking. Reticulum's cited **3.1 kb/s** figure describes on-air bitrate under different settings; it is neither **3.1 kB/s** nor encrypted application goodput. [Performance](PERFORMANCE.md#comparison-with-published-figures) keeps the units, conditions and missing measurements explicit.
+The latest **1,071.3 B/s** Meshticulum finite resource result is numerically **2.61×** the **410 B/s** contributor measurement in [MeshCore issue #3404](https://github.com/meshcore-dev/MeshCore/issues/3404). Both state SF7/BW500, but the MeshCore report times individually acknowledged 128-byte frames and our result times a windowed resource reply. This supports a scoped comparison between published observations, not a general speed or security ranking. Reticulum's cited **3.1 kbit/s** figure describes on-air bitrate under different settings; it is neither **3.1 kB/s** nor encrypted application goodput. [Performance](PERFORMANCE.md#comparison-with-published-figures) keeps the units, conditions and missing measurements explicit.
 
 ## Security properties and gaps
 

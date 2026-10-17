@@ -42,7 +42,7 @@ The flow history includes references to lab receipts in the original SAGE checko
 
 ## Follow qualification
 
-The [roadmap](ROADMAP.md) separates current evidence, alpha requirements and later work. Alpha targets sustained useful encrypted delivery above 1,000 B/s including sender startup, reliable verified completion and deployable SDK/firmware. Real mixed/native and private integration, security, firmware/source/notices and release checks remain required. The optional 4–5 kB/s stretch and post-quantum feasibility work belong after alpha.
+The [roadmap](ROADMAP.md) separates current evidence, published alpha scope and later work. The alpha records useful encrypted delivery above 1 kB/s (8 kbit/s) including sender startup on its declared near-bench path, reliable verified completion and a deployable SDK/firmware source-build path. Wider mixed/native integration, private security and field qualification remain required. The optional 4 to 5 kB/s (32 to 40 kbit/s) stretch and post-quantum feasibility work belong after the baseline.
 
 Read [Performance](PERFORMANCE.md) alongside that roadmap. Source controls, modeled workers and loopback transfers provide useful implementation evidence. Physical RF completion, peer receipt, publisher verification and production application acceptance need their respective observations.
 
