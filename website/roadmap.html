@@ -37,15 +37,28 @@
     </div>
   </header>
   <main id="main" class="roadmap-page">
-    <section class="docs-hero"><div class="container"><p class="eyebrow">Project roadmap / 17 October 2026</p><h1>A usable alpha.<br><em>Measured on radio.</em></h1><p>The experimental 1.0.0-alpha is now published with a tested SDK wheel, source archive and firmware source-build path. Follow-on work targets sustained useful encrypted delivery above 1 kB/s, broader completion and recovery, and qualification beyond the declared near-bench path.</p></div></section>
+    <section class="docs-hero"><div class="container"><p class="eyebrow">Project roadmap / 18 October 2026</p><h1>A usable alpha.<br><em>Measured on radio.</em></h1><p>The experimental 1.0.0-alpha is published with a tested SDK wheel, source archive and firmware source-build path. Fresh 250 kB, 500 kB and 1 MB transfers now extend the measured file range while work continues toward consistent usable delivery, broader completion and recovery.</p></div></section>
     <div class="docs-tabs"><nav class="container" aria-label="Documentation pages"><a href="technical.html">Technical overview</a><a href="comparison.html">Comparison</a><a href="getting-started.html">Getting started</a><a href="roadmap.html" aria-current="page">Roadmap</a></nav></div>
     <section class="section paper docs-body"><div class="container docs-grid">
       <aside class="docs-toc" aria-label="On this page"><span>On this page</span><a href="#now">Where we are</a><a href="#installed-sdk">Installed SDK check</a><a href="#alpha">The alpha work</a><a href="#later">After the baseline</a><a href="#release">Release preparation</a><a href="#family">Project boundaries</a></aside>
       <div class="docs-prose">
         <section id="now">
           <p class="eyebrow">Recorded / Public SDK file transfers</p>
-          <h2>100 kB verified twice.<br>1.95–2.03 kB/s, 15.6–16.2 kbit/s.</h2>
-          <p>The public SDK completed two fresh 100,000-byte files, each across five signed parts on a direct GFSK250 link. The recipient independently verified the publisher, every part and each whole-file SHA-256. A separate fresh 23,900-byte file reached 2.535 kB/s (20.28 kbit/s) through authenticated receipt.</p>
+          <h2>100 kB to 1 MB verified.<br>2.11, 2.22 and 1.75 kB/s.</h2>
+          <p>The signed-bundle path completed fresh 250,000-, 500,000- and 1,000,000-byte files on the direct GFSK250 HAT-to-MCU link. Every recipient verified the publisher, all parts and the exact whole-file SHA-256. Sender-startup-inclusive rates were <strong>2.111, 2.216 and 1.750 kB/s</strong> (<strong>16.889, 17.725 and 13.999 kbit/s</strong>).</p>
+          <div class="table-scroll" role="region" aria-labelledby="large-caption" tabindex="0">
+            <table class="roadmap-table">
+              <caption id="large-caption">18 October 2026: fresh files at source 1f85608. Rates use decimal kB/s and include sender startup through final authenticated receipt.</caption>
+              <thead><tr><th scope="col">Whole-file boundary</th><th scope="col">250 kB / 11 parts</th><th scope="col">500 kB / 21 parts</th><th scope="col">1 MB / 42 parts</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">First sender startup through final authenticated receipt</th><td>118.420 s · 2.111 kB/s</td><td>225.668 s · 2.216 kB/s</td><td>571.484 s · 1.750 kB/s</td></tr>
+                <tr><th scope="row">First DATA-worker call through final authenticated receipt</th><td>117.383 s · 2.130 kB/s</td><td>223.949 s · 2.233 kB/s</td><td>570.384 s · 1.753 kB/s</td></tr>
+                <tr><th scope="row">Scope issue through both endpoints closed</th><td>121.214 s · 2.063 kB/s</td><td>228.292 s · 2.190 kB/s</td><td>573.956 s · 1.742 kB/s</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="docs-note"><strong>250 kB and 500 kB clear the 2.0 kB/s usability floor; 1 MB does not yet.</strong><p>All 74 receiver confirmations were accepted and all 148 endpoint children exited zero. The 250 kB run had no new raw receive drop; the 500 kB and 1 MB runs each recorded one. The 1 MB result averaged 11.0 seconds per part with 110.8 seconds of coordination gaps, so persistent startup/worker cost and host load are the next optimization targets.</p></div>
+          <p>The earlier public SDK set also completed two fresh 100,000-byte files, each across five signed parts, and a separate 23,900-byte file. Those remain the historical baseline below.</p>
           <p>The table shows whole-file elapsed boundaries for both 100 kB runs. Every interval includes all five parts and coordination gaps. Rates use decimal kB/s: 1 kB = 1,000 bytes. Multiply bytes per second by eight for bit rates.</p>
           <div class="table-scroll" role="region" aria-labelledby="sample-caption" tabindex="0">
             <table class="roadmap-table">
@@ -60,7 +73,7 @@
           </div>
           <div class="docs-note"><strong>Above the alpha floor for this tested path.</strong><p>All ten receiver confirmations were accepted. The files had zero and one DATA retransmissions respectively and zero new receiver drops; all twenty endpoint children exited successfully. This initial repeat supports the published finite alpha scope; sustained-capacity evidence remains open.</p></div>
           <p>In bit-rate terms, the two sender-start rates were <strong>16.24 and 15.59 kbit/s</strong>. Scope-to-closure rates were <strong>14.85 and 14.05 kbit/s</strong>. The SX1262 HAT sender and Heltec V4 MCU receiver were about one metre apart. GFSK at 250 kbit/s is a separate modulation from LoRa. These samples provide no field-range result; measured RF airtime, energy and EIRP remain unavailable. Earlier LoRa and upstream observations keep their own conditions on the <a href="comparison.html#published-observations">comparison page</a>.</p>
-          <p class="source-line"><a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/RADIO_SDK_MEASUREMENTS.md">Read the measurement report</a> · <a href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-17-public-sdk/results.json">Inspect the sanitized SDK records</a></p>
+          <p class="source-line"><a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/RADIO_SDK_MEASUREMENTS.md">Read the measurement report</a> · <a href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-18-public-sdk-large-files/results.json">Inspect the larger-file records</a> · <a href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-17-public-sdk/results.json">Inspect the 100 kB records</a></p>
         </section>
         <section id="installed-sdk">
           <p class="eyebrow">Recorded / Clean installation and continuation</p>
