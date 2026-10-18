@@ -20,6 +20,9 @@ class RadioAdmission:
     max_boot_estimated_airtime_us: int
 
     def __post_init__(self):
+        self._validate_limits(256, 60000000)
+
+    def _validate_limits(self, max_attempts, max_airtime_us):
         require(type(self.country) is str and len(self.country) == 2
                 and self.country.isascii() and self.country.isalpha() and self.country.isupper(),
                 'invalid_radio_admission_country')
@@ -30,8 +33,8 @@ class RadioAdmission:
         require(all(type(value) is int for value in (self.min_lease_ms, self.max_lease_ms,
                     self.max_boot_attempts, self.max_boot_estimated_airtime_us))
                 and 1 <= self.min_lease_ms <= self.max_lease_ms <= 180000
-                and 1 <= self.max_boot_attempts <= 256
-                and 1 <= self.max_boot_estimated_airtime_us <= 60000000,
+                and 1 <= self.max_boot_attempts <= max_attempts
+                and 1 <= self.max_boot_estimated_airtime_us <= max_airtime_us,
                 'invalid_radio_admission_limits')
         for row in self.waveforms:
             RadioProfile(*row, self.max_lease_ms, self.max_boot_attempts,
@@ -48,6 +51,19 @@ class RadioAdmission:
                 and profile.max_boot_attempts <= self.max_boot_attempts
                 and profile.max_boot_estimated_airtime_us <= self.max_boot_estimated_airtime_us,
                 'unsupported_admitted_bench_profile')
+
+
+@dataclass(frozen=True)
+class LoraAdmission(RadioAdmission):
+    """LoRa admission with cumulative boot ceilings.
+
+    The legacy ``RadioAdmission`` keeps its 256-attempt/60-second per-run
+    ceiling. Bench campaigns that preserve debt across runs need explicit
+    cumulative headroom, matching the already-qualified GFSK250 path.
+    """
+
+    def __post_init__(self):
+        self._validate_limits(100000, 300000000)
 
 
 from .gfsk_profile import GfskProfile

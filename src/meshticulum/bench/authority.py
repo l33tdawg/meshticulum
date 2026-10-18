@@ -26,7 +26,7 @@ from ..contracts.negotiation import (CapabilityLimits, Feature,
 from ..scheduler.scheduler import DispatchGrant, LeaseScope
 from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
-from .admission import RadioAdmission,GfskAdmission,Gfsk250Admission
+from .admission import RadioAdmission,LoraAdmission,GfskAdmission,Gfsk250Admission
 from .gfsk_profile import GfskProfile,radio_airtime_us,radio_is_fast,radio_is_sf5
 from .gfsk250_profile import Gfsk250Profile
 from .wire import BenchGrant, require
@@ -66,7 +66,7 @@ def _open(path, flags=os.O_RDONLY):
 
 class RunAuthority:
     def __init__(self, directory, *, expected_unit, host_boot_id, clock, owner_probe, radio_admission=None):
-        require(type(radio_admission) in (RadioAdmission,GfskAdmission,Gfsk250Admission), 'explicit_native_radio_admission_required')
+        require(type(radio_admission) in (RadioAdmission,LoraAdmission,GfskAdmission,Gfsk250Admission), 'explicit_native_radio_admission_required')
         self.path = Path(directory).absolute()
         _private_info(self.path.lstat(), directory=True)
         self.fds, self.held = {}, {}
@@ -136,7 +136,7 @@ class RunAuthority:
                 require(type(radio_admission) is Gfsk250Admission,'explicit_gfsk250_admission_required')
                 self.profile=Gfsk250Profile.from_dict(p['profile'],board_id=1)
             else:
-                require(type(radio_admission) is RadioAdmission,'wrong_radio_admission_modem')
+                require(type(radio_admission) in (RadioAdmission,LoraAdmission),'wrong_radio_admission_modem')
                 self.profile = RadioProfile(**p['profile'])
             self.profile.encode(board_id=1)
             radio_admission.check(p['country'], p['antenna_confirmed'], self.profile)
