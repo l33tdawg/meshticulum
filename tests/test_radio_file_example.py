@@ -425,3 +425,96 @@ def test_partial_arm_failure_contains_then_retires_and_closes(tmp_path, monkeypa
     assert (run / 'started').exists() and (run / 'attempts.db').exists()
     with sqlite3.connect(run / 'wire.db') as db:
         assert db.execute('SELECT retired FROM state').fetchone() == (1,)
+
+
+def test_lora_plan_selects_lora_profile_and_serial_worker(tmp_path, monkeypatch):
+    """A plan with no modem marker runs the LoRa worker, not GFSK250."""
+    from meshticulum.bench.serial_protocol import FirmwareIdentity
+    clock = Clock()
+    file = example.manifest(b'one')
+    descriptor = file['chunks'][0]
+    run = tmp_path / 'lora'
+    run.mkdir(mode=0o700)
+    plan = dict(schema='meshticulum.bench-run.v1', unit='receiver', host_boot_id=BOOT,
+        local_peer=PEERS[1], initiator=PEERS[0], responder=PEERS[1],
+        session_id='0' * 31 + '1', generation='22' * 16,
+        issued_epoch_us=1000000000, expires_epoch_us=1240000000,
+        profile=dict(frequency_hz=921375000, bandwidth_hz=500000, spreading_factor=7,
+            coding_rate=5, chip_power_dbm=0, preamble=8, sync_word=18, lease_ms=180000,
+            max_boot_attempts=256, max_boot_estimated_airtime_us=60000000),
+        sender_unit='sender', country='MY', antenna_confirmed=True, max_frames=512,
+        object=descriptor)
+    for name, data in (('grant.json', json.dumps(plan).encode()),
+                       ('secret.bin', b'K' * 32), ('active', b'active\n')):
+        path = run / name
+        path.write_bytes(data)
+        path.chmod(0o600)
+    raw = json.dumps(file).encode()
+    manifest_path = tmp_path / 'manifest.json'
+    manifest_path.write_bytes(raw)
+    admission_path = tmp_path / 'admission.json'
+    admission_raw = json.dumps(dict(country='MY', waveforms=[[921375000, 500000, 7, 5, 0, 8, 18]],
+        min_lease_ms=1000, max_lease_ms=180000, max_boot_attempts=256,
+        max_boot_estimated_airtime_us=60000000)).encode()
+    admission_path.write_bytes(admission_raw)
+    admission_path.chmod(0o600)
+    source_path, source_pin, source = source_metadata(tmp_path)
+    calls = []
+
+    class Channel:
+        def __init__(self, *args, **kwargs):
+            calls.append('open')
+
+        def close(self):
+            calls.append('close')
+
+    class Owner:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def current(self):
+            return True
+
+        def close(self):
+            pass
+
+    class Worker:
+        def __init__(self, channel):
+            calls.append('lora-worker')
+
+        def discover(self, **kwargs):
+            return FirmwareIdentity(bytes.fromhex('0000545662f61b440000000000000012'),
+                                    1, source['identity'])
+
+        def arm(self, **kwargs):
+            calls.append('partial-arm')
+            assert kwargs['authorize']()
+            raise WireError('source_partial_arm_failure')
+
+        def disarm(self):
+            calls.append('disarm')
+
+    monkeypatch.setattr(example, 'ExclusiveSerial', Channel)
+    monkeypatch.setattr(example, 'HeldHardware', Owner)
+    monkeypatch.setattr(example, 'SerialWorker', Worker)
+    monkeypatch.setattr(example, 'host_boot', lambda: BOOT)
+    monkeypatch.setattr(example, 'clock', clock)
+    args = SimpleNamespace(manifest=manifest_path, manifest_sha256=example.sha(raw), chunk=0,
+        grant_directory=run, grant_sha256=example.sha((run / 'grant.json').read_bytes()),
+        file_issued_epoch_us=1000000000, file_expires_epoch_us=1240000000,
+        admission=admission_path, admission_sha256=example.sha(admission_raw), input=None,
+        unit='receiver', firmware_source=source_path, firmware_source_sha256=source_pin,
+        chunks=tmp_path / 'lora-cache', interface='usb', device='/source-model', usb_serial='model')
+    with pytest.raises(BaseExceptionGroup, match='cleanup failed') as failure:
+        example.transfer_chunk(args)
+    assert str(failure.value.exceptions[0]) == 'source_partial_arm_failure'
+    assert calls == ['open', 'lora-worker', 'partial-arm', 'disarm', 'close']
+
+
+def test_plan_modem_rejects_unknown_marker():
+    assert example.plan_modem({}) == 'lora'
+    assert example.plan_modem({'radio_modem': 'gfsk250'}) == 'gfsk250'
+    with pytest.raises(WireError, match='example_unknown_radio_modem'):
+        example.plan_modem({'radio_modem': 'gfsk125'})
+    with pytest.raises(WireError, match='example_unknown_radio_modem'):
+        example.plan_modem({'radio_modem': 'lora'})

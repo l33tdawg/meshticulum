@@ -144,6 +144,16 @@ JSON arrays. These are limits your application has independently admitted,
 not permission inferred from the grant or from a firmware feature reply.
 Pass the exact file hash to the command.
 
+A plan without a `radio_modem` marker selects the LoRa profile path instead of
+GFSK250. The same commands apply, but the plan's `profile` is the seven-field
+`RadioProfile` tuple (frequency, bandwidth, spreading factor, coding rate, chip
+power, preamble, sync word), and the admission file supplies the inert
+[`RadioAdmission`](../src/meshticulum/bench/admission.py) fields: `country`,
+`waveforms` (a JSON array of those seven-field rows), `min_lease_ms`,
+`max_lease_ms`, `max_boot_attempts` and `max_boot_estimated_airtime_us`.
+The LoRa path refuses an unknown modem marker and never upgrades a profile the
+admission did not list.
+
 The public admission retains a maximum 180-second lease, 256 attempts and
 60,000,000 estimated airtime microseconds per run. The MCU retains cumulative
 boot attempt/airtime counters across all chunk sessions. This direction uses
