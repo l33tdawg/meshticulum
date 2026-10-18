@@ -123,10 +123,11 @@ class Gfsk250AdmissionLimits(unittest.TestCase):
             self.admission().check('MY', True,
                                   GfskProfile(921375000, 0, 90000, 256, 60000000))
 
-    def test_lora_admission_bounds_are_unchanged(self):
+    def test_lora_admission_retains_firmware_cumulative_headroom(self):
         waveform = (921375000, 500000, 7, 5, 0, 8, 0x12)
+        RadioAdmission('MY', (waveform,), 1000, 180000, 257, 60000000)
         with self.assertRaisesRegex(WireError, 'invalid_radio_admission_limits'):
-            RadioAdmission('MY', (waveform,), 1000, 180000, 257, 60000000)
+            RadioAdmission('MY', (waveform,), 1000, 180000, 100001, 60000000)
 
 
 if __name__ == '__main__':
