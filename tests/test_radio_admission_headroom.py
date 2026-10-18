@@ -7,5 +7,5 @@ def test_lora_admission_can_retain_cumulative_mcu_headroom():
     admission = RadioAdmission(
         'MY', (waveform,), 10000, 180000, 1024, 120000000)
     profile = RadioProfile(
-        *waveform, 90000, 384, 60000000)
+        *waveform, 90000, 1024, 60000000)
     admission.check('MY', True, profile)
