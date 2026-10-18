@@ -145,6 +145,17 @@ def test_real_composition_waits_for_authenticated_startup_credit(pair):
     assert sender.snapshot()['complete']
 
 
+def test_receiver_startup_announcements_cover_slow_peer_launch(pair):
+    data, clock, (sender, receiver), workers = pair
+    sender.send(data)
+    for _ in range(12):
+        receiver.step()
+        clock.advance(500000)
+    assert receiver.flow.startup_pending
+    assert receiver.flow.failure is None
+    finish(pair)
+
+
 def test_tx_events_preserve_driver_and_host_worker_timings_separately(pair):
     data, clock, (sender, receiver), workers = pair
     original = workers[0].transmit
