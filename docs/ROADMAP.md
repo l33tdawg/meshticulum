@@ -20,13 +20,12 @@ The two 100 kB sender-start rates were **2.03 and 1.95 kB/s**, equivalent to **1
 
 Each 100 kB interval includes all five sequential parts and coordination gaps. All ten receiver confirmations were accepted, and all twenty endpoint children exited successfully. The two files had zero and one DATA retransmissions respectively, with zero new receiver drops. The smaller sample used the default 20-second receiver grace, which appears in its closure time.
 
-On **18 October 2026**, source `1f85608` extended the verified public-file set to **250 kB, 500 kB and 1 MB** using the same direct GFSK250 HAT/MCU path. Sender-startup-inclusive useful rates were **2.111, 2.216 and 1.750 kB/s (16.889, 17.725 and 13.999 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 1.742 kB/s (16.500, 17.521 and 13.938 kbit/s)**. The 11-, 21- and 42-part files all passed independent publisher and whole-file verification. Each had one DATA retransmission; the 250 kB run had no new receive drop, while the 500 kB and 1 MB runs each advanced the raw drop counter by one. All 74 authenticated receiver confirmations were accepted and all 148 endpoint children exited zero. [The larger-file measurements](RADIO_SDK_MEASUREMENTS.md#larger-public-files) retain the exact windows, attempts and reclassification record.
+On **18 October 2026**, source `1f85608` extended the verified public-file set to **250 kB, 500 kB and 1 MB** using the same direct GFSK250 HAT/MCU path. Final sender-startup-inclusive useful rates were **2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 2.218 kB/s (16.500, 17.521 and 17.742 kbit/s)**. The 11-, 21- and 42-part files all passed independent publisher and whole-file verification. [The larger-file measurements](RADIO_SDK_MEASUREMENTS.md#larger-public-files) retain all attempts, the original host-contended 1 MB sample, the CPU-isolated control and the 500 kB diagnostic reclassification.
 
-The 250 kB and 500 kB files clear **2.0 kB/s**; the 1 MB file does not on the
-whole-file boundary. Its payload interval is still **2.5112 kB/s**, but the 42
-part intervals sum to **460.672429 s** and leave **110.812061 s** of
-coordination gaps. The first six parts averaged **8.590 s** each; parts 6–41
-averaged **11.365 s**. Warm workers and fewer restarts are the measured fix.
+All three final files clear **2.0 kB/s** on the whole-file boundary. The original
+1 MB run reached 1.750 kB/s while the sender's production LLM occupied CPU4;
+excluding that core raised the fresh control to **2.230 kB/s**. Warm workers and
+fewer restarts remain useful headroom for larger files and the HTTP path.
 
 A first one-request HTTP gateway also fetched `http://example.com/` through a
 second unit's internet connection and returned it over the radio. A `links`
@@ -55,10 +54,10 @@ Compare performance and security with published MeshCore and Reticulum evidence 
 ## After alpha
 
 - **More headroom and broader measurements.** Establish repeated startup-inclusive performance before treating the new finite rates as sustained capacity. Improve startup latency, retry cost, completion consistency and resource use. Expand file sizes, topology, range and power measurements under fresh bounded admission.
-- **Warm the request path.** Reuse workers and pre-stage grants so the 1 MB
-  whole-file rate can clear 2.0 kB/s and the HTTP gateway can target a normal
-  30-second browser timeout. This is the direct measured fix for the current
-  process-start and coordination cost.
+- **Warm the request path.** Reuse workers and pre-stage grants so the HTTP
+  gateway can target a normal 30-second browser timeout and larger files retain
+  more headroom above 2.0 kB/s. This is the direct measured fix for cold-start
+  process and coordination cost.
 - **Optional 4 to 5 kB/s (32 to 40 kbit/s) stretch.** Evaluate higher useful encrypted rates on explicitly supported hardware and profiles after the reliability and deployment work. Capability, range and operating cost need new measurements; raw modem bitrate is not application goodput.
 - **Richer path selection.** Extend verified-piece reuse and locally measured radio/IP choices. Autonomous routing and MeshCore/Reticulum wire interoperability remain unimplemented; existing finite path demonstrations do not supply those features.
 - **Post-quantum feasibility and hybrid research.** Evaluate the separate experimental hybrid prototype's security review, replay/key lifecycle, setup cost, loss recovery and device memory/performance. The default protocols remain classical. PQC is not an alpha prerequisite, a current radio capability or a promised delivery date. [Post-quantum status](POST_QUANTUM.md) records the prototype and its limits.

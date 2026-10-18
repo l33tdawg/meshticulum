@@ -44,20 +44,20 @@
       <div class="docs-prose">
         <section id="now">
           <p class="eyebrow">Recorded / Public SDK file transfers</p>
-          <h2>100 kB to 1 MB verified.<br>2.11, 2.22 and 1.75 kB/s.</h2>
-          <p>The signed-bundle path completed fresh 250,000-, 500,000- and 1,000,000-byte files on the direct GFSK250 HAT-to-MCU link. Every recipient verified the publisher, all parts and the exact whole-file SHA-256. Sender-startup-inclusive rates were <strong>2.111, 2.216 and 1.750 kB/s</strong> (<strong>16.889, 17.725 and 13.999 kbit/s</strong>).</p>
+          <h2>100 kB to 1 MB verified.<br>2.11, 2.22 and 2.23 kB/s.</h2>
+          <p>The signed-bundle path completed fresh 250,000-, 500,000- and 1,000,000-byte files on the direct GFSK250 HAT-to-MCU link. Every recipient verified the publisher, all parts and the exact whole-file SHA-256. Final sender-startup-inclusive rates were <strong>2.111, 2.216 and 2.230 kB/s</strong> (<strong>16.889, 17.725 and 17.838 kbit/s</strong>).</p>
           <div class="table-scroll" role="region" aria-labelledby="large-caption" tabindex="0">
             <table class="roadmap-table">
               <caption id="large-caption">18 October 2026: fresh files at source 1f85608. Rates use decimal kB/s and include sender startup through final authenticated receipt.</caption>
-              <thead><tr><th scope="col">Whole-file boundary</th><th scope="col">250 kB / 11 parts</th><th scope="col">500 kB / 21 parts</th><th scope="col">1 MB / 42 parts</th></tr></thead>
+              <thead><tr><th scope="col">Whole-file boundary</th><th scope="col">250 kB / 11 parts</th><th scope="col">500 kB / 21 parts</th><th scope="col">1 MB / 42 parts, CPU-isolated</th></tr></thead>
               <tbody>
-                <tr><th scope="row">First sender startup through final authenticated receipt</th><td>118.420 s · 2.111 kB/s</td><td>225.668 s · 2.216 kB/s</td><td>571.484 s · 1.750 kB/s</td></tr>
-                <tr><th scope="row">First DATA-worker call through final authenticated receipt</th><td>117.383 s · 2.130 kB/s</td><td>223.949 s · 2.233 kB/s</td><td>570.384 s · 1.753 kB/s</td></tr>
-                <tr><th scope="row">Scope issue through both endpoints closed</th><td>121.214 s · 2.063 kB/s</td><td>228.292 s · 2.190 kB/s</td><td>573.956 s · 1.742 kB/s</td></tr>
+                <tr><th scope="row">First sender startup through final authenticated receipt</th><td>118.420 s · 2.111 kB/s</td><td>225.668 s · 2.216 kB/s</td><td>448.474 s · 2.230 kB/s</td></tr>
+                <tr><th scope="row">First DATA-worker call through final authenticated receipt</th><td>117.383 s · 2.130 kB/s</td><td>223.949 s · 2.233 kB/s</td><td>447.267 s · 2.236 kB/s</td></tr>
+                <tr><th scope="row">Scope issue through both endpoints closed</th><td>121.214 s · 2.063 kB/s</td><td>228.292 s · 2.190 kB/s</td><td>450.903 s · 2.218 kB/s</td></tr>
               </tbody>
             </table>
           </div>
-          <div class="docs-note"><strong>250 kB and 500 kB clear the 2.0 kB/s usability floor; 1 MB does not yet.</strong><p>All 74 receiver confirmations were accepted and all 148 endpoint children exited zero. The 250 kB run had no new raw receive drop; the 500 kB and 1 MB runs each recorded one. The 1 MB result averaged 11.0 seconds per part with 110.8 seconds of coordination gaps; the first six parts averaged 8.590 seconds and parts 6–41 averaged 11.365 seconds, so persistent startup/worker cost and host load are the next optimization targets.</p></div>
+          <div class="docs-note"><strong>All three final files clear the 2.0 kB/s usability floor.</strong><p>The original 1 MB run reached 1.750 kB/s while the sender host's production LLM engine held CPU4 at roughly 95%; that sample remains in the record. Excluding CPU4 from the benchmark reduced mean part time from 10.97 to 8.66 seconds and raised the fresh 1 MB control to 2.230 kB/s. All 74 receiver confirmations across the final three files were accepted.</p></div>
           <p>A first one-request HTTP gateway also fetched <code>http://example.com/</code> through unit A's internet connection and returned it over the radio. Unit C's <code>links</code> text browser rendered the page in <strong>53.3 seconds</strong>; the same request with a <strong>30-second</strong> timeout failed. The body and both radio directions verified. This is an application gateway, not transparent IP, HTTPS <code>CONNECT</code> or a TUN interface.</p>
           <p>The earlier public SDK set also completed two fresh 100,000-byte files, each across five signed parts, and a separate 23,900-byte file. Those remain the historical baseline below.</p>
           <p>The table shows whole-file elapsed boundaries for both 100 kB runs. Every interval includes all five parts and coordination gaps. Rates use decimal kB/s: 1 kB = 1,000 bytes. Multiply bytes per second by eight for bit rates.</p>

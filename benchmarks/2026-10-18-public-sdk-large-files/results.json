@@ -227,6 +227,87 @@
       "source_result_sha256": "091cfe0f3beef5e3a35311b87d85aad1ab88e61dc831c4fb97ecad0695f47b88",
       "verified_summary_sha256": "225e783d08bdb66b911d586582e8fa648f73459751e5c293cada8b3069ceb46b",
       "useful_sha256": "800b4452a2febbe4401bf7c9f3a8581d1c1dae5310c0ed0c6955578cc38e4794"
+    },
+    {
+      "sample_id": "1000000-public-bundle-cpu-isolated",
+      "useful_decoded_bytes": 1000000,
+      "part_useful_bytes": [
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        20100
+      ],
+      "fresh_files_measured": 1,
+      "receiver_retirement_mode": "authenticated-sender-receipt-confirmation",
+      "receiver_confirmations_accepted": 42,
+      "default_receiver_grace_us": 20000000,
+      "publisher_and_whole_file_independently_verified": true,
+      "within_original_file_window": true,
+      "endpoint_children": {
+        "total": 84,
+        "exit_zero": 84,
+        "forced_cleanup": 0
+      },
+      "services_and_boot_unchanged": true,
+      "data_retransmissions": 2,
+      "new_receiver_drops": 2,
+      "preexisting_cached_parts": 0,
+      "measurement_control": "benchmark sender affinity excluded CPU4, reserved by the production LLM engine",
+      "boundaries": {
+        "first_sender_startup_to_final_authenticated_receipt": {
+          "elapsed_us": 448473933,
+          "useful_decoded_Bps": 2229.783999508395
+        },
+        "first_DATA_worker_call_to_final_authenticated_receipt": {
+          "elapsed_us": 447266757,
+          "useful_decoded_Bps": 2235.8022015930865
+        },
+        "scope_issue_to_both_endpoints_closed": {
+          "elapsed_us": 450903081,
+          "useful_decoded_Bps": 2217.7714948902735
+        }
+      },
+      "source_result_sha256": "5ecf3d0487108b335c0a96eccc886979c8a82c4e22ed9f96c1fb334ae4f4f9e2",
+      "verified_summary_sha256": "b9ad13a296f3cc5f6b0b91aed88eb7b9d65be2e06285671bc8f6839419a0591c",
+      "useful_sha256": "16226b690f14d6b338d899f8e538907a3030b9d0b0de4ef2abb0d07e14fcba58"
     }
   ]
 }
