@@ -82,6 +82,58 @@ These larger-file results remain direct near-bench GFSK250 measurements. They
 do not establish LoRa modulation, field range, sustained-capacity distribution,
 or operation on another installation.
 
+## Matched SF7 and SF8 LoRa profiles
+
+On **18 October 2026**, source
+`f8952155146f821be1eefebd10664141484a22b9` completed two matched-profile
+campaigns on the same direct near-bench path. Each campaign used three fresh
+8,164-byte payloads at both SF7/BW500 and SF8/BW500. Both profiles used 500 kHz
+bandwidth, CR4/5, 921.375 MHz, 0 dBm chip power, an eight-symbol preamble and
+sync word `0x42`. All 12 receiver chunks and all 12 authenticated receipts
+verified.
+
+| Run | SF7 sender ARM → receipt, median | SF7 useful rate | SF8 sender ARM → receipt, median | SF8 useful rate | SF8 / SF7 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| **Combined, six pairs** | **7.404932 s** | **1.102508 kB/s (8.820067 kbit/s)** | **11.340178 s** | **0.719918 kB/s (5.759345 kbit/s)** | **1.531×** |
+| Final campaign, three pairs | 7.285935 s | 1.120515 kB/s (8.964121 kbit/s) | 11.316693 s | 0.721412 kB/s (5.771297 kbit/s) | 1.553× |
+| Control campaign, three pairs | 7.648962 s | 1.067334 kB/s (8.538675 kbit/s) | 11.363662 s | 0.718430 kB/s (5.747443 kbit/s) | 1.486× |
+
+At the receiver ARM-to-verified boundary, the combined medians were
+**8.600729 s at SF7 (949.222 B/s)** and **12.157059 s at SF8 (671.544 B/s)**.
+Including sender process startup through receipt, the combined medians were
+**7.675360 s** and **11.602588 s**. The control campaign was within 4.7% of the
+final campaign's SF7 rate and 0.4% of its SF8 rate.
+
+The final campaign used 85 receiver attempts and 264 sender attempts; the
+control used 87 and 264. Across both, the receiver journals total **172
+attempts** and the sender journals **528**, with no fenced or
+recovered-unknown attempts. The pre-campaign MCU status was boot generation 39
+with **208 attempts** and **9,156,480 microseconds** of reserved estimated
+airtime. The read-only post-campaign status is the same boot, **380 attempts**
+and **16,719,744 microseconds**, disarmed with zero receive drops. The
+172-attempt advance matches the journals.
+
+The public LoRa admission caps cumulative boot attempts at **1,024**. The
+baseline left 816 attempts; the control used 87, leaving 729 for the final
+campaign; the final used 85, leaving **644 attempts of headroom**. The
+reserved-airtime counter advanced by 7,563,264 microseconds, leaving
+43,280,256 under the campaign's 60,000,000-microsecond profile cap. The
+receiver journals' reservation sum is 8,491,660 microseconds; the firmware
+counter and journal reservations use different accounting bases, and neither is
+an RF-energy measurement.
+
+An earlier setup in the campaign rebooted the MCU from boot generation 38 to 39
+without a logged USB reset; the cause remains unknown. Both complete campaigns
+are continuous within boot generation 39.
+
+The [sanitized comparison
+record](../benchmarks/2026-10-18-lora-sf7-sf8/results.json) retains every
+payload hash, timing boundary, attempt journal and the post-campaign status.
+This is a finite near-bench comparison, not a completion distribution or a
+field-range measurement. The one-chunk harness verifies the exact resource
+bytes but does not invoke whole-file assembly, and no RF airtime, energy or EIRP
+was measured.
+
 ## Useful bytes and elapsed time
 
 Rates use decimal bytes: **1 kB = 1,000 bytes**. Multiply bytes per second by eight for bit rates. The numerator is the original decoded file length, excluding manifests, framing and encoded representation bytes. The elapsed intervals include transport overhead, host work, ACKs and any retries.

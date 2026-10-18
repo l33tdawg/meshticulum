@@ -77,6 +77,15 @@ engine occupied its pinned CPU4; that result remains in the record. The
 CPU-isolated control fell to **8.66 seconds per part** and raised the whole-file
 rate to **2.230 kB/s**, establishing the declared near-bench result.
 
+Two complete matched LoRa campaigns then produced **six same-payload pairs** at
+SF7/BW500 and SF8/BW500. Median sender-ARM-to-receipt rates were **1.103 and
+0.720 kB/s (8.820 and 5.759 kbit/s)**, making SF8 **1.531×** slower on this
+near-bench link. All 12 chunks and authenticated receipts verified. The MCU's
+**1,024-attempt** cumulative cap stood at 380 after both campaigns, leaving
+**644 attempts of headroom**, on one boot generation with zero receive drops.
+[The profile record](benchmarks/2026-10-18-lora-sf7-sf8/results.json) retains
+the final and control medians and the exact debt accounting.
+
 The first HTTP gateway test carried a bounded request from a radio-only endpoint
 through a second unit's internet connection and back. A `links` text browser
 rendered `example.com` in **53.3 seconds**; the same request with a **30-second**

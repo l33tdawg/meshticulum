@@ -154,12 +154,14 @@ power, preamble, sync word), and the admission file supplies the inert
 The LoRa path refuses an unknown modem marker and never upgrades a profile the
 admission did not list.
 
-The public admission retains a maximum 180-second lease, 256 attempts and
-60,000,000 estimated airtime microseconds per run. The MCU retains cumulative
-boot attempt/airtime counters across all chunk sessions. This direction uses
-the HAT for DATA and the MCU principally for ACKs. A fresh 100 kB **MCU sender**
-needs at least 519 DATA frames and exceeds its 256-attempt boot ceiling. Do not
-reset the MCU or replace old journals to work around that limit.
+The public LoRa admission retains a maximum 180-second lease, **1,024 cumulative
+attempts** and a **300,000,000-microsecond** estimated-airtime ceiling. The MCU
+retains cumulative boot attempt/airtime counters across all chunk sessions. This
+direction uses the HAT for DATA and the MCU principally for ACKs. A fresh 100 kB
+**MCU sender** needs at least 519 DATA frames; that fits only when at least 519
+attempts remain on the current boot. Check the counter before preparing the
+plan. Do not reset the MCU or replace old journals to work around a spent
+limit.
 
 ## Transfer one approved chunk
 

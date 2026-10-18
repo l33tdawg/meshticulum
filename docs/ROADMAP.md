@@ -27,6 +27,16 @@ All three final files clear **2.0 kB/s** on the whole-file boundary. The origina
 excluding that core raised the fresh control to **2.230 kB/s**. Warm workers and
 fewer restarts remain useful headroom for larger files and the HTTP path.
 
+Two complete campaigns then produced **six matched LoRa pairs** at SF7/BW500
+and SF8/BW500 using the same 8,164-byte payloads. Across all six pairs, median
+sender-ARM-to-receipt rates were **1.103 and 0.720 kB/s (8.820 and
+5.759 kbit/s)**, making SF8 **1.531×** slower on this near-bench link. All 12
+chunks and receipts verified. The MCU's 1,024-attempt cumulative cap stood at
+380 attempts after both campaigns, leaving **644 attempts of headroom**, on
+one boot generation with zero receive drops. [The profile
+record](RADIO_SDK_MEASUREMENTS.md#matched-sf7-and-sf8-lora-profiles) retains the
+individual samples, the final and control medians, and the debt accounting.
+
 A first one-request HTTP gateway also fetched `http://example.com/` through a
 second unit's internet connection and returned it over the radio. A `links`
 text browser rendered the page in **53.3 seconds**; the same request with a

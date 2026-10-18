@@ -124,12 +124,15 @@ entry and approved response length. This example pushes the preapproved response
 it does not claim that an additional request was sent over RF or charge a
 fictional request. The service/AEAD route and response object remain exact.
 
-Per-run profile limits remain at most 256 attempts and 60,000,000 estimated
-airtime microseconds. HAT DATA uses distinct approved run journals; all old
-journals and debt remain. MCU boot attempts/airtime remain cumulative across
-all sessions, and the first MCU boot/version is pinned in local file state.
-A reset or changed MCU identity refuses instead of resetting a file budget.
-This route does not make the MCU a bundle DATA sender.
+Profile limits are waveform-specific. Public LoRa admission allows up to
+**1,024 cumulative attempts** and **300,000,000 estimated-airtime
+microseconds**; legacy GFSK retains its 256-attempt/60,000,000-microsecond
+limits, and GFSK250 has its separate cumulative limits. Check the exact plan
+profile. HAT DATA uses distinct approved run journals; all old journals and
+debt remain. MCU boot attempts/airtime remain cumulative across all sessions,
+and the first MCU boot/version is pinned in local file state. A reset or changed
+MCU identity refuses instead of resetting a file budget. This route does not
+make the MCU a bundle DATA sender.
 
 ## Run each approved pair
 
