@@ -82,6 +82,39 @@ These larger-file results remain direct near-bench GFSK250 measurements. They
 do not establish LoRa modulation, field range, sustained-capacity distribution,
 or operation on another installation.
 
+## Matched SF7 and SF8 LoRa profiles
+
+On **18 October 2026**, source `2cfcbb34f6da84923ee5a3dd137cc8fafa548bbd`
+completed three matched pairs of one-chunk LoRa transfers on the same direct
+near-bench path. Each pair used the same fresh 8,164-byte payload for SF7 and
+SF8. Both profiles used 500 kHz bandwidth, CR4/5, 921.375 MHz, 0 dBm chip power,
+an eight-symbol preamble and sync word `0x42`.
+
+| Profile | Sender ARM → authenticated receipt, median | Useful rate | Receiver ARM → verified, median |
+| --- | ---: | ---: | ---: |
+| SF7 / BW500 / CR4/5 | **7.820767 s** | **1.043887 kB/s (8.351096 kbit/s)** | 8.812348 s · 926.427 B/s |
+| SF8 / BW500 / CR4/5 | **11.195342 s** | **0.729232 kB/s (5.833856 kbit/s)** | 12.172387 s · 670.698 B/s |
+
+SF8 took **1.431×** as long as SF7 at the sender receipt boundary under these
+conditions. Including sender process startup, the medians were 8.090763 s and
+11.466193 s. The receiver verified the exact chunk in all six transfers, and all
+six authenticated receipt confirmations completed. No attempt was fenced or
+recovered as unknown.
+
+The final batch used 89 receiver attempts and 264 sender attempts. The receiver
+MCU remained on the same boot generation: attempts advanced from 119 to 208 and
+reserved estimated airtime from 5,254,272 to 9,156,480 microseconds, while the
+raw receive-drop counter remained zero. The 89-attempt delta matches the six
+receiver journals. An earlier setup in the campaign rebooted the MCU from boot
+generation 38 to 39 without a logged USB reset; the cause remains unknown. The
+final three-pair comparison is continuous within the latter generation.
+
+The [sanitized comparison record](../benchmarks/2026-10-18-lora-sf7-sf8/results.json)
+retains every payload hash, grant window, timing boundary, attempt journal and
+MCU counter. This is a finite near-bench comparison, not a completion
+distribution or a field-range measurement. The one-chunk harness verifies the
+exact resource bytes but does not invoke whole-file assembly.
+
 ## Useful bytes and elapsed time
 
 Rates use decimal bytes: **1 kB = 1,000 bytes**. Multiply bytes per second by eight for bit rates. The numerator is the original decoded file length, excluding manifests, framing and encoded representation bytes. The elapsed intervals include transport overhead, host work, ACKs and any retries.

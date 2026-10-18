@@ -12,6 +12,15 @@ control. Excluding CPU4 from the benchmark process reduced mean part time from
 [The larger-file report](RADIO_SDK_MEASUREMENTS.md#where-the-1-mb-time-went)
 retains both decompositions and exact arithmetic.
 
+A separate matched LoRa comparison used three fresh 8,164-byte payloads at both
+SF7/BW500 and SF8/BW500. Median sender-ARM-to-authenticated-receipt time was
+**7.821 seconds at SF7** and **11.195 seconds at SF8**, a **1.431×** difference.
+Useful rates were **1.044 kB/s (8.351 kbit/s)** and **0.729 kB/s (5.834
+kbit/s)**. All six receivers verified the exact chunk, and the final batch kept
+one MCU boot with no unknown, fenced or dropped attempts. [The profile
+comparison](RADIO_SDK_MEASUREMENTS.md#matched-sf7-and-sf8-lora-profiles) keeps
+the three pair timings and hardware conditions.
+
 A first one-request HTTP gateway also carried `http://example.com/` from a
 radio-only endpoint through a second endpoint's internet connection and back.
 The body and both radio directions verified; a `links` text browser rendered the

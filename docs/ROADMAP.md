@@ -27,6 +27,14 @@ All three final files clear **2.0 kB/s** on the whole-file boundary. The origina
 excluding that core raised the fresh control to **2.230 kB/s**. Warm workers and
 fewer restarts remain useful headroom for larger files and the HTTP path.
 
+Three matched LoRa pairs then compared the same 8,164-byte payload at SF7/BW500
+and SF8/BW500. Median sender-ARM-to-receipt rates were **1.044 and 0.729 kB/s**
+(**8.351 and 5.834 kbit/s**), making SF8 **1.431×** slower on this near-bench
+link. All six chunks and receipts verified; the final batch advanced the MCU from
+119 to 208 attempts with no unknown, fenced or dropped attempts. [The profile
+record](RADIO_SDK_MEASUREMENTS.md#matched-sf7-and-sf8-lora-profiles) retains the
+individual samples and hardware.
+
 A first one-request HTTP gateway also fetched `http://example.com/` through a
 second unit's internet connection and returned it over the radio. A `links`
 text browser rendered the page in **53.3 seconds**; the same request with a

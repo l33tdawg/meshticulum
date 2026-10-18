@@ -45,6 +45,15 @@ There is also an intentional difference in identity policy. Meshticulum's curren
 
 The latest **1,071.3 B/s** Meshticulum finite resource result is numerically **2.61×** the **410 B/s** contributor measurement in [MeshCore issue #3404](https://github.com/meshcore-dev/MeshCore/issues/3404). Both state SF7/BW500, but the MeshCore report times individually acknowledged 128-byte frames and our result times a windowed resource reply. This supports a scoped comparison between published observations, not a general speed or security ranking. Reticulum's cited **3.1 kbit/s** figure describes on-air bitrate under different settings; it is neither **3.1 kB/s** nor encrypted application goodput. [Performance](PERFORMANCE.md#comparison-with-published-figures) keeps the units, conditions and missing measurements explicit.
 
+Three matched pairs on 18 October 2026 provide the first same-payload SF7/SF8
+profile comparison on the public bench path. At BW500, CR4/5, 921.375 MHz and
+0 dBm, median sender-ARM-to-receipt time was **7.821 seconds for SF7** and
+**11.195 seconds for SF8**, or **1.044 and 0.729 kB/s** of useful application
+throughput. The observed SF7 advantage was **1.431×**. All six chunks and
+authenticated receipts passed, and the final MCU batch remained on one boot
+without unknown or fenced attempts. This is a matched profile comparison on one
+near-bench link, not a range result or an upstream ranking.
+
 ## Security properties and gaps
 
 Stronger encryption security is an objective that needs a threat model and evidence for confidentiality, integrity, author authentication, replay handling and key compromise. Cipher names alone do not establish an overall security ranking. The current forward-secrecy gap is material:

@@ -1,0 +1,707 @@
+{
+  "baseline": {
+    "captured_after": "MCU boot 39 after three successful SF7/SF8 pairs",
+    "captured_between_epoch_us": [
+      1792306504753747,
+      1792306639312578
+    ],
+    "core_commit": "1f85608e2c5e543130673529e21d838917094c11",
+    "public_identity_redaction": "Raw USB serial and MCU boot remain in the lab capture; pre/post equality and counter continuity are recorded here.",
+    "schema": "meshticulum.radio-status-baseline.v1",
+    "unit-a": {
+      "boot_attempts": 119,
+      "boot_reserved_estimated_airtime_us": 5254272,
+      "dropped_receive": 0,
+      "firmware": "mtb1-020e287255"
+    },
+    "unit-c": {
+      "spi_other_openers": []
+    }
+  },
+  "complete": true,
+  "confirmation": {
+    "authenticated_receipt_confirmations": 6,
+    "fenced_attempts": 0,
+    "mcu_attempt_delta": 89,
+    "mcu_boot_changed": false,
+    "mcu_receive_drop_delta": 0,
+    "mcu_reserved_estimated_airtime_delta_us": 3902208,
+    "receiver_chunks_verified": 6,
+    "recovered_unknown_attempts": 0,
+    "sender_peer_receipts": 6
+  },
+  "date": "2026-10-18",
+  "hardware": {
+    "approximate_separation_metres": 1,
+    "distance_method": "owner estimate; near-bench placement",
+    "receiver": "Heltec V4 SX1262 MCU",
+    "sender": "Orange Pi 5 Plus SX1262 HAT",
+    "topology": "direct single radio link"
+  },
+  "limitations": [
+    "Six finite one-chunk samples on one direct near-bench link; not a completion distribution.",
+    "The receiver verified each exact 8,164-byte resource; the single-chunk example does not invoke whole-file assembly.",
+    "Approximate one-metre separation is an owner estimate; field range, measured RF airtime, energy and EIRP were not measured.",
+    "SF7/BW500 and SF8/BW500 share frequency, coding rate, power, preamble, sync word and timing boundary; these results compare application goodput, not raw PHY theory.",
+    "The MCU rebooted once earlier in the campaign from one boot generation to the next with no kernel USB reset logged; the final three-pair comparison is continuous within the final boot and does not attribute a cause to that earlier reboot.",
+    "Raw MCU boot and USB serial identifiers are withheld from the public record; the pre/post equality and counter continuity are retained in the lab capture."
+  ],
+  "mcu_after": {
+    "armed": false,
+    "boot_attempts": 208,
+    "boot_reserved_estimated_airtime_us": 9156480,
+    "complete": true,
+    "dropped_receive": 0,
+    "fenced": false,
+    "firmware": "mtb1-020e287255",
+    "profile_kind": "unconfigured",
+    "read_epoch_us": 1792306765437622,
+    "schema": "meshticulum.mcu-status-readonly.v1",
+    "transmitting": false
+  },
+  "operation_policy": {
+    "attempt_allowance": 512,
+    "boot_attempts_cap": 631,
+    "boot_estimated_airtime_cap_us": 125254272,
+    "estimated_airtime_allowance_us": 120000000
+  },
+  "operator_capture_sha256": {
+    "comparison_result": "08706139c7ca835a7aff6232f148d26fcdcdf6edb2ad0fe2bd34c9ede31a7244",
+    "mcu_after": "96c3b1ca2fe8b3e8f00528571af597e310095445e8c64d41f44c4bd95562e5a8"
+  },
+  "payloads": [
+    {
+      "bytes": 8164,
+      "repeat": 0,
+      "sha256": "2c8d5ea1335df4cae61b60141abd2293c6a8660f5ee31ea1fe8323a1f8fbfa58"
+    },
+    {
+      "bytes": 8164,
+      "repeat": 1,
+      "sha256": "cc4d59f594207b684588a514ee4884d5e117a7c1f58c38672a4cdf53d4c8d1f9"
+    },
+    {
+      "bytes": 8164,
+      "repeat": 2,
+      "sha256": "2715cd06d3f7a97e793aea902bbfceb708814289fc7acf1c57e9d5bd594becc1"
+    }
+  ],
+  "repeats": 3,
+  "samples": [
+    {
+      "expires_epoch_us": 1792306819312578,
+      "issued_epoch_us": 1792306639312578,
+      "payload_bytes": 8164,
+      "payload_sha256": "2c8d5ea1335df4cae61b60141abd2293c6a8660f5ee31ea1fe8323a1f8fbfa58",
+      "profile": "sf7-500",
+      "radio_manifest_sha256": "2c8d5ea1335df4cae61b60141abd2293c6a8660f5ee31ea1fe8323a1f8fbfa58",
+      "receiver": {
+        "attempt_journal": {
+          "attempts": 15,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 544065
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 7,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": false,
+          "enabled": true,
+          "outcome": null,
+          "peer_receipt_confirmed": true
+        },
+        "receiver_chunk_verified": true,
+        "sender_peer_receipt": false,
+        "timing": {
+          "armed_epoch_us": 1792306643069766,
+          "armed_monotonic_us": 765995777392,
+          "armed_to_complete_us": 8781828,
+          "armed_to_receiver_verified_us": 8700706,
+          "complete_epoch_us": 1792306651851594,
+          "complete_monotonic_us": 766004559220,
+          "receiver_verified_monotonic_us": 766004478098,
+          "started_epoch_us": 1792306642916772,
+          "started_monotonic_us": 765995624402
+        },
+        "whole_file_verified": false
+      },
+      "repeat": 0,
+      "sample_id": "79954c843d1b9742db6897ca58b83502",
+      "sender": {
+        "attempt_journal": {
+          "attempts": 44,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 4754068
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 7,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": true,
+          "enabled": true,
+          "outcome": "RF_DONE",
+          "peer_receipt_confirmed": false
+        },
+        "receiver_chunk_verified": false,
+        "sender_peer_receipt": true,
+        "timing": {
+          "armed_epoch_us": 1792306644320395,
+          "armed_monotonic_us": 262339789698,
+          "armed_to_complete_us": 7529290,
+          "armed_to_receiver_verified_us": null,
+          "complete_epoch_us": 1792306651849685,
+          "complete_monotonic_us": 262347318988,
+          "receiver_verified_monotonic_us": null,
+          "started_epoch_us": 1792306644048957,
+          "started_monotonic_us": 262339518285
+        },
+        "whole_file_verified": false
+      }
+    },
+    {
+      "expires_epoch_us": 1792306832050001,
+      "issued_epoch_us": 1792306652050001,
+      "payload_bytes": 8164,
+      "payload_sha256": "2c8d5ea1335df4cae61b60141abd2293c6a8660f5ee31ea1fe8323a1f8fbfa58",
+      "profile": "sf8-500",
+      "radio_manifest_sha256": "2c8d5ea1335df4cae61b60141abd2293c6a8660f5ee31ea1fe8323a1f8fbfa58",
+      "receiver": {
+        "attempt_journal": {
+          "attempts": 14,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 883302
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 8,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": false,
+          "enabled": true,
+          "outcome": null,
+          "peer_receipt_confirmed": true
+        },
+        "receiver_chunk_verified": true,
+        "sender_peer_receipt": false,
+        "timing": {
+          "armed_epoch_us": 1792306655759265,
+          "armed_monotonic_us": 766008466891,
+          "armed_to_complete_us": 12097987,
+          "armed_to_receiver_verified_us": 11997230,
+          "complete_epoch_us": 1792306667857252,
+          "complete_monotonic_us": 766020564878,
+          "receiver_verified_monotonic_us": 766020464121,
+          "started_epoch_us": 1792306655610371,
+          "started_monotonic_us": 766008318000
+        },
+        "whole_file_verified": false
+      },
+      "repeat": 0,
+      "sample_id": "ef4227f5b7c1afa3b93cc7acf681e1d0",
+      "sender": {
+        "attempt_journal": {
+          "attempts": 44,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 8379932
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 8,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": true,
+          "enabled": true,
+          "outcome": "RF_DONE",
+          "peer_receipt_confirmed": false
+        },
+        "receiver_chunk_verified": false,
+        "sender_peer_receipt": true,
+        "timing": {
+          "armed_epoch_us": 1792306656926008,
+          "armed_monotonic_us": 262352395311,
+          "armed_to_complete_us": 10938769,
+          "armed_to_receiver_verified_us": null,
+          "complete_epoch_us": 1792306667864777,
+          "complete_monotonic_us": 262363334080,
+          "receiver_verified_monotonic_us": null,
+          "started_epoch_us": 1792306656655918,
+          "started_monotonic_us": 262352125248
+        },
+        "whole_file_verified": false
+      }
+    },
+    {
+      "expires_epoch_us": 1792306848143245,
+      "issued_epoch_us": 1792306668143245,
+      "payload_bytes": 8164,
+      "payload_sha256": "cc4d59f594207b684588a514ee4884d5e117a7c1f58c38672a4cdf53d4c8d1f9",
+      "profile": "sf7-500",
+      "radio_manifest_sha256": "cc4d59f594207b684588a514ee4884d5e117a7c1f58c38672a4cdf53d4c8d1f9",
+      "receiver": {
+        "attempt_journal": {
+          "attempts": 16,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 580336
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 7,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": false,
+          "enabled": true,
+          "outcome": null,
+          "peer_receipt_confirmed": true
+        },
+        "receiver_chunk_verified": true,
+        "sender_peer_receipt": false,
+        "timing": {
+          "armed_epoch_us": 1792306671421453,
+          "armed_monotonic_us": 766024129080,
+          "armed_to_complete_us": 9256595,
+          "armed_to_receiver_verified_us": 9174818,
+          "complete_epoch_us": 1792306680678048,
+          "complete_monotonic_us": 766033385675,
+          "receiver_verified_monotonic_us": 766033303898,
+          "started_epoch_us": 1792306671267410,
+          "started_monotonic_us": 766023975040
+        },
+        "whole_file_verified": false
+      },
+      "repeat": 1,
+      "sample_id": "1f624044d9dd360a831e725c4793051d",
+      "sender": {
+        "attempt_journal": {
+          "attempts": 44,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 4754068
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 7,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": true,
+          "enabled": true,
+          "outcome": "RF_DONE",
+          "peer_receipt_confirmed": false
+        },
+        "receiver_chunk_verified": false,
+        "sender_peer_receipt": true,
+        "timing": {
+          "armed_epoch_us": 1792306672625544,
+          "armed_monotonic_us": 262368094847,
+          "armed_to_complete_us": 8058326,
+          "armed_to_receiver_verified_us": null,
+          "complete_epoch_us": 1792306680683870,
+          "complete_monotonic_us": 262376153173,
+          "receiver_verified_monotonic_us": null,
+          "started_epoch_us": 1792306672367566,
+          "started_monotonic_us": 262367836897
+        },
+        "whole_file_verified": false
+      }
+    },
+    {
+      "expires_epoch_us": 1792306860888019,
+      "issued_epoch_us": 1792306680888019,
+      "payload_bytes": 8164,
+      "payload_sha256": "cc4d59f594207b684588a514ee4884d5e117a7c1f58c38672a4cdf53d4c8d1f9",
+      "profile": "sf8-500",
+      "radio_manifest_sha256": "cc4d59f594207b684588a514ee4884d5e117a7c1f58c38672a4cdf53d4c8d1f9",
+      "receiver": {
+        "attempt_journal": {
+          "attempts": 15,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 946395
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 8,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": false,
+          "enabled": true,
+          "outcome": null,
+          "peer_receipt_confirmed": true
+        },
+        "receiver_chunk_verified": true,
+        "sender_peer_receipt": false,
+        "timing": {
+          "armed_epoch_us": 1792306684216256,
+          "armed_monotonic_us": 766036923882,
+          "armed_to_complete_us": 12566146,
+          "armed_to_receiver_verified_us": 12453283,
+          "complete_epoch_us": 1792306696782402,
+          "complete_monotonic_us": 766049490028,
+          "receiver_verified_monotonic_us": 766049377165,
+          "started_epoch_us": 1792306684058103,
+          "started_monotonic_us": 766036765733
+        },
+        "whole_file_verified": false
+      },
+      "repeat": 1,
+      "sample_id": "59c19dfce1f36a91d54e28e0a295c9bf",
+      "sender": {
+        "attempt_journal": {
+          "attempts": 44,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 8379932
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 8,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": true,
+          "enabled": true,
+          "outcome": "RF_DONE",
+          "peer_receipt_confirmed": false
+        },
+        "receiver_chunk_verified": false,
+        "sender_peer_receipt": true,
+        "timing": {
+          "armed_epoch_us": 1792306685503457,
+          "armed_monotonic_us": 262380972760,
+          "armed_to_complete_us": 11276933,
+          "armed_to_receiver_verified_us": null,
+          "complete_epoch_us": 1792306696780390,
+          "complete_monotonic_us": 262392249693,
+          "receiver_verified_monotonic_us": null,
+          "started_epoch_us": 1792306685223999,
+          "started_monotonic_us": 262380693329
+        },
+        "whole_file_verified": false
+      }
+    },
+    {
+      "expires_epoch_us": 1792306877000106,
+      "issued_epoch_us": 1792306697000106,
+      "payload_bytes": 8164,
+      "payload_sha256": "2715cd06d3f7a97e793aea902bbfceb708814289fc7acf1c57e9d5bd594becc1",
+      "profile": "sf7-500",
+      "radio_manifest_sha256": "2715cd06d3f7a97e793aea902bbfceb708814289fc7acf1c57e9d5bd594becc1",
+      "receiver": {
+        "attempt_journal": {
+          "attempts": 15,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 544065
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 7,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": false,
+          "enabled": true,
+          "outcome": null,
+          "peer_receipt_confirmed": true
+        },
+        "receiver_chunk_verified": true,
+        "sender_peer_receipt": false,
+        "timing": {
+          "armed_epoch_us": 1792306700874385,
+          "armed_monotonic_us": 766053582011,
+          "armed_to_complete_us": 8894522,
+          "armed_to_receiver_verified_us": 8812348,
+          "complete_epoch_us": 1792306709768906,
+          "complete_monotonic_us": 766062476533,
+          "receiver_verified_monotonic_us": 766062394359,
+          "started_epoch_us": 1792306700721644,
+          "started_monotonic_us": 766053429273
+        },
+        "whole_file_verified": false
+      },
+      "repeat": 2,
+      "sample_id": "92ca272c89f8787b1bfd937174066897",
+      "sender": {
+        "attempt_journal": {
+          "attempts": 44,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 4754068
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 7,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": true,
+          "enabled": true,
+          "outcome": "RF_DONE",
+          "peer_receipt_confirmed": false
+        },
+        "receiver_chunk_verified": false,
+        "sender_peer_receipt": true,
+        "timing": {
+          "armed_epoch_us": 1792306701947730,
+          "armed_monotonic_us": 262397417033,
+          "armed_to_complete_us": 7820767,
+          "armed_to_receiver_verified_us": null,
+          "complete_epoch_us": 1792306709768497,
+          "complete_monotonic_us": 262405237800,
+          "receiver_verified_monotonic_us": null,
+          "started_epoch_us": 1792306701677708,
+          "started_monotonic_us": 262397147037
+        },
+        "whole_file_verified": false
+      }
+    },
+    {
+      "expires_epoch_us": 1792306889971116,
+      "issued_epoch_us": 1792306709971116,
+      "payload_bytes": 8164,
+      "payload_sha256": "2715cd06d3f7a97e793aea902bbfceb708814289fc7acf1c57e9d5bd594becc1",
+      "profile": "sf8-500",
+      "radio_manifest_sha256": "2715cd06d3f7a97e793aea902bbfceb708814289fc7acf1c57e9d5bd594becc1",
+      "receiver": {
+        "attempt_journal": {
+          "attempts": 14,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 883302
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 8,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": false,
+          "enabled": true,
+          "outcome": null,
+          "peer_receipt_confirmed": true
+        },
+        "receiver_chunk_verified": true,
+        "sender_peer_receipt": false,
+        "timing": {
+          "armed_epoch_us": 1792306713392638,
+          "armed_monotonic_us": 766066100264,
+          "armed_to_complete_us": 12284828,
+          "armed_to_receiver_verified_us": 12172387,
+          "complete_epoch_us": 1792306725677466,
+          "complete_monotonic_us": 766078385092,
+          "receiver_verified_monotonic_us": 766078272651,
+          "started_epoch_us": 1792306713238946,
+          "started_monotonic_us": 766065946575
+        },
+        "whole_file_verified": false
+      },
+      "repeat": 2,
+      "sample_id": "451a627038e88501a3a89fd5e207b6c4",
+      "sender": {
+        "attempt_journal": {
+          "attempts": 44,
+          "fenced": false,
+          "recovered_unknown": 0,
+          "reserved_estimated_airtime_us": 8379932
+        },
+        "chunk": 0,
+        "profile": {
+          "bandwidth_hz": 500000,
+          "chip_power_dbm": 0,
+          "coding_rate": 5,
+          "frequency_hz": 921375000,
+          "lease_ms": 90000,
+          "max_boot_attempts": 631,
+          "max_boot_estimated_airtime_us": 125254272,
+          "preamble": 8,
+          "spreading_factor": 8,
+          "sync_word": 66
+        },
+        "receipt_confirmation": {
+          "attempted": true,
+          "enabled": true,
+          "outcome": "RF_DONE",
+          "peer_receipt_confirmed": false
+        },
+        "receiver_chunk_verified": false,
+        "sender_peer_receipt": true,
+        "timing": {
+          "armed_epoch_us": 1792306714477848,
+          "armed_monotonic_us": 262409947152,
+          "armed_to_complete_us": 11195342,
+          "armed_to_receiver_verified_us": null,
+          "complete_epoch_us": 1792306725673191,
+          "complete_monotonic_us": 262421142494,
+          "receiver_verified_monotonic_us": null,
+          "started_epoch_us": 1792306714206971,
+          "started_monotonic_us": 262409676301
+        },
+        "whole_file_verified": false
+      }
+    }
+  ],
+  "schema": "meshticulum.lora-sf7-sf8-comparison.v1",
+  "sdk_sha256": "209c577b2dd503aa8812ecd584119f024782b07107ea006de36be6071cba5d66",
+  "source_commit": "2cfcbb34f6da84923ee5a3dd137cc8fafa548bbd",
+  "summary": {
+    "comparison": {
+      "sender_armed_to_receipt_time_ratio_sf8_over_sf7": 1.431489,
+      "sf7_over_sf8_rate_ratio": 1.431488
+    },
+    "sf7-500": {
+      "median_receiver_armed_to_verified_seconds": 8.812348,
+      "median_receiver_armed_to_verified_useful_Bps": 926.427,
+      "median_sender_armed_to_receipt_seconds": 7.820767,
+      "median_sender_armed_to_receipt_useful_Bps": 1043.887,
+      "median_sender_started_to_receipt_seconds": 8.090763,
+      "median_sender_started_to_receipt_useful_Bps": 1009.052,
+      "payload_bytes": 8164,
+      "receiver_attempts": [
+        15,
+        16,
+        15
+      ],
+      "receiver_reserved_estimated_airtime_us": 1668466,
+      "samples": 3,
+      "sender_armed_to_receipt_seconds": [
+        7.52929,
+        8.058326,
+        7.820767
+      ],
+      "sender_attempts": [
+        44,
+        44,
+        44
+      ],
+      "sender_reserved_estimated_airtime_us": 14262204
+    },
+    "sf8-500": {
+      "median_receiver_armed_to_verified_seconds": 12.172387,
+      "median_receiver_armed_to_verified_useful_Bps": 670.698,
+      "median_sender_armed_to_receipt_seconds": 11.195342,
+      "median_sender_armed_to_receipt_useful_Bps": 729.232,
+      "median_sender_started_to_receipt_seconds": 11.466193,
+      "median_sender_started_to_receipt_useful_Bps": 712.006,
+      "payload_bytes": 8164,
+      "receiver_attempts": [
+        14,
+        15,
+        14
+      ],
+      "receiver_reserved_estimated_airtime_us": 2712999,
+      "samples": 3,
+      "sender_armed_to_receipt_seconds": [
+        10.938769,
+        11.276933,
+        11.195342
+      ],
+      "sender_attempts": [
+        44,
+        44,
+        44
+      ],
+      "sender_reserved_estimated_airtime_us": 25139796
+    }
+  }
+}
