@@ -10,8 +10,10 @@ On 17 October, this public SDK path completed **two fresh five-part 100,000-byte
 files at 2,030.2 and 1,949.2 useful B/s including sender startup**, with independent
 publisher and whole-file verification. Both endpoints used receipt confirmation
 on a direct GFSK250 link about one metre long. [The measurement report](../docs/RADIO_SDK_MEASUREMENTS.md)
-records the exact source and timing. The same example accepts larger bundles up to
-the SDK's 1,000,000-byte format limit; no larger-file radio result is claimed here.
+records the exact source and timing. On 18 October, source `1f85608` also
+completed fresh **250,000-, 500,000- and 1,000,000-byte files** on the same path
+at **2,111.1, 2,215.6 and 1,749.8 useful B/s including sender startup**. All
+three receivers verified every signed part and the exact whole file.
 
 ## Bundle geometry and window
 
@@ -27,8 +29,8 @@ Five receiver ACK graces cost 100 seconds, leaving at most 140 seconds for DATA,
 setup, retries, verification and cleanup. For larger bundles, the maximum original
 window is **20 seconds per part plus 300 seconds of transfer headroom**: 520 seconds
 for 11 parts, 720 seconds for 21 and 1,140 seconds for 42. These bounds make the
-larger geometries candidates for measurement, not promises that they complete on
-your hardware. The retained file clock and bench grant authority both refuse an
+larger geometries supported by measured bench runs, not promises that they
+complete on your hardware. The retained file clock and bench grant authority both refuse an
 original window above 20 minutes.
 
 The 1,000,000-byte SDK bundle-format limit is not a radio-operation limit.

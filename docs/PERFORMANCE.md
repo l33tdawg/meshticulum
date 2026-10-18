@@ -2,6 +2,8 @@
 
 The latest public SDK radio samples completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s) including sender startup**, plus a **23,900-byte file at 2.53 kB/s (20.28 kbit/s)**. They used **GFSK at 250 kbit/s**, on a direct HAT-to-MCU link about one metre apart. Both 100 kB intervals include all five sequential parts and coordination gaps. Scope issue through endpoint closure reached **1.86 and 1.76 kB/s (14.85 and 14.05 kbit/s)**. [The 17 October report](RADIO_SDK_MEASUREMENTS.md) gives the exact source, elapsed boundaries, confirmations and sanitized record.
 
+On 18 October, source `1f85608` also completed fresh **250 kB, 500 kB and 1 MB signed bundles** on that path. Sender-startup-inclusive rates were **2.111, 2.216 and 1.750 kB/s (16.889, 17.725 and 13.999 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 1.742 kB/s (16.500, 17.521 and 13.938 kbit/s)**. All three receivers independently verified every part and the exact whole file.
+
 These finite samples exceed the **1 kB/s (8 kbit/s) startup-inclusive alpha floor for that path**. The source-build alpha is published. A sustained-throughput distribution, broader repetition and wider [qualification](RELEASE_READINESS.md) remain open. The optional later 4 to 5 kB/s (32 to 40 kbit/s) stretch remains in the [roadmap](ROADMAP.md).
 
 This page retains the earlier 30-sample LoRa distribution, seven finite native LoRa public samples and the 15 October GFSK campaign at their original source pins and timing boundaries. The new GFSK measurements are separate from the LoRa evidence and upstream comparison below.

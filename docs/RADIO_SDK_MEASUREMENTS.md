@@ -1,10 +1,49 @@
-# Public SDK radio measurements: 17 October 2026
+# Public SDK radio measurements: 17–18 October 2026
 
 The public SDK completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s)** of useful application throughput, from each file's first sender startup through its final authenticated receipt. Both five-part files and their publishers were independently verified. A separate **23,900-byte file reached 2.53 kB/s (20.28 kbit/s)** at the same timing boundary.
 
 The three samples above used source `da247a1bb74601973f0bb72f51c268a412714719`, an Orange Pi 5 Plus SX1262 HAT sender and a Heltec V4 MCU receiver about **one metre apart**. The modem used **GFSK at 250 kbit/s**. These are direct, near-bench GFSK results; they provide no LoRa-modulation, multihop or field-range measurement. No new firmware was flashed for these samples.
 
 The tested [`Gfsk250Profile`](https://github.com/l33tdawg/meshticulum/blob/da247a1bb74601973f0bb72f51c268a412714719/src/meshticulum/bench/gfsk250_profile.py) used **921,375,000 Hz**, **0 dBm configured chip power**, a **250,000 bit/s** rate, **62,500 Hz** frequency deviation, **467,000 Hz** receive bandwidth and a **32-bit** preamble. Configured chip power is not a measurement of EIRP; measured EIRP remains unavailable.
+
+## Larger public files
+
+On **18 October 2026**, source `1f85608e2c5e543130673529e21d838917094c11`
+completed fresh whole-file transfers through the same public signed-bundle path
+and hardware. These use 11- and 21-part geometries and their own original
+520- and 720-second windows. Each input, publisher key, grant set and receiver
+state was fresh.
+
+| Useful file | Parts | First sender startup → final authenticated receipt | First DATA → final receipt | Scope issue → both endpoints closed |
+| ---: | ---: | ---: | ---: | ---: |
+| 250,000 bytes | 11 | 118.420015 s; **2,111.1 B/s (16.889 kbit/s)** | 117.382857 s; 2,129.8 B/s (17.038 kbit/s) | 121.214435 s; **2,062.5 B/s (16.500 kbit/s)** |
+| 500,000 bytes | 21 | 225.668497 s; **2,215.6 B/s (17.725 kbit/s)** | 223.949464 s; 2,232.6 B/s (17.861 kbit/s) | 228.292237 s; **2,190.2 B/s (17.521 kbit/s)** |
+| 1,000,000 bytes | 42 | 571.484490 s; **1,749.8 B/s (13.999 kbit/s)** | 570.384109 s; 1,753.2 B/s (14.026 kbit/s) | 573.955922 s; **1,742.3 B/s (13.938 kbit/s)** |
+
+The 250 kB receiver independently verified all 11 parts and the complete file.
+All 22 endpoint processes exited zero and all 11 authenticated receipt
+confirmations were accepted. It used 372 receiver attempts and 1,353 sender
+attempts, with one DATA retransmission and no new raw receive drops.
+
+The 500 kB receiver independently verified all 21 parts and the complete file.
+All 42 endpoint processes exited zero and all 21 authenticated receipt
+confirmations were accepted. It used 736 receiver attempts and 2,700 sender
+attempts, with one DATA retransmission and one new raw receive drop. The
+original controller stopped at that diagnostic counter change only after the
+final authenticated receipt and whole-file verification had succeeded. The
+stopped result is retained; the corrected result follows the existing policy
+that records receive drops as diagnostics while requiring exact content,
+receipts and settled attempts.
+
+The 1 MB receiver independently verified all 42 parts and the complete file.
+All 84 endpoint processes exited zero and all 42 authenticated receipt
+confirmations were accepted. It used 1,530 receiver attempts and 5,400 sender
+attempts, with one DATA retransmission and one additional raw receive drop.
+The complete command remained inside its original 1,140-second window.
+
+These larger-file results remain direct near-bench GFSK250 measurements. They
+do not establish LoRa modulation, field range, sustained-capacity distribution,
+or operation on another installation.
 
 ## Useful bytes and elapsed time
 
