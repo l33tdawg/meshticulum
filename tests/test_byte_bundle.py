@@ -11,6 +11,8 @@ from meshticulum.resources import knowledge_pack as kp,byte_bundle as bb,resourc
 
 SEED=b'Meshticulum SAGE Foundation public reproducible network payload 2026-10-11 v1'
 PINS={100000:'dbc6cad927a8f49cfe38fd6a0616f0939d3e49b59fec91999ac09bf6e16fbfb8',
+      250000:'4a0a6d506233a8ba46c2effa2bfee534b4e8640babeb16818d3c9d5d10a061a4',
+      500000:'e06f9e57a92a1ccdc6a43af623cafd521454b452734a6926794c7fb09eeb68b8',
       1000000:'3bc41059ce9fc88e5b24557b8f1d916830e7eefa536beae508d553a66188ff36'}
 
 
@@ -48,10 +50,16 @@ def receive(path,p,clock,expiry=2800000000,boot='test-host-boot'):
 def inputs(p):return [kp.chunk_bytes(p[5][entry['sha256']]) for entry in p[4]['chunks']]
 
 
-@pytest.mark.parametrize('n',[100000,1000000])
+@pytest.mark.parametrize('n',[100000,250000,500000,1000000])
 @pytest.mark.parametrize('exact32',[False,True])
 def test_pinned_file_roundtrip_signatures_whole_sha_and_honest_wire_counts(tmp_path,signer,n,exact32):
-    p=package(signer,n,exact32);parts=inputs(p);assert len(parts)==(5 if n==100000 else 42)
+    expected_parts={100000:5,250000:11,500000:21,1000000:42}[n]
+    p=package(signer,n,exact32);parts=inputs(p);assert len(parts)==expected_parts
+    descriptor=bb.descriptor(p[4])
+    assert descriptor['bytes']==n and len(descriptor['parts'])==expected_parts
+    assert [row['raw_bytes'] for row in descriptor['parts']]==[
+        min(bb.PART_BYTES,n-index*bb.PART_BYTES) for index in range(expected_parts)
+    ]
     assert all(len(raw)<=32740 for raw in parts)
     if exact32:assert set(map(len,parts))=={32740}
     with receive(tmp_path/'receiver',p,Clock()) as receiver:
