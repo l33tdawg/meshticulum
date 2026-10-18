@@ -93,6 +93,11 @@ completion at **16.81–17.08 seconds**. The pre-fix startup race is retained as
 the 52.8-second control. [The HTTP record](docs/HTTP_GATEWAY.md) explains the
 3-second startup gap, exact receipts and opt-in routing direction.
 
+An interactive `links` session also submitted a real Wiby search and opened a
+small result page in about 20 seconds. Google browsing remains outside the
+plain-HTTP gateway: `google.com` redirects to HTTPS and its search page is about
+92 KB, above the 16 KiB response cap.
+
 A separate [clean installed-wheel check](docs/RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) completed another fresh **100 kB file at 1.74 kB/s (13.92 kbit/s) including startup and a five-second pause between verified parts**. Normal isolated virtual environments matched all 67 runtime files to the published wheel, and all ten endpoint processes closed successfully. Wider recovery, hardware and sustained-capacity qualification remain open.
 
 Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/s median (9.6 kbit/s)**, and two later 16,356-byte public responses reached **1.037 and 1.071 kB/s** through reliable-flow ACK with zero DATA retries or duplicates. [Performance](docs/PERFORMANCE.md) retains those historical conditions and scoped upstream comparisons. The immediate target is sustained useful encrypted delivery above **1 kB/s (8 kbit/s) including startup**, with reliable completion and deployable code. **4 to 5 kB/s (32 to 40 kbit/s) is an optional later stretch**, not an alpha release gate. The new GFSK samples and earlier LoRa results retain their own source pins and measurement boundaries.

@@ -78,6 +78,40 @@
       "response_staged_s": 11.66584674990736
     }
   ],
+  "interactive_browsing": {
+    "client": "links",
+    "search": {
+      "url": "http://www.wiby.me/?q=radio",
+      "run_id": "b2519a99f55e87afef315b7048fc60f7",
+      "body_bytes": 6414,
+      "body_sha256": "a8a520f3c122a5906eba6b917baad1c079af29efe30f103fbb516ed40533a451",
+      "response_over_radio_bytes": 6514,
+      "gateway_complete_seconds": 19.34286191686988,
+      "request_radio_attempts": [8, 2],
+      "response_radio_attempts": [16, 35],
+      "browser_wall_seconds": 20.2
+    },
+    "followed_result": {
+      "url": "http://www.hammondmuseumofradio.org/collins.html",
+      "run_id": "1b8b7e0711a4f96a69badf5a26fa2191",
+      "body_bytes": 7359,
+      "body_sha256": "f70c358a4ab58bd4778ce28ee08b49587498aa1eff979b648f78f9fb828bedf7",
+      "response_over_radio_bytes": 7459,
+      "gateway_complete_seconds": 19.38427025009878,
+      "request_radio_attempts": [9, 2],
+      "response_radio_attempts": [17, 40],
+      "browser_wall_seconds": 20.6
+    },
+    "limits": {
+      "gateway_max_body_bytes": 16384,
+      "google_root": "301 redirect to HTTPS; the gateway currently accepts only an upstream 200",
+      "google_search_body_bytes": 92356,
+      "google_search_js_heavy": true,
+      "murgasarc_body_bytes": 44679,
+      "https_connect": false,
+      "links_installed_on_unit_a": false
+    }
+  },
   "all_body_hashes_match": true,
   "all_radio_directions_verified": true,
   "scope": {
@@ -97,6 +131,7 @@
     "Each browser run used fresh signed request and response phases and fresh grants.",
     "The gateway is plain HTTP/1.x only and does not provide HTTPS CONNECT, a TUN interface or transparent IP routing.",
     "The 3.0-second startup gap is a bounded coordination delay, not a persistent radio session.",
+    "links can search Wiby and open small plain-HTTP result pages, but Google's HTTPS redirect and approximately 92 KB search page are outside this gateway's current 16 KiB/plain-HTTP path.",
     "No RF airtime at the antenna, energy, EIRP or field range was measured.",
     "The gateway is a lab probe, not a published alpha SDK API."
   ],

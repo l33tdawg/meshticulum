@@ -17,6 +17,19 @@ The pre-fix control failed the 30-second timeout after 52.834 s and only passed
 with a 90-second timeout at 53.296 s. The post-fix one-shot control completed
 in **17.559 s**.
 
+## Interactive search and result page
+
+An interactive `links` session on unit C submitted a real Wiby search,
+`http://www.wiby.me/?q=radio`, and rendered the 6,414-byte results page in about
+**20 seconds**. Following
+`http://www.hammondmuseumofradio.org/collins.html` rendered the 7,359-byte
+result page in about **20.6 seconds**. Both directions verified.
+
+Google remains outside this path: `http://google.com/` redirects to HTTPS, and
+the plain-HTTP Google search response is about 92 KB, above the 16 KiB gateway
+cap. A 44.7 KB Wiby result was refused for the same reason. `links` is installed
+on unit C; unit A uses Chromium for the keyboard-and-mouse desktop mode.
+
 ## What changed
 
 The receiver has to open the serial device, discover the MCU, load the SDK,

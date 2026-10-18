@@ -34,6 +34,37 @@ The three browser runs all returned the same 577-byte body hash and verified
 both radio directions. The 30-second target now has about 13 seconds of margin
 on this near-bench path.
 
+## Interactive browsing
+
+An interactive `links` session on unit C also submitted a real search and
+followed a result:
+
+- `http://www.wiby.me/?q=radio` returned a 6,414-byte results page in about
+  **20 seconds**. The page listed the first page of radio results.
+- Following
+  `http://www.hammondmuseumofradio.org/collins.html` rendered the 7,359-byte
+  result page in about **20.6 seconds**.
+- The interactive session accepted normal URL navigation and rendered both
+  pages; receiver verification and sender peer receipt passed in both radio
+  directions.
+
+This is a real, if lightweight, browsing path. It is not normal Google
+browsing yet:
+
+- `http://google.com/` returns a 301 redirect to HTTPS. The gateway accepts only
+  an upstream 200 response, so it refuses the redirect.
+- `http://www.google.com/search?q=meshticulum` returns 200 over plain HTTP, but
+  the JS-heavy page is about **92 KB**, above the gateway's 16 KiB response
+  cap.
+- A 44.7 KB Wiby result was refused for the same size reason.
+- `links` is installed on unit C, not unit A. Unit A's desktop browser is
+  Chromium.
+
+The practical next steps are an HTTPS-fetching, bounded reader/search shim on
+the internet-connected unit, or a bounded HTTPS stream path. Terminal `links`
+remains the low-bandwidth fallback; desktop Chromium is the keyboard-and-mouse
+landscape experience.
+
 ## What it proves
 
 - A text browser can consume a public HTTP resource through a radio gateway.
