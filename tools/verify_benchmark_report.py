@@ -288,6 +288,28 @@ def verify_http_gateway(record):
         for field in ('request_radio_complete_s','internet_fetch_complete_s','response_staged_s'):
             require(type(row[field]) in (int,float) and 0<row[field]<row['gateway_complete_seconds'],
                     'invalid HTTP timing '+field)
+    interactive=record['interactive_browsing']
+    require(interactive['client']=='links','wrong interactive HTTP client')
+    for key in ('search','followed_result'):
+        row=interactive[key]
+        require(row['url'].startswith('http://'),'interactive browsing not plain HTTP')
+        require(0<row['body_bytes']<=16384 and re.fullmatch('[0-9a-f]{64}',row['body_sha256']),
+                'invalid interactive body')
+        require(0<row['gateway_complete_seconds']<30 and row['browser_wall_seconds']<30,
+                'interactive browsing missed 30-second window')
+        require(0<row['response_over_radio_bytes']<=16384,'interactive response exceeds gateway cap')
+        for attempts in (row['request_radio_attempts'],row['response_radio_attempts']):
+            require(len(attempts)==2 and all(type(value) is int and value>0 for value in attempts),
+                    'invalid interactive attempt counts')
+    limits=interactive['limits']
+    require(limits['gateway_max_body_bytes']==16384,'wrong interactive body cap')
+    require(limits['google_search_body_bytes']>limits['gateway_max_body_bytes'],
+            'Google search body unexpectedly within cap')
+    require(limits['murgasarc_body_bytes']>limits['gateway_max_body_bytes'],
+            'large result unexpectedly within cap')
+    require('HTTPS' in limits['google_root'] and limits['https_connect'] is False,
+            'interactive HTTPS boundary missing')
+    require(limits['links_installed_on_unit_a'] is False,'wrong links placement')
     require(record['all_body_hashes_match'] is True and record['all_radio_directions_verified'] is True,
             'HTTP verification missing')
     scope=record['scope']

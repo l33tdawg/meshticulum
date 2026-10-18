@@ -34,6 +34,11 @@ pre-fix 52.8-second startup-race failure remains as the control. See the
 [HTTP gateway record](docs/HTTP_GATEWAY.md). None of these results changes the
 immutable `v1.0.0-alpha` tag or its checksummed assets.
 
+An interactive `links` session also submitted a real Wiby search and opened a
+small result page in about 20 seconds. Google browsing remains outside the
+plain-HTTP gateway: `google.com` redirects to HTTPS and the Google search page
+is about 92 KB, above the 16 KiB response cap.
+
 ## Alpha contents and measured scope
 
 Meshticulum is a SAGE Foundation project created and maintained by Dhillon Andrew
