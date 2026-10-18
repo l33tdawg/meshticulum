@@ -26,12 +26,13 @@ receive drops. The [profile
 record](benchmarks/2026-10-18-lora-sf7-sf8/results.json) retains the final and
 control medians, individual timings and debt accounting.
 
-A one-request HTTP gateway also carried a bounded request through a
-radio-connected endpoint, fetched `example.com` through a second endpoint's
-internet access and returned it over the radio. A `links` text browser rendered
-the page in 53.3 seconds; the 30-second timeout failed. See the [HTTP gateway
-record](docs/HTTP_GATEWAY.md). Neither result changes the immutable
-`v1.0.0-alpha` tag or its checksummed assets.
+Three consecutive HTTP gateway requests now complete inside the normal
+**30-second** browser timeout. `links` rendered `example.com` and `example.org`
+in **17.77–17.99 seconds** wall time, with gateway completion at
+**16.81–17.08 seconds**; both radio directions verified on every run. The
+pre-fix 52.8-second startup-race failure remains as the control. See the
+[HTTP gateway record](docs/HTTP_GATEWAY.md). None of these results changes the
+immutable `v1.0.0-alpha` tag or its checksummed assets.
 
 ## Alpha contents and measured scope
 

@@ -25,12 +25,13 @@ record](RADIO_SDK_MEASUREMENTS.md#matched-sf7-and-sf8-lora-profiles) keeps the
 individual timings, attempt journals and limitations. This is a finite
 near-bench profile comparison, not a field-range or upstream ranking.
 
-A first one-request HTTP gateway also carried `http://example.com/` from a
-radio-only endpoint through a second endpoint's internet connection and back.
-The body and both radio directions verified; a `links` text browser rendered the
-page in **53.3 seconds**. The same request with a **30-second** timeout failed.
-[The HTTP gateway record](HTTP_GATEWAY.md) keeps the receipts and limits; a warm
-session is the next step toward a 30-second browser path.
+The HTTP gateway now meets a normal **30-second** browser timeout. Three
+consecutive `links` requests through a radio-only endpoint and a second
+endpoint's internet connection rendered in **17.77–17.99 seconds** wall time,
+with gateway completion at **16.81–17.08 seconds**. The body and both radio
+directions verified on every run. The pre-fix startup-race control failed at
+52.8 seconds; a bounded 3-second startup gap removed the race. [The HTTP gateway
+record](HTTP_GATEWAY.md) keeps the receipts and limitations.
 
 These finite samples exceed the **1 kB/s (8 kbit/s) startup-inclusive alpha floor
 for that path**, and the final 250 kB, 500 kB and 1 MB samples all exceed the

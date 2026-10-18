@@ -86,11 +86,12 @@ near-bench link. All 12 chunks and authenticated receipts verified. The MCU's
 [The profile record](benchmarks/2026-10-18-lora-sf7-sf8/results.json) retains
 the final and control medians and the exact debt accounting.
 
-The first HTTP gateway test carried a bounded request from a radio-only endpoint
-through a second unit's internet connection and back. A `links` text browser
-rendered `example.com` in **53.3 seconds**; the same request with a **30-second**
-timeout failed. [The HTTP record](docs/HTTP_GATEWAY.md) explains the cold-start
-cost and the opt-in routing direction.
+The HTTP gateway now meets a normal **30-second** browser timeout. Three
+consecutive `links` requests through a radio-only endpoint and a second unit's
+internet connection rendered in **17.77–17.99 seconds** wall time, with gateway
+completion at **16.81–17.08 seconds**. The pre-fix startup race is retained as
+the 52.8-second control. [The HTTP record](docs/HTTP_GATEWAY.md) explains the
+3-second startup gap, exact receipts and opt-in routing direction.
 
 A separate [clean installed-wheel check](docs/RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) completed another fresh **100 kB file at 1.74 kB/s (13.92 kbit/s) including startup and a five-second pause between verified parts**. Normal isolated virtual environments matched all 67 runtime files to the published wheel, and all ten endpoint processes closed successfully. Wider recovery, hardware and sustained-capacity qualification remain open.
 
@@ -105,7 +106,7 @@ Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
 | Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
 | Public resources | Two fresh 100 kB files reached 1.95 to 2.03 kB/s (15.6 to 16.2 kbit/s); fresh 250 kB, 500 kB and 1 MB files reached 2.111, 2.216 and 2.230 kB/s (16.9, 17.7 and 17.8 kbit/s), all with independent whole-file verification | Wider completion distribution, recovery, mixed-path coverage, field range and qualification |
-| HTTP gateway | One bounded plain-HTTP request fetched `example.com` through a second unit's internet access and rendered in `links` in 53.3 s; both radio directions verified | Warm session for a 30 s browser path; no HTTPS `CONNECT`, TUN or transparent routing |
+| HTTP gateway | Three plain-HTTP browser runs through a second unit's internet access rendered in 17.77–17.99 s with a 30 s timeout; gateway completion 16.81–17.08 s; both radio directions verified | Repeated-request latency and broader hardware; no HTTPS `CONNECT`, TUN or transparent routing |
 | Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
 | Standalone packaging | Published source-build alpha, canonical Python package and standalone source suite | Separately qualified Lantern deployment and future releases |
 

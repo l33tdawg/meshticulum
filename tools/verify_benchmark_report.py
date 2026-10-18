@@ -255,6 +255,53 @@ def verify_lora_comparison(record):
                              rel_tol=1e-9),'wrong '+name+' ratio')
 
 
+def verify_http_gateway(record):
+    require(record['schema']=='meshticulum.http-radio-gateway-browser-runs.v1','unsupported HTTP report')
+    require(record['complete'] is True,'incomplete HTTP report')
+    require(re.fullmatch('[0-9a-f]{40}',record['source_commit']) is not None,'invalid HTTP source pin')
+    for field in ('sdk_sha256','gateway_script_sha256'):
+        require(re.fullmatch('[0-9a-f]{64}',record[field]) is not None,'invalid '+field)
+    require(record['browser']=='links' and record['receive_timeout_seconds']==30,'wrong browser scope')
+    require(record['startup_gap_seconds']==3.0,'wrong startup gap')
+    require(record['pre_fix_control']['thirty_second']['returncode']==1
+            and record['pre_fix_control']['thirty_second']['elapsed_ms']>30000,
+            'pre-fix control was not a 30-second failure')
+    require(record['pre_fix_control']['ninety_second']['returncode']==0,'pre-fix 90-second control failed')
+    one=record['one_shot_control']
+    require(one['status']==200 and one['http_body_bytes']==577
+            and one['complete_seconds']<30,'one-shot control missed 30-second window')
+    require(one['http_body_sha256']=='25ddf2c883e0d1958ea971d279a7e4f0fd446724ee3db7db19dadabd4a62e484',
+            'wrong one-shot body hash')
+    require(len(record['runs'])==3,'wrong browser sample count')
+    seen=set()
+    for row in record['runs']:
+        require(row['run_id'] not in seen,'duplicate browser run');seen.add(row['run_id'])
+        require(row['url'] in ('http://example.com/','http://example.org/'),'unexpected HTTP target')
+        require(row['status']==200 and row['http_body_bytes']==577,'browser HTTP result incomplete')
+        require(row['http_body_sha256']==one['http_body_sha256'],'browser body hash mismatch')
+        require(0<row['gateway_complete_seconds']<row['browser_elapsed_seconds']<=30,
+                'browser run missed the 30-second window')
+        require(row['gateway_complete_seconds']<20,'gateway completion outside measured bound')
+        for attempts in (row['request_radio_attempts'],row['response_radio_attempts']):
+            require(len(attempts)==2 and all(type(value) is int and value>0 for value in attempts),
+                    'invalid HTTP radio attempt counts')
+        for field in ('request_radio_complete_s','internet_fetch_complete_s','response_staged_s'):
+            require(type(row[field]) in (int,float) and 0<row[field]<row['gateway_complete_seconds'],
+                    'invalid HTTP timing '+field)
+    require(record['all_body_hashes_match'] is True and record['all_radio_directions_verified'] is True,
+            'HTTP verification missing')
+    scope=record['scope']
+    for field in ('transparent_ip_routing','tun_interface','https_connect','latency_distribution',
+                  'field_range_measured','rf_airtime_at_antenna_measured','energy_measured',
+                  'eirp_measured'):
+        require(scope[field] is False,'HTTP scope inflated: '+field)
+    require(scope['one_request_per_browser_run'] is True and scope['plain_http_only'] is True,
+            'HTTP scope boundary missing')
+    require(bool(record['limitations']),'HTTP limitations missing')
+    for field,value in record['evidence_sha256'].items():
+        require(re.fullmatch('[0-9a-f]{64}',value) is not None,'invalid evidence hash '+field)
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('report',nargs='?',type=Path)
@@ -271,6 +318,9 @@ def main():
         elif record['schema']=='meshticulum.lora-sf7-sf8-comparison.v2':
             verify_lora_comparison(record)
             print('Verified 12 LoRa chunks, six matched pairs, both campaign medians, the 1,024-attempt cap and the 644-attempt remaining headroom. Field-range and whole-file claims remain absent.')
+        elif record['schema']=='meshticulum.http-radio-gateway-browser-runs.v1':
+            verify_http_gateway(record)
+            print('Verified three HTTP browser runs inside the 30-second timeout, matching body hashes and both radio directions. Transparent-IP, field-range, energy and EIRP claims remain absent.')
         else:
             verify(record)
             print('Verified 30 unique RF samples, separate directional distributions and 1 retained setup failure. Missing metrics remain null.')
