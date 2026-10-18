@@ -47,7 +47,11 @@ holding CPU4 at roughly 95%. A fresh CPU-isolated control excluded that core
 from the benchmark process: per-part time fell to 8.66 seconds, and the
 whole-file rate rose from 1,749.8 to **2,229.8 useful B/s**, clearing the owner's
 2.0 kB/s floor. The control used 1,471 receiver attempts and 5,400 sender
-attempts, with two DATA retransmissions and two additional raw receive drops.
+attempts, reserving 5,873,703 and 56,270,665 microseconds of estimated airtime
+respectively, with two DATA retransmissions and two additional raw receive
+drops. The MCU advanced from 4,584 to 6,055 attempts and from 14,019,936 to
+18,021,056 reserved-airtime microseconds; firmware, boot identity and USB
+identity were unchanged.
 
 ### Where the 1 MB time went
 
@@ -65,7 +69,8 @@ equivalent data-only rates for the 250,000- and 500,000-byte files were
 With the sender-side benchmark excluded from CPU4, the fresh 1 MB control
 completed at **448.473933 s** through authenticated receipt and **450.903081 s**
 through endpoint closure. Its 42 part intervals summed to **363.705645 s** and
-coordination gaps to **87.197436 s**. This is **2,229.8 B/s whole-file** and
+the remaining interval between parts to **84.768288 s**. This is
+**2,229.8 B/s whole-file** and
 demonstrates that the file path itself clears 2.0 kB/s under the declared
 near-bench conditions. Warm workers and fewer process restarts remain useful
 headroom but are no longer required to cross the floor.

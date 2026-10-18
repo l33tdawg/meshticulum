@@ -93,6 +93,31 @@ def verify_sdk_files(record):
         require(row['services_and_boot_unchanged'] is True,'service/boot state changed')
         for field in ('data_retransmissions','new_receiver_drops'):
             require(type(row[field]) is int and row[field]>=0,'invalid '+field)
+        if 'attempt_ledger' in row:
+            ledger=row['attempt_ledger']
+            require(set(ledger)=={'unit-a','unit-c'},'wrong attempt ledger endpoints')
+            for unit,attempts in ledger.items():
+                require(type(attempts.get('total_attempts')) is int and attempts['total_attempts']>=0,
+                        unit+' invalid attempt total')
+                require(type(attempts.get('reserved_estimated_airtime_us')) is int
+                        and attempts['reserved_estimated_airtime_us']>=0,
+                        unit+' invalid reserved airtime')
+                require(attempts.get('recovered_unknown')==0 and attempts.get('fenced') is False,
+                        unit+' unsettled attempt ledger')
+        if 'mcu_boot_counters' in row:
+            counters=row['mcu_boot_counters']
+            advance=counters['attempts_after']-counters['attempts_before']
+            require(advance==row['attempt_ledger']['unit-a']['total_attempts'],
+                    'MCU attempt advance does not match receiver journal')
+            require(counters['reserved_estimated_airtime_us_after']
+                    >=counters['reserved_estimated_airtime_us_before'],
+                    'MCU reserved airtime moved backwards')
+            require(counters['raw_receive_drops_after']-counters['raw_receive_drops_before']
+                    ==row['new_receiver_drops'],'MCU receive-drop advance mismatch')
+        if 'part_interval_sum_us' in row:
+            require(row['part_interval_sum_us']+row['coordination_gap_us']
+                    ==row['boundaries'][boundaries[0]]['elapsed_us'],
+                    'part interval and coordination gap do not match sender boundary')
         require(row['default_receiver_grace_us']==20000000,'changed fallback grace')
         mode=row['receiver_retirement_mode']
         require(mode in ('default-20-second-receiver-grace','authenticated-sender-receipt-confirmation'),'unknown retirement mode')

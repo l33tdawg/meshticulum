@@ -291,6 +291,31 @@
       "new_receiver_drops": 2,
       "preexisting_cached_parts": 0,
       "measurement_control": "benchmark sender affinity excluded CPU4, reserved by the production LLM engine",
+      "original_file_window_seconds": 1140,
+      "attempt_ledger": {
+        "unit-a": {
+          "total_attempts": 1471,
+          "reserved_estimated_airtime_us": 5873703,
+          "recovered_unknown": 0,
+          "fenced": false
+        },
+        "unit-c": {
+          "total_attempts": 5400,
+          "reserved_estimated_airtime_us": 56270665,
+          "recovered_unknown": 0,
+          "fenced": false
+        }
+      },
+      "mcu_boot_counters": {
+        "attempts_before": 4584,
+        "attempts_after": 6055,
+        "reserved_estimated_airtime_us_before": 14019936,
+        "reserved_estimated_airtime_us_after": 18021056,
+        "raw_receive_drops_before": 5,
+        "raw_receive_drops_after": 7
+      },
+      "part_interval_sum_us": 363705645,
+      "coordination_gap_us": 84768288,
       "boundaries": {
         "first_sender_startup_to_final_authenticated_receipt": {
           "elapsed_us": 448473933,
