@@ -1,0 +1,232 @@
+{
+  "schema": "meshticulum.published-sdk-file-samples.v1",
+  "date": "2026-10-18",
+  "core_commit": "1f85608e2c5e543130673529e21d838917094c11",
+  "modulation": "GFSK",
+  "modem_bit_rate_bps": 250000,
+  "configured_profile": {
+    "class": "Gfsk250Profile",
+    "frequency_hz": 921375000,
+    "chip_power_dbm": 0,
+    "bit_rate_bps": 250000,
+    "deviation_hz": 62500,
+    "rx_bandwidth_hz": 467000,
+    "preamble_bits": 32
+  },
+  "sender_hardware": "Orange Pi 5 Plus SX1262 HAT",
+  "receiver_hardware": "Heltec V4 SX1262 MCU",
+  "topology": "direct single radio link",
+  "approximate_separation_metres": 1,
+  "distance_method": "owner estimate; near-bench placement",
+  "measured_range_metres": null,
+  "measured_RF_airtime_us": null,
+  "measured_energy_joules": null,
+  "measured_eirp_dbm": null,
+  "native_private_qualified": false,
+  "sustained_goodput_qualified": false,
+  "alpha_accepted": false,
+  "scope_to_closure_includes": [
+    "grant delivery",
+    "endpoint startup",
+    "coordination",
+    "verification",
+    "endpoint cleanup"
+  ],
+  "scope_to_closure_excludes": [
+    "offline file generation",
+    "signing",
+    "build",
+    "staging"
+  ],
+  "samples": [
+    {
+      "sample_id": "250000-public-bundle",
+      "useful_decoded_bytes": 250000,
+      "part_useful_bytes": [
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        11000
+      ],
+      "fresh_files_measured": 1,
+      "receiver_retirement_mode": "authenticated-sender-receipt-confirmation",
+      "receiver_confirmations_accepted": 11,
+      "default_receiver_grace_us": 20000000,
+      "publisher_and_whole_file_independently_verified": true,
+      "within_original_file_window": true,
+      "endpoint_children": {
+        "total": 22,
+        "exit_zero": 22,
+        "forced_cleanup": 0
+      },
+      "services_and_boot_unchanged": true,
+      "data_retransmissions": 1,
+      "new_receiver_drops": 0,
+      "preexisting_cached_parts": 0,
+      "boundaries": {
+        "first_sender_startup_to_final_authenticated_receipt": {
+          "elapsed_us": 118420015,
+          "useful_decoded_Bps": 2111.129609297888
+        },
+        "first_DATA_worker_call_to_final_authenticated_receipt": {
+          "elapsed_us": 117382857,
+          "useful_decoded_Bps": 2129.7828864397125
+        },
+        "scope_issue_to_both_endpoints_closed": {
+          "elapsed_us": 121214435,
+          "useful_decoded_Bps": 2062.460630204645
+        }
+      },
+      "source_result_sha256": "98a2710df35d874a0e0462181c1cf27d052d7a0deb98e5f776adb667e7313525",
+      "verified_summary_sha256": "c1d185ddb92800fb52af55613c3b296d78e4197cdf58177a6b86543fba4219d9",
+      "useful_sha256": "1dfa9ae722ed948c0516e0573b710efbef6dba58151f585188b210c670d065b6"
+    },
+    {
+      "sample_id": "500000-public-bundle",
+      "useful_decoded_bytes": 500000,
+      "part_useful_bytes": [
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        22000
+      ],
+      "fresh_files_measured": 1,
+      "receiver_retirement_mode": "authenticated-sender-receipt-confirmation",
+      "receiver_confirmations_accepted": 21,
+      "default_receiver_grace_us": 20000000,
+      "publisher_and_whole_file_independently_verified": true,
+      "within_original_file_window": true,
+      "endpoint_children": {
+        "total": 42,
+        "exit_zero": 42,
+        "forced_cleanup": 0
+      },
+      "services_and_boot_unchanged": true,
+      "data_retransmissions": 1,
+      "new_receiver_drops": 1,
+      "preexisting_cached_parts": 0,
+      "boundaries": {
+        "first_sender_startup_to_final_authenticated_receipt": {
+          "elapsed_us": 225668497,
+          "useful_decoded_Bps": 2215.6393410995242
+        },
+        "first_DATA_worker_call_to_final_authenticated_receipt": {
+          "elapsed_us": 223949464,
+          "useful_decoded_Bps": 2232.646558153852
+        },
+        "scope_issue_to_both_endpoints_closed": {
+          "elapsed_us": 228292237,
+          "useful_decoded_Bps": 2190.1752182664013
+        }
+      },
+      "source_result_sha256": "3f90dcf31aac83e2bdec99f8d567bc5bb0f41f246906922e37c2e968390ca27a",
+      "verified_summary_sha256": "35a7619d28d447b485de5e9533ab98fe7aa23352459de1b6d4ea506e6956b365",
+      "useful_sha256": "3202f8ecec988382e91e88ca66bbf1daf986311b0a51a32c11c8b573f5dfc5f0",
+      "reclassified_after_diagnostic_drop_gate": true
+    },
+    {
+      "sample_id": "1000000-public-bundle",
+      "useful_decoded_bytes": 1000000,
+      "part_useful_bytes": [
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        23900,
+        20100
+      ],
+      "fresh_files_measured": 1,
+      "receiver_retirement_mode": "authenticated-sender-receipt-confirmation",
+      "receiver_confirmations_accepted": 42,
+      "default_receiver_grace_us": 20000000,
+      "publisher_and_whole_file_independently_verified": true,
+      "within_original_file_window": true,
+      "endpoint_children": {
+        "total": 84,
+        "exit_zero": 84,
+        "forced_cleanup": 0
+      },
+      "services_and_boot_unchanged": true,
+      "data_retransmissions": 1,
+      "new_receiver_drops": 1,
+      "preexisting_cached_parts": 0,
+      "boundaries": {
+        "first_sender_startup_to_final_authenticated_receipt": {
+          "elapsed_us": 571484490,
+          "useful_decoded_Bps": 1749.8287661315183
+        },
+        "first_DATA_worker_call_to_final_authenticated_receipt": {
+          "elapsed_us": 570384109,
+          "useful_decoded_Bps": 1753.2045234450948
+        },
+        "scope_issue_to_both_endpoints_closed": {
+          "elapsed_us": 573955922,
+          "useful_decoded_Bps": 1742.2940711464598
+        }
+      },
+      "source_result_sha256": "091cfe0f3beef5e3a35311b87d85aad1ab88e61dc831c4fb97ecad0695f47b88",
+      "verified_summary_sha256": "225e783d08bdb66b911d586582e8fa648f73459751e5c293cada8b3069ceb46b",
+      "useful_sha256": "800b4452a2febbe4401bf7c9f3a8581d1c1dae5310c0ed0c6955578cc38e4794"
+    }
+  ]
+}
