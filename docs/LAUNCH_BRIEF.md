@@ -46,11 +46,12 @@ The remaining cost is 42 process starts and about **84.8 seconds** between
 part intervals in the pinned repeat. That is the next engineering target, not
 a hidden radio limit.
 
-A first one-request HTTP gateway test also fetched `example.com` from a unit
-with internet access and carried the response back over the radio. A `links`
-text browser rendered it in **53.3 seconds**. The same request with a
-**30-second** timeout failed. The gateway is an opt-in application experiment,
-not transparent IP routing or HTTPS support.
+The HTTP gateway now meets a normal **30-second** browser timeout. Three
+consecutive `links` requests fetched `example.com` and `example.org` from a
+unit with internet access and carried the responses back over the radio in
+**17.77–17.99 seconds** wall time. A bounded 3-second startup gap removed the
+pre-fix 52.8-second race. The gateway is an opt-in application experiment, not
+transparent IP routing or HTTPS support.
 
 The GFSK link itself ran at **250 kbit/s**. The figures above are useful application bytes after transport, encryption, verification, acknowledgements and retry costs.
 
@@ -72,8 +73,8 @@ Next measurement and reliability work:
 
 - Repeat the 250 kB, 500 kB and 1 MB results with warm workers and fewer process
   restarts; target above 2.0 kB/s on the whole-file 1 MB boundary.
-- Extend the HTTP gateway to a warm session and measure whether a 30-second
-  browser path is reachable.
+- Reduce repeated-request latency with warm workers or pre-staged grants, and
+  extend the 30-second browser path to more hardware.
 - Measure repeated startup-inclusive delivery, completion consistency, latency, retries and resource use.
 - Exercise loss, final-ACK recovery, expiry, replay refusal, interruption and verified-piece resume.
 - Preserve peer, boot, deadline, attempt and airtime bindings through restarts and failures.
@@ -119,9 +120,9 @@ The reusable Python core handles bounded reliable flow, authenticated sessions, 
 On a direct near-bench GFSK250 path, two fresh 100,000-byte files completed at 1.95 to 2.03 kB/s (15.6 to 16.2 kbit/s) of useful application throughput, including sender startup. That is a measured baseline, not a LoRa or field-range claim. It gives us a starting point for harder work: sustained delivery, larger files, loss and recovery, mixed paths, more hardware and clearer security boundaries.
 
 Larger files followed: 250 kB, 500 kB and 1 MB at 2.111, 2.216 and 2.230 kB/s
-including startup. A one-request HTTP gateway also rendered a public
-page through the radio in 53.3 seconds. The next target is to remove the
-process-start cost and make the browser path usable at a normal timeout.
+including startup. Three HTTP gateway browser requests then rendered public
+pages through the radio in 17.77–17.99 seconds with a normal 30-second timeout.
+Repeated-request latency and broader hardware remain the next targets.
 
 This alpha is for people who like to test the edge of a design. Install the SDK. Run the offline example. Build the firmware. Try a radio path. Break something, then send us the exact hardware, source, commands, logs and timing.
 

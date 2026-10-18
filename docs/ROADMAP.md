@@ -37,11 +37,13 @@ one boot generation with zero receive drops. [The profile
 record](RADIO_SDK_MEASUREMENTS.md#matched-sf7-and-sf8-lora-profiles) retains the
 individual samples, the final and control medians, and the debt accounting.
 
-A first one-request HTTP gateway also fetched `http://example.com/` through a
-second unit's internet connection and returned it over the radio. A `links`
-text browser rendered the page in **53.3 seconds**; the same request with a
-**30-second** timeout failed. [The HTTP gateway record](HTTP_GATEWAY.md) keeps
-the receipts and limits.
+The HTTP gateway now meets a normal **30-second** browser timeout. Three
+consecutive `links` requests fetched `example.com` and `example.org` through a
+second unit's internet connection and returned them over the radio in
+**17.77–17.99 seconds** wall time, with gateway completion at
+**16.81–17.08 seconds**. A bounded 3-second startup gap removed the pre-fix
+52.8-second startup-race failure. [The HTTP gateway record](HTTP_GATEWAY.md)
+keeps the receipts and limits.
 
 **These samples exceed the startup-inclusive alpha floor for the tested path.** Two fresh 100 kB files provide an initial repeat, rather than a sustained-capacity or completion distribution. GFSK is separate from LoRa modulation; the one-metre setup does not measure field range. [The measurement report](RADIO_SDK_MEASUREMENTS.md) records exact durations, source hashes and limits. The [earlier 15 October campaign](PERFORMANCE.md#a-complete-100-kb-file-2026-10-15) remains in the historical record.
 
@@ -64,10 +66,11 @@ Compare performance and security with published MeshCore and Reticulum evidence 
 ## After alpha
 
 - **More headroom and broader measurements.** Establish repeated startup-inclusive performance before treating the new finite rates as sustained capacity. Improve startup latency, retry cost, completion consistency and resource use. Expand file sizes, topology, range and power measurements under fresh bounded admission.
-- **Warm the request path.** Reuse workers and pre-stage grants so the HTTP
-  gateway can target a normal 30-second browser timeout and larger files retain
-  more headroom above 2.0 kB/s. This is the direct measured fix for cold-start
-  process and coordination cost.
+- **Repeated-request and warm-path latency.** The normal 30-second browser
+  target is met with a bounded cold-start gap. Reduce repeated-request latency
+  with persistent workers or pre-staged grants, and extend the measurement to
+  more hardware while keeping fresh grants, verification and original
+  deadlines.
 - **Optional 4 to 5 kB/s (32 to 40 kbit/s) stretch.** Evaluate higher useful encrypted rates on explicitly supported hardware and profiles after the reliability and deployment work. Capability, range and operating cost need new measurements; raw modem bitrate is not application goodput.
 - **Richer path selection.** Extend verified-piece reuse and locally measured radio/IP choices. Autonomous routing and MeshCore/Reticulum wire interoperability remain unimplemented; existing finite path demonstrations do not supply those features.
 - **Post-quantum feasibility and hybrid research.** Evaluate the separate experimental hybrid prototype's security review, replay/key lifecycle, setup cost, loss recovery and device memory/performance. The default protocols remain classical. PQC is not an alpha prerequisite, a current radio capability or a promised delivery date. [Post-quantum status](POST_QUANTUM.md) records the prototype and its limits.
