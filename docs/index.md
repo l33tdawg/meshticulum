@@ -13,7 +13,8 @@ Meshticulum brings bounded radio transfers, authenticated service boundaries and
 | [Why Meshticulum](WHY.md) | The gap we are trying to close and the priorities drawn from embedded radio meshes and secure networking |
 | [Architecture](ARCHITECTURE.md) | Component diagrams, service separation, a transfer's lifecycle and the intended mixed-path topology |
 | [MeshCore and Reticulum comparison](COMPARISON.md) | The upstream designs, their strengths, and what Meshticulum implements differently |
-| [Public SDK radio measurements](RADIO_SDK_MEASUREMENTS.md) | Inspect the 17 October GFSK file samples, whole-file timing and confirmation results |
+| [Public SDK radio measurements](RADIO_SDK_MEASUREMENTS.md) | Inspect the 17–18 October GFSK file samples, larger-file timing and confirmation results |
+| [HTTP over radio](HTTP_GATEWAY.md) | Inspect the one-request text-browser gateway, its 53-second cold path and its limits |
 | [Performance and measurement](PERFORMANCE.md) | Useful encrypted goodput, reported results, exact units and the conditions for a fair comparison |
 | [Post-quantum status](POST_QUANTUM.md) | The classical default, hybrid prototype, radio overhead and remaining device work |
 
@@ -42,7 +43,7 @@ The flow history includes references to lab receipts in the original SAGE checko
 
 ## Follow qualification
 
-The [roadmap](ROADMAP.md) separates current evidence, published alpha scope and later work. The alpha records useful encrypted delivery above 1 kB/s (8 kbit/s) including sender startup on its declared near-bench path, reliable verified completion and a deployable SDK/firmware source-build path. Wider mixed/native integration, private security and field qualification remain required. The optional 4 to 5 kB/s (32 to 40 kbit/s) stretch and post-quantum feasibility work belong after the baseline.
+The [roadmap](ROADMAP.md) separates current evidence, published alpha scope and later work. The alpha records useful encrypted delivery above 1 kB/s (8 kbit/s) including sender startup on its declared near-bench path, reliable verified completion and a deployable SDK/firmware source-build path. The later 250 kB and 500 kB files clear 2.0 kB/s; the 1 MB file is 1.75 kB/s whole-file because process starts and coordination gaps dominate, while its payload interval is 2.51 kB/s. A one-request HTTP gateway rendered a public page in `links` in 53.3 seconds; the 30-second target needs a warm session. Wider mixed/native integration, private security and field qualification remain required. The optional 4 to 5 kB/s (32 to 40 kbit/s) stretch and post-quantum feasibility work belong after the baseline.
 
 Read [Performance](PERFORMANCE.md) alongside that roadmap. Source controls, modeled workers and loopback transfers provide useful implementation evidence. Physical RF completion, peer receipt, publisher verification and production application acceptance need their respective observations.
 

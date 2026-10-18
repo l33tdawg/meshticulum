@@ -2,7 +2,15 @@
 
 The published experimental alpha provides reusable Python libraries for authenticated transport, bounded resource exchange and offline encrypted envelopes. You can explore signed public resources without a radio, Lantern or the SAGE SDK. Native deployment and protected SAGE integration belong to the separate [Lantern repository](https://github.com/l33tdawg/sage-lantern).
 
-The [public radio examples](../examples/README.md) have two fresh five-part 100 kB measurements at **1.95–2.03 kB/s including sender startup**. A separate clean installed-wheel check completed another 100 kB file at **1.74 kB/s**, including startup and a five-second pause between verified parts. All used a direct near-bench GFSK250 path. [The report](RADIO_SDK_MEASUREMENTS.md) gives the exact packages, conditions and limits. The offline walkthrough below has its own scope.
+The [public radio examples](../examples/README.md) have two fresh five-part
+100 kB measurements at **1.95–2.03 kB/s including sender startup**. A separate
+clean installed-wheel check completed another 100 kB file at **1.74 kB/s**,
+including startup and a five-second pause between verified parts. Later fresh
+250 kB and 500 kB files reached **2.11 and 2.22 kB/s**; a 1 MB file reached
+**1.75 kB/s** whole-file because process startup and coordination dominate.
+All used a direct near-bench GFSK250 path. [The report](RADIO_SDK_MEASUREMENTS.md)
+gives the exact packages, conditions and limits. The offline walkthrough below
+has its own scope.
 
 ## Install the alpha or checkout
 

@@ -1,10 +1,60 @@
-# Public SDK radio measurements: 17 October 2026
+# Public SDK radio measurements: 17–18 October 2026
 
 The public SDK completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s)** of useful application throughput, from each file's first sender startup through its final authenticated receipt. Both five-part files and their publishers were independently verified. A separate **23,900-byte file reached 2.53 kB/s (20.28 kbit/s)** at the same timing boundary.
 
 The three samples above used source `da247a1bb74601973f0bb72f51c268a412714719`, an Orange Pi 5 Plus SX1262 HAT sender and a Heltec V4 MCU receiver about **one metre apart**. The modem used **GFSK at 250 kbit/s**. These are direct, near-bench GFSK results; they provide no LoRa-modulation, multihop or field-range measurement. No new firmware was flashed for these samples.
 
 The tested [`Gfsk250Profile`](https://github.com/l33tdawg/meshticulum/blob/da247a1bb74601973f0bb72f51c268a412714719/src/meshticulum/bench/gfsk250_profile.py) used **921,375,000 Hz**, **0 dBm configured chip power**, a **250,000 bit/s** rate, **62,500 Hz** frequency deviation, **467,000 Hz** receive bandwidth and a **32-bit** preamble. Configured chip power is not a measurement of EIRP; measured EIRP remains unavailable.
+
+## Larger files: 250, 500 and 1,000 kB (18 October 2026)
+
+The same public SDK path later completed three larger files at source
+`1f85608e2c5e543130673529e21d838917094c11`: **250,000**, **500,000** and
+**1,000,000 useful bytes** in **11, 21 and 42 signed parts**. The sender was the
+Orange Pi 5 Plus SX1262 HAT and the receiver the Heltec V4 SX1262 MCU, about one
+metre apart, using the same GFSK250 profile. The receiver independently verified
+every part and the whole-file SHA-256. All 22, 42 and 84 endpoint children exited
+zero, and all 11, 21 and 42 authenticated receipt confirmations were accepted.
+
+| Useful file bytes | Parts | First sender startup → final authenticated receipt | Scope issue → both endpoints closed |
+| ---: | ---: | --- | --- |
+| 250,000 | 11 | 118.420015 s; **2,111.1 B/s (2.1111 kB/s; 16.889 kbit/s)** | 121.214435 s; **2,062.5 B/s (2.0625 kB/s; 16.500 kbit/s)** |
+| 500,000 | 21 | 225.668497 s; **2,215.6 B/s (2.2156 kB/s; 17.725 kbit/s)** | 228.292237 s; **2,190.2 B/s (2.1902 kB/s; 17.521 kbit/s)** |
+| 1,000,000 | 42 | 571.484490 s; **1,749.8 B/s (1.7498 kB/s; 13.999 kbit/s)** | 573.955922 s; **1,742.3 B/s (1.7423 kB/s; 13.938 kbit/s)** |
+
+The 250,000- and 500,000-byte files clear **2.0 kB/s (16 kbit/s) including
+startup**. The 1,000,000-byte file does not: its whole-file rate is **1.75 kB/s
+(14.0 kbit/s)**. That is a real result for the current process-per-part
+campaign, not a payload-path collapse.
+
+Each file had one DATA retransmission. The new raw receive-drop counts were
+**0, 1 and 1**. The original 520-, 720- and 1,140-second windows were not
+extended, and firmware, boot identity and USB identity were unchanged. The
+500,000-byte run's original controller result stopped at the legacy raw-receive
+drop diagnostic after the final radio receipt and whole-file verification had
+already succeeded. `RESULT.json` is retained unchanged and the audited
+`RESULT_RECLASSIFIED.json` records the verified completion. These are verified
+file transfers, not alpha qualification; global quiescence remains unproven and
+is recorded as such.
+
+### Where the 1 MB time went
+
+The whole-file interval is not only radio payload time. The sum of the 42
+per-part sender-startup-to-receipt intervals is **460.672429 s**; the remaining
+**110.812061 s** is coordination between parts. The first six parts averaged
+**8.590 s** each; parts 6–41 averaged **11.365 s** each. That startup step-up is
+the clearest measured lead for the next optimization.
+
+The data-only interval, from the first DATA-worker call to the final receipt,
+was **398.221307 s**, or **2,511.2 B/s (2.5112 kB/s; 20.089 kbit/s)**. The
+equivalent data-only rates for the 250,000- and 500,000-byte files were
+**2,938.4 B/s** and **3,303.1 B/s**. The radio data path is therefore above
+2.0 kB/s in these finite samples; the 1 MB whole-file miss is the cost of 42
+separate starts and coordination gaps. Warm workers, fewer process restarts and
+pre-staged grants are the direct route to a whole-file result above 2.0 kB/s.
+
+The exact parts, confirmations, endpoint exits, timing arithmetic and hashes are
+in the [sanitized larger-file record](../benchmarks/2026-10-18-larger-files/results.json).
 
 ## Useful bytes and elapsed time
 
@@ -64,10 +114,16 @@ Measured RF airtime, energy, EIRP and field range remain unavailable. GFSK resul
 
 ## Inspect the published record
 
-[Sanitized results and source-capture hashes](../benchmarks/2026-10-17-public-sdk/results.json) contain the measured fields needed to check the arithmetic. The operator captures stay in the lab; hashes and an allowlisted transcription do not independently attest the hardware. The public record excludes grants, addresses, device identifiers, boot values and operational logs.
+[Sanitized results and source-capture hashes](../benchmarks/2026-10-17-public-sdk/results.json)
+and the [larger-file record](../benchmarks/2026-10-18-larger-files/results.json)
+contain the measured fields needed to check the arithmetic. The operator
+captures stay in the lab; hashes and an allowlisted transcription do not
+independently attest the hardware. The public record excludes grants, addresses,
+device identifiers, boot values and operational logs.
 
 ```sh
 python tools/verify_benchmark_report.py benchmarks/2026-10-17-public-sdk/results.json
+python tools/verify_benchmark_report.py benchmarks/2026-10-18-larger-files/results.json
 python tools/verify_benchmark_report.py provenance/PUBLIC_INSTALLED_SDK_PROOF.json
 ```
 

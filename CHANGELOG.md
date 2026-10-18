@@ -4,6 +4,24 @@
 
 [Download the GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha). It is published from source `673eb60d24dc60f67371e24bc5c9caeec3a68508` and contains the tested SDK wheel, normalized source distribution, firmware source-build guide, project notices, public proof records, release manifest and checksums. No prebuilt firmware or third-party dependency wheels are included.
 
+## Post-alpha measurement update — 2026-10-18
+
+Source `1f85608e2c5e543130673529e21d838917094c11` completed fresh
+**250,000-, 500,000- and 1,000,000-byte files at 2.11, 2.22 and 1.75 kB/s
+(16.9, 17.7 and 14.0 kbit/s) including sender startup** on the near-bench
+GFSK250 path. The first two clear 2.0 kB/s. The 1 MB file does not on the
+whole-file boundary; its payload interval is 2.51 kB/s and the difference is 42
+process starts plus coordination gaps. The [larger-file
+record](benchmarks/2026-10-18-larger-files/results.json) retains all parts,
+confirmations, endpoint exits and timing arithmetic.
+
+A one-request HTTP gateway also carried a bounded request through a
+radio-connected endpoint, fetched `example.com` through a second endpoint's
+internet access and returned it over the radio. A `links` text browser rendered
+the page in 53.3 seconds; the 30-second timeout failed. See the [HTTP gateway
+record](docs/HTTP_GATEWAY.md). Neither result changes the immutable
+`v1.0.0-alpha` tag or its checksummed assets.
+
 ## Alpha contents and measured scope
 
 Meshticulum is a SAGE Foundation project created and maintained by Dhillon Andrew

@@ -2,7 +2,30 @@
 
 The latest public SDK radio samples completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s) including sender startup**, plus a **23,900-byte file at 2.53 kB/s (20.28 kbit/s)**. They used **GFSK at 250 kbit/s**, on a direct HAT-to-MCU link about one metre apart. Both 100 kB intervals include all five sequential parts and coordination gaps. Scope issue through endpoint closure reached **1.86 and 1.76 kB/s (14.85 and 14.05 kbit/s)**. [The 17 October report](RADIO_SDK_MEASUREMENTS.md) gives the exact source, elapsed boundaries, confirmations and sanitized record.
 
-These finite samples exceed the **1 kB/s (8 kbit/s) startup-inclusive alpha floor for that path**. The source-build alpha is published. A sustained-throughput distribution, broader repetition and wider [qualification](RELEASE_READINESS.md) remain open. The optional later 4 to 5 kB/s (32 to 40 kbit/s) stretch remains in the [roadmap](ROADMAP.md).
+On 18 October, the same public SDK path at source `1f85608` completed
+**250,000-, 500,000- and 1,000,000-byte files at 2.11, 2.22 and 1.75 kB/s
+(16.9, 17.7 and 14.0 kbit/s) including sender startup**. The 250 kB and 500 kB
+files clear the owner's **2.0 kB/s (16 kbit/s)** whole-file floor. The 1 MB file
+does not: its payload interval is still **2.51 kB/s**, but 42 process starts and
+coordination gaps add about **171 seconds** to the whole-file interval. The
+measured fix is warm workers and fewer restarts, not a different radio profile.
+[The larger-file record](RADIO_SDK_MEASUREMENTS.md#larger-files-250-500-and-1000-kb-18-october-2026)
+keeps the exact boundaries.
+
+A first one-request HTTP gateway test also carried
+`http://example.com/` from a radio-only endpoint through a second endpoint's
+internet connection and back. The body and both radio directions verified; a
+`links` text browser rendered the page in **53.3 seconds**. The same request with
+a **30-second** timeout failed. [The HTTP gateway record](HTTP_GATEWAY.md) keeps
+the receipts and limits; a warm session is the next step toward a 30-second
+browser path.
+
+These finite samples exceed the **1 kB/s (8 kbit/s) startup-inclusive alpha floor
+for that path**. The 250 kB and 500 kB samples also exceed 2.0 kB/s; the 1 MB
+sample remains below it on the whole-file boundary. The source-build alpha is
+published. A sustained-throughput distribution, broader repetition and wider
+[qualification](RELEASE_READINESS.md) remain open. The optional later 4 to
+5 kB/s (32 to 40 kbit/s) stretch remains in the [roadmap](ROADMAP.md).
 
 This page retains the earlier 30-sample LoRa distribution, seven finite native LoRa public samples and the 15 October GFSK campaign at their original source pins and timing boundaries. The new GFSK measurements are separate from the LoRa evidence and upstream comparison below.
 

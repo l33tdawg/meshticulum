@@ -24,6 +24,23 @@ Each 100 kB interval includes all five sequential parts and coordination gaps. A
 
 A separate [clean installed-wheel check](RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) completed another fresh 100 kB file at **1.74 kB/s (13.92 kbit/s) including startup and a five-second pause between verified parts**, or **1.61 kB/s (12.91 kbit/s) through endpoint closure**. Both normal virtual environments matched all 67 runtime files to release source `673eb60`; all five confirmations and all ten endpoint exits passed under the unchanged original window. The record retains the earlier incomplete 95,600-byte installed trial. This finite check supports the published source-build alpha and does not establish in-flight crash recovery.
 
+On **18 October 2026**, source `1f85608` completed fresh **250,000-, 500,000-
+and 1,000,000-byte files** on the same near-bench GFSK250 path:
+**2.11, 2.22 and 1.75 kB/s (16.9, 17.7 and 14.0 kbit/s)** including sender
+startup through final authenticated receipt. The 250 kB and 500 kB files clear
+**2.0 kB/s**; the 1 MB file does not. Its data-only interval is **2.51 kB/s**,
+but 42 process starts and coordination gaps add about **171 seconds** to the
+whole-file interval. The measured priority is warm workers, fewer restarts and
+pre-staged grants. [The larger-file record](RADIO_SDK_MEASUREMENTS.md#larger-files-250-500-and-1000-kb-18-october-2026)
+has the exact boundaries.
+
+A first one-request HTTP gateway test also worked: unit A fetched
+`http://example.com/` through its internet connection and unit C's `links` text
+browser rendered the response over the radio. The body and both radio
+directions verified. The cold path took **53.3 seconds**; a **30-second**
+browser timeout failed. [The HTTP gateway record](HTTP_GATEWAY.md) keeps the
+receipts and limits.
+
 Earlier native milestones demonstrated [mixed LoRa/IP delivery, loss, verified-piece retention, fresh LoRa resume and return to a locally measured faster IP path](IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return). Their original scope and failed attempts remain part of the record. Current source tests and later firmware builds do not requalify those physical results.
 
 ## Published alpha and wider programme
@@ -41,6 +58,10 @@ Compare performance and security with published MeshCore and Reticulum evidence 
 ## After alpha
 
 - **More headroom and broader measurements.** Establish repeated startup-inclusive performance before treating the new finite rates as sustained capacity. Improve startup latency, retry cost, completion consistency and resource use. Expand file sizes, topology, range and power measurements under fresh bounded admission.
+- **Warm the request path.** Reuse workers and pre-stage grants so the 1 MB
+  whole-file rate can clear 2.0 kB/s and the HTTP gateway can target a normal
+  30-second browser timeout. This is the direct measured fix for the current
+  process-start and coordination cost.
 - **Optional 4 to 5 kB/s (32 to 40 kbit/s) stretch.** Evaluate higher useful encrypted rates on explicitly supported hardware and profiles after the reliability and deployment work. Capability, range and operating cost need new measurements; raw modem bitrate is not application goodput.
 - **Richer path selection.** Extend verified-piece reuse and locally measured radio/IP choices. Autonomous routing and MeshCore/Reticulum wire interoperability remain unimplemented; existing finite path demonstrations do not supply those features.
 - **Post-quantum feasibility and hybrid research.** Evaluate the separate experimental hybrid prototype's security review, replay/key lifecycle, setup cost, loss recovery and device memory/performance. The default protocols remain classical. PQC is not an alpha prerequisite, a current radio capability or a promised delivery date. [Post-quantum status](POST_QUANTUM.md) records the prototype and its limits.

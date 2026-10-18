@@ -83,20 +83,20 @@
       <div class="container">
         <div class="section-heading"><div><p class="eyebrow">03 / Measured, with scope</p><h2>More than a modem<br>bitrate.</h2></div><p>We measure useful bytes in authenticated encrypted transfers, and require independent publisher and content verification. Timing boundaries matter.</p></div>
         <div class="evidence-panel">
-          <div class="evidence-head"><span class="label">Two fresh 100 kB file transfers</span><span class="date">17 October 2026</span></div>
+          <div class="evidence-head"><span class="label">Larger files and HTTP over radio</span><span class="date">18 October 2026</span></div>
           <div class="metrics-grid file-metrics">
-            <div class="metric primary-metric"><strong>1.95–2.03<span>kB/s including sender startup<br>(15.6–16.2 kbit/s)</span></strong><p>First sender startup<br>through the final authenticated receipt</p></div>
-            <div class="metric"><strong>1.99–2.08<span>kB/s from first DATA<br>(15.9–16.6 kbit/s)</span></strong><p>First DATA-worker call<br>through the final authenticated receipt</p></div>
-            <div class="metric"><strong>100,000<span>decoded bytes per file</span></strong><p>Five signed parts per file<br>both whole-file hashes verified</p></div>
+            <div class="metric primary-metric"><strong>2.11–2.22<span>kB/s including sender startup<br>(16.9–17.7 kbit/s)</span></strong><p>250 kB and 500 kB files<br>verified end to end</p></div>
+            <div class="metric"><strong>1.75<span>kB/s on 1 MB<br>(14.0 kbit/s)</span></strong><p>Whole file below 2.0 kB/s;<br>2.51 kB/s payload interval</p></div>
+            <div class="metric"><strong>53.3<span>seconds for links HTTP</span></strong><p>example.com rendered over radio<br>30-second timeout failed</p></div>
           </div>
-          <div class="measurement-note"><span aria-hidden="true">↳</span><p>The fresh 100 kB files took <strong>49.256 and 51.303 seconds</strong> through final authenticated receipt, including all five parts and coordination gaps. Full scope-to-closure rates were <strong>1.76–1.86 kB/s (14.0–14.8 kbit/s)</strong>. All ten receiver confirmations were accepted, with zero and one DATA retransmissions respectively and zero new receiver drops.</p></div>
+          <div class="measurement-note"><span aria-hidden="true">↳</span><p>The 250 kB and 500 kB files cleared <strong>2.0 kB/s</strong>. The 1 MB file did not on the whole-file boundary: 42 process starts and coordination gaps added about <strong>171 seconds</strong>, while the payload interval remained <strong>2.51 kB/s</strong>. The 100 kB repeat remains at <strong>1.95–2.03 kB/s</strong>. The HTTP result is one bounded request, not transparent IP or HTTPS support.</p></div>
           <div class="radio-settings"><span>GFSK / 250 kbit/s</span><span>Linux SX1262 HAT → Heltec V4 MCU</span><span>About 1 metre apart / direct near-bench link</span><span>Measured airtime, energy and EIRP: unavailable</span></div>
         </div>
         <div class="evidence-columns">
-          <article><h3>A comparison you can inspect</h3><p>The earlier LoRa sample at 1,071.3 B/s is numerically <strong>2.61×</strong> the <strong>410 B/s</strong> contributed test in <a href="https://github.com/meshcore-dev/MeshCore/issues/3404">MeshCore issue #3404</a>. That test used 25 individually acknowledged 128-byte frames at SF7/BW500. Ours used a windowed resource reply. Different workloads and timing boundaries prevent a general speed ranking.</p></article>
-          <article><h3>Installed and continued.</h3><p>A separate clean installed-wheel check completed another 100 kB file at <strong>1.74 kB/s (13.9 kbit/s)</strong>, including sender startup and a five-second pause between verified parts. All ten endpoint processes closed successfully. <a href="roadmap.html#installed-sdk">Read the installation and continuation check</a>. Field range, wider recovery and native private qualification remain open; the finite source-build alpha is <a href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha">published as a prerelease</a>.</p></article>
+          <article><h3>The 100 kB repeat</h3><p>Two fresh 100 kB files completed at <strong>1.95–2.03 kB/s (15.6–16.2 kbit/s)</strong> including sender startup. A separate clean installed-wheel file reached <strong>1.74 kB/s</strong> with a five-second pause between verified parts. <a href="roadmap.html#installed-sdk">Read the installation and continuation check</a>.</p></article>
+          <article><h3>HTTP is an application gateway.</h3><p>A text browser rendered <strong>example.com</strong> through a second unit's internet connection and the radio path. The cold request took <strong>53.3 seconds</strong>; the 30-second timeout failed. It is an opt-in, bounded experiment, not a TUN or HTTPS proxy. <a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/HTTP_GATEWAY.md">Read the HTTP record</a>.</p></article>
         </div>
-        <div class="evidence-links"><a class="text-link" href="roadmap.html#now">Read the whole-file timing boundaries <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-17-public-sdk/results.json">Inspect the sample records <span aria-hidden="true">↗</span></a></div>
+        <div class="evidence-links"><a class="text-link" href="roadmap.html#larger-files">Read the larger-file boundaries <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-18-larger-files/results.json">Inspect the sample records <span aria-hidden="true">↗</span></a></div>
       </div>
     </section>
 

@@ -71,6 +71,21 @@ The uninterrupted public SDK samples completed **two fresh 100,000-byte files at
 
 A separate [clean installed-wheel check](docs/RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) completed another fresh **100 kB file at 1.74 kB/s (13.92 kbit/s) including startup and a five-second pause between verified parts**. Normal isolated virtual environments matched all 67 runtime files to the published wheel, and all ten endpoint processes closed successfully. Wider recovery, hardware and sustained-capacity qualification remain open.
 
+On 18 October, the same public SDK path completed fresh **250,000-, 500,000- and
+1,000,000-byte files at 2.11, 2.22 and 1.75 kB/s (16.9, 17.7 and 14.0 kbit/s)
+including sender startup**. The 250 kB and 500 kB files clear **2.0 kB/s**; the
+1 MB file does not. Its payload interval is still **2.51 kB/s**, but 42 separate
+process starts and coordination gaps add about **171 seconds**. The next
+optimization is a warm worker path, not a different radio profile. [The
+larger-file record](docs/RADIO_SDK_MEASUREMENTS.md#larger-files-250-500-and-1000-kb-18-october-2026)
+keeps every timing boundary.
+
+The first HTTP gateway test carried a bounded request from the radio-only
+endpoint through a second unit's internet connection and back. A `links` text
+browser rendered `example.com` in **53.3 seconds**; the same request with a
+**30-second** timeout failed. [The HTTP record](docs/HTTP_GATEWAY.md) explains
+the cold-start cost and the opt-in routing direction.
+
 Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/s median (9.6 kbit/s)**, and two later 16,356-byte public responses reached **1.037 and 1.071 kB/s** through reliable-flow ACK with zero DATA retries or duplicates. [Performance](docs/PERFORMANCE.md) retains those historical conditions and scoped upstream comparisons. The immediate target is sustained useful encrypted delivery above **1 kB/s (8 kbit/s) including startup**, with reliable completion and deployable code. **4 to 5 kB/s (32 to 40 kbit/s) is an optional later stretch**, not an alpha release gate. The new GFSK samples and earlier LoRa results retain their own source pins and measurement boundaries.
 
 [Performance](docs/PERFORMANCE.md) explains the available evidence, units, measurement boundaries and the scope of comparisons with published upstream figures.
@@ -81,7 +96,8 @@ Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/
 | --- | --- | --- |
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
 | Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
-| Public resources | Direct GFSK samples reached 1.95 to 2.03 kB/s (15.6 to 16.2 kbit/s) on two fresh 100 kB files; a clean installed-wheel file reached 1.74 kB/s (13.9 kbit/s) including startup and a five-second verified-piece pause | Wider completion, recovery, mixed-path coverage, field range and qualification |
+| Public resources | Direct GFSK samples reached 2.11 and 2.22 kB/s on fresh 250 kB and 500 kB files, and 1.75 kB/s on a 1 MB file; the 1 MB whole-file gap is process startup and coordination, with 2.51 kB/s in the payload interval | Warm-worker optimization, wider completion, recovery, mixed-path coverage, field range and qualification |
+| HTTP gateway | A one-request plain-HTTP gateway fetched `example.com` over the radio and rendered it in `links` in 53.3 s; both radio directions verified | Warm session for a 30 s browser path; no HTTPS `CONNECT`, TUN or transparent routing |
 | Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
 | Standalone packaging | Published source-build alpha, canonical Python package and standalone source suite | Separately qualified Lantern deployment and future releases |
 

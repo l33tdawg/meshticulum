@@ -37,10 +37,10 @@
     </div>
   </header>
   <main id="main" class="roadmap-page">
-    <section class="docs-hero"><div class="container"><p class="eyebrow">Project roadmap / 17 October 2026</p><h1>A usable alpha.<br><em>Measured on radio.</em></h1><p>The experimental 1.0.0-alpha is now published with a tested SDK wheel, source archive and firmware source-build path. Follow-on work targets sustained useful encrypted delivery above 1 kB/s, broader completion and recovery, and qualification beyond the declared near-bench path.</p></div></section>
+    <section class="docs-hero"><div class="container"><p class="eyebrow">Project roadmap / 18 October 2026</p><h1>A usable alpha.<br><em>Measured on radio.</em></h1><p>The experimental 1.0.0-alpha is now published with a tested SDK wheel, source archive and firmware source-build path. Follow-on work targets sustained useful encrypted delivery above 1 kB/s, broader completion and recovery, and qualification beyond the declared near-bench path.</p></div></section>
     <div class="docs-tabs"><nav class="container" aria-label="Documentation pages"><a href="technical.html">Technical overview</a><a href="comparison.html">Comparison</a><a href="getting-started.html">Getting started</a><a href="roadmap.html" aria-current="page">Roadmap</a></nav></div>
     <section class="section paper docs-body"><div class="container docs-grid">
-      <aside class="docs-toc" aria-label="On this page"><span>On this page</span><a href="#now">Where we are</a><a href="#installed-sdk">Installed SDK check</a><a href="#alpha">The alpha work</a><a href="#later">After the baseline</a><a href="#release">Release preparation</a><a href="#family">Project boundaries</a></aside>
+      <aside class="docs-toc" aria-label="On this page"><span>On this page</span><a href="#now">Where we are</a><a href="#larger-files">Larger files and HTTP</a><a href="#installed-sdk">Installed SDK check</a><a href="#alpha">The alpha work</a><a href="#later">After the baseline</a><a href="#release">Release preparation</a><a href="#family">Project boundaries</a></aside>
       <div class="docs-prose">
         <section id="now">
           <p class="eyebrow">Recorded / Public SDK file transfers</p>
@@ -62,6 +62,25 @@
           <p>In bit-rate terms, the two sender-start rates were <strong>16.24 and 15.59 kbit/s</strong>. Scope-to-closure rates were <strong>14.85 and 14.05 kbit/s</strong>. The SX1262 HAT sender and Heltec V4 MCU receiver were about one metre apart. GFSK at 250 kbit/s is a separate modulation from LoRa. These samples provide no field-range result; measured RF airtime, energy and EIRP remain unavailable. Earlier LoRa and upstream observations keep their own conditions on the <a href="comparison.html#published-observations">comparison page</a>.</p>
           <p class="source-line"><a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/RADIO_SDK_MEASUREMENTS.md">Read the measurement report</a> · <a href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-17-public-sdk/results.json">Inspect the sanitized SDK records</a></p>
         </section>
+        <section id="larger-files">
+          <p class="eyebrow">Recorded / Larger files and HTTP over radio</p>
+          <h2>2.11–2.22 kB/s on 250–500 kB.<br>1.75 kB/s on 1 MB.</h2>
+          <p>Three fresh files completed at source <code>1f85608</code> on the same near-bench GFSK250 path. The receiver verified every signed part and the whole-file SHA-256. All 22, 42 and 84 endpoint children exited zero, and all 11, 21 and 42 receipt confirmations were accepted.</p>
+          <div class="table-scroll" role="region" aria-labelledby="larger-caption" tabindex="0">
+            <table class="roadmap-table">
+              <caption id="larger-caption">18 October 2026: fresh 250 kB, 500 kB and 1 MB files, including sender startup through the final authenticated receipt.</caption>
+              <thead><tr><th scope="col">Useful bytes</th><th scope="col">Parts</th><th scope="col">Sender startup → receipt</th><th scope="col">Scope → both closed</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">250,000</th><td>11</td><td>118.420 s · <strong>2.111 kB/s</strong></td><td>121.214 s · 2.063 kB/s</td></tr>
+                <tr><th scope="row">500,000</th><td>21</td><td>225.668 s · <strong>2.216 kB/s</strong></td><td>228.292 s · 2.190 kB/s</td></tr>
+                <tr><th scope="row">1,000,000</th><td>42</td><td>571.484 s · <strong>1.750 kB/s</strong></td><td>573.956 s · 1.742 kB/s</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="docs-note"><strong>The 1 MB gap is measured, not hidden.</strong><p>The 250 kB and 500 kB files clear <strong>2.0 kB/s</strong>; the 1 MB file does not on the whole-file boundary. Its payload interval is still <strong>2.51 kB/s</strong>, but 42 process starts and coordination gaps add about <strong>171 seconds</strong>. The first six parts averaged 8.590 seconds each; parts 6–41 averaged 11.365 seconds. Warm workers and fewer restarts are the direct fix.</p></div>
+          <p>A first one-request HTTP gateway also fetched <code>http://example.com/</code> through unit A's internet connection and returned it over the radio. Unit C's <code>links</code> text browser rendered the page in <strong>53.3 seconds</strong>; the same request with a <strong>30-second</strong> timeout failed. The body and both radio directions verified. This is an application gateway, not transparent IP, HTTPS <code>CONNECT</code> or a TUN interface.</p>
+          <p class="source-line"><a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/RADIO_SDK_MEASUREMENTS.md#larger-files-250-500-and-1000-kb-18-october-2026">Read the larger-file report</a> · <a href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-18-larger-files/results.json">Inspect the larger-file record</a> · <a href="https://github.com/l33tdawg/meshticulum/blob/main/docs/HTTP_GATEWAY.md">Read the HTTP gateway record</a></p>
+        </section>
         <section id="installed-sdk">
           <p class="eyebrow">Recorded / Clean installation and continuation</p>
           <h2>Install the wheel.<br>Continue verified work.</h2>
@@ -77,7 +96,7 @@
           <h2>The source-build alpha is public.</h2>
           <p>Speed matters when the transfer finishes correctly. The 1.0.0-alpha release records useful encrypted delivery above 1 kB/s (8 kbit/s) with sender startup included on the declared near-bench GFSK250 path. The next work extends completion, recovery and hardware coverage while keeping setup, verification and cleanup time visible.</p>
           <ul class="roadmap-work" role="list" aria-label="Published alpha and follow-on workstreams">
-            <li><span class="roadmap-state">Performance</span><h3>Repeat useful delivery above the floor.</h3><p>Repeat the new complete SDK file transfers on the supported hardware, measuring startup and coordination cost alongside delivery. Report useful decoded bytes, ACK and retry cost, completion and latency within the original deadlines. Keep unsuccessful samples in the record.</p></li>
+            <li><span class="roadmap-state">Performance</span><h3>Repeat useful delivery above the floor.</h3><p>The 250 kB and 500 kB files are above 2.0 kB/s. The immediate task is to warm the worker path so the 1 MB whole-file result clears 2.0 kB/s and the HTTP gateway can target a normal 30-second browser timeout. Report useful decoded bytes, ACK and retry cost, completion and latency within the original deadlines. Keep unsuccessful samples in the record.</p></li>
             <li><span class="roadmap-state">Reliability</span><h3>Finish safely when a link fails.</h3><p>Exercise loss, final-ACK recovery, expiry, replay refusal and interruption. Preserve verified work, original peer and boot bindings, and attempt debt. Prove disarm and ownership closure; an uncertain write keeps its reservation.</p></li>
             <li><span class="roadmap-state">Deployment</span><h3>Extend the published setup path.</h3><p>The clean installed-wheel check demonstrates full-file completion and continuation after a verified piece on the declared GFSK250 path. The published alpha supplies the SDK and a source-build path with app-only backup and rollback instructions and required notices. Broader hardware and in-flight recovery remain separate work; optional prebuilt firmware needs its own source, object, relinking and notice review.</p></li>
             <li><span class="roadmap-state">Qualification</span><h3>Keep each advertised path within its evidence.</h3><p>Declare the supported radio path and its setup, timing and recovery limits. Wider mixed-path failure/resume and native private owner, consent, replay and forward-secrecy qualification remain programme work. The consuming application must qualify its integration; a public SDK alpha does not complete that work.</p></li>
