@@ -18,6 +18,15 @@ from meshticulum.resources import lamplighter, resource
 
 import radio_file as base
 
+FILE_WINDOW_HEADROOM_US = 300_000_000
+
+
+def max_file_window_us(part_count):
+    require(type(part_count) is int and part_count > 0, 'invalid_example_part_count')
+    if part_count <= 5:
+        return 240_000_000
+    return part_count * base.ACK_GRACE_US + FILE_WINDOW_HEADROOM_US
+
 
 def request_for(manifest_digest, entry, response_bytes):
     return resource.encode_request('/packs/' + manifest_digest + '/chunks/' + entry['sha256'] + '.json',
@@ -120,7 +129,7 @@ def transfer(args):
                 public_response_max_bytes=32768, **{REPRESENTATION_MARKER: 'MB1',
                     TRANSPORT_DESCRIPTOR_MARKER: transport_pin(entry, obj['bytes'], obj['sha256'])}),
             'example_requires_exact_bundle_service_grant')
-    require(0 < args.file_expires_epoch_us - args.file_issued_epoch_us <= 240000000,
+    require(0 < args.file_expires_epoch_us - args.file_issued_epoch_us <= max_file_window_us(count),
             'example_file_window_bound')
     admission = json.loads(base.read_file(args.admission, 8192, pin=args.admission_sha256, private=True))
     for name in ('frequencies_hz', 'powers_dbm'):
