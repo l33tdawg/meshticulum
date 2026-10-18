@@ -9,7 +9,7 @@ floor. The original 1 MB run reached 1.750 kB/s while its production LLM engine
 held CPU4 at roughly 95%; that sample remains in the record as a host-contention
 control. Excluding CPU4 from the benchmark process reduced mean part time from
 10.97 to 8.66 seconds and raised the fresh 1 MB control to **2.230 kB/s**.
-[The larger-file report](RADIO_SDK_MEASUREMENTS.md#where-the-1-mb-time-went)
+[The larger-file report](RADIO_SDK_MEASUREMENTS.md#1-mb-repeat-with-the-sender-pinned-away-from-the-loaded-core)
 retains both decompositions and exact arithmetic.
 
 A first one-request HTTP gateway also carried `http://example.com/` from a

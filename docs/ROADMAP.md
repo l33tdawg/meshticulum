@@ -20,12 +20,14 @@ The two 100 kB sender-start rates were **2.03 and 1.95 kB/s**, equivalent to **1
 
 Each 100 kB interval includes all five sequential parts and coordination gaps. All ten receiver confirmations were accepted, and all twenty endpoint children exited successfully. The two files had zero and one DATA retransmissions respectively, with zero new receiver drops. The smaller sample used the default 20-second receiver grace, which appears in its closure time.
 
-On **18 October 2026**, source `1f85608` extended the verified public-file set to **250 kB, 500 kB and 1 MB** using the same direct GFSK250 HAT/MCU path. Final sender-startup-inclusive useful rates were **2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 2.218 kB/s (16.500, 17.521 and 17.742 kbit/s)**. The 11-, 21- and 42-part files all passed independent publisher and whole-file verification. [The larger-file measurements](RADIO_SDK_MEASUREMENTS.md#larger-public-files) retain all attempts, the original host-contended 1 MB sample, the CPU-isolated control and the 500 kB diagnostic reclassification.
+On **18 October 2026**, source `1f85608` extended the verified public-file set to **250 kB, 500 kB and 1 MB** using the same direct GFSK250 HAT/MCU path. Final sender-startup-inclusive useful rates were **2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 2.218 kB/s (16.500, 17.521 and 17.742 kbit/s)**. The 11-, 21- and 42-part files all passed independent publisher and whole-file verification, with all **74 receiver confirmations** across the final files accepted. [The larger-file measurements](RADIO_SDK_MEASUREMENTS.md#larger-public-files) retain all attempts, the original host-contended 1 MB sample, the CPU-isolated control and the 500 kB diagnostic reclassification.
 
 All three final files clear **2.0 kB/s** on the whole-file boundary. The original
 1 MB run reached 1.750 kB/s while the sender's production LLM occupied CPU4;
-excluding that core raised the fresh control to **2.230 kB/s**. Warm workers and
-fewer restarts remain useful headroom for larger files and the HTTP path.
+excluding that core raised the fresh control to **2.230 kB/s**, cut mean part
+time from **10.97 to 8.66 seconds** and reduced coordination gaps from
+**110.8 to 87.2 seconds**. Warm workers and fewer restarts remain useful
+headroom for larger files and the HTTP path.
 
 A first one-request HTTP gateway also fetched `http://example.com/` through a
 second unit's internet connection and returned it over the radio. A `links`

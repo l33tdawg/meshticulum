@@ -69,13 +69,14 @@ For public resources, the path policy uses local verified request timings and sh
 
 The uninterrupted public SDK samples completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s) of useful application throughput including sender startup**, plus a **23,900-byte file at 2.53 kB/s (20.28 kbit/s)**. All used GFSK at 250 kbit/s on a direct HAT-to-MCU link about one metre apart. The 100 kB files took **49.256 and 51.303 seconds through final authenticated receipt**, including all five parts and coordination gaps. Scope issue through endpoint closure took **53.879 and 56.957 seconds** (**1.86 and 1.76 kB/s; 14.85 and 14.05 kbit/s**). All ten receiver confirmations were accepted; the runs had zero and one DATA retransmissions, with zero new receiver drops. [Timing definitions, exact source and conditions](docs/RADIO_SDK_MEASUREMENTS.md) accompany this initial repeat. Broader completion, hardware coverage and sustained-capacity evidence remain open.
 
-The same public signed-bundle path also completed fresh **250 kB, 500 kB and 1 MB files at 2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s) including sender startup**. All receivers verified every signed part and the complete file. Scope issue through both endpoints closed took **121.214, 228.292 and 450.903 seconds** (**2.063, 2.190 and 2.218 kB/s; 16.500, 17.521 and 17.742 kbit/s**). These 11-, 21- and 42-part runs used source `1f85608`; [the measurement report](docs/RADIO_SDK_MEASUREMENTS.md#larger-public-files) records retries, receive drops and exact windows.
+The same public signed-bundle path also completed fresh **250 kB, 500 kB and 1 MB files at 2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s) including sender startup**. All three receivers verified every signed part and the complete file. Scope issue through both endpoints closed took **121.214, 228.292 and 450.903 seconds** (**2.063, 2.190 and 2.218 kB/s; 16.500, 17.521 and 17.742 kbit/s**). These 11-, 21- and 42-part runs used source `1f85608`; [the measurement report](docs/RADIO_SDK_MEASUREMENTS.md#larger-public-files) records exact windows, while the [sanitized 1 MB control record](benchmarks/2026-10-18-public-sdk-1mb-cpu-pinned/results.json) retains its hashes and counters.
 
 All three final samples clear the owner's **2.0 kB/s whole-file floor**. An
 earlier fresh 1 MB run reached 1.750 kB/s while the sender host's production LLM
-engine occupied its pinned CPU4; that result remains in the record. The
-CPU-isolated control fell to **8.66 seconds per part** and raised the whole-file
-rate to **2.230 kB/s**, establishing the declared near-bench result.
+engine occupied CPU4; that result remains in the record. The CPU-isolated repeat
+reduced mean part time from **10.97 to 8.66 seconds** and raised the whole-file
+rate to **2.230 kB/s**. Warm workers with fewer process restarts remain useful
+headroom.
 
 The first HTTP gateway test carried a bounded request from a radio-only endpoint
 through a second unit's internet connection and back. A `links` text browser
