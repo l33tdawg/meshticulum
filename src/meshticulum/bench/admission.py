@@ -30,8 +30,8 @@ class RadioAdmission:
         require(all(type(value) is int for value in (self.min_lease_ms, self.max_lease_ms,
                     self.max_boot_attempts, self.max_boot_estimated_airtime_us))
                 and 1 <= self.min_lease_ms <= self.max_lease_ms <= 180000
-                and 1 <= self.max_boot_attempts <= 256
-                and 1 <= self.max_boot_estimated_airtime_us <= 60000000,
+                and 1 <= self.max_boot_attempts <= 100000
+                and 1 <= self.max_boot_estimated_airtime_us <= 300000000,
                 'invalid_radio_admission_limits')
         for row in self.waveforms:
             RadioProfile(*row, self.max_lease_ms, self.max_boot_attempts,
