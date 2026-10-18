@@ -1,0 +1,66 @@
+{
+  "schema": "meshticulum.http-radio-gateway-result.v1",
+  "date": "2026-10-18",
+  "core_commit": "1f85608e2c5e543130673529e21d838917094c11",
+  "transport": "GFSK250 direct HAT-to-MCU radio with unit-a Internet egress",
+  "topology": "unit-c SX1262 HAT -> unit-a Heltec V4 MCU -> unit-a Internet -> unit-a MCU -> unit-c HAT",
+  "url": "http://example.com/",
+  "status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "http_body_bytes": 577,
+  "http_body_sha256": "25ddf2c883e0d1958ea971d279a7e4f0fd446724ee3db7db19dadabd4a62e484",
+  "request_over_radio_bytes": 83,
+  "response_over_radio_bytes": 676,
+  "radio_request_sha256": "bf01efe3857101a55fdea1a903ea5d29ed63f59cbc081074efbb80f80a1aa125",
+  "radio_response_sha256": "2ae302db3ae190b4e48d7e6065fe3792e55a80331f2efccfe7dbd46b88d45ef4",
+  "request_radio": {
+    "receiver_chunk_verified": true,
+    "sender_peer_receipt": true,
+    "receiver_attempts": 4,
+    "sender_attempts": 1,
+    "receiver_reserved_estimated_airtime_us": 15972,
+    "sender_reserved_estimated_airtime_us": 6632
+  },
+  "response_radio": {
+    "receiver_chunk_verified": true,
+    "sender_peer_receipt": true,
+    "receiver_attempts": 3,
+    "sender_attempts": 4,
+    "receiver_reserved_estimated_airtime_us": 11979,
+    "sender_reserved_estimated_airtime_us": 38637
+  },
+  "browser": {
+    "client": "links",
+    "command": "links -dump -no-g -no-connect -http-proxy 127.0.0.1:18080 -receive-timeout <seconds> -unrestartable-receive-timeout <seconds> -width 80 http://example.com/",
+    "thirty_second": {
+      "returncode": 1,
+      "elapsed_ms": 52834,
+      "error": "Error reading from socket"
+    },
+    "ninety_second": {
+      "returncode": 0,
+      "elapsed_ms": 53296,
+      "rendered_excerpt": "This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes."
+    }
+  },
+  "one_shot_control": {
+    "complete": true,
+    "status": 200,
+    "elapsed_note": "Controller wall time was about 48 seconds including password entry, staging and both radio phases; the precise browser measurements above are the latency evidence."
+  },
+  "limitations": [
+    "One public URL and one request; not a completion or latency distribution",
+    "Plain HTTP/1.x only; no HTTPS CONNECT, TUN or transparent IP routing",
+    "Cold-start gateway: two endpoint starts and two fresh signed grants are inside the browser receive window",
+    "No measured RF airtime, energy, EIRP or field range",
+    "The 30-second browser timeout is not met by the cold path"
+  ],
+  "evidence_sha256": {
+    "one_shot_result": "f1c3b071eb3ef8b7a40077930da9cdbcced571422f85ce776919f36947ee80a5",
+    "wire_response": "2ae302db3ae190b4e48d7e6065fe3792e55a80331f2efccfe7dbd46b88d45ef4",
+    "links_30s": "45bc8b1a9b01fbb63c7f89516f185289fd67d68c01573181d39556c977a73331",
+    "links_90s": "f4d19d464ff4b5f2e47a8b39b396d3e2b0e10bdc1da5e54fa69e9e370b88b8e6",
+    "operator_report": "8947ed458eb9439b6299031abf501a530105a2fdbe22c9e5486393384e8c16ca",
+    "proxy_log": "fb36968f3f35ec479a53480efec1ca13c994afb75b725e304d72b62982d29a52"
+  }
+}
