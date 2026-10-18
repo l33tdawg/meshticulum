@@ -93,6 +93,16 @@
           <div class="radio-settings"><span>GFSK / 250 kbit/s</span><span>Source 1f85608</span><span>Direct HAT → MCU link / about 1 metre</span><span>Measured airtime, energy and EIRP: unavailable</span></div>
         </div>
         <div class="evidence-panel">
+          <div class="evidence-head"><span class="label">Matched LoRa profiles / six same-payload pairs</span><span class="date">18 October 2026</span></div>
+          <div class="metrics-grid file-metrics">
+            <div class="metric primary-metric"><strong>1.103<span>kB/s at SF7<br>(8.820 kbit/s)</span></strong><p>Median sender ARM<br>through authenticated receipt</p></div>
+            <div class="metric"><strong>0.720<span>kB/s at SF8<br>(5.759 kbit/s)</span></strong><p>Same payloads, bandwidth,<br>power and timing boundary</p></div>
+            <div class="metric"><strong>1.531×<span>SF8 / SF7 time ratio</span></strong><p>12 verified chunks<br>and 12 authenticated receipts</p></div>
+          </div>
+          <div class="measurement-note"><span aria-hidden="true">↳</span><p>Two complete campaigns at BW500/CR4/5 produced six matched pairs. SF8 took <strong>1.531×</strong> as long as SF7. The MCU's <strong>1,024-attempt</strong> cap stood at 380 after both campaigns, leaving <strong>644 attempts of headroom</strong>; the same boot generation was disarmed with zero receive drops. This is a finite near-bench profile comparison, not a field-range result or an upstream ranking.</p></div>
+          <div class="radio-settings"><span>SF7 / SF8 · BW500 · CR4/5</span><span>Source f895215</span><span>Direct HAT → MCU link / about 1 metre</span><span>Measured airtime, energy and EIRP: unavailable</span></div>
+        </div>
+        <div class="evidence-panel">
           <div class="evidence-head"><span class="label">Two fresh 100 kB file transfers</span><span class="date">17 October 2026</span></div>
           <div class="metrics-grid file-metrics">
             <div class="metric primary-metric"><strong>1.95–2.03<span>kB/s including sender startup<br>(15.6–16.2 kbit/s)</span></strong><p>First sender startup<br>through the final authenticated receipt</p></div>

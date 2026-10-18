@@ -133,6 +133,128 @@ def verify_sdk_files(record):
             require(re.fullmatch('[0-9a-f]{64}',row[field]) is not None,'invalid '+field)
 
 
+def verify_lora_comparison(record):
+    require(record['schema']=='meshticulum.lora-sf7-sf8-comparison.v2','unsupported LoRa report')
+    require(re.fullmatch('[0-9a-f]{40}',record['source_commit']) is not None,'invalid LoRa source pin')
+    require(re.fullmatch('[0-9a-f]{64}',record['sdk_sha256']) is not None,'invalid LoRa SDK hash')
+    require(record['complete'] is True,'incomplete LoRa report')
+    require(record['matched_pairs']==6 and len(record['samples'])==12,'wrong LoRa denominator')
+    require(len(record['campaigns'])==2,'wrong campaign count')
+    campaign_ids={row['campaign_id'] for row in record['campaigns']}
+    require(campaign_ids=={'final-main-20261018','first-1024-20261018'},'wrong campaign ids')
+    payloads={row['sha256']:row for row in record['payloads']}
+    require(len(record['payloads'])==6 and len(payloads)==6,'wrong payload count')
+    require(all(row['bytes']==8164 and re.fullmatch('[0-9a-f]{64}',row['sha256']) for row in record['payloads']),'invalid payload')
+    for campaign in record['campaigns']:
+        rows=[row for row in record['samples'] if row['campaign']==campaign['campaign_id']]
+        require(len(rows)==6,'wrong campaign sample count')
+        for profile in ('sf7-500','sf8-500'):
+            group=[row for row in rows if row['profile']==profile]
+            require(len(group)==3 and sorted(row['repeat'] for row in group)==[0,1,2],'wrong profile repeats')
+        for repeat in range(3):
+            pair=[row for row in rows if row['repeat']==repeat]
+            require(len({row['payload_sha256'] for row in pair})==1,'unmatched payload pair')
+        require(campaign['receiver_attempts']==sum(row['receiver']['attempt_journal']['attempts'] for row in rows),'campaign receiver attempt mismatch')
+        require(campaign['sender_attempts']==sum(row['sender']['attempt_journal']['attempts'] for row in rows),'campaign sender attempt mismatch')
+
+    for row in record['samples']:
+        require(row['profile'] in ('sf7-500','sf8-500'),'unknown LoRa profile')
+        require(row['payload_bytes']==8164 and row['payload_sha256'] in payloads,'invalid LoRa payload')
+        require(row['radio_manifest_sha256']==row['payload_sha256'],'LoRa manifest/payload mismatch')
+        expected_sf=7 if row['profile']=='sf7-500' else 8
+        for side in ('receiver','sender'):
+            profile=row[side]['profile']
+            require(profile['frequency_hz']==921375000 and profile['bandwidth_hz']==500000
+                    and profile['spreading_factor']==expected_sf and profile['coding_rate']==5
+                    and profile['chip_power_dbm']==0 and profile['preamble']==8
+                    and profile['sync_word']==0x42 and profile['lease_ms']==90000
+                    and profile['max_boot_attempts']==1024
+                    and profile['max_boot_estimated_airtime_us']==60000000,
+                    'wrong LoRa profile')
+            journal=row[side]['attempt_journal']
+            require(type(journal['attempts']) is int and journal['attempts']>0,'invalid LoRa attempts')
+            require(type(journal['reserved_estimated_airtime_us']) is int
+                    and journal['reserved_estimated_airtime_us']>0,'invalid LoRa airtime')
+            require(journal['fenced'] is False and journal['recovered_unknown']==0,'unsettled LoRa attempt')
+            timing=row[side]['timing']
+            require(timing['armed_to_complete_us']>0,'invalid LoRa interval')
+            require(abs(timing['armed_to_complete_us']
+                        -(timing['complete_epoch_us']-timing['armed_epoch_us']))<=1,
+                    'LoRa receipt interval mismatch')
+        require(row['receiver']['receiver_chunk_verified'] is True,'LoRa chunk not verified')
+        require(row['receiver']['whole_file_verified'] is False
+                and row['sender']['whole_file_verified'] is False,'LoRa scope inflated')
+        require(row['receiver']['receipt_confirmation']['peer_receipt_confirmed'] is True,'missing receiver receipt')
+        require(row['sender']['sender_peer_receipt'] is True,'missing sender peer receipt')
+        require(row['sender']['receipt_confirmation']['attempted'] is True
+                and row['sender']['receipt_confirmation']['outcome']=='RF_DONE',
+                'missing sender confirmation')
+        receiver_timing=row['receiver']['timing']
+        require(abs(receiver_timing['armed_to_receiver_verified_us']
+                    -(receiver_timing['receiver_verified_monotonic_us']
+                      -receiver_timing['armed_monotonic_us']))<=1,
+                'receiver verified interval mismatch')
+
+    confirmation=record['confirmation']
+    require(confirmation['campaigns_completed']==2 and confirmation['samples']==12
+            and confirmation['matched_pairs']==6,'wrong confirmation denominator')
+    require(confirmation['receiver_chunks_verified']==12
+            and confirmation['authenticated_receipt_confirmations']==12
+            and confirmation['sender_peer_receipts']==12,'missing LoRa completion')
+    require(confirmation['fenced_attempts']==0 and confirmation['recovered_unknown_attempts']==0,'LoRa debt unsettled')
+    receiver_attempts=sum(row['receiver']['attempt_journal']['attempts'] for row in record['samples'])
+    sender_attempts=sum(row['sender']['attempt_journal']['attempts'] for row in record['samples'])
+    require(receiver_attempts==confirmation['receiver_attempts']==172,'wrong receiver attempt total')
+    require(sender_attempts==confirmation['sender_attempts']==528,'wrong sender attempt total')
+    require(confirmation['mcu_attempt_delta']==receiver_attempts,'MCU attempt delta mismatch')
+    require(confirmation['mcu_attempts_before']==208 and confirmation['mcu_attempts_after']==380,'wrong MCU attempts')
+    require(confirmation['mcu_reserved_estimated_airtime_delta_us']
+            ==confirmation['mcu_reserved_estimated_airtime_after_us']
+              -confirmation['mcu_reserved_estimated_airtime_before_us'],
+            'MCU airtime delta mismatch')
+    require(record['operation_policy']['boot_attempts_cap']==1024,'wrong LoRa attempt cap')
+    require(record['operation_policy']['boot_estimated_airtime_cap_us']==60000000,'wrong LoRa airtime cap')
+    require(record['operation_policy']['attempts_remaining_after_campaigns']==644,'wrong LoRa attempt headroom')
+    require(record['operation_policy']['estimated_airtime_remaining_after_campaigns_us']==43280256,'wrong LoRa airtime headroom')
+    require(record['scope']['whole_file_assembly'] is False
+            and record['scope']['completion_distribution'] is False
+            and record['scope']['field_range_measured'] is False
+            and record['scope']['rf_airtime_at_antenna_measured'] is False
+            and record['scope']['energy_measured'] is False
+            and record['scope']['eirp_measured'] is False
+            and record['scope']['upstream_ranking'] is False,'LoRa scope inflated')
+    require(bool(record['limitations']),'missing LoRa limitations')
+
+    def measurements(rows):
+        result={}
+        for profile in ('sf7-500','sf8-500'):
+            group=[row for row in rows if row['profile']==profile]
+            sender=statistics.median(row['sender']['timing']['armed_to_complete_us']/1000000 for row in group)
+            receiver=statistics.median(row['receiver']['timing']['armed_to_receiver_verified_us']/1000000 for row in group)
+            startup=statistics.median(
+                (row['sender']['timing']['complete_epoch_us']-row['sender']['timing']['started_epoch_us'])/1000000
+                for row in group)
+            result[profile]={'sender':sender,'receiver':receiver,'startup':startup}
+        return result
+    groups={
+        'combined':record['samples'],
+        'final':[row for row in record['samples'] if row['campaign']=='final-main-20261018'],
+        'control':[row for row in record['samples'] if row['campaign']=='first-1024-20261018'],
+    }
+    for name,rows in groups.items():
+        expected=measurements(rows)
+        published=record['measurements'][name]
+        for profile,key in (('sf7-500','sf7'),('sf8-500','sf8')):
+            row=published[key]
+            require(math.isclose(row['sender_arm_to_receipt_median_s'],expected[profile]['sender'],rel_tol=1e-9),'wrong '+name+' SF median')
+            require(math.isclose(row['useful_Bps'],8164/expected[profile]['sender'],rel_tol=1e-9),'wrong '+name+' rate')
+            require(math.isclose(row['receiver_arm_to_verified_median_s'],expected[profile]['receiver'],rel_tol=1e-9),'wrong '+name+' receiver median')
+            require(math.isclose(row['startup_to_receipt_median_s'],expected[profile]['startup'],rel_tol=1e-9),'wrong '+name+' startup median')
+        require(math.isclose(published['sf8_to_sf7_time_ratio'],
+                             expected['sf8-500']['sender']/expected['sf7-500']['sender'],
+                             rel_tol=1e-9),'wrong '+name+' ratio')
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('report',nargs='?',type=Path)
@@ -146,6 +268,9 @@ def main():
         if record['schema']=='meshticulum.published-sdk-file-samples.v1':
             verify_sdk_files(record)
             print('Verified '+str(len(record['samples']))+' distinct fresh SDK files, part/confirmation/endpoint counts and all whole-file timing arithmetic. Qualification remains open.')
+        elif record['schema']=='meshticulum.lora-sf7-sf8-comparison.v2':
+            verify_lora_comparison(record)
+            print('Verified 12 LoRa chunks, six matched pairs, both campaign medians, the 1,024-attempt cap and the 644-attempt remaining headroom. Field-range and whole-file claims remain absent.')
         else:
             verify(record)
             print('Verified 30 unique RF samples, separate directional distributions and 1 retained setup failure. Missing metrics remain null.')

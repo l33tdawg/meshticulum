@@ -12,6 +12,19 @@ control. Excluding CPU4 from the benchmark process reduced mean part time from
 [The larger-file report](RADIO_SDK_MEASUREMENTS.md#where-the-1-mb-time-went)
 retains both decompositions and exact arithmetic.
 
+Two complete campaigns then produced **six matched SF7/SF8 LoRa pairs** at
+BW500/CR4/5. Across all six pairs, median sender-ARM-to-receipt rates were
+**1.103 kB/s (8.820 kbit/s) at SF7** and **0.720 kB/s (5.759 kbit/s) at SF8**;
+SF8 took **1.531×** as long. The final three-pair campaign alone measured
+**1.121 and 0.721 kB/s**, and the earlier control measured **1.067 and
+0.718 kB/s**. All 12 chunks and authenticated receipts verified. The MCU's
+1,024-attempt cap stood at 208 attempts before the campaigns and 380 after,
+leaving **644 attempts of headroom**; the same boot generation was disarmed
+with zero receive drops. [The profile
+record](RADIO_SDK_MEASUREMENTS.md#matched-sf7-and-sf8-lora-profiles) keeps the
+individual timings, attempt journals and limitations. This is a finite
+near-bench profile comparison, not a field-range or upstream ranking.
+
 A first one-request HTTP gateway also carried `http://example.com/` from a
 radio-only endpoint through a second endpoint's internet connection and back.
 The body and both radio directions verified; a `links` text browser rendered the

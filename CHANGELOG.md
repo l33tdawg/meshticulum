@@ -7,13 +7,24 @@
 ## Post-alpha measurement update — 2026-10-18
 
 Source `1f85608e2c5e543130673529e21d838917094c11` completed fresh
-**250,000-, 500,000- and 1,000,000-byte files at 2.111, 2.216 and 1.750 kB/s
-(16.889, 17.725 and 13.999 kbit/s) including sender startup** on the near-bench
-GFSK250 path. The first two clear 2.0 kB/s. The 1 MB file does not on the
-whole-file boundary; its payload interval is 2.5112 kB/s and the difference is
-42 process starts plus coordination gaps. The [larger-file
-record](benchmarks/2026-10-18-public-sdk-large-files/results.json) retains all
-parts, confirmations, endpoint exits and timing arithmetic.
+**250,000-, 500,000- and 1,000,000-byte files at 2.111, 2.216 and 2.230 kB/s
+(16.889, 17.725 and 17.838 kbit/s) including sender startup** on the near-bench
+GFSK250 path. All three clear 2.0 kB/s. The original 1 MB sample measured
+1.750 kB/s while its production LLM engine held CPU4; the CPU-isolated repeat
+reduced mean part time from 10.97 to 8.66 seconds and raised the whole-file rate
+to 2.230 kB/s. The [larger-file
+record](benchmarks/2026-10-18-public-sdk-large-files/results.json) retains both
+samples, all parts, confirmations, endpoint exits and timing arithmetic.
+
+Two complete matched LoRa campaigns at source `f895215` produced six pairs at
+SF7/BW500 and SF8/BW500. Median sender-ARM-to-receipt rates across all six were
+**1.103 and 0.720 kB/s (8.820 and 5.759 kbit/s)**, making SF8 **1.531×** slower
+on this near-bench link. All 12 chunks and authenticated receipts verified. The
+MCU's 1,024-attempt cumulative cap stood at 380 after both campaigns, leaving
+**644 attempts of headroom**, with the same boot generation disarmed and zero
+receive drops. The [profile
+record](benchmarks/2026-10-18-lora-sf7-sf8/results.json) retains the final and
+control medians, individual timings and debt accounting.
 
 A one-request HTTP gateway also carried a bounded request through a
 radio-connected endpoint, fetched `example.com` through a second endpoint's
