@@ -20,13 +20,15 @@ The two 100 kB sender-start rates were **2.03 and 1.95 kB/s**, equivalent to **1
 
 Each 100 kB interval includes all five sequential parts and coordination gaps. All ten receiver confirmations were accepted, and all twenty endpoint children exited successfully. The two files had zero and one DATA retransmissions respectively, with zero new receiver drops. The smaller sample used the default 20-second receiver grace, which appears in its closure time.
 
-On **18 October 2026**, source `1f85608` extended the verified public-file set to **250 kB, 500 kB and 1 MB** using the same direct GFSK250 HAT/MCU path. Sender-startup-inclusive useful rates were **2.111, 2.216 and 1.750 kB/s (16.889, 17.725 and 13.999 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 1.742 kB/s (16.500, 17.521 and 13.938 kbit/s)**. The 11-, 21- and 42-part files all passed independent publisher and whole-file verification. Each had one DATA retransmission; the 250 kB run had no new receive drop, while the 500 kB and 1 MB runs each advanced the raw drop counter by one. All 74 authenticated receiver confirmations were accepted and all 148 endpoint children exited zero. [The larger-file measurements](RADIO_SDK_MEASUREMENTS.md#larger-public-files) retain the exact windows, attempts and reclassification record.
+On **18 October 2026**, source `1f85608` extended the verified public-file set to **250 kB, 500 kB and 1 MB** using the same direct GFSK250 HAT/MCU path. Sender-startup-inclusive useful rates were **2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s)**, the last from a repeat with the sender pinned away from a CPU core its production LLM engine held near 95%; scope-to-closure rates were **2.063, 2.190 and 1.742 kB/s (16.500, 17.521 and 13.938 kbit/s)**, the last rising to **2.218 kB/s (17.742 kbit/s)** in the pinned repeat. The 11-, 21- and 42-part files all passed independent publisher and whole-file verification. Each had one DATA retransmission; the 250 kB run had no new receive drop, while the 500 kB and 1 MB runs each advanced the raw drop counter by one. All 74 authenticated receiver confirmations were accepted and all 148 endpoint children exited zero. [The larger-file measurements](RADIO_SDK_MEASUREMENTS.md#larger-public-files) retain the exact windows, attempts and reclassification record.
 
-The 250 kB and 500 kB files clear **2.0 kB/s**; the 1 MB file does not on the
-whole-file boundary. Its payload interval is still **2.5112 kB/s**, but the 42
-part intervals sum to **460.672429 s** and leave **110.812061 s** of
-coordination gaps. The first six parts averaged **8.590 s** each; parts 6–41
-averaged **11.365 s**. Warm workers and fewer restarts are the measured fix.
+All three sizes clear **2.0 kB/s** on the whole-file boundary. The first 1 MB
+sample reached **1.750 kB/s**: its 42 part intervals summed to **460.672429 s**
+with **110.812061 s** of coordination gaps while the sender host ran the
+production LLM engine at roughly 95% of one core. The repeat pinned the sender
+away from that core and reached **2.230 kB/s**, with part intervals summing to
+**363.706 s** and gaps of **87.197 s**. Both samples stay in the record. Warm
+workers and fewer restarts remain the measured next fix.
 
 A first one-request HTTP gateway also fetched `http://example.com/` through a
 second unit's internet connection and returned it over the radio. A `links`

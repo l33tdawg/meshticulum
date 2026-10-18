@@ -1,0 +1,114 @@
+{
+  "schema": "meshticulum.published-sdk-file-samples.v1",
+  "date": "2026-10-18",
+  "core_commit": "1f85608e2c5e543130673529e21d838917094c11",
+  "modulation": "GFSK",
+  "modem_bit_rate_bps": 250000,
+  "configured_profile": {
+    "class": "Gfsk250Profile",
+    "frequency_hz": 921375000,
+    "chip_power_dbm": 0,
+    "bit_rate_bps": 250000,
+    "deviation_hz": 62500,
+    "rx_bandwidth_hz": 467000,
+    "preamble_bits": 32
+  },
+  "sender_hardware": "Orange Pi 5 Plus SX1262 HAT",
+  "receiver_hardware": "Heltec V4 SX1262 MCU",
+  "topology": "direct single radio link",
+  "approximate_separation_metres": 1,
+  "distance_method": "owner estimate; near-bench placement",
+  "measured_range_metres": null,
+  "measured_RF_airtime_us": null,
+  "measured_energy_joules": null,
+  "measured_eirp_dbm": null,
+  "native_private_qualified": false,
+  "sustained_goodput_qualified": false,
+  "alpha_accepted": false,
+  "scope_to_closure_includes": [
+    "grant delivery",
+    "endpoint startup",
+    "coordination",
+    "verification",
+    "endpoint cleanup"
+  ],
+  "scope_to_closure_excludes": [
+    "offline file generation",
+    "signing",
+    "build",
+    "staging"
+  ],
+  "samples": [
+    {
+      "sample_id": "1000000-public-bundle-sender-cpu-pinned",
+      "useful_decoded_bytes": 1000000,
+      "part_useful_bytes": [
+        23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900,
+        23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900,
+        23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900,
+        23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900, 23900,
+        23900, 20100
+      ],
+      "fresh_files_measured": 1,
+      "condition": "sender process pinned away from the CPU core held at roughly 95% by the production LLM engine",
+      "receiver_retirement_mode": "authenticated-sender-receipt-confirmation",
+      "receiver_confirmations_accepted": 42,
+      "default_receiver_grace_us": 20000000,
+      "publisher_and_whole_file_independently_verified": true,
+      "within_original_file_window": true,
+      "original_file_window_seconds": 1140,
+      "endpoint_children": {
+        "total": 84,
+        "exit_zero": 84,
+        "forced_cleanup": 0
+      },
+      "services_and_boot_unchanged": true,
+      "data_retransmissions": 2,
+      "new_receiver_drops": 2,
+      "preexisting_cached_parts": 0,
+      "attempts": {
+        "unit-a": {
+          "total_attempts": 1471,
+          "reserved_estimated_airtime_us": 5873703,
+          "recovered_unknown": 0,
+          "fenced": false
+        },
+        "unit-c": {
+          "total_attempts": 5400,
+          "reserved_estimated_airtime_us": 56270665,
+          "recovered_unknown": 0,
+          "fenced": false
+        }
+      },
+      "mcu_boot_counters": {
+        "attempts_before": 4584,
+        "attempts_after": 6055,
+        "reserved_estimated_airtime_us_before": 14019936,
+        "reserved_estimated_airtime_us_after": 18021056,
+        "raw_receive_drops_before": 5,
+        "raw_receive_drops_after": 7
+      },
+      "part_interval_sum_us": 363705645,
+      "coordination_gap_us": 87197436,
+      "boundaries": {
+        "first_sender_startup_to_final_authenticated_receipt": {
+          "elapsed_us": 448473933,
+          "useful_decoded_Bps": 2229.783999508395
+        },
+        "first_DATA_worker_call_to_final_authenticated_receipt": {
+          "elapsed_us": 447266757,
+          "useful_decoded_Bps": 2235.8022015930865
+        },
+        "scope_issue_to_both_endpoints_closed": {
+          "elapsed_us": 450903081,
+          "useful_decoded_Bps": 2217.7708496829386
+        }
+      },
+      "scope_sha256": "343e7c9967e031a8d88948ca8b1dadcf0f1e6dfb78c4bf92f13c7fddb3ded28c",
+      "prepared_sha256": "08e5ef194b92c806365bbf7c02e1d4e3e0fa21757fea14c8f2c3260da9988050",
+      "source_result_sha256": "5ecf3d0487108b335c0a96eccc886979c8a82c4e22ed9f96c1fb334ae4f4f9e2",
+      "verified_summary_sha256": "ea56795785969a984205ef49b61bbc93ff11f671fbb378d908c571b7ee26df06",
+      "useful_sha256": "16226b690f14d6b338d899f8e538907a3030b9d0b0de4ef2abb0d07e14fcba58"
+    }
+  ]
+}

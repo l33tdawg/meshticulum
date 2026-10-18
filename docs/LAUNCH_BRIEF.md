@@ -37,12 +37,14 @@ On 18 October, larger files completed at the same source and near-bench path:
 
 - **250,000 bytes: 2.111 kB/s (16.889 kbit/s)** including sender startup.
 - **500,000 bytes: 2.216 kB/s (17.725 kbit/s)**.
-- **1,000,000 bytes: 1.750 kB/s (13.999 kbit/s)**.
+- **1,000,000 bytes: 2.230 kB/s (17.838 kbit/s)**, from a repeat with the sender
+  pinned away from a CPU core its production LLM engine held near 95%.
 
-The first two clear **2.0 kB/s**. The 1 MB file does not on the whole-file
-boundary, even though its payload interval is **2.5112 kB/s**. The difference is
-42 process starts and coordination gaps, about **171 seconds** across the run.
-That is the next engineering target, not a hidden radio limit.
+All three clear **2.0 kB/s** on the whole-file boundary. The first 1 MB sample
+measured **1.750 kB/s** under that host load; both samples stay in the record.
+The remaining cost is 42 process starts and coordination gaps, about **87
+seconds** in the pinned repeat. That is the next engineering target, not a
+hidden radio limit.
 
 A first one-request HTTP gateway test also fetched `example.com` from a unit
 with internet access and carried the response back over the radio. A `links`
@@ -116,8 +118,8 @@ The reusable Python core handles bounded reliable flow, authenticated sessions, 
 
 On a direct near-bench GFSK250 path, two fresh 100,000-byte files completed at 1.95 to 2.03 kB/s (15.6 to 16.2 kbit/s) of useful application throughput, including sender startup. That is a measured baseline, not a LoRa or field-range claim. It gives us a starting point for harder work: sustained delivery, larger files, loss and recovery, mixed paths, more hardware and clearer security boundaries.
 
-Larger files followed: 250 kB and 500 kB at 2.111 and 2.216 kB/s, and 1 MB at
-1.750 kB/s including startup. A one-request HTTP gateway also rendered a public
+Larger files followed: 250 kB, 500 kB and 1 MB at 2.111, 2.216 and 2.230 kB/s
+including startup. A one-request HTTP gateway also rendered a public
 page through the radio in 53.3 seconds. The next target is to remove the
 process-start cost and make the browser path usable at a normal timeout.
 

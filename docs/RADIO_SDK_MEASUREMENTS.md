@@ -64,6 +64,36 @@ These larger-file results remain direct near-bench GFSK250 measurements. They
 do not establish LoRa modulation, field range, sustained-capacity distribution,
 or operation on another installation.
 
+### 1 MB repeat with the sender pinned away from the loaded core
+
+The 1 MB geometry was repeated once on the same source, firmware and hardware
+with the sender process pinned away from the CPU core the production LLM engine
+held at roughly 95% during the earlier sample. The receiver again verified all
+42 parts, the publisher and the complete 1,000,000-byte file. All 84 endpoint
+processes exited zero and all 42 authenticated receipt confirmations were
+accepted, inside the original 1,140-second window.
+
+| Boundary | Earlier sample | Pinned repeat |
+| --- | ---: | ---: |
+| First sender startup → final authenticated receipt | 571.484490 s; 1,749.8 B/s | **448.473933 s; 2,229.8 B/s (17.838 kbit/s)** |
+| First DATA-worker call → final authenticated receipt | 570.384109 s; 1,753.2 B/s | **447.266757 s; 2,235.8 B/s (17.886 kbit/s)** |
+| Scope issue → both endpoints closed | 573.955922 s; 1,742.3 B/s | **450.903081 s; 2,217.8 B/s (17.742 kbit/s)** |
+
+Per-part time fell from **10.97 s** to **8.66 s**, the 42 part intervals sum to
+**363.706 s**, and coordination between parts fell from **110.812 s** to
+**87.197 s**. The repeat used 1,471 receiver and 5,400 sender attempts with two
+DATA retransmissions and no fenced or unknown attempts; the MCU advanced from
+4,584 to 6,055 attempts and its raw receive-drop counter from five to seven.
+The
+[pinned-run record](../benchmarks/2026-10-18-public-sdk-1mb-cpu-pinned/results.json)
+keeps the hashes and counters.
+
+All three larger-file sizes therefore clear the owner's **2.0 kB/s whole-file
+usability floor**: 2.111, 2.216 and 2.230 kB/s including sender startup. Both
+1 MB samples stay in the record. The difference between them is host
+contention and orchestration overhead, not a changed radio setting, and two
+samples on one near-bench link do not establish a sustained distribution.
+
 ## Useful bytes and elapsed time
 
 Rates use decimal bytes: **1 kB = 1,000 bytes**. Multiply bytes per second by eight for bit rates. The numerator is the original decoded file length, excluding manifests, framing and encoded representation bytes. The elapsed intervals include transport overhead, host work, ACKs and any retries.

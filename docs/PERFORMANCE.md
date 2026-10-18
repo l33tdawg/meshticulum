@@ -2,14 +2,22 @@
 
 The latest public SDK radio samples completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s) including sender startup**, plus a **23,900-byte file at 2.53 kB/s (20.28 kbit/s)**. They used **GFSK at 250 kbit/s**, on a direct HAT-to-MCU link about one metre apart. Both 100 kB intervals include all five sequential parts and coordination gaps. Scope issue through endpoint closure reached **1.86 and 1.76 kB/s (14.85 and 14.05 kbit/s)**. [The 17 October report](RADIO_SDK_MEASUREMENTS.md) gives the exact source, elapsed boundaries, confirmations and sanitized record.
 
-On 18 October, source `1f85608` also completed fresh **250 kB, 500 kB and 1 MB signed bundles** on that path. Sender-startup-inclusive rates were **2.111, 2.216 and 1.750 kB/s (16.889, 17.725 and 13.999 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 1.742 kB/s (16.500, 17.521 and 13.938 kbit/s)**. All three receivers independently verified every part and the exact whole file.
+On 18 October, source `1f85608` also completed fresh **250 kB, 500 kB and 1 MB signed bundles** on that path. Sender-startup-inclusive rates were **2.111, 2.216 and 1.750 kB/s (16.889, 17.725 and 13.999 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 1.742 kB/s (16.500, 17.521 and 13.938 kbit/s)**. All three receivers independently verified every part and the exact whole file. The 1 MB file was repeated with the sender pinned away from a loaded CPU core and reached **2.230 kB/s (17.838 kbit/s)** including startup; that repeat is described below and both samples stay in the record.
 
-The 250 kB and 500 kB files clear the owner's **2.0 kB/s (16 kbit/s)**
-whole-file floor; the 1 MB file does not. The 1 MB payload interval is still
-**2.5112 kB/s**, but its 42 part intervals sum to **460.672429 s** and leave
-**110.812061 s** of coordination gaps. The first six parts averaged **8.590 s**
-each; parts 6–41 averaged **11.365 s**. Warm workers and fewer process restarts
-are the measured fix. [The larger-file report](RADIO_SDK_MEASUREMENTS.md#where-the-1-mb-time-went)
+The 250 kB and 500 kB files cleared the owner's **2.0 kB/s (16 kbit/s)**
+whole-file floor immediately. The first 1 MB file did not: its 42 part
+intervals summed to **460.672429 s** and left **110.812061 s** of coordination
+gaps, while the sender host's production LLM engine held a CPU core at roughly
+95%.
+
+A second 1 MB file, identical apart from pinning the sender away from that
+core, reached **2.230 kB/s (17.838 kbit/s)** including sender startup and
+**2.218 kB/s (17.742 kbit/s)** through endpoint closure. Per-part time fell
+from **10.97 s** to **8.66 s**, the 42 part intervals summed to **363.706 s**,
+and coordination gaps fell to **87.197 s**. All three larger sizes therefore
+clear the 2.0 kB/s floor. Both 1 MB samples stay in the record; the difference
+is host load and orchestration, not a changed radio setting.
+[The larger-file report](RADIO_SDK_MEASUREMENTS.md#1-mb-repeat-with-the-sender-pinned-away-from-the-loaded-core)
 retains the exact decomposition.
 
 A first one-request HTTP gateway also carried `http://example.com/` from a

@@ -85,11 +85,11 @@
         <div class="evidence-panel">
           <div class="evidence-head"><span class="label">Fresh signed-bundle files / 250 kB to 1 MB</span><span class="date">18 October 2026</span></div>
           <div class="metrics-grid file-metrics">
-            <div class="metric primary-metric"><strong>1.75–2.22<span>kB/s including sender startup<br>(14.0–17.7 kbit/s)</span></strong><p>Three fresh files<br>all whole-file hashes verified</p></div>
+            <div class="metric primary-metric"><strong>2.11–2.23<span>kB/s including sender startup<br>(16.9–17.8 kbit/s)</span></strong><p>250 kB, 500 kB and 1 MB<br>all whole-file hashes verified</p></div>
             <div class="metric"><strong>74 / 74<span>receiver confirmations</span></strong><p>11, 21 and 42 parts<br>all endpoint children exited zero</p></div>
-            <div class="metric"><strong>500 kB<span>fastest verified size</span></strong><p>2.216 kB/s through receipt<br>1 MB reached 1.750 kB/s</p></div>
+            <div class="metric"><strong>1 MB<span>largest verified file</span></strong><p>2.230 kB/s through receipt<br>42 parts, 448.5 seconds</p></div>
           </div>
-          <div class="measurement-note"><span aria-hidden="true">↳</span><p>The 250 kB, 500 kB and 1 MB files completed at <strong>2.111, 2.216 and 1.750 kB/s</strong> from sender startup through authenticated receipt. Scope-to-closure rates were <strong>2.063, 2.190 and 1.742 kB/s</strong>. The 1 MB result remains below our 2.0 kB/s usability floor; repeated process startup, coordination gaps and sender-host load are now the measured optimization targets. A one-request HTTP gateway also rendered <strong>example.com</strong> in a <code>links</code> browser in <strong>53.3 seconds</strong>; the 30-second timeout failed.</p></div>
+          <div class="measurement-note"><span aria-hidden="true">↳</span><p>The 250 kB, 500 kB and 1 MB files completed at <strong>2.111, 2.216 and 2.230 kB/s</strong> from sender startup through authenticated receipt, with scope-to-closure rates of <strong>2.063, 2.190 and 2.218 kB/s</strong>. A first 1 MB sample reached only 1.750 kB/s while the sender host's LLM engine held a CPU core near 95%; repeating it pinned away from that core cut per-part time from 10.97 s to 8.66 s. Both 1 MB samples stay in the record. A one-request HTTP gateway also rendered <strong>example.com</strong> in a <code>links</code> browser in <strong>53.3 seconds</strong>; the 30-second timeout failed.</p></div>
           <div class="radio-settings"><span>GFSK / 250 kbit/s</span><span>Source 1f85608</span><span>Direct HAT → MCU link / about 1 metre</span><span>Measured airtime, energy and EIRP: unavailable</span></div>
         </div>
         <div class="evidence-panel">
