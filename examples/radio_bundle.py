@@ -9,7 +9,6 @@ import json
 from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from meshticulum.bench.admission import Gfsk250Admission
 from meshticulum.bench.public_block import REPRESENTATION_MARKER, TRANSPORT_DESCRIPTOR_MARKER
 from meshticulum.bench.services import ServiceTransfer
 from meshticulum.bench.wire import require
@@ -119,7 +118,7 @@ def transfer(args):
                         pin=args.grant_sha256, private=True)
     plan = json.loads(raw)
     obj, service = plan['object'], plan['service']
-    require(plan['schema'] == 'meshticulum.service-run.v1' and plan.get('radio_modem') == 'gfsk250'
+    require(plan['schema'] == 'meshticulum.service-run.v1' and base.plan_modem(plan) in base.MODEMS
             and obj['object_id'] == expected['sha256'] and obj['chunk_index'] == index
             and resource.RESPONSE.size < obj['bytes'] <= 32768
             and plan['issued_epoch_us'] == args.file_issued_epoch_us
@@ -134,7 +133,12 @@ def transfer(args):
     admission = json.loads(base.read_file(args.admission, 8192, pin=args.admission_sha256, private=True))
     for name in ('frequencies_hz', 'powers_dbm'):
         admission[name] = tuple(admission[name])
-    admission = Gfsk250Admission(**admission)
+    for name in ('frequencies_hz', 'powers_dbm'):
+        if name in admission:
+            admission[name] = tuple(admission[name])
+    if 'waveforms' in admission:
+        admission['waveforms'] = tuple(tuple(row) for row in admission['waveforms'])
+    admission = base.modem_classes(base.plan_modem(plan))[3](**admission)
     version = base.firmware_identity(args.firmware_source, args.firmware_source_sha256)
     args.state.mkdir(mode=0o700, exist_ok=True)
     info = args.state.lstat()

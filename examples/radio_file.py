@@ -17,18 +17,18 @@ import stat
 import struct
 import time
 
-from meshticulum.bench.admission import Gfsk250Admission
+from meshticulum.bench.admission import Gfsk250Admission, RadioAdmission
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.gfsk250_profile import Gfsk250Profile
-from meshticulum.bench.hat_worker import Gfsk250HATWorker, journal_binding as hat_binding
+from meshticulum.bench.hat_worker import Gfsk250HATWorker, HATWorker, journal_binding as hat_binding
 from meshticulum.bench.linux_hat import LinuxHAT
 from meshticulum.bench.open_watch import OpenCollisionWatch
 from meshticulum.bench.objects import VerifiedChunks
 from meshticulum.bench.serial_port import ExclusiveSerial, usb_identity
-from meshticulum.bench.serial_protocol import Frame, Message, Gfsk250Status
-from meshticulum.bench.serial_worker import Gfsk250SerialWorker, journal_binding
+from meshticulum.bench.serial_protocol import Frame, Message, Gfsk250Status, RadioProfile
+from meshticulum.bench.serial_worker import Gfsk250SerialWorker, SerialWorker, journal_binding
 from meshticulum.bench.state import SessionStore
 from meshticulum.bench.wire import SessionCipher, require
 from meshticulum.scheduler.budget import BudgetPolicy, Ledger
@@ -36,6 +36,23 @@ from meshticulum.scheduler.budget import BudgetPolicy, Ledger
 CHUNK_BYTES, MAX_FILE_BYTES, ACK_GRACE_US = 16384, 64 * 16384, 20000000
 FILE_SCHEMA = 'meshticulum.example-radio-file.v1'
 MAX_FIRMWARE_SOURCE_BYTES = 8 * 1024 * 1024
+MODEMS = {'gfsk250': ('Gfsk250Profile', 'Gfsk250HATWorker', 'Gfsk250SerialWorker', 'Gfsk250Admission'),
+          'lora': ('RadioProfile', 'HATWorker', 'SerialWorker', 'RadioAdmission')}
+
+
+def modem_classes(modem):
+    """Return profile, HAT worker, serial worker and admission for one modem."""
+    require(modem in MODEMS, 'example_unknown_radio_modem')
+    return tuple(globals()[name] for name in MODEMS[modem])
+
+
+def plan_modem(plan):
+    """Plans without a modem marker are the LoRa profile path."""
+    modem = plan.get('radio_modem')
+    if modem is None:
+        return 'lora'
+    require(modem == 'gfsk250', 'example_unknown_radio_modem')
+    return modem
 
 
 def sha(data):
@@ -156,16 +173,18 @@ def compact_firmware_identity(args):
 
 def inspect_usb(args):
     """HELLO, capabilities and STATUS only: no grant, ARM, TX or disarm."""
+    modem = getattr(args, 'modem', 'gfsk250')
+    _, _, serial_cls, _ = modem_classes(modem)
     version = firmware_identity(args.firmware_source, args.firmware_source_sha256)
     with ExclusiveSerial(args.device, usb_serial=args.usb_serial) as channel:
-        worker = Gfsk250SerialWorker(channel)
+        worker = serial_cls(channel)
         identity = worker.discover(expected_board_id=1, expected_version=version)
         request, deadline = secrets.randbits(63) or 1, channel.monotonic() + 2
         worker._send(Frame(Message.STATUS, identity.boot, request), deadline)
         reply = worker._wait(request, deadline)
         require(reply.boot == identity.boot and reply.request == request
                 and channel.monotonic() < deadline, 'example_unbound_status')
-        if reply.type is Message.REFUSED and reply.body == b'\x01':
+        if modem == 'gfsk250' and reply.type is Message.REFUSED and reply.body == b'\x01':
             # Current firmware refuses LoRa STATUS in GFSK mode (BAD_COMMAND).
             # Query that modem without reconfiguring it or renewing this deadline.
             request += 1
@@ -360,7 +379,8 @@ def transfer_chunk(args):
     raw = read_file(args.grant_directory / 'grant.json', 16384,
                     pin=args.grant_sha256, private=True)
     plan = json.loads(raw)
-    require(plan['object'] == descriptor and plan.get('radio_modem') == 'gfsk250'
+    modem = plan_modem(plan)
+    require(plan['object'] == descriptor
             and plan['schema'] == 'meshticulum.bench-run.v1', 'example_requires_matching_bench_grant')
     require(plan['expires_epoch_us'] - plan['issued_epoch_us'] <= 240000000,
             'example_grant_window_too_large')
@@ -372,8 +392,11 @@ def transfer_chunk(args):
             'example_file_cannot_fit_original_window')
     admission = json.loads(read_file(args.admission, 8192, pin=args.admission_sha256, private=True))
     for name in ('frequencies_hz', 'powers_dbm'):
-        admission[name] = tuple(admission[name])
-    admission = Gfsk250Admission(**admission)
+        if name in admission:
+            admission[name] = tuple(admission[name])
+    if 'waveforms' in admission:
+        admission['waveforms'] = tuple(tuple(row) for row in admission['waveforms'])
+    admission = modem_classes(modem)[3](**admission)
     payload = None
     if args.input is not None:
         data = read_file(args.input, MAX_FILE_BYTES)
@@ -404,8 +427,9 @@ def run_object(args, raw, admission, version, payload, window, factory):
         cleanup.append(authority.close)
         require(authority.plan_bytes == raw and authority.application_live(), 'example_authority_changed')
         profile = authority.profile
-        require(type(profile) is Gfsk250Profile, 'example_requires_gfsk250')
-        worker = Gfsk250SerialWorker(transport) if args.interface == 'usb' else None
+        profile_cls, hat_cls, serial_cls, _ = modem_classes(plan_modem(plan))
+        require(type(profile) is profile_cls, 'example_requires_matching_profile')
+        worker = serial_cls(transport) if args.interface == 'usb' else None
         if worker is not None:
             identity = worker.discover(expected_board_id=1, expected_version=version)
             window.pin_mcu(identity)
@@ -426,7 +450,7 @@ def run_object(args, raw, admission, version, payload, window, factory):
             worker.arm(journal=journal, profile=profile, context_digest=authority.grant.digest,
                        authorize=authorize, authority_deadline=min(authority.deadlines.application_deadline_monotonic, window.deadline_us / 1000000))
         else:
-            worker = Gfsk250HATWorker(transport, journal=journal, profile=profile,
+            worker = hat_cls(transport, journal=journal, profile=profile,
                 context_digest=authority.grant.digest, authorize=authorize,
                 authority_deadline=min(authority.deadlines.application_deadline_monotonic, window.deadline_us / 1000000),
                 antenna_confirmed=plan['antenna_confirmed'])
@@ -486,6 +510,7 @@ def main():
         sub.add_argument('--firmware-source-sha256', required=True)
     inspect.add_argument('--device', type=Path, required=True)
     inspect.add_argument('--usb-serial', required=True)
+    inspect.add_argument('--modem', choices=tuple(MODEMS), default='gfsk250')
     run.add_argument('--unit', required=True)
     run.add_argument('--interface', choices=('hat', 'usb'), required=True)
     run.add_argument('--device', type=Path)
