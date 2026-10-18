@@ -18,7 +18,8 @@ state was fresh.
 | ---: | ---: | ---: | ---: | ---: |
 | 250,000 bytes | 11 | 118.420015 s; **2,111.1 B/s (16.889 kbit/s)** | 117.382857 s; 2,129.8 B/s (17.038 kbit/s) | 121.214435 s; **2,062.5 B/s (16.500 kbit/s)** |
 | 500,000 bytes | 21 | 225.668497 s; **2,215.6 B/s (17.725 kbit/s)** | 223.949464 s; 2,232.6 B/s (17.861 kbit/s) | 228.292237 s; **2,190.2 B/s (17.521 kbit/s)** |
-| 1,000,000 bytes | 42 | 571.484490 s; **1,749.8 B/s (13.999 kbit/s)** | 570.384109 s; 1,753.2 B/s (14.026 kbit/s) | 573.955922 s; **1,742.3 B/s (13.938 kbit/s)** |
+| 1,000,000 bytes, original | 42 | 571.484490 s; 1,749.8 B/s (13.999 kbit/s) | 570.384109 s; 1,753.2 B/s (14.026 kbit/s) | 573.955922 s; 1,742.3 B/s (13.938 kbit/s) |
+| 1,000,000 bytes, CPU-isolated | 42 | 448.473933 s; **2,229.8 B/s (17.838 kbit/s)** | 447.266757 s; 2,235.8 B/s (17.886 kbit/s) | 450.903081 s; **2,217.8 B/s (17.742 kbit/s)** |
 
 The 250 kB receiver independently verified all 11 parts and the complete file.
 All 22 endpoint processes exited zero and all 11 authenticated receipt
@@ -35,27 +36,39 @@ stopped result is retained; the corrected result follows the existing policy
 that records receive drops as diagnostics while requiring exact content,
 receipts and settled attempts.
 
-The 1 MB receiver independently verified all 42 parts and the complete file.
-All 84 endpoint processes exited zero and all 42 authenticated receipt
-confirmations were accepted. It used 1,530 receiver attempts and 5,400 sender
-attempts, with one DATA retransmission and one additional raw receive drop.
-The complete command remained inside its original 1,140-second window.
+Both 1 MB receivers independently verified all 42 parts and the complete file.
+Both runs had 84 endpoint processes exit zero and all 42 authenticated receipt
+confirmations were accepted inside the original 1,140-second window.
+
+The original 1 MB run used 1,530 receiver attempts and 5,400 sender attempts,
+with one DATA retransmission and one additional raw receive drop. Its per-part
+time averaged 10.97 seconds while the sender host's production LLM engine was
+holding CPU4 at roughly 95%. A fresh CPU-isolated control excluded that core
+from the benchmark process: per-part time fell to 8.66 seconds, and the
+whole-file rate rose from 1,749.8 to **2,229.8 useful B/s**, clearing the owner's
+2.0 kB/s floor. The control used 1,471 receiver attempts and 5,400 sender
+attempts, with two DATA retransmissions and two additional raw receive drops.
 
 ### Where the 1 MB time went
 
-The whole-file interval is not only radio payload time. The sum of the 42
-per-part sender-startup-to-receipt intervals is **460.672429 s**; the remaining
-**110.812061 s** is coordination between parts. The first six parts averaged
-**8.590 s** each; parts 6–41 averaged **11.365 s** each. That startup step-up is
-the clearest measured lead for the next optimization.
+The whole-file interval is not only radio payload time. In the original run,
+the sum of the 42 per-part sender-startup-to-receipt intervals is
+**460.672429 s**; the remaining **110.812061 s** is coordination between parts.
+The first six parts averaged **8.590 s** each; parts 6–41 averaged **11.365 s**
+each while CPU4 was held by the production LLM engine.
 
 The data-only interval, from the first DATA-worker call to the final receipt,
 was **398.221307 s**, or **2,511.2 B/s (2.5112 kB/s; 20.089 kbit/s)**. The
 equivalent data-only rates for the 250,000- and 500,000-byte files were
-**2,938.4 B/s** and **3,303.1 B/s**. The radio data path is therefore above
-2.0 kB/s in these finite samples; the 1 MB whole-file miss is the cost of 42
-separate starts and coordination gaps. Warm workers, fewer process restarts and
-pre-staged grants are the direct route to a whole-file result above 2.0 kB/s.
+**2,938.4 B/s** and **3,303.1 B/s**.
+
+With the sender-side benchmark excluded from CPU4, the fresh 1 MB control
+completed at **448.473933 s** through authenticated receipt and **450.903081 s**
+through endpoint closure. Its 42 part intervals summed to **363.705645 s** and
+coordination gaps to **87.197436 s**. This is **2,229.8 B/s whole-file** and
+demonstrates that the file path itself clears 2.0 kB/s under the declared
+near-bench conditions. Warm workers and fewer process restarts remain useful
+headroom but are no longer required to cross the floor.
 
 The exact parts, confirmations, endpoint exits and timing arithmetic are in the
 [sanitized larger-file record](../benchmarks/2026-10-18-public-sdk-large-files/results.json).

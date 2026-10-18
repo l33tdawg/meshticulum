@@ -69,12 +69,13 @@ For public resources, the path policy uses local verified request timings and sh
 
 The uninterrupted public SDK samples completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s) of useful application throughput including sender startup**, plus a **23,900-byte file at 2.53 kB/s (20.28 kbit/s)**. All used GFSK at 250 kbit/s on a direct HAT-to-MCU link about one metre apart. The 100 kB files took **49.256 and 51.303 seconds through final authenticated receipt**, including all five parts and coordination gaps. Scope issue through endpoint closure took **53.879 and 56.957 seconds** (**1.86 and 1.76 kB/s; 14.85 and 14.05 kbit/s**). All ten receiver confirmations were accepted; the runs had zero and one DATA retransmissions, with zero new receiver drops. [Timing definitions, exact source and conditions](docs/RADIO_SDK_MEASUREMENTS.md) accompany this initial repeat. Broader completion, hardware coverage and sustained-capacity evidence remain open.
 
-The same public signed-bundle path also completed fresh **250 kB, 500 kB and 1 MB files at 2.111, 2.216 and 1.750 kB/s (16.889, 17.725 and 13.999 kbit/s) including sender startup**. All three receivers verified every signed part and the complete file. Scope issue through both endpoints closed took **121.214, 228.292 and 573.956 seconds** (**2.063, 2.190 and 1.742 kB/s; 16.500, 17.521 and 13.938 kbit/s**). These 11-, 21- and 42-part runs used source `1f85608`; [the measurement report](docs/RADIO_SDK_MEASUREMENTS.md#larger-public-files) records retries, receive drops and exact windows.
+The same public signed-bundle path also completed fresh **250 kB, 500 kB and 1 MB files at 2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s) including sender startup**. All receivers verified every signed part and the complete file. Scope issue through both endpoints closed took **121.214, 228.292 and 450.903 seconds** (**2.063, 2.190 and 2.218 kB/s; 16.500, 17.521 and 17.742 kbit/s**). These 11-, 21- and 42-part runs used source `1f85608`; [the measurement report](docs/RADIO_SDK_MEASUREMENTS.md#larger-public-files) records retries, receive drops and exact windows.
 
-The 250 kB and 500 kB files clear **2.0 kB/s**; the 1 MB file does not on the
-whole-file boundary. Its payload interval is still **2.5112 kB/s**, but 42 part
-intervals plus **110.812 s** of coordination gaps leave the whole-file result at
-1.750 kB/s. Warm workers and fewer process restarts are the measured target.
+All three final samples clear the owner's **2.0 kB/s whole-file floor**. An
+earlier fresh 1 MB run reached 1.750 kB/s while the sender host's production LLM
+engine occupied its pinned CPU4; that result remains in the record. The
+CPU-isolated control fell to **8.66 seconds per part** and raised the whole-file
+rate to **2.230 kB/s**, establishing the declared near-bench result.
 
 The first HTTP gateway test carried a bounded request from a radio-only endpoint
 through a second unit's internet connection and back. A `links` text browser
@@ -94,7 +95,7 @@ Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/
 | --- | --- | --- |
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
 | Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
-| Public resources | Two fresh 100 kB files reached 1.95 to 2.03 kB/s (15.6 to 16.2 kbit/s); fresh 250 kB, 500 kB and 1 MB files reached 2.111, 2.216 and 1.750 kB/s (16.9, 17.7 and 14.0 kbit/s), all with independent whole-file verification | Wider completion distribution, recovery, mixed-path coverage, field range and qualification |
+| Public resources | Two fresh 100 kB files reached 1.95 to 2.03 kB/s (15.6 to 16.2 kbit/s); fresh 250 kB, 500 kB and 1 MB files reached 2.111, 2.216 and 2.230 kB/s (16.9, 17.7 and 17.8 kbit/s), all with independent whole-file verification | Wider completion distribution, recovery, mixed-path coverage, field range and qualification |
 | HTTP gateway | One bounded plain-HTTP request fetched `example.com` through a second unit's internet access and rendered in `links` in 53.3 s; both radio directions verified | Warm session for a 30 s browser path; no HTTPS `CONNECT`, TUN or transparent routing |
 | Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
 | Standalone packaging | Published source-build alpha, canonical Python package and standalone source suite | Separately qualified Lantern deployment and future releases |
