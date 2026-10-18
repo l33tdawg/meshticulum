@@ -248,6 +248,17 @@ def test_file_window_cannot_rotate_between_chunk_commands(tmp_path):
         example.bind_file_window(cache, file, issued, expires + 1, **kw)
 
 
+def test_bench_authority_accepts_bounded_multi_minute_bundle_window(tmp_path):
+    clock = Clock()
+    descriptor = example.manifest(b'large-window')['chunks'][0]
+    opened, _, _ = pair(tmp_path / 'run', descriptor, clock,
+                        clock()[0], clock()[0] + 520000000, [0])
+    try:
+        assert opened[0][2].grant.expires_epoch_us - opened[0][2].grant.issued_epoch_us == 520000000
+    finally:
+        close_pair(opened)
+
+
 def source_metadata(tmp_path):
     app = {name: str(i) * 64 for i, name in enumerate(
         ('main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp'))}

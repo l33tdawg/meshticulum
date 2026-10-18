@@ -1,4 +1,4 @@
-# A signed 100 kB file over the existing MB1 service
+# A signed public file over the existing MB1 service
 
 [`radio_bundle.py`](radio_bundle.py) uses the public SDK's existing
 `byte_bundle`, MB1 encoding, `ServiceTransfer`, reliable flow, authenticated
@@ -10,27 +10,33 @@ On 17 October, this public SDK path completed **two fresh five-part 100,000-byte
 files at 2,030.2 and 1,949.2 useful B/s including sender startup**, with independent
 publisher and whole-file verification. Both endpoints used receipt confirmation
 on a direct GFSK250 link about one metre long. [The measurement report](../docs/RADIO_SDK_MEASUREMENTS.md)
-records the exact source and timing; broader repetition and deployment remain open.
+records the exact source and timing. The same example accepts larger bundles up to
+the SDK's 1,000,000-byte format limit; no larger-file radio result is claimed here.
 
-## Why five transfers
+## Bundle geometry and window
 
 The existing byte-bundle builder uses parts of at most **23,900 useful bytes**.
-A 100,000-byte file therefore uses five parts. MB1 carries their raw bytes and
+A 100,000-byte file therefore uses five parts, while 250,000, 500,000 and
+1,000,000-byte files use 11, 21 and 42 parts. MB1 carries their raw bytes and
 reconstructs the exact signed canonical public chunks at the receiver. Each
 MR1 response fits the existing explicit `public_response_max_bytes=32768`
 capability and uses its separately admitted transport descriptor hash.
 
-Five receiver ACK graces cost **100 seconds**, leaving at most **140 seconds**
-of the same original 240-second interval for DATA, setup, retries, verification
-and cleanup. At 1,000 useful B/s, useful DATA alone takes 100 seconds; protocol
-and host work still need measured headroom. These bounds make this route a
-candidate for qualification, not a promise that it completes on your hardware.
+For five or fewer parts, the original example window remains **240 seconds**.
+Five receiver ACK graces cost 100 seconds, leaving at most 140 seconds for DATA,
+setup, retries, verification and cleanup. For larger bundles, the maximum original
+window is **20 seconds per part plus 300 seconds of transfer headroom**: 520 seconds
+for 11 parts, 720 seconds for 21 and 1,140 seconds for 42. These bounds make the
+larger geometries candidates for measurement, not promises that they complete on
+your hardware. The retained file clock and bench grant authority both refuse an
+original window above 20 minutes.
 
 The 1,000,000-byte SDK bundle-format limit is not a radio-operation limit.
-The command rejects `part_count × 20 seconds >= original interval`, and rejects
-remaining graces that cannot fit the actual remaining original monotonic time,
-**before hardware is opened or a grant is claimed**. Data and setup need further
-time. No timer or lease is extended to finish a part or a grace.
+The command rejects an original interval above the geometry's window bound, a
+`part_count × 20 seconds >= original interval` shape, and remaining graces that
+cannot fit the actual remaining original monotonic time, **before hardware is
+opened or a grant is claimed**. Data and setup need further time. No timer or
+lease is extended to finish a part or a grace.
 
 ## Optional sender receipt confirmation
 
@@ -83,14 +89,15 @@ checked trust-root hash through your trusted administration channel. The sender
 also needs the canonical chunk files. The receiver does not need payload files
 before DATA arrives.
 
-## Approve five original response grants
+## Approve the original response grants
 
 Use the [same private grant-directory rules](README.md#prepare-the-file-and-approve-the-sessions),
 actual host boots, independently distributed pairwise secret, explicit admission,
-fresh per-part sessions and exclusive workers. All five grants at each endpoint
-share the **same original issued/expiry epoch values**, no more than 240 seconds
-apart. They must be approved before the operation. This example does not issue
-grants, widen an old grant or run a native product controller.
+fresh per-part sessions and exclusive workers. Each endpoint needs one grant per
+part. All grants at an endpoint share the **same original issued/expiry epoch
+values**, within the geometry's window bound. They must be approved before the
+operation. This example does not issue grants, widen an old grant or run a native
+product controller.
 
 For each part, the following offline command prints the existing protocol
 `object` and `service` fields for your application to approve. It prints no
@@ -118,9 +125,9 @@ fictional request. The service/AEAD route and response object remain exact.
 Per-run profile limits remain at most 256 attempts and 60,000,000 estimated
 airtime microseconds. HAT DATA uses distinct approved run journals; all old
 journals and debt remain. MCU boot attempts/airtime remain cumulative across
-all five sessions, and the first MCU boot/version is pinned in local file state.
+all sessions, and the first MCU boot/version is pinned in local file state.
 A reset or changed MCU identity refuses instead of resetting a file budget.
-This route does not enable a 100 kB MCU DATA sender.
+This route does not make the MCU a bundle DATA sender.
 
 ## Run each approved pair
 
@@ -169,8 +176,8 @@ through your application/operator channel. Parts must arrive in order; local
 sender receipt markers and reverified receiver quarantine prevent skipping them.
 There is no new cross-host daemon, RF grant issuer or automatic retry campaign.
 
-For part 4 of a 100 kB file, the receiver re-verifies all five parts and the
-signed whole-file length/SHA-256, then durably publishes
+For the final part, the receiver re-verifies every part and the signed whole-file
+length/SHA-256, then durably publishes
 `$PRIVATE_STATE/receiver/bundle.bin` within the original file interval. Its result
 includes the SDK's `publisher_verified`/whole-file result. Sender flow receipt
 alone does not prove this publication. Missing/corrupt parts, wrong signatures,

@@ -21,6 +21,32 @@ import radio_bundle as bundle
 base = bundle.base
 
 
+@pytest.mark.parametrize(('part_count', 'expected'), [
+    (1, 240_000_000),
+    (5, 240_000_000),
+    (11, 520_000_000),
+    (21, 720_000_000),
+    (42, 1_140_000_000),
+])
+def test_large_bundle_window_is_bounded_by_ack_grace_and_reviewed_headroom(part_count, expected):
+    assert bundle.max_file_window_us(part_count) == expected
+
+
+def test_large_bundle_window_is_retained_by_the_file_clock(tmp_path):
+    clock = Clock()
+    issued = clock()[0]
+    window = base.FileWindow(tmp_path, dict(sha256='a' * 64),
+        issued, issued + bundle.max_file_window_us(11), time_source=clock,
+        boot_reader=lambda: BOOT, max_window_us=bundle.max_file_window_us(11))
+    assert window.deadline_us == clock()[1] + bundle.max_file_window_us(11)
+
+
+@pytest.mark.parametrize('part_count', [0, -1, True, 1.5])
+def test_invalid_bundle_window_part_count_is_refused(part_count):
+    with pytest.raises(WireError, match='invalid_example_part_count'):
+        bundle.max_file_window_us(part_count)
+
+
 @pytest.fixture
 def published():
     data = bytes(range(256)) * 390 + bytes(range(160))
