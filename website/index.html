@@ -83,6 +83,16 @@
       <div class="container">
         <div class="section-heading"><div><p class="eyebrow">03 / Measured, with scope</p><h2>More than a modem<br>bitrate.</h2></div><p>We measure useful bytes in authenticated encrypted transfers, and require independent publisher and content verification. Timing boundaries matter.</p></div>
         <div class="evidence-panel">
+          <div class="evidence-head"><span class="label">Fresh signed-bundle files / 250 kB to 1 MB</span><span class="date">18 October 2026</span></div>
+          <div class="metrics-grid file-metrics">
+            <div class="metric primary-metric"><strong>1.75–2.22<span>kB/s including sender startup<br>(14.0–17.7 kbit/s)</span></strong><p>Three fresh files<br>all whole-file hashes verified</p></div>
+            <div class="metric"><strong>74 / 74<span>receiver confirmations</span></strong><p>11, 21 and 42 parts<br>all endpoint children exited zero</p></div>
+            <div class="metric"><strong>500 kB<span>fastest verified size</span></strong><p>2.216 kB/s through receipt<br>1 MB reached 1.750 kB/s</p></div>
+          </div>
+          <div class="measurement-note"><span aria-hidden="true">↳</span><p>The 250 kB, 500 kB and 1 MB files completed at <strong>2.111, 2.216 and 1.750 kB/s</strong> from sender startup through authenticated receipt. Scope-to-closure rates were <strong>2.063, 2.190 and 1.742 kB/s</strong>. The 1 MB result remains below our 2.0 kB/s usability floor; repeated process startup, coordination gaps and sender-host load are now the measured optimization targets.</p></div>
+          <div class="radio-settings"><span>GFSK / 250 kbit/s</span><span>Source 1f85608</span><span>Direct HAT → MCU link / about 1 metre</span><span>Measured airtime, energy and EIRP: unavailable</span></div>
+        </div>
+        <div class="evidence-panel">
           <div class="evidence-head"><span class="label">Two fresh 100 kB file transfers</span><span class="date">17 October 2026</span></div>
           <div class="metrics-grid file-metrics">
             <div class="metric primary-metric"><strong>1.95–2.03<span>kB/s including sender startup<br>(15.6–16.2 kbit/s)</span></strong><p>First sender startup<br>through the final authenticated receipt</p></div>
@@ -96,7 +106,7 @@
           <article><h3>A comparison you can inspect</h3><p>The earlier LoRa sample at 1,071.3 B/s is numerically <strong>2.61×</strong> the <strong>410 B/s</strong> contributed test in <a href="https://github.com/meshcore-dev/MeshCore/issues/3404">MeshCore issue #3404</a>. That test used 25 individually acknowledged 128-byte frames at SF7/BW500. Ours used a windowed resource reply. Different workloads and timing boundaries prevent a general speed ranking.</p></article>
           <article><h3>Installed and continued.</h3><p>A separate clean installed-wheel check completed another 100 kB file at <strong>1.74 kB/s (13.9 kbit/s)</strong>, including sender startup and a five-second pause between verified parts. All ten endpoint processes closed successfully. <a href="roadmap.html#installed-sdk">Read the installation and continuation check</a>. Field range, wider recovery and native private qualification remain open; the finite source-build alpha is <a href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha">published as a prerelease</a>.</p></article>
         </div>
-        <div class="evidence-links"><a class="text-link" href="roadmap.html#now">Read the whole-file timing boundaries <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-17-public-sdk/results.json">Inspect the sample records <span aria-hidden="true">↗</span></a></div>
+        <div class="evidence-links"><a class="text-link" href="roadmap.html#now">Read the whole-file timing boundaries <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-18-public-sdk-large-files/results.json">Inspect the larger-file records <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum/blob/main/benchmarks/2026-10-17-public-sdk/results.json">Inspect the 100 kB records <span aria-hidden="true">↗</span></a></div>
       </div>
     </section>
 
