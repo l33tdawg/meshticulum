@@ -148,7 +148,10 @@ class BenchFlow:
                 min_rto_s=profile.min_rto_seconds, max_rto_s=profile.max_rto_seconds,
                 ack_delay_s=0.01, persist_interval_s=max(.5,
                     2 * profile.forward_seconds + profile.reverse_control_seconds + .15),
-                max_persist_acks=8),
+                # Separate endpoint processes can take more than four seconds
+                # to reach first DATA. Keep startup failure bounded at eight
+                # seconds instead of losing a valid transfer to host startup.
+                max_persist_acks=16),
             flow_id=flow_key.flow_id, generation=1, sends=sends, receive=not sends,
             startup=None)
         self.sender_control_hold_us = (max(self.burst_quiet_us,
