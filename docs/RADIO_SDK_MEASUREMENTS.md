@@ -41,6 +41,25 @@ confirmations were accepted. It used 1,530 receiver attempts and 5,400 sender
 attempts, with one DATA retransmission and one additional raw receive drop.
 The complete command remained inside its original 1,140-second window.
 
+### Where the 1 MB time went
+
+The whole-file interval is not only radio payload time. The sum of the 42
+per-part sender-startup-to-receipt intervals is **460.672429 s**; the remaining
+**110.812061 s** is coordination between parts. The first six parts averaged
+**8.590 s** each; parts 6–41 averaged **11.365 s** each. That startup step-up is
+the clearest measured lead for the next optimization.
+
+The data-only interval, from the first DATA-worker call to the final receipt,
+was **398.221307 s**, or **2,511.2 B/s (2.5112 kB/s; 20.089 kbit/s)**. The
+equivalent data-only rates for the 250,000- and 500,000-byte files were
+**2,938.4 B/s** and **3,303.1 B/s**. The radio data path is therefore above
+2.0 kB/s in these finite samples; the 1 MB whole-file miss is the cost of 42
+separate starts and coordination gaps. Warm workers, fewer process restarts and
+pre-staged grants are the direct route to a whole-file result above 2.0 kB/s.
+
+The exact parts, confirmations, endpoint exits and timing arithmetic are in the
+[sanitized larger-file record](../benchmarks/2026-10-18-public-sdk-large-files/results.json).
+
 These larger-file results remain direct near-bench GFSK250 measurements. They
 do not establish LoRa modulation, field range, sustained-capacity distribution,
 or operation on another installation.

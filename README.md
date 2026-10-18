@@ -71,6 +71,17 @@ The uninterrupted public SDK samples completed **two fresh 100,000-byte files at
 
 The same public signed-bundle path also completed fresh **250 kB, 500 kB and 1 MB files at 2.111, 2.216 and 1.750 kB/s (16.889, 17.725 and 13.999 kbit/s) including sender startup**. All three receivers verified every signed part and the complete file. Scope issue through both endpoints closed took **121.214, 228.292 and 573.956 seconds** (**2.063, 2.190 and 1.742 kB/s; 16.500, 17.521 and 13.938 kbit/s**). These 11-, 21- and 42-part runs used source `1f85608`; [the measurement report](docs/RADIO_SDK_MEASUREMENTS.md#larger-public-files) records retries, receive drops and exact windows.
 
+The 250 kB and 500 kB files clear **2.0 kB/s**; the 1 MB file does not on the
+whole-file boundary. Its payload interval is still **2.5112 kB/s**, but 42 part
+intervals plus **110.812 s** of coordination gaps leave the whole-file result at
+1.750 kB/s. Warm workers and fewer process restarts are the measured target.
+
+The first HTTP gateway test carried a bounded request from a radio-only endpoint
+through a second unit's internet connection and back. A `links` text browser
+rendered `example.com` in **53.3 seconds**; the same request with a **30-second**
+timeout failed. [The HTTP record](docs/HTTP_GATEWAY.md) explains the cold-start
+cost and the opt-in routing direction.
+
 A separate [clean installed-wheel check](docs/RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) completed another fresh **100 kB file at 1.74 kB/s (13.92 kbit/s) including startup and a five-second pause between verified parts**. Normal isolated virtual environments matched all 67 runtime files to the published wheel, and all ten endpoint processes closed successfully. Wider recovery, hardware and sustained-capacity qualification remain open.
 
 Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/s median (9.6 kbit/s)**, and two later 16,356-byte public responses reached **1.037 and 1.071 kB/s** through reliable-flow ACK with zero DATA retries or duplicates. [Performance](docs/PERFORMANCE.md) retains those historical conditions and scoped upstream comparisons. The immediate target is sustained useful encrypted delivery above **1 kB/s (8 kbit/s) including startup**, with reliable completion and deployable code. **4 to 5 kB/s (32 to 40 kbit/s) is an optional later stretch**, not an alpha release gate. The new GFSK samples and earlier LoRa results retain their own source pins and measurement boundaries.
@@ -84,6 +95,7 @@ Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
 | Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
 | Public resources | Two fresh 100 kB files reached 1.95 to 2.03 kB/s (15.6 to 16.2 kbit/s); fresh 250 kB, 500 kB and 1 MB files reached 2.111, 2.216 and 1.750 kB/s (16.9, 17.7 and 14.0 kbit/s), all with independent whole-file verification | Wider completion distribution, recovery, mixed-path coverage, field range and qualification |
+| HTTP gateway | One bounded plain-HTTP request fetched `example.com` through a second unit's internet access and rendered in `links` in 53.3 s; both radio directions verified | Warm session for a 30 s browser path; no HTTPS `CONNECT`, TUN or transparent routing |
 | Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
 | Standalone packaging | Published source-build alpha, canonical Python package and standalone source suite | Separately qualified Lantern deployment and future releases |
 

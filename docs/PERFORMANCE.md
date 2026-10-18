@@ -4,7 +4,27 @@ The latest public SDK radio samples completed **two fresh 100,000-byte files at 
 
 On 18 October, source `1f85608` also completed fresh **250 kB, 500 kB and 1 MB signed bundles** on that path. Sender-startup-inclusive rates were **2.111, 2.216 and 1.750 kB/s (16.889, 17.725 and 13.999 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 1.742 kB/s (16.500, 17.521 and 13.938 kbit/s)**. All three receivers independently verified every part and the exact whole file.
 
-These finite samples exceed the **1 kB/s (8 kbit/s) startup-inclusive alpha floor for that path**. The source-build alpha is published. A sustained-throughput distribution, broader repetition and wider [qualification](RELEASE_READINESS.md) remain open. The optional later 4 to 5 kB/s (32 to 40 kbit/s) stretch remains in the [roadmap](ROADMAP.md).
+The 250 kB and 500 kB files clear the owner's **2.0 kB/s (16 kbit/s)**
+whole-file floor; the 1 MB file does not. The 1 MB payload interval is still
+**2.5112 kB/s**, but its 42 part intervals sum to **460.672429 s** and leave
+**110.812061 s** of coordination gaps. The first six parts averaged **8.590 s**
+each; parts 6–41 averaged **11.365 s**. Warm workers and fewer process restarts
+are the measured fix. [The larger-file report](RADIO_SDK_MEASUREMENTS.md#where-the-1-mb-time-went)
+retains the exact decomposition.
+
+A first one-request HTTP gateway also carried `http://example.com/` from a
+radio-only endpoint through a second endpoint's internet connection and back.
+The body and both radio directions verified; a `links` text browser rendered the
+page in **53.3 seconds**. The same request with a **30-second** timeout failed.
+[The HTTP gateway record](HTTP_GATEWAY.md) keeps the receipts and limits; a warm
+session is the next step toward a 30-second browser path.
+
+These finite samples exceed the **1 kB/s (8 kbit/s) startup-inclusive alpha floor
+for that path**. The 250 kB and 500 kB samples also exceed 2.0 kB/s; the 1 MB
+sample remains below it on the whole-file boundary. The source-build alpha is
+published. A sustained-throughput distribution, broader repetition and wider
+[qualification](RELEASE_READINESS.md) remain open. The optional later 4 to
+5 kB/s (32 to 40 kbit/s) stretch remains in the [roadmap](ROADMAP.md).
 
 This page retains the earlier 30-sample LoRa distribution, seven finite native LoRa public samples and the 15 October GFSK campaign at their original source pins and timing boundaries. The new GFSK measurements are separate from the LoRa evidence and upstream comparison below.
 

@@ -22,6 +22,18 @@ Each 100 kB interval includes all five sequential parts and coordination gaps. A
 
 On **18 October 2026**, source `1f85608` extended the verified public-file set to **250 kB, 500 kB and 1 MB** using the same direct GFSK250 HAT/MCU path. Sender-startup-inclusive useful rates were **2.111, 2.216 and 1.750 kB/s (16.889, 17.725 and 13.999 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 1.742 kB/s (16.500, 17.521 and 13.938 kbit/s)**. The 11-, 21- and 42-part files all passed independent publisher and whole-file verification. Each had one DATA retransmission; the 250 kB run had no new receive drop, while the 500 kB and 1 MB runs each advanced the raw drop counter by one. All 74 authenticated receiver confirmations were accepted and all 148 endpoint children exited zero. [The larger-file measurements](RADIO_SDK_MEASUREMENTS.md#larger-public-files) retain the exact windows, attempts and reclassification record.
 
+The 250 kB and 500 kB files clear **2.0 kB/s**; the 1 MB file does not on the
+whole-file boundary. Its payload interval is still **2.5112 kB/s**, but the 42
+part intervals sum to **460.672429 s** and leave **110.812061 s** of
+coordination gaps. The first six parts averaged **8.590 s** each; parts 6–41
+averaged **11.365 s**. Warm workers and fewer restarts are the measured fix.
+
+A first one-request HTTP gateway also fetched `http://example.com/` through a
+second unit's internet connection and returned it over the radio. A `links`
+text browser rendered the page in **53.3 seconds**; the same request with a
+**30-second** timeout failed. [The HTTP gateway record](HTTP_GATEWAY.md) keeps
+the receipts and limits.
+
 **These samples exceed the startup-inclusive alpha floor for the tested path.** Two fresh 100 kB files provide an initial repeat, rather than a sustained-capacity or completion distribution. GFSK is separate from LoRa modulation; the one-metre setup does not measure field range. [The measurement report](RADIO_SDK_MEASUREMENTS.md) records exact durations, source hashes and limits. The [earlier 15 October campaign](PERFORMANCE.md#a-complete-100-kb-file-2026-10-15) remains in the historical record.
 
 A separate [clean installed-wheel check](RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) completed another fresh 100 kB file at **1.74 kB/s (13.92 kbit/s) including startup and a five-second pause between verified parts**, or **1.61 kB/s (12.91 kbit/s) through endpoint closure**. Both normal virtual environments matched all 67 runtime files to release source `673eb60`; all five confirmations and all ten endpoint exits passed under the unchanged original window. The record retains the earlier incomplete 95,600-byte installed trial. This finite check supports the published source-build alpha and does not establish in-flight crash recovery.
@@ -43,6 +55,10 @@ Compare performance and security with published MeshCore and Reticulum evidence 
 ## After alpha
 
 - **More headroom and broader measurements.** Establish repeated startup-inclusive performance before treating the new finite rates as sustained capacity. Improve startup latency, retry cost, completion consistency and resource use. Expand file sizes, topology, range and power measurements under fresh bounded admission.
+- **Warm the request path.** Reuse workers and pre-stage grants so the 1 MB
+  whole-file rate can clear 2.0 kB/s and the HTTP gateway can target a normal
+  30-second browser timeout. This is the direct measured fix for the current
+  process-start and coordination cost.
 - **Optional 4 to 5 kB/s (32 to 40 kbit/s) stretch.** Evaluate higher useful encrypted rates on explicitly supported hardware and profiles after the reliability and deployment work. Capability, range and operating cost need new measurements; raw modem bitrate is not application goodput.
 - **Richer path selection.** Extend verified-piece reuse and locally measured radio/IP choices. Autonomous routing and MeshCore/Reticulum wire interoperability remain unimplemented; existing finite path demonstrations do not supply those features.
 - **Post-quantum feasibility and hybrid research.** Evaluate the separate experimental hybrid prototype's security review, replay/key lifecycle, setup cost, loss recovery and device memory/performance. The default protocols remain classical. PQC is not an alpha prerequisite, a current radio capability or a promised delivery date. [Post-quantum status](POST_QUANTUM.md) records the prototype and its limits.
