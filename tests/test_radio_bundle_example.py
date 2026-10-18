@@ -32,6 +32,15 @@ def test_large_bundle_window_is_bounded_by_ack_grace_and_reviewed_headroom(part_
     assert bundle.max_file_window_us(part_count) == expected
 
 
+def test_large_bundle_window_is_retained_by_the_file_clock(tmp_path):
+    clock = Clock()
+    issued = clock()[0]
+    window = base.FileWindow(tmp_path, dict(sha256='a' * 64),
+        issued, issued + bundle.max_file_window_us(11), time_source=clock,
+        boot_reader=lambda: BOOT, max_window_us=bundle.max_file_window_us(11))
+    assert window.deadline_us == clock()[1] + bundle.max_file_window_us(11)
+
+
 @pytest.mark.parametrize('part_count', [0, -1, True, 1.5])
 def test_invalid_bundle_window_part_count_is_refused(part_count):
     with pytest.raises(WireError, match='invalid_example_part_count'):

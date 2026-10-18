@@ -41,6 +41,8 @@ SERVICE_FORMATS = {
     'MPF2.record': ServiceKind.MESSAGE,
 }
 
+MAX_GRANT_WINDOW_US = 1_200_000_000
+
 
 def canonical(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':')).encode('ascii')
@@ -165,7 +167,7 @@ class RunAuthority:
                   canonical(self.plan),canonical(self.route_record),service_binding)
             self._admission_refs=refs;self._captured_admission=lambda:refs
             require(self.grant.max_frames <= 512
-                    and self.grant.expires_epoch_us - self.grant.issued_epoch_us <= 240000000,
+                    and self.grant.expires_epoch_us - self.grant.issued_epoch_us <= MAX_GRANT_WINDOW_US,
                     'bench_grant_too_large')
             epoch, mono = clock()
             require(self.grant.issued_epoch_us <= epoch < self.grant.expires_epoch_us,

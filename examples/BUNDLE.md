@@ -28,7 +28,8 @@ setup, retries, verification and cleanup. For larger bundles, the maximum origin
 window is **20 seconds per part plus 300 seconds of transfer headroom**: 520 seconds
 for 11 parts, 720 seconds for 21 and 1,140 seconds for 42. These bounds make the
 larger geometries candidates for measurement, not promises that they complete on
-your hardware.
+your hardware. The retained file clock and bench grant authority both refuse an
+original window above 20 minutes.
 
 The 1,000,000-byte SDK bundle-format limit is not a radio-operation limit.
 The command rejects an original interval above the geometry's window bound, a

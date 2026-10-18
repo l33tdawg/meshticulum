@@ -193,12 +193,14 @@ def inspect_usb(args):
 
 class FileWindow:
     """A retained original file clock/boot binding; not RF authority."""
-    def __init__(self, directory, file, issued, expires, *, time_source=None, boot_reader=None):
+    def __init__(self, directory, file, issued, expires, *, time_source=None, boot_reader=None,
+                 max_window_us=240_000_000):
         self.path = Path(directory) / (file['sha256'] + '-window.json')
         self.clock, self.boot_reader = time_source or clock, boot_reader or host_boot
         now = self.clock()
         require(type(issued) is int and type(expires) is int and 0 < issued < expires
-                and expires - issued <= 240000000 and issued <= now[0] < expires,
+                and type(max_window_us) is int and 0 < max_window_us <= 1200000000
+                and expires - issued <= max_window_us and issued <= now[0] < expires,
                 'example_file_window_bound')
         expected = dict(schema='meshticulum.example-file-window.v2', manifest=file,
                         issued_epoch_us=issued, expires_epoch_us=expires,

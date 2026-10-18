@@ -142,7 +142,8 @@ def transfer(args):
             and base.stat.S_IMODE(info.st_mode) == 0o700, 'example_bundle_state_not_private')
     window = base.FileWindow(args.state, dict(sha256=args.manifest_sha256,
         bundle_sha256=expected['sha256'], parts=count),
-        args.file_issued_epoch_us, args.file_expires_epoch_us)
+        args.file_issued_epoch_us, args.file_expires_epoch_us,
+        max_window_us=max_file_window_us(count))
     window.require_capacity(count - index)
     args.chunk = index  # Shared hardware receipt index, not a new transport mode.
     sends = plan['sender_unit'] == args.unit
