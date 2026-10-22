@@ -128,9 +128,10 @@ clients are not wire-compatible.
 
 ## 4. Send a useful result
 
-[Open an issue](https://github.com/l33tdawg/meshticulum/issues) with the smallest
-test that shows the problem. Successful test notes and suggestions are useful
-too. Copy this starter and fill in the parts you used:
+[Open a tester report](https://github.com/l33tdawg/meshticulum/issues/new?template=tester-report.yml)
+with the smallest test that shows the problem. Successful test notes and
+suggestions are useful too. If you cannot use the form, include this starter in
+a normal issue:
 
 ```text
 Test: desktop / firmware build / flash / radio
