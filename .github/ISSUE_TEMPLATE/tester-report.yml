@@ -110,7 +110,6 @@ body:
       options:
         - label: I removed private keys, shared secrets, credentials, full device serial numbers and precise locations from this report and its attachments.
           required: true
-        - label: For radio tests, I used a locally authorized frequency and power, an appropriate antenna, and my own regulatory compliance decision.
-          required: true
+        - label: For any radio test included here, I chose a locally authorized frequency and power, an appropriate antenna, and my own regulatory compliance decision.
         - label: I understand this is experimental evidence and is not a production, field-range or wire-compatibility claim.
           required: true
