@@ -33,14 +33,14 @@ python3.12 -m venv build/firmware-cli
 build/firmware-cli/bin/python -m pip install \
   -r firmware/meshticulum-bench/requirements-firmware.txt
 
-python3 firmware/meshticulum-bench/prepare_firmware.py fetch \
+build/firmware-cli/bin/python firmware/meshticulum-bench/prepare_firmware.py fetch \
   --archive-dir build/firmware-archives
 
-python3 firmware/meshticulum-bench/prepare_firmware.py prepare \
+build/firmware-cli/bin/python firmware/meshticulum-bench/prepare_firmware.py prepare \
   --archive-dir build/firmware-archives \
   --output-dir build/firmware-work
 
-python3 firmware/meshticulum-bench/prepare_firmware.py build \
+build/firmware-cli/bin/python firmware/meshticulum-bench/prepare_firmware.py build \
   --output-dir build/firmware-work \
   --pio-python build/firmware-cli/bin/python
 ```

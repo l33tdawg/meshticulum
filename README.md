@@ -12,6 +12,25 @@ Meshticulum is an experimental transport and resource system for networks that m
 
 It began in SAGE Lantern and now lives as a standalone project. The transport, public-resource and offline envelope code work without SAGE or Lantern. [Lantern](https://github.com/l33tdawg/sage-lantern) consumes Meshticulum and owns its device and private SAGE integrations.
 
+## Start here
+
+Meshticulum is an experimental alpha. You can make a useful contribution
+without owning a radio or making an RF decision.
+
+| What you want to do | Start with | Useful result |
+| --- | --- | --- |
+| Try the SDK offline (**Level 0**) | [Testers' Guide](docs/TESTER_GUIDE.md#1-try-it-on-your-computer) | The signed-resource demo and its `Verified public chunk: 287 bytes` result |
+| Reproduce the firmware build (**Level 1**) | [Firmware recipe](docs/FIRMWARE_RECIPE.md) | `SOURCE.json`, `BUILD.json` and target output hashes |
+| Install on a spare matching board (**Level 2**) | [Device setup](docs/DEVICE_SETUP.md) | Exact board/image identity, inspection and recovery result |
+| Check app-only update and rollback (**Level 3**) | [Flashing and rollback](docs/FLASHING.md) | Current/backup correspondence and the completed rollback check |
+| Run a near-bench radio transfer (**Level 4**) | [Signed-file walkthrough](examples/BUNDLE.md) | Authenticated receipts plus publisher and whole-file verification |
+
+The public [community tester campaign](https://github.com/l33tdawg/meshticulum/issues/43)
+tracks the ladder and claim boundaries. Open a separate
+[tester report](https://github.com/l33tdawg/meshticulum/issues/new?template=tester-report.yml)
+for each result or failure. Level 5 field, mixed-path and loss/resume work is
+project-operated and is not part of the initial community campaign.
+
 ## SAGE project family
 
 | Project | Repository and scope |
@@ -174,6 +193,11 @@ New code should use `meshticulum.*` imports. Small compatibility bridges preserv
 ## Read more and contribute
 
 [Documentation home](docs/index.md) · [Why](docs/WHY.md) · [Architecture](docs/ARCHITECTURE.md) · [MeshCore/Reticulum comparison](docs/COMPARISON.md) · [Performance](docs/PERFORMANCE.md) · [Experimental forward sessions](docs/FORWARD_SECRECY.md) · [Roadmap](docs/ROADMAP.md) · [1.0.0-alpha readiness](docs/RELEASE_READINESS.md)
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for source, documentation and tester
+paths. Contributors who want an offline engineering task can start with
+[issue #44](https://github.com/l33tdawg/meshticulum/issues/44), the
+third-party LoRa backend/profile conformance contract.
 
 Before changing transport behavior, read [AGENTS.md](AGENTS.md), run the standalone suite and verify the frozen-flow pins. Changes to the accepted flow and port require a reviewed revision. Keep original deadlines, replay decisions and attempt debt intact across cancellation and restart, and preserve failed or unavailable measurements alongside successful runs.
 
