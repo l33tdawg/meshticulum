@@ -1,8 +1,10 @@
-# Meshticulum tester guide
+# Meshticulum Testers' Guide
 
 Try the desktop example, build firmware if you have a matching board, and tell
 us what worked or got in your way. Meshticulum is an experimental open-source
 SDK and firmware alpha. The commands below use a macOS or Linux shell.
+
+[Download the SAGE-branded PDF](../website/assets/meshticulum-testers-guide.pdf).
 
 ## 1. Try it on your computer
 
