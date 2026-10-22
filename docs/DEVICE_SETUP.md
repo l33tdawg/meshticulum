@@ -19,7 +19,7 @@ Matching the radio chip does not establish board compatibility. MeshCore-derived
 Follow the [locked firmware recipe](FIRMWARE_RECIPE.md). Its validated host is **macOS arm64, Python 3.12.8 and PlatformIO Core 6.1.19**. Use the pinned CLI requirements, archives and isolated output. Select one target explicitly, or let the recipe build both:
 
 ```sh
-python3 firmware/meshticulum-bench/prepare_firmware.py build \
+build/firmware-cli/bin/python firmware/meshticulum-bench/prepare_firmware.py build \
   --output-dir build/firmware-work \
   --pio-python build/firmware-cli/bin/python \
   --target mtbench_heltec_v4

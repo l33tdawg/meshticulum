@@ -20,7 +20,7 @@ def headings(path):
 
 def main():
     errors=[];links=0;diagrams=0
-    documents=[ROOT/'README.md',*sorted((ROOT/'docs').glob('*.md'))]
+    documents=[ROOT/'README.md',ROOT/'CONTRIBUTING.md',*sorted((ROOT/'docs').glob('*.md'))]
     for path in documents:
         text=re.sub(r'```.*?```','',path.read_text(),flags=re.S)
         for target in re.findall(r'!?\[[^\]]*\]\(([^)]+)\)',text):
@@ -33,6 +33,10 @@ def main():
                 errors.append(str(path.relative_to(ROOT))+': missing '+target)
             elif parsed.fragment and destination.suffix=='.md' and unquote(parsed.fragment) not in headings(destination):
                 errors.append(str(path.relative_to(ROOT))+': missing anchor '+target)
+    for path in [*documents,ROOT/'website/getting-started.html']:
+        text=path.read_text()
+        if re.search(r'(?m)(?:^|\s)python(?:3(?:\.\d+)?)?\s+firmware/meshticulum-bench/prepare_firmware\.py',text):
+            errors.append(str(path.relative_to(ROOT))+': firmware command uses an unisolated Python interpreter')
     for name in DIAGRAM_DOCS:
         path=ROOT/name
         for index,source in enumerate(re.findall(r'```mermaid\s*\n(.*?)```',path.read_text(),flags=re.S),1):
