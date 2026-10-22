@@ -119,6 +119,10 @@ Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/
 
 ## Install and explore
 
+New testers can start with the [short tester guide](docs/TESTER_GUIDE.md): run an
+offline signed-resource example, build the matching firmware target and choose
+the correct flashing procedure before reporting a result.
+
 Python 3.11 or later is required. The offline core runs on a development host. Reusable radio drivers need the corresponding hardware interfaces; Lantern owns the native device entry points and their deployment requirements.
 
 ```sh
