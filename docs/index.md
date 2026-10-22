@@ -32,6 +32,7 @@ Start with [installation and the standalone test command](../README.md#install-a
 | [Signed radio file example](../examples/BUNDLE.md) | Compose the existing MB1 service for five-part 100 kB transfer under independently approved grants |
 | [App-only flashing and rollback](FLASHING.md) | Check a compatible current layout and rollback before installing an application on your own board |
 | [Hardware tooling](HARDWARE.md) | Build a public host runtime, understand serial/SX1262 adapters, or prepare a separately authorized device run |
+| [Third-party backend contract](THIRD_PARTY_BACKEND_CONTRACT.md) | Implement and test a new LoRa backend/profile offline without weakening worker, debt or authority boundaries |
 | [Authenticated TCP prototype](IP_TRANSPORT.md) | Understand the explicit IP grants, durable counters, stream-byte budgets and source controls |
 | [Lantern's SAGE integration](SAGE_INTEGRATION.md) | Understand the separate owning repository for protected capture, replay and private inbox admission |
 | [Extraction and provenance](EXTRACTION.md) | Trace code to its original snapshot, inspect frozen flow pins or understand package bridges |

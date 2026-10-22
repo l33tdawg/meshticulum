@@ -207,7 +207,8 @@ New code should use `meshticulum.*` imports. Small compatibility bridges preserv
 See [CONTRIBUTING.md](CONTRIBUTING.md) for source, documentation and tester
 paths. Contributors who want an offline engineering task can start with
 [issue #44](https://github.com/l33tdawg/meshticulum/issues/44), the
-third-party LoRa backend/profile conformance contract.
+third-party LoRa backend/profile conformance contract and its
+[offline contract guide](docs/THIRD_PARTY_BACKEND_CONTRACT.md).
 
 Before changing transport behavior, read [AGENTS.md](AGENTS.md), run the standalone suite and verify the frozen-flow pins. Changes to the accepted flow and port require a reviewed revision. Keep original deadlines, replay decisions and attempt debt intact across cancellation and restart, and preserve failed or unavailable measurements alongside successful runs.
 
