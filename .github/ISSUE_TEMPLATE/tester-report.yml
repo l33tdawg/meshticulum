@@ -1,0 +1,116 @@
+name: Tester report
+description: Report an offline SDK, firmware build, installation, rollback or radio test
+title: "[Tester] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing Meshticulum. Read the [Testers' Guide](https://github.com/l33tdawg/meshticulum/blob/main/docs/TESTER_GUIDE.md) or [branded PDF](https://github.com/l33tdawg/meshticulum/blob/main/website/assets/meshticulum-testers-guide.pdf) before starting.
+
+        Report the smallest test that shows what happened, including failures. Do not include private keys, shared secrets, credentials, full device serial numbers or precise locations.
+  - type: dropdown
+    id: test-level
+    attributes:
+      label: Test level
+      description: Choose the furthest stage reached.
+      options:
+        - Desktop SDK / offline signed-resource example
+        - Firmware build only
+        - First installation on a spare board
+        - App-only update and rollback
+        - Radio transfer
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Commit or release
+      description: Paste the commit from `git rev-parse HEAD`, or the release tag and package version.
+      placeholder: b68441ac6674ee695c457d35595b49fa2c03d69c / 1.0.0a1
+    validations:
+      required: true
+  - type: input
+    id: host
+    attributes:
+      label: Host environment
+      description: Operating system, CPU architecture and Python version.
+      placeholder: macOS 15 arm64, Python 3.12.14
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware and firmware identity
+      description: Board or HAT, recipe target and compact firmware identity. Write "None" for desktop-only tests.
+      placeholder: Heltec LoRa 32 V4 / mtbench_heltec_v4 / identity.json SHA-256
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: Commands and configuration
+      description: Paste the exact commands and relevant profile or admission values. Mask secrets and serial numbers.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Include exit status, the first relevant error and whether the stage completed.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Hashes and evidence
+      description: Include source, build, firmware, input and output hashes where applicable. Attach logs separately if large.
+      placeholder: |
+        SOURCE.json SHA-256:
+        BUILD.json SHA-256:
+        firmware.bin SHA-256:
+        input/output SHA-256:
+    validations:
+      required: true
+  - type: textarea
+    id: radio
+    attributes:
+      label: Radio details
+      description: For radio tests only: profile, frequency, power, topology, input size/hash, timing boundaries and whether each endpoint closed.
+      placeholder: |
+        Profile:
+        Frequency / power:
+        Topology:
+        Sender startup -> authenticated receipt:
+        Retransmissions / receive drops:
+        Publisher / whole-file verification:
+        Endpoint cleanup:
+  - type: dropdown
+    id: cleanup
+    attributes:
+      label: Disarm and cleanup
+      options:
+        - Not applicable
+        - Passed
+        - Failed
+        - Unknown
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety and privacy
+      options:
+        - label: I removed private keys, shared secrets, credentials, full device serial numbers and precise locations from this report and its attachments.
+          required: true
+        - label: For radio tests, I used a locally authorized frequency and power, an appropriate antenna, and my own regulatory compliance decision.
+          required: true
+        - label: I understand this is experimental evidence and is not a production, field-range or wire-compatibility claim.
+          required: true
