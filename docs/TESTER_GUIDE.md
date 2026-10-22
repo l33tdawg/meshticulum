@@ -10,8 +10,6 @@ SDK and firmware alpha. The commands below use a macOS or Linux shell.
 
 You need Git, Python 3.11 or later, and internet access to install dependencies.
 This example works without a radio, Lantern or SAGE.
-If you are reviewing an unmerged PR, check out its branch or commit after cloning
-so the guide and example come from the same revision.
 
 ```sh
 git clone https://github.com/l33tdawg/meshticulum.git
@@ -62,12 +60,12 @@ repository root, with a fresh `build/firmware-work` path:
 python3.12 -m venv build/firmware-cli
 build/firmware-cli/bin/python -m pip install \
   -r firmware/meshticulum-bench/requirements-firmware.txt
-python3 firmware/meshticulum-bench/prepare_firmware.py fetch \
+build/firmware-cli/bin/python firmware/meshticulum-bench/prepare_firmware.py fetch \
   --archive-dir build/firmware-archives
-python3 firmware/meshticulum-bench/prepare_firmware.py prepare \
+build/firmware-cli/bin/python firmware/meshticulum-bench/prepare_firmware.py prepare \
   --archive-dir build/firmware-archives \
   --output-dir build/firmware-work
-python3 firmware/meshticulum-bench/prepare_firmware.py build \
+build/firmware-cli/bin/python firmware/meshticulum-bench/prepare_firmware.py build \
   --output-dir build/firmware-work \
   --pio-python build/firmware-cli/bin/python \
   --target mtbench_heltec_v4
