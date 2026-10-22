@@ -1,6 +1,6 @@
 # Post-quantum status
 
-Meshticulum's default radio, TCP and private-envelope protocols use classical cryptography. A hybrid post-quantum prototype is available for evaluation in [draft PR #5](https://github.com/l33tdawg/meshticulum/pull/5). It has not been merged or deployed to the devices.
+Meshticulum's default radio, TCP and private-envelope protocols use classical cryptography. An opt-in, test-only hybrid post-quantum source prototype is available in this repository for evaluation. It is not integrated into or deployed with those protocols.
 
 ## What the prototype adds
 
@@ -18,7 +18,7 @@ The aim is to protect future sessions against attackers who record encrypted tra
 
 ## What we have checked
 
-The real-backend source prototype passes 49 focused checks, including all three published X-Wing draft-11 vectors. Its local demo encrypts, decrypts and verifies 512 actual bytes. The exact prototype commit is [`fd0fb313`](https://github.com/l33tdawg/meshticulum/commit/fd0fb31399a256d5a32a0111b5f4fd15001784c9).
+The real-backend source prototype passes 49 focused checks, including all three published X-Wing draft-11 vectors. Its local demo encrypts, decrypts and verifies 512 actual bytes.
 
 These are source results. Independent cryptographic review, persistent replay protection, protected key storage and rotation, native transport integration, and device performance remain open. Python object deletion does not prove secure key erasure or deployed forward secrecy.
 
@@ -30,8 +30,8 @@ The design performs the large asymmetric exchange when establishing a session an
 
 ## Try it or share its status
 
-Use the [pinned prototype instructions and demo](https://github.com/l33tdawg/meshticulum/blob/fd0fb31399a256d5a32a0111b5f4fd15001784c9/docs/POST_QUANTUM_PROTOTYPE.md) in a separate development environment. Installing the current default branch does not include the provider.
+Use the [prototype instructions and demo](POST_QUANTUM_PROTOTYPE.md) in a separate development environment. A default installation keeps the classical behavior; enabling the optional extra does not integrate the provider into the radio or IP transports.
 
 You can describe the project this way:
 
-> Meshticulum currently uses classical cryptography. We have a tested experimental hybrid post-quantum prototype combining X25519 + ML-KEM-768 and Ed25519 + ML-DSA-65. It is under review and has not yet been integrated into the radio stack.
+> Meshticulum currently uses classical cryptography. We have an opt-in, tested experimental hybrid post-quantum source prototype combining X25519 + ML-KEM-768 and Ed25519 + ML-DSA-65. It has not been integrated into or deployed with the radio stack.
