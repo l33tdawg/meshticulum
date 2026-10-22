@@ -1,5 +1,30 @@
 # Release notes
 
+## Post-alpha cross-room A/B test — 2026-10-22
+
+The published installed wheel from source
+`673eb60d24dc60f67371e24bc5c9caeec3a68508` completed one GFSK250 A/B transfer
+with Heltec V4 endpoints approximately **20 metres apart in separate rooms**.
+Unit B sent a five-part **100,000-byte signed file to Unit A at 1.776 kB/s
+including sender startup**. All five authenticated peer receipts and the exact
+whole-file SHA-256 passed. Receiver DATA RSSI was **-57.5 to -56.5 dBm**, both
+MCU receive-drop deltas were zero, every endpoint process exited zero and no
+forced cleanup occurred.
+
+Unit B was first updated app-only from `mtb1-9816f92488` to the current
+`mtb1-020e287255` image after its exact 393,216-byte application range was
+pinned for rollback. The image was reproduced from source
+`c8957e56b017ecd42486acc2c8a46c24cb238d2d`; the SDK wheel remains from
+source `673eb60`. One earlier A/B scope failed before DATA because
+endpoint-specific boot limits produced different authenticated wire profiles;
+that failure remains retained and is not counted as a pass.
+
+Distance is operator-reported. This single cross-room sample does not establish
+field range, sustained-capacity distribution, LoRa-profile behavior,
+MeshCore/Reticulum interoperability or production readiness. See the
+[sanitized result](benchmarks/2026-10-22-ab-cross-room/results.json) and
+[issue #43 report](https://github.com/l33tdawg/meshticulum/issues/43#issuecomment-6333261599).
+
 ## 1.0.0-alpha (`1.0.0a1`) — 2026-10-17
 
 [Download the GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha). It is published from source `673eb60d24dc60f67371e24bc5c9caeec3a68508` and contains the tested SDK wheel, normalized source distribution, firmware source-build guide, project notices, public proof records, release manifest and checksums. No prebuilt firmware or third-party dependency wheels are included.

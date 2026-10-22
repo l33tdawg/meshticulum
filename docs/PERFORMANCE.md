@@ -1,8 +1,16 @@
 # Performance and measurement
 
-The latest public SDK radio samples completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s) including sender startup**, plus a **23,900-byte file at 2.53 kB/s (20.28 kbit/s)**. They used **GFSK at 250 kbit/s**, on a direct HAT-to-MCU link about one metre apart. Both 100 kB intervals include all five sequential parts and coordination gaps. Scope issue through endpoint closure reached **1.86 and 1.76 kB/s (14.85 and 14.05 kbit/s)**. [The 17 October report](RADIO_SDK_MEASUREMENTS.md) gives the exact source, elapsed boundaries, confirmations and sanitized record.
+The 17 October public SDK radio samples completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s) including sender startup**, plus a **23,900-byte file at 2.53 kB/s (20.28 kbit/s)**. They used **GFSK at 250 kbit/s**, on a direct HAT-to-MCU link about one metre apart. Both 100 kB intervals include all five sequential parts and coordination gaps. Scope issue through endpoint closure reached **1.86 and 1.76 kB/s (14.85 and 14.05 kbit/s)**. [The 17 October report](RADIO_SDK_MEASUREMENTS.md) gives the exact source, elapsed boundaries, confirmations and sanitized record.
 
 On 18 October, source `1f85608` also completed fresh **250 kB, 500 kB and 1 MB signed bundles** on that path. Final sender-startup-inclusive rates were **2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 2.218 kB/s (16.500, 17.521 and 17.742 kbit/s)**. Every receiver independently verified every part and the exact whole file.
+
+On 22 October, a separate installed-wheel A/B run crossed approximately
+**20 metres between rooms** and delivered the five-part **100,000-byte file at
+1.776 kB/s including sender startup**. Receiver RSSI was **-57.5 to -56.5 dBm**
+and there were zero receive drops on either MCU. This is one operator-reported
+cross-room GFSK250 sample, not a field-range or sustained-capacity result.
+[The A/B record](RADIO_SDK_MEASUREMENTS.md#ab-cross-room-transfer-22-october-2026)
+retains the timing and claim boundaries.
 
 All three final files clear the owner's **2.0 kB/s (16 kbit/s)** whole-file
 floor. The original 1 MB run reached 1.750 kB/s while its production LLM engine

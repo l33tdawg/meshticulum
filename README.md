@@ -119,6 +119,16 @@ plain-HTTP gateway: `google.com` redirects to HTTPS and its search page is about
 
 A separate [clean installed-wheel check](docs/RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) completed another fresh **100 kB file at 1.74 kB/s (13.92 kbit/s) including startup and a five-second pause between verified parts**. Normal isolated virtual environments matched all 67 runtime files to the published wheel, and all ten endpoint processes closed successfully. Wider recovery, hardware and sustained-capacity qualification remain open.
 
+On 22 October, a fresh installed-wheel A/B run crossed approximately **20 metres
+between two rooms**: a Heltec V4 sender delivered the same five-part
+100,000-byte signed file to a Heltec V4 receiver at **1.776 kB/s including
+sender startup**, with all five authenticated receipts and the complete file
+verified. Receiver DATA RSSI was **-57.5 to -56.5 dBm** and both MCU receive-drop
+deltas were zero. This is one operator-reported cross-room sample, not a field
+range or sustained-capacity result. [The A/B record](benchmarks/2026-10-22-ab-cross-room/README.md)
+retains the failed authentication attempt, exact evidence hashes and the
+B-firmware rollback boundary.
+
 Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/s median (9.6 kbit/s)**, and two later 16,356-byte public responses reached **1.037 and 1.071 kB/s** through reliable-flow ACK with zero DATA retries or duplicates. [Performance](docs/PERFORMANCE.md) retains those historical conditions and scoped upstream comparisons. The immediate target is sustained useful encrypted delivery above **1 kB/s (8 kbit/s) including startup**, with reliable completion and deployable code. **4 to 5 kB/s (32 to 40 kbit/s) is an optional later stretch**, not an alpha release gate. The new GFSK samples and earlier LoRa results retain their own source pins and measurement boundaries.
 
 [Performance](docs/PERFORMANCE.md) explains the available evidence, units, measurement boundaries and the scope of comparisons with published upstream figures.

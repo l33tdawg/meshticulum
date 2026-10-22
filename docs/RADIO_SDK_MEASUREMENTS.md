@@ -1,4 +1,4 @@
-# Public SDK radio measurements: 17–18 October 2026
+# Public SDK radio measurements: 17–22 October 2026
 
 The public SDK completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s)** of useful application throughput, from each file's first sender startup through its final authenticated receipt. Both five-part files and their publishers were independently verified. A separate **23,900-byte file reached 2.53 kB/s (20.28 kbit/s)** at the same timing boundary.
 
@@ -181,6 +181,58 @@ All five authenticated receiver confirmations were accepted. The file had one DA
 An earlier installed-wheel trial stopped after **four verified parts / 95,600 bytes** when a harness condition required no change in the raw receive-discard counter; that counter rose from two to three. All eight started children exited successfully, but the fifth part never started and no whole-file completion or rate is claimed. The harness now records discard changes as diagnostics while still requiring authenticated receipts, publisher/hash checks, settled journals and the original window. The successful run used a fresh file and window; the earlier attempt debt remains retained.
 
 [The sanitized installed-SDK record](../provenance/PUBLIC_INSTALLED_SDK_PROOF.json) contains the package and dependency hashes, timing arithmetic, continuation conditions and earlier incomplete attempt. It is separate from the two uninterrupted files in the headline.
+
+## A/B cross-room transfer: 22 October 2026
+
+One fresh Level 4 run used **Unit B as sender and Unit A as receiver**, both
+Heltec LoRa 32 V4 boards running firmware `mtb1-020e287255`, approximately
+**20 metres apart in separate rooms**. The distance is operator-reported and was
+not independently measured. Both endpoints used the published wheel
+`dce5127fed0956e5b3d2cd9ce7dd859a2a4f6af8cdd491bfaf9ba5723e495c1c`
+from source `673eb60d24dc60f67371e24bc5c9caeec3a68508`.
+
+The transfer delivered **100,000 decoded bytes** in five signed parts with
+whole-file SHA-256
+`65d19fca4bd31ce9db664e4d0457b1d677132d4c4463d5aeb5c40352170938f1`.
+All five authenticated peer receipts and the final whole-file check passed.
+
+| Boundary | Result |
+| --- | ---: |
+| First sender startup → final authenticated receipt | 56.311923 s; **1,775.822857 B/s (1.776 kB/s)** |
+| First DATA-worker call → final authenticated receipt | 55.554563 s; **1,800.032159 B/s** |
+| Scope issue → both endpoints closed | 71.051173 s |
+| Receiver DATA RSSI | **-57.5 to -56.5 dBm**; median -57.0 dBm across 539 frames |
+| MCU receive-drop delta | A **0**; B **0** |
+
+All ten endpoint processes exited zero with no forced cleanup. Attempt journals
+were complete and unfenced: A used 162 attempts / 646,866 microseconds; B used
+544 attempts / 5,659,198 microseconds. Tracked service lifetimes and endpoint
+boot identities were unchanged.
+
+Unit B was first updated app-only from `mtb1-9816f92488` to the current
+`mtb1-020e287255` image
+`eca7772095cc9c9e63c9f6e6d9fe48ba3c376cd6bfef557ffcc441621a846fa2`.
+That firmware image was reproduced from source
+`c8957e56b017ecd42486acc2c8a46c24cb238d2d`, separate from the installed
+wheel source `673eb60`.
+The exact prior 393,216-byte application range was retained for rollback with
+SHA-256
+`b143884e63e7ad3694a72de8beff241c8b9918618bc91bfbab8a04caf2d71059`.
+
+An earlier A/B scope failed before any DATA transfer because endpoint-specific
+boot ceilings produced different cryptographic wire profiles. That consumed
+scope is retained and is not a pass. The successful run used one identical wire
+profile while checking each endpoint's independent boot baseline.
+
+The harness also allowed the exact GFSK250 USB serial sender rather than only
+the existing Linux HAT sender. The published wheel remained exact; this narrow
+example adaptation is not part of the wheel and does not change protocol code.
+
+[The sanitized A/B result](../benchmarks/2026-10-22-ab-cross-room/results.json)
+retains the verified hashes, timing, attempts, RSSI samples and firmware
+rollback boundary. This is one cross-room GFSK250 sample. It does not establish
+field range, sustained capacity, LoRa-profile behavior, another installation or
+a completion distribution.
 
 ## What changed, and what remains
 
