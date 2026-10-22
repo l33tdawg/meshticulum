@@ -26,6 +26,7 @@ Start with [installation and the standalone test command](../README.md#install-a
 
 | Guide | Use it when you need to… |
 | --- | --- |
+| [Tester guide](TESTER_GUIDE.md) | Try the desktop example, build firmware, choose a flashing path and report a result |
 | [Transport source update](TRANSPORT_SOURCE_UPDATE.md) | Review the GFSK, byte-bundle and opaque-relay source additions and their qualification limits |
 | [Signed radio file example](../examples/BUNDLE.md) | Compose the existing MB1 service for five-part 100 kB transfer under independently approved grants |
 | [App-only flashing and rollback](FLASHING.md) | Check a compatible current layout and rollback before installing an application on your own board |
