@@ -83,7 +83,7 @@ body:
     id: radio
     attributes:
       label: Radio details
-      description: For radio tests only: profile, frequency, power, topology, input size/hash, timing boundaries and whether each endpoint closed.
+      description: "For radio tests only: profile, frequency, power, topology, input size/hash, timing boundaries and whether each endpoint closed."
       placeholder: |
         Profile:
         Frequency / power:
