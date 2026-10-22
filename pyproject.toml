@@ -16,6 +16,7 @@ dependencies = ["cryptography>=46.0.3,<51", "PyNaCl>=1.6.2,<2"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10"]
+pq-prototype = ["cryptography==50.0.2"]
 
 [project.urls]
 Repository = "https://github.com/l33tdawg/meshticulum"

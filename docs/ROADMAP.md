@@ -8,6 +8,8 @@ The [public repository](https://github.com/l33tdawg/meshticulum), [project websi
 
 The measured SDK source, `da247a1`, has [passing source CI on Python 3.11, 3.12 and 3.13](https://github.com/l33tdawg/meshticulum/actions/runs/39028024473). The published documentation head passed the same source-control matrix with unchanged runtime and firmware. The hardware samples below supply separate physical evidence. Future release candidates need their own exact source checks and artifacts.
 
+The optional [post-quantum source prototype](POST_QUANTUM_PROTOTYPE.md) adds hybrid key establishment and dual signatures without changing current radio, TCP or envelope formats. Adoption requires independent protocol review, persistent replay and key lifecycle integration, and actual device measurements of setup cost, completion and goodput. Its source controls and calculated fragment counts do not qualify a post-quantum network.
+
 On **17 October 2026**, the public SDK completed **two fresh 100,000-byte files in five signed parts each**, with independent publisher and whole-file verification. A separate fresh **23,900-byte file** completed at the same source, `da247a1bb74601973f0bb72f51c268a412714719`. All three used GFSK at 250 kbit/s, from an SX1262 HAT to a Heltec V4 MCU about one metre apart.
 
 | Whole-file boundary | 23,900 bytes: useful B/s | 100 kB run 1: useful B/s | 100 kB run 2: useful B/s |

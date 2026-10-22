@@ -4,6 +4,9 @@ recursive-include provenance *.json
 recursive-include tools *.py
 recursive-include firmware *.py *.cpp *.hpp *.c *.dts *.json *.txt *.patch *.md LICENSE.*
 recursive-include tests *.py *.h *.hpp *.cpp *.c *.json
+include tests/vectors/XWING_NOTICE.txt
+include tests/vectors/XWING_LICENSE.txt
+recursive-include examples *.py
 global-exclude __pycache__ *.py[cod] .DS_Store
 recursive-include benchmarks *.json
 include .github/workflows/tests.yml
