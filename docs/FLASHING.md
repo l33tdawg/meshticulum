@@ -152,13 +152,19 @@ timeout -k 5s 20s "$FLASH_PYTHON" -m esptool \
   --chip esp32s3 --port "$PORT" --no-stub --after hard_reset run
 ```
 
-For the Heltec GFSK250 receiver, obtain its application serial path again and
-run the public read-only inspection command:
+For the Heltec GFSK250 receiver, obtain its application serial path again.
+First use the [offline firmware-identity step](../examples/README.md#prepare-the-firmware-identity-offline)
+to create a compact identity from the full `SOURCE.json` and its independently
+checked SHA-256. Hardware commands accept at most 64 KiB of metadata; a full
+build manifest can exceed that limit. Keep the full manifest and build evidence.
+Set `FIRMWARE_IDENTITY` to the compact file and `FIRMWARE_IDENTITY_SHA256` to
+that compact file's checked SHA-256, then run the public read-only inspection:
 
 ```sh
 sudo .venv/bin/python examples/radio_file.py inspect \
   --device "$BY_ID" --usb-serial "$USB_SERIAL" \
-  --firmware-source SOURCE.json --firmware-source-sha256 "$SOURCE_SHA256"
+  --firmware-source "$FIRMWARE_IDENTITY" \
+  --firmware-source-sha256 "$FIRMWARE_IDENTITY_SHA256"
 ```
 
 It checks exact HELLO board/version, current-boot GFSK250 capabilities and the

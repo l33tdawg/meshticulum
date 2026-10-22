@@ -106,8 +106,8 @@ Do not mix its commands with the other installation path.
 For a Heltec receiver, follow the [firmware identity preparation](../examples/README.md#prepare-the-firmware-identity-offline)
 before [post-flash inspection](FLASHING.md#write-verify-boot-and-inspect).
 Give preparation the full `build/firmware-work/SOURCE.json` and its SHA-256.
-Use the resulting compact `identity.json` and its own hash in `inspect`, in
-place of the full-manifest arguments shown in the flashing guide; hardware
+Use the resulting compact `identity.json` and its own hash in `inspect`, as
+shown in the flashing guide; hardware
 commands accept at most 64 KiB of metadata. Keep the full build manifest too.
 Inspection runs on Linux with the board's stable `/dev/serial/by-id` path.
 Expect the exact board/version, a fresh boot, and disarmed, non-transmitting,
@@ -145,7 +145,8 @@ For radio: profile, input size/hash, timing boundaries,
 receipt/content checks and whether both endpoints closed:
 ```
 
-Remove private keys, shared secrets, credentials and personal data from logs.
+Remove private keys, shared secrets, credentials and personal data from logs;
+mask full device serial numbers and precise locations too.
 Keep the original evidence locally. Bug-fix PRs and documentation improvements
 are welcome; include how you reproduced and checked the change.
 
