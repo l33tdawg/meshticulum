@@ -49,6 +49,16 @@ keeps the receipts and limits.
 
 A separate [clean installed-wheel check](RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) completed another fresh 100 kB file at **1.74 kB/s (13.92 kbit/s) including startup and a five-second pause between verified parts**, or **1.61 kB/s (12.91 kbit/s) through endpoint closure**. Both normal virtual environments matched all 67 runtime files to release source `673eb60`; all five confirmations and all ten endpoint exits passed under the unchanged original window. The record retains the earlier incomplete 95,600-byte installed trial. This finite check supports the published source-build alpha and does not establish in-flight crash recovery.
 
+On **22 October**, the same installed wheel completed one **A/B cross-room
+GFSK250** run with Heltec V4 endpoints approximately **20 metres apart**. The
+five-part 100,000-byte file completed at **1.776 kB/s including sender startup**,
+with five authenticated receipts, exact whole-file verification and RSSI from
+**-57.5 to -56.5 dBm**. Both MCUs recorded zero receive drops and all ten child
+processes exited zero. This is a single operator-reported cross-room sample; it
+does not establish a completion distribution, sustained capacity or field range.
+[The A/B measurement](RADIO_SDK_MEASUREMENTS.md#ab-cross-room-transfer-22-october-2026)
+retains the prior failed authentication attempt and firmware rollback boundary.
+
 Earlier native milestones demonstrated [mixed LoRa/IP delivery, loss, verified-piece retention, fresh LoRa resume and return to a locally measured faster IP path](IP_TRANSPORT.md#recorded-native-public-resume-and-ip-return). Their original scope and failed attempts remain part of the record. Current source tests and later firmware builds do not requalify those physical results.
 
 ## Published alpha and wider programme

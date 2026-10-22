@@ -30,6 +30,19 @@ The [installed-SDK check](../provenance/PUBLIC_INSTALLED_SDK_PROOF.json) used no
 
 This is a direct GFSK250 check at about one metre using the retained MCU020 Heltec installation. It does not transfer physical acceptance to Xiao, LoRa modulation, other Linux HAT wiring or a private Lantern integration. The [measurement report](RADIO_SDK_MEASUREMENTS.md#clean-installation-and-verified-piece-continuation) distinguishes the successful run from the earlier incomplete installed trial and states the timing boundaries.
 
+A later A/B check used two ROCK 5B+ hosts with USB-attached Heltec V4 radios
+approximately 20 metres apart in separate rooms. Unit B was updated app-only
+from older firmware `mtb1-9816f92488` to the current `mtb1-020e287255` image
+reproduced from source `c8957e56b017ecd42486acc2c8a46c24cb238d2d`
+after pinning the exact prior application range for rollback. The fresh 100,000-byte
+signed file completed at **1.776 kB/s including sender startup**, with five
+authenticated receipts, exact whole-file verification, **-57.5 to -56.5 dBm**
+receiver DATA RSSI and zero MCU receive-drop deltas. The distance was
+operator-reported, and this one cross-room sample does not establish field
+range, sustained capacity or acceptance of another board/antenna build.
+[The A/B record](RADIO_SDK_MEASUREMENTS.md#ab-cross-room-transfer-22-october-2026)
+retains the evidence and claim boundaries.
+
 ## Where to run Lantern jobs
 
 For an application on your own hardware, the [public file example](../examples/README.md) composes the existing finite workers, crypto, journals and verified chunks without Lantern or SAGE imports. Its [app-only flashing guide](FLASHING.md) uses the pinned esptool interface and a separately checked current rollback. These examples do not provision a fleet or supply native product authority.

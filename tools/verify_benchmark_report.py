@@ -324,6 +324,53 @@ def verify_http_gateway(record):
         require(re.fullmatch('[0-9a-f]{64}',value) is not None,'invalid evidence hash '+field)
 
 
+def verify_level4_ab(record):
+    require(record['schema']=='meshticulum.level4-a-b-verification.v1','unsupported A/B report')
+    require(record['complete'] is True and record['parts_verified']==5
+            and record['authenticated_receipts']==5,'incomplete A/B result')
+    require(record['source_commit']=='673eb60d24dc60f67371e24bc5c9caeec3a68508',
+            'wrong A/B SDK source')
+    require(record['useful_bytes']==100000
+            and record['useful_sha256']=='65d19fca4bd31ce9db664e4d0457b1d677132d4c4463d5aeb5c40352170938f1',
+            'wrong A/B file identity')
+    for field in ('prepared_sha256','staging_sha256','scope_sha256','result_sha256',
+                  'b_flash_receipt_sha256','b_rollback_app_range_sha256'):
+        require(re.fullmatch('[0-9a-f]{64}',record[field]) is not None,'invalid '+field)
+    require(record['whole_file_verified'] is True and record['both_endpoints_closed'] is True
+            and record['within_original_scope'] is True and record['forced_cleanup'] is False,
+            'A/B completion or cleanup claim missing')
+    require(record['sender_startup_to_final_receipt_us']==56311923,
+            'A/B sender receipt interval changed')
+    require(close(record['sender_startup_goodput_Bps'],
+                  record['useful_bytes']*1000000/record['sender_startup_to_final_receipt_us']),
+            'A/B goodput arithmetic mismatch')
+    require(record['scope_issue_to_both_endpoints_closed_us']>=record['sender_startup_to_final_receipt_us'],
+            'A/B closure precedes sender receipt')
+    require(set(record['paid_attempts'])=={'unit-a','unit-b'},'wrong A/B debt endpoints')
+    for unit,row in record['paid_attempts'].items():
+        require(row['journal_report_complete'] is True and row['unreported_parts']==[]
+                and row['fenced'] is False and row['recovered_unknown']==0,
+                unit+' A/B debt incomplete')
+        require(row['known_attempts']<=1280
+                and row['known_reserved_estimated_airtime_us']<=60000000,
+                unit+' A/B debt exceeds shared profile')
+    require(record['paid_attempts']['unit-a']['known_attempts']==162
+            and record['paid_attempts']['unit-b']['known_attempts']==544,
+            'wrong A/B attempt totals')
+    require(record['receive_drop_delta']=={'unit-a':0,'unit-b':0},
+            'wrong A/B receive-drop result')
+    rssi=record['receiver_data_rssi']
+    require(rssi['samples']==539 and rssi['min_dbm']==-57.5
+            and rssi['median_dbm']==-57.0 and rssi['max_dbm']==-56.5,
+            'wrong A/B RSSI summary')
+    require(record['b_prior_firmware_identity']=='mtb1-9816f92488',
+            'wrong prior A/B firmware')
+    require('approximately 20 m' in record['claim']
+            and 'field range' not in record['claim'].lower()
+            and 'sustained' not in record['claim'].lower(),
+            'A/B scope inflated')
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('report',nargs='?',type=Path)
@@ -331,7 +378,8 @@ def main():
     root=Path(__file__).resolve().parents[1]
     paths=[args.report] if args.report else [root/'benchmarks/2026-10-09-radio/radio-results.json',
                                            root/'benchmarks/2026-10-17-public-sdk/results.json',
-                                           root/'provenance/PUBLIC_INSTALLED_SDK_PROOF.json']
+                                           root/'provenance/PUBLIC_INSTALLED_SDK_PROOF.json',
+                                           root/'benchmarks/2026-10-22-ab-cross-room/results.json']
     for path in paths:
         record=json.loads(path.read_text())
         if record['schema']=='meshticulum.published-sdk-file-samples.v1':
@@ -343,6 +391,9 @@ def main():
         elif record['schema']=='meshticulum.http-radio-gateway-browser-runs.v1':
             verify_http_gateway(record)
             print('Verified three HTTP browser runs inside the 30-second timeout, matching body hashes and both radio directions. Transparent-IP, field-range, energy and EIRP claims remain absent.')
+        elif record['schema']=='meshticulum.level4-a-b-verification.v1':
+            verify_level4_ab(record)
+            print('Verified the five-part A/B whole-file hash, authenticated receipts, timing arithmetic, attempt debt, zero receive-drop delta and bounded cross-room claim.')
         else:
             verify(record)
             print('Verified 30 unique RF samples, separate directional distributions and 1 retained setup failure. Missing metrics remain null.')
