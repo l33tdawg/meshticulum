@@ -29,6 +29,7 @@ from meshticulum.bench.objects import VerifiedChunks
 from meshticulum.bench.serial_port import ExclusiveSerial, usb_identity
 from meshticulum.bench.serial_protocol import Frame, Message, Gfsk250Status, RadioProfile
 from meshticulum.bench.serial_worker import Gfsk250SerialWorker, SerialWorker, journal_binding
+from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.state import SessionStore
 from meshticulum.bench.wire import SessionCipher, require
 from meshticulum.scheduler.budget import BudgetPolicy, Ledger
@@ -144,8 +145,10 @@ def firmware_source_identity(source):
     require(type(source) is dict
             and source.get('schema') == 'meshticulum.raw-firmware-prepared.v1'
             and type(source.get('application')) is dict
-            and set(source['application']) == {
-                'main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp'}
+            and set(source['application']) in (
+                {'main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp'},
+                {'main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
+                 'burst_adapter.hpp', 'experimental/tx_burst.hpp'})
             and all(type(value) is str and re.fullmatch('[0-9a-f]{64}', value)
                     for value in source['application'].values())
             and source.get('identity') == 'mtb1-' + sha(json.dumps(
@@ -429,7 +432,11 @@ def run_object(args, raw, admission, version, payload, window, factory):
         profile = authority.profile
         profile_cls, hat_cls, serial_cls, _ = modem_classes(plan_modem(plan))
         require(type(profile) is profile_cls, 'example_requires_matching_profile')
-        worker = serial_cls(transport) if args.interface == 'usb' else None
+        policy = authority.data_burst_policy
+        require(not policy or not authority.sends or args.interface == 'usb',
+                'data_burst_sender_requires_usb')
+        worker = ((BurstSerialWorker(transport, policy=policy) if policy and authority.sends
+                   else serial_cls(transport)) if args.interface == 'usb' else None)
         if worker is not None:
             identity = worker.discover(expected_board_id=1, expected_version=version)
             window.pin_mcu(identity)

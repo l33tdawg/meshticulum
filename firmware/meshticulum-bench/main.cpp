@@ -10,6 +10,7 @@
 #include "protocol.hpp"
 #include "gfsk_profile.hpp"
 #include "gfsk250_profile.hpp"
+#include "experimental/tx_burst.hpp"
 
 extern RADIO_CLASS radio;
 using namespace mtbench;
@@ -35,15 +36,24 @@ static void waitForRadioOrTick() {
     if(radioServiceTask!=nullptr) ulTaskNotifyTake(pdTRUE,1);
     else delay(1);
 }
+static mtbench::experimental::BootState burstBoot;
 static uint8_t boot[16]={}, profile[47]={}, previousPacket[255]={}, previousDigest[32]={};
-static uint64_t previousRequest=0, lastMutation=0, deadlineUs=0, startedUs=0, reservedUs=0, capUs=0;
-static uint32_t attempted=0, capCount=0, droppedRx=0;
+static uint64_t previousRequest=0, deadlineUs=0, startedUs=0, capUs=0;
+static uint64_t& lastMutation=burstBoot.request_highwater;
+static uint64_t& reservedUs=burstBoot.counters.reserved_airtime_us;
+static uint32_t& attempted=burstBoot.counters.attempts;
+static uint32_t capCount=0, droppedRx=0;
 static uint16_t previousSize=0;
 static uint64_t previousEstimate=0;
 static bool gfskMode=false;
 static bool gfsk250Mode=false;
-static bool ready=false, armed=false, transmitting=false, fenced=false, resultPending=false;
+static bool ready=false, armed=false, transmitting=false, resultPending=false;
+static bool& fenced=burstBoot.fenced;
 static Frame previousResult;
+static uint64_t armMutationRequest=0, burstActiveRequest=0;
+static bool burstOutcome(uint8_t outcome,uint64_t elapsed,uint32_t flags,int16_t error);
+static void burstStop();
+static void burstReceiveStarted();
 
 static Frame response(uint8_t type,uint64_t request) {
     Frame frame; frame.type=type; frame.request=request; memcpy(frame.boot,boot,16); return frame;
@@ -53,7 +63,11 @@ static int16_t idleRadio() {
     // A disarmed/expired/fenced carrier does not retain the fast oscillator.
     // RadioLib updates both standby() and the RX/TX fallback mode within this
     // checked call; an error remains a containment failure.
-    return radio.setStandbyXOSC(false);
+    const int16_t error=radio.setStandbyXOSC(false);
+    if(error!=RADIOLIB_ERR_NONE && burstBoot.queue_owned) {
+        burstBoot.containment_required=true;serialContainmentPending=true;fenced=true;
+    }
+    return error;
 }
 static int16_t readIrqFlags(uint32_t& flags) {
     // RadioLib getIrqFlags() discards the SPI return code. A failed read must
@@ -75,6 +89,7 @@ static void reportOutcome(uint8_t outcome,uint64_t elapsed,uint32_t flags,int16_
     resultPending=!output.offer(previousResult);
 }
 static void contain(uint32_t flags,int16_t error) {
+    if(burstOutcome(UNKNOWN,nowUs()-startedUs,flags,error)) return;
     // Standby is an attempted containment action, not proof of RF completion.
     idleRadio(); board.onAfterTransmit(); transmitting=false; armed=false; fenced=true;
     reportOutcome(UNKNOWN,nowUs()-startedUs,flags,error);
@@ -83,6 +98,7 @@ static void startReceive() {
     if(!armed || fenced) return;
     if(nowUs()>=deadlineUs) { armed=false; if(idleRadio()!=RADIOLIB_ERR_NONE) fenced=true; return; }
     if(radio.startReceive()!=RADIOLIB_ERR_NONE) { armed=false; fenced=true; idleRadio(); }
+    else burstReceiveStarted();
 }
 static bool drainCompletedReceive(bool rearm,bool alreadyStandby=false) {
     // RX continuous shares the FIFO with TX. Stop writes before reading the
@@ -149,6 +165,8 @@ static bool configureGfsk(const uint8_t* body,size_t size,bool fast=false) {
     memcpy(profile,body,47);gfskMode=true;gfsk250Mode=fast;return true;
 }
 
+#include "burst_adapter.hpp"
+
 static void command(const Frame& frame) {
     if(!frame.request || output.freeSlots()<2) return; // Host must treat missing reply as unknown.
     if(frame.type==HELLO && frame.size==0) {
@@ -159,6 +177,7 @@ static void command(const Frame& frame) {
         memcpy(reply.body+4,version,sizeof(version)); output.offer(reply); return;
     }
     if(!isCurrentBoot(frame)) { refuse(frame,WRONG_BOOT); return; }
+    if(burstCommand(frame)) return;
     if(frame.type==GFSK250_CAPABILITIES && frame.size==0) {
         // Read-only feature negotiation: no ARM, RF, replay counter or lease.
         Frame reply=response(GFSK250_CAPABILITIES_REPLY,frame.request);reply.size=16;
@@ -187,10 +206,20 @@ static void command(const Frame& frame) {
         if(frame.request<=lastMutation) { refuse(frame,OLD_ATTEMPT); return; }
         lastMutation=frame.request; // A delayed ARM must not silently extend its lease.
     }
+    if(frame.type==DISARM && frame.size==0 && burstQueue) {
+        if(burstQueue->retained() || transmitting || burstQueue->containmentRequired()) burstStop();
+    }
+    if(burstQueue && burstQueue->pending()) { refuse(frame,mtbench::BUSY); return; }
+    if(burstQueue && frame.type==TRANSMIT && nowUs()<burstNextStartUs) { refuse(frame,mtbench::BUSY);return; }
+    if((frame.type==ARM || frame.type==GFSK_ARM || frame.type==GFSK250_ARM) && burstQueue) {
+        if(burstQueue->retained()) { refuse(frame,mtbench::BUSY);return; }
+        burstCloseEmpty();
+    }
     if(transmitting || resultPending) { refuse(frame,mtbench::BUSY); return; }
     if(frame.type==DISARM && frame.size==0) {
         armed=false;
         if(idleRadio()!=RADIOLIB_ERR_NONE) fenced=true;
+        else burstCloseEmpty();
         Frame reply=response(DISARM_REPLY,frame.request); reply.size=1; reply.body[0]=fenced;
         output.offer(reply); return;
     }
@@ -200,6 +229,7 @@ static void command(const Frame& frame) {
         if(!configure(frame.body)) { armed=false; if(idleRadio()!=RADIOLIB_ERR_NONE) fenced=true; refuse(frame,BAD_PROFILE); return; }
         armed=true; startReceive();
         if(!armed) { refuse(frame,FENCED); return; }
+        armMutationRequest=frame.request;
         Frame reply=response(ARM_REPLY,frame.request); reply.size=30; memcpy(reply.body,profile,30);
         output.offer(reply); return;
     }
@@ -207,6 +237,7 @@ static void command(const Frame& frame) {
         if(armed) { refuse(frame,mtbench::BUSY);return; }
         if(!configureGfsk(frame.body,frame.size,frame.type==GFSK250_ARM)) { armed=false;fenced=true;idleRadio();refuse(frame,BAD_PROFILE);return; }
         armed=true;startReceive();if(!armed) { refuse(frame,FENCED);return; }
+        armMutationRequest=frame.request;
         Frame reply=response(gfsk250Mode ? GFSK250_ARM_REPLY : GFSK_ARM_REPLY,frame.request);reply.size=47;memcpy(reply.body,profile,47);output.offer(reply);return;
     }
     if(frame.type!=TRANSMIT || frame.size<1 || frame.size>255) { refuse(frame,BAD_COMMAND); return; }
@@ -232,6 +263,7 @@ static void command(const Frame& frame) {
     }
     previousRequest=frame.request; previousSize=frame.size; memcpy(previousPacket,frame.body,frame.size);
     previousEstimate=estimate; reservedUs+=estimate; attempted++; startedUs=nowUs();
+    burstBoot.paid_floor=burstBoot.counters;
     previousResult=response(TX_RESULT,previousRequest); previousResult.size=55;
     previousResult.body[0]=UNKNOWN; memcpy(previousResult.body+1,previousDigest,32);
     put64(previousResult.body+33,estimate);
@@ -269,6 +301,7 @@ void setup() {
     uint64_t generation=state.getULong64("boot",0);
     if(generation==UINT64_MAX || state.putULong64("boot",generation+1)!=8) { state.end(); return; }
     state.end(); put64(boot+8,generation+1);
+    memcpy(burstBoot.boot,boot,16);
     ready=radio_init();
     if(ready && idleRadio()!=RADIOLIB_ERR_NONE) ready=false;
     if(ready) {
@@ -287,8 +320,11 @@ static void serviceRadio() {
         if(irqError!=RADIOLIB_ERR_NONE) { contain(flags,irqError); return; }
         if((flags & RADIOLIB_SX126X_IRQ_TX_DONE) && !(flags & RADIOLIB_SX126X_IRQ_TIMEOUT)) {
             const int16_t error=radio.finishTransmit(); board.onAfterTransmit();
+            if(burstActiveRequest) burstBoardPrepared=false;
             if(error!=RADIOLIB_ERR_NONE) { contain(flags,error); return; }
-            transmitting=false; reportOutcome(RF_DONE,now-startedUs,flags,0); startReceive();
+            transmitting=false;
+            if(!burstOutcome(RF_DONE,now-startedUs,flags,0)) reportOutcome(RF_DONE,now-startedUs,flags,0);
+            startReceive();
         } else if((flags & RADIOLIB_SX126X_IRQ_TIMEOUT) || now-startedUs>previousEstimate+1000000) {
             contain(flags,-1);
         }
@@ -303,6 +339,12 @@ static void serviceRadio() {
             armed=false; fenced=true; idleRadio(); return;
         }
         if(flags & RADIOLIB_SX126X_IRQ_RX_DONE) {
+            if(burstQueue && output.freeSlots()<=2) {
+                // Preserve the completed shared FIFO while USB is blocked;
+                // continuous RX must not overwrite evidence awaiting space.
+                if(radio.standby()!=RADIOLIB_ERR_NONE) { armed=false;fenced=true;idleRadio(); }
+                return;
+            }
             drainCompletedReceive(true);
         } else if((flags & RADIOLIB_SX126X_IRQ_TIMEOUT)
                   || ((flags & (RADIOLIB_SX126X_IRQ_HEADER_ERR|RADIOLIB_SX126X_IRQ_CRC_ERR))
@@ -321,6 +363,10 @@ static void serialReadFailed() {
     serialReady=false; armed=false; fenced=true;
     const int16_t error=idleRadio();
     serialContainmentPending=error!=RADIOLIB_ERR_NONE;
+    if(burstQueue) {
+        burstStop();
+        return;
+    }
     if(transmitting) {
         board.onAfterTransmit(); transmitting=false;
         // A failed input channel cannot establish completion or erase debt.
@@ -335,6 +381,7 @@ void loop() {
         // Preserve output evidence and retry checked containment even when RX
         // is unusable. A later standby success never upgrades UNKNOWN.
         if(serialContainmentPending) serialContainmentPending=idleRadio()!=RADIOLIB_ERR_NONE;
+        burstService(false);
         output.flush(Serial); waitForRadioOrTick(); return;
     }
     serviceRadio(); // Drain RX_DONE before a queued TX can clear it or overwrite its FIFO.
@@ -345,6 +392,7 @@ void loop() {
         serialReadFailed(); output.flush(Serial); waitForRadioOrTick(); return;
     }
     for(size_t n=0;n<count;n++) if(decoder.feed(bytes[n],frame)) command(frame);
+    burstService(true);
     output.flush(Serial);
     waitForRadioOrTick();
 }

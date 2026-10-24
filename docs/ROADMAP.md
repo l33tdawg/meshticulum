@@ -79,12 +79,16 @@ Compare performance and security with published MeshCore and Reticulum evidence 
 
 - **Host-backed MCU acceleration.** The 24 October A/B LoRa distance sample
   verified 8,164 bytes at **0.889 kB/s including startup**, below the 1 kB/s
-  target for that boundary. The selected next direction is a bounded MCU
-  ciphertext DATA queue, with host crypto, peer-ACK verification and retry
-  policy. The [source prototype](MCU_ACCELERATION.md) tests queue and evidence
-  behavior offline. Firmware wiring, reviewed scheduler handoff, capability
-  negotiation, cancellation, physical-result drain and a new measured run
-  remain required before any acceleration claim.
+  target for that boundary. The [functional source candidate](MCU_ACCELERATION.md)
+  now connects a bounded MCU DATA ciphertext queue to the serial worker,
+  durable journal and frozen flow runtime. Firmware starts queue-closed; an
+  immutable grant opts into short autonomous handover. Host crypto, peer-ACK
+  authentication, credit and retries remain on Linux. Source tests cover
+  capability/clock negotiation, replay, cancellation and physical-result drain;
+  a Heltec V4 candidate has two matching same-host builds. Candidate wheel/source
+  artifacts, debt-preserving finite
+  deployment approval and a fresh legacy/queue RF comparison remain required
+  before any acceleration claim.
 - **More headroom and broader measurements.** Establish repeated startup-inclusive performance before treating the new finite rates as sustained capacity. Improve startup latency, retry cost, completion consistency and resource use. Expand file sizes, topology, range and power measurements under fresh bounded admission.
 - **Repeated-request and warm-path latency.** The normal 30-second browser
   target is met with a bounded cold-start gap. Reduce repeated-request latency
