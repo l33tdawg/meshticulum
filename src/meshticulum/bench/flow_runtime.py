@@ -71,6 +71,7 @@ class BenchFlow:
         self.receipt_confirmation_outcome = None
         self.events = deque(maxlen=512)
         self.counts = Counter()
+        self.dispatch_budget_failure = None
         self.received = bytearray()
         self.last_activity_us = self.clock()[1]
         flow, port = _flow_modules()
@@ -450,6 +451,7 @@ class BenchFlow:
         self.flow.send(data)
 
     def step(self):
+        require(self.dispatch_budget_failure is None, 'bench_own_airtime_budget_exhausted')
         require(not self.closed and self.authority.live(), 'bench_authority_not_live')
         self._poll_physical()
         self.update_counter()
@@ -564,6 +566,32 @@ class BenchFlow:
         if self.worker.fenced:
             raise WireError('worker_run_fenced')
         require(not self.scheduler.snapshot()['fenced_flows'], 'bench_scheduler_flow_fenced')
+        dispatch = self.link.last_result
+        if (self.sends and self.flow.queued_bytes() > 0
+                and dispatch is not None and dispatch.outcome is CommitOutcome.REFUSED_SCHEDULER
+                and dispatch.reason == 'dispatch_budget_refused' and not dispatch.invoked
+                and not dispatch.flow_fenced):
+            budget = self.ledger.snapshot(self.clock()[1])
+            deadlines = self.owner.original_deadlines
+            deadline_us = math.ceil(min(deadlines.application_deadline_monotonic,
+                                        deadlines.authority_deadline_monotonic) * 1000000)
+            # The frozen ledger deliberately adds observed counter progress to
+            # persistent reservation debt. Neither ACKs nor quiet time refund
+            # either term. Within this fixed window own usage cannot decrease;
+            # if its end is beyond the original send deadline, unsent application
+            # bytes cannot finish. With no unsent bytes a later ACK may still
+            # complete an already handed-over DATA despite a refused retry.
+            # Do not mint hundreds of known-unsent handles until the
+            # compatibility retention bound hides the permanent refusal.
+            if (budget['own_remaining_us'] < self.owner.cost.own_tx_us
+                    and budget['window_end_us'] >= deadline_us):
+                self.dispatch_budget_failure = dict(reason=dispatch.reason,
+                    required_own_us=self.owner.cost.own_tx_us,
+                    own_limit_us=self.ledger.policy.own_tx_limit_us,
+                    original_send_deadline_us=deadline_us, ledger=budget)
+                self.events.append(dict(event='dispatch_budget_exhausted',
+                    mono_us=self.clock()[1], **self.dispatch_budget_failure))
+                raise WireError('bench_own_airtime_budget_exhausted')
         require(len(self.owner.retained) < 1024, 'bench_handle_retention_limit')
 
     def snapshot(self):
@@ -580,6 +608,8 @@ class BenchFlow:
                              'control_rate_us_per_second': self.scheduler.policy.control_rate_us_per_second},
             'attempt_journal': self.journal.snapshot(), 'events': list(self.events),
             'scheduler': self.scheduler.snapshot()}
+        if self.dispatch_budget_failure is not None:
+            value['dispatch_budget_failure'] = self.dispatch_budget_failure
         if self.data_burst:
             value['physical_queue'] = dict(pending=len(self._physical_data),
                 worker_pending=len(self.worker.pending_physical),
