@@ -76,7 +76,7 @@ static bool burstScenario(const std::string& mode) {
     if(mode=="burst_capability") {
         command(request(BURST_CAPABILITIES,90));command(request(BURST_CLOCK,91));
         auto rows=drain();assert(rows.size()==2 && rows[0].size==24 && !memcmp(rows[0].body,"MBQ1",4));
-        assert(rows[0].body[4]==4 && rows[0].body[5]==7 && u32(rows[0].body+20)==200000);
+        assert(rows[0].body[4]==4 && rows[0].body[5]==7 && u32(rows[0].body+20)==100000);
         assert(rows[1].type==BURST_CLOCK_REPLY && u64(rows[1].body)==fake_time && !u64(rows[1].body+8));
         assert(!armed && !lastMutation && !attempted && !reservedUs && !radio.starts);return true;
     }
@@ -130,20 +130,40 @@ static bool burstScenario(const std::string& mode) {
     if(mode=="burst_header_priority") {
         radio.flags=RADIOLIB_SX126X_IRQ_HEADER_VALID;loop();assert(!radio.starts);
         fake_time+=100000;loop();assert(!radio.starts);
-        radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;loop();assert(radio.starts==1);
+        radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;loop();assert(!radio.starts);
+        fake_time=burstNextStartUs;loop();assert(radio.starts==1);
         auto rows=drain();bool rx=false;for(const auto& row:rows) if(row.type==RECEIVE) rx=true;assert(rx);return true;
     }
     if(mode=="burst_header_rearm_age") {
         radio.flags=RADIOLIB_SX126X_IRQ_HEADER_VALID;loop();assert(!radio.starts && burstHeaderSeenUs);
         fake_time+=190000;radio.irq_on_receive=RADIOLIB_SX126X_IRQ_HEADER_VALID;
-        radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;loop();assert(!radio.starts && burstHeaderSeenUs);
+        radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;loop();assert(!radio.starts && !burstHeaderSeenUs);
+        fake_time=burstNextStartUs;loop();assert(!radio.starts && burstHeaderSeenUs);
         fake_time+=20000;loop();assert(!radio.starts && !droppedRx);
-        radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;loop();assert(radio.starts==1 && !droppedRx);return true;
+        radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;loop();assert(!radio.starts && !droppedRx);
+        fake_time=burstNextStartUs;loop();assert(radio.starts==1);return true;
     }
     if(mode=="burst_stale_header") {
         radio.flags=RADIOLIB_SX126X_IRQ_HEADER_VALID;loop();assert(!radio.starts);
         fake_time+=201000;loop();assert(!radio.starts && droppedRx==1);
-        loop();assert(radio.starts==1 && !fenced);return true;
+        fake_time=burstNextStartUs;loop();assert(radio.starts==1 && !fenced);return true;
+    }
+    if(mode=="burst_reverse_ack_boundary") {
+        loop();assert(radio.starts==1);burstDone();drain();
+        const uint64_t boundary=burstNextStartUs;
+        auto next=data;next.request=4;command(next);drain();
+        fake_time=boundary-1;radio.flags=RADIOLIB_SX126X_IRQ_HEADER_VALID;loop();
+        assert(radio.starts==1 && burstEvidence(4).state==burst_native::State::Queued);
+        fake_time=boundary+32064;loop();assert(radio.starts==1);
+        const uint64_t rxReady=fake_time+7000;
+        radio.receive_advance_us=7000;radio.flags=RADIOLIB_SX126X_IRQ_RX_DONE;loop();
+        auto rows=drain();bool rx=false;for(const auto& row:rows) if(row.type==RECEIVE) {
+            const uint8_t expected[]={0xc0,0xdb,0,255};
+            assert(row.size==8 && !memcmp(row.body+4,expected,4));rx=true;
+        }
+        assert(rx && radio.starts==1 && burstNextStartUs==rxReady+BURST_RX_US);
+        fake_time=burstNextStartUs-1;loop();assert(radio.starts==1);
+        fake_time=burstNextStartUs;loop();assert(radio.starts==2 && !droppedRx && !fenced);return true;
     }
     if(mode=="burst_cancel_queued" || mode=="burst_expiry_queued") {
         if(mode=="burst_cancel_queued") { auto f=request(BURST_CANCEL,4);f.size=8;put64(f.body,2);command(f); }

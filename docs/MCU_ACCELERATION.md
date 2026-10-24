@@ -8,7 +8,7 @@ queue handover. Linux retains session keys, AEAD, peer ACK authentication,
 credit, retries and application verification.
 
 This is a functional **source candidate**, with host/native tests and a Heltec V4
-build (`mtb1-ace6f7df3e`). Two independent preparations on the same pinned
+build (`mtb1-6cfde1fdd4`). Two independent preparations on the same pinned
 macOS-arm64 host produced identical application BIN and ELF bytes. The
 [build record](../provenance/MCU_BURST_FIRMWARE.json) binds all six application
 inputs, recipe, lock and output hashes; the
@@ -50,7 +50,7 @@ radio was opened. Journaling was not established as the main delay.
 The grant's exact `data_burst` record participates in the original shared
 route/grant digest. It selects irrevocably charged carrier handover at queue
 acceptance, depth four, a maximum 2,000,000 us MCU hold, 5,000 us between-packet
-receive dwell and 200,000 us reverse listen. The full record is in the
+receive dwell and 100,000 us reverse listen. The full record is in the
 [protocol contract](MCU_BURST_PROTOCOL.md#admission-and-ownership). Locally
 classified DATA is the only queued lane. ACK snapshots and control remain on
 the synchronous host path; the MCU gets no keys and makes no retry decisions.

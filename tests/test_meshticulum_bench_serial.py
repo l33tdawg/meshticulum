@@ -43,7 +43,7 @@ def native(tmp_path_factory):
     'burst_serial_failure', 'burst_timestamp', 'burst_ack_replay',
     'burst_start_failure', 'burst_clear_failure', 'burst_irq_failure', 'burst_standby_rx',
     'burst_standby_header', 'burst_finish_failure', 'burst_clock_regression', 'burst_debt_regression',
-    'burst_header_rearm_age',
+    'burst_header_rearm_age', 'burst_reverse_ack_boundary',
     'burst_open_widen', 'burst_refusal_order', 'burst_reverse_legacy', 'burst_disarm_containment',
     'radio_notify_wakeup','radio_notify_decode','radio_notify_serial_failure',
     'usb_rx_allocation_failure','usb_rx_escaped_burst','usb_rx_queue_bound','usb_rx_legacy_queue_overflow',

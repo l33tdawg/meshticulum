@@ -206,7 +206,7 @@ def test_exact_metadata_is_durable_before_queue_write_and_acceptance_is_not_comp
     assert worker.pending_physical == (result.request,)
     assert worker.poll_physical() == []
     assert journal.queued_records()[0]['state'] == 'RESERVED'
-    assert worker.pending_airtime_us >= 300_000
+    assert worker.pending_airtime_us >= 200_000
     with pytest.raises(HardwareError, match='physical_pending'):
         worker.assert_drained()
 

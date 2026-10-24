@@ -9,7 +9,7 @@ retains session keys, authenticated ACKs, credit and retries.
 A private immutable grant opts in with exactly this `data_burst` record:
 
 ```json
-{"schema":"meshticulum.data-burst-policy.v1","handover":"irrevocably-charged-at-queue-acceptance","max_depth":4,"max_hold_us":2000000,"inter_packet_rx_us":5000,"reverse_listen_us":200000}
+{"schema":"meshticulum.data-burst-policy.v1","handover":"irrevocably-charged-at-queue-acceptance","max_depth":4,"max_hold_us":2000000,"inter_packet_rx_us":5000,"reverse_listen_us":100000}
 ```
 
 The record participates in the original shared route/grant digest. It permits
@@ -47,7 +47,7 @@ they do not authenticate a remote peer.
 - CAPABILITIES: empty request; exact 24-byte reply `!4sBBHIIII` = magic
   `MBQ1`, depth 4, flags 7 (LoRa DATA, stable event timestamps, exact ACK replay),
   packet bytes 255, hold 2,000,000 us, start guard 100,000 us, inter-packet RX
-  dwell 5,000 us, post-burst reverse listen 200,000 us. Same discovered firmware
+  dwell 5,000 us, post-burst reverse listen 100,000 us. Same discovered firmware
   and boot must match; unsupported capability cannot reach OPEN or DATA.
 - CLOCK: empty request; reply `!QQQ` = current MCU monotonic microseconds,
   original successful ARM mutation request, immutable ARM end. Read-only;
@@ -116,9 +116,14 @@ Do not issue while RX_DONE evidence is pending or output is blocked. Drain RX
 again at standby before touching the TX FIFO. Retain at least 5 ms receive dwell
 between DATA operations, and let a detected valid header finish or time out
 before the next claim. After four admissions or an empty queue at RF completion,
-retain at least 200 ms reverse listen. The existing host
+retain at least 100 ms reverse listen. The existing host
 coalesces ACKs for a finite four-frame train; do not move ACK snapshots into the
 queue. Neither receive dwell nor reverse listen extends the original authority.
+The 100 ms floor admits the reviewed 70-byte SF7/BW500 ACK estimate (32.064 ms)
+plus 60 ms of host allowance. An active header still delays a claim past that
+floor, and Linux must authenticate ACK progress before granting new DATA credit.
+This avoids retaining the earlier 200 ms minimum after an ACK has already
+arrived. It is a source timing choice awaiting RF qualification.
 
 Host routing is keyed by physical request and accepts events while other serial
 commands wait. Durable reservation includes immutable queue metadata before any

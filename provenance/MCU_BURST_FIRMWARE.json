@@ -1,6 +1,6 @@
 {
   "application": {
-    "burst_adapter.hpp": "a1e678a2f6bbe8b15bdf4bd34c46dd9f379f4249def21c515fa3cef86a3766fc",
+    "burst_adapter.hpp": "05e3be4e8c059862d8fef8e41faa3ee052665e2f8dc57fb91c65f9e4ceb19e67",
     "experimental/tx_burst.hpp": "828ce0d17950dcc36a1539ef25608fa1bac2f35aaf42a1fc4cb00c68af3b433a",
     "gfsk250_profile.hpp": "379c0023940a6091a93c20f2199f2dcb0f70e7678c680681107622ea71cd6aba",
     "gfsk_profile.hpp": "eae3b0883490663c89bdd6b636aa054e0031e294651185e52cf4ebd292cb4d82",
@@ -9,34 +9,34 @@
   },
   "builds": [
     {
-      "build_manifest_sha256": "9a3eeef72941850588fb550a7ca65542e893e3af985770648b5af9ace87d9708",
+      "build_manifest_sha256": "6fac0291977d40d006843dcc4913b70528675785b077f529622f9710fbcfa090",
       "elf": {
-        "bytes": 12141268,
-        "sha256": "26edcd3219d3ccaeff79b4ee27f0df41ea95cdfdebcf5154d18a1f6a6d113342"
+        "bytes": 12141448,
+        "sha256": "e79e7828309ab1774e23856f59cd312a537d755861101f2793befab7478e5568"
       },
       "firmware": {
-        "bytes": 401392,
-        "sha256": "d56adfec7e94cda5a1dc85d5eaec84454ec1a41eeee3e5046b87520d51830cba"
+        "bytes": 401408,
+        "sha256": "fed657cc073912f1b20fc2b006b4bb2c9a85b47a6ec367cd5d01e7a1c8d9188d"
       },
-      "source_manifest_sha256": "4f5674310aaef19e964f659cff42f03cd9cb6498876dae510f94597fef990053"
+      "source_manifest_sha256": "9d2c7c84beab58efdb8484d53bae8c7d9208d6d4339ef6c4c9502ca1ca918bc8"
     },
     {
-      "build_manifest_sha256": "6787148b59f4a4d92d8f11b620895d3dd324dd22a7ca7ccf5c33140c86c9e3c8",
+      "build_manifest_sha256": "9c58a98d4cf15fe9a02fbafd2ece09c007dd8139f74df4c7de7821f8ed7aa14b",
       "elf": {
-        "bytes": 12141268,
-        "sha256": "26edcd3219d3ccaeff79b4ee27f0df41ea95cdfdebcf5154d18a1f6a6d113342"
+        "bytes": 12141448,
+        "sha256": "e79e7828309ab1774e23856f59cd312a537d755861101f2793befab7478e5568"
       },
       "firmware": {
-        "bytes": 401392,
-        "sha256": "d56adfec7e94cda5a1dc85d5eaec84454ec1a41eeee3e5046b87520d51830cba"
+        "bytes": 401408,
+        "sha256": "fed657cc073912f1b20fc2b006b4bb2c9a85b47a6ec367cd5d01e7a1c8d9188d"
       },
-      "source_manifest_sha256": "6d5026a1e9c1882bc3e217b4645e4c08b1a4c2dc92babfa3d3ee275458e8c496"
+      "source_manifest_sha256": "3218d1618292b27ab5410516f5cdca63af56a7e54b75368b5cbf1665c1c8e59a"
     }
   ],
   "elf_bytes_identical": true,
   "firmware_bytes_identical": true,
   "flashed": false,
-  "identity": "mtb1-ace6f7df3e",
+  "identity": "mtb1-6cfde1fdd4",
   "independent_preparations": 2,
   "lock_sha256": "9d2d534dbf784db3c13b729ab91d20832e0dd536dd8edf7ce2ccd79985c6dfb2",
   "recipe_sha256": "4b6e1fd8353fcae0e98a2ea868696b2d0ad7442e1c888b2aea284ac1a8f57371",

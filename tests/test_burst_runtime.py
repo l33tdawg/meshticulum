@@ -247,7 +247,7 @@ def test_close_cancels_queued_retry_even_after_late_authenticated_receipt(compos
 def test_retry_horizon_does_not_enlarge_ack_coalescing_quiet_time(composition):
     case = composition()
     authority = case.authorities[1]
-    assert authority.carrier_profile.initial_rto_seconds >= 2.32
+    assert authority.carrier_profile.initial_rto_seconds >= 2.22
     assert authority.source_initial_rto_seconds < authority.carrier_profile.initial_rto_seconds
     expected = max(case.receiver.burst_quiet_us,
                    math.ceil(authority.source_initial_rto_seconds * 500000))

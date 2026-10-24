@@ -13,7 +13,7 @@ from .tx_burst import (Binding, BurstContractError, MAX_AUTONOMOUS_HOLD_US,
                        START_GUARD_US, UINT64_MAX, _bytes, _integer, _need)
 
 INTER_PACKET_RX_US = 5_000
-REVERSE_LISTEN_US = 200_000
+REVERSE_LISTEN_US = 100_000
 MAX_CLOCK_RTT_US = 50_000
 CLOCK_MARGIN_US = 20_000
 MIN_MCU_RATE_PPM = 990_000

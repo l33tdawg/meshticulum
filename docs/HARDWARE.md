@@ -24,7 +24,7 @@ The later [MCU020 proof](../provenance/PUBLIC_MCU020_PROOF.json), bound to candi
 
 The [host-backed DATA queue candidate](MCU_ACCELERATION.md) has its own
 [six-input Heltec V4 build record](../provenance/MCU_BURST_FIRMWARE.json), identity
-`mtb1-ace6f7df3e`. Two independently prepared builds on the same pinned
+`mtb1-6cfde1fdd4`. Two independently prepared builds on the same pinned
 macOS-arm64 host produced identical application BIN/ELF bytes. This candidate
 has not been flashed or RF-qualified, and the earlier installation evidence
 does not transfer to it.

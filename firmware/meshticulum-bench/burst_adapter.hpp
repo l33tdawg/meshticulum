@@ -6,7 +6,7 @@
 #include <new>
 
 namespace burst_native = mtbench::experimental;
-static constexpr uint64_t BURST_RX_US=5000, BURST_REVERSE_US=200000;
+static constexpr uint64_t BURST_RX_US=5000, BURST_REVERSE_US=100000;
 alignas(burst_native::TxBurstQueue) static uint8_t burstStorage[sizeof(burst_native::TxBurstQueue)];
 static burst_native::TxBurstQueue* burstQueue=nullptr;
 static burst_native::Binding burstBinding;
@@ -94,7 +94,12 @@ static void burstStop() {
 }
 static void burstReceiveStarted() {
     burstHeaderSeenUs=0;
-    if(burstRxDelayUs) { burstNextStartUs=nowUs()+burstRxDelayUs;burstRxDelayUs=0; }
+    const uint64_t delay=burstRxDelayUs ? burstRxDelayUs : (burstQueue ? BURST_RX_US : 0);
+    if(delay) {
+        const uint64_t next=nowUs()+delay;
+        if(next>burstNextStartUs) burstNextStartUs=next;
+        burstRxDelayUs=0;
+    }
 }
 static bool burstOutcome(uint8_t outcome,uint64_t elapsed,uint32_t flags,int16_t error) {
     if(!burstQueue || !burstActiveRequest) return false;
