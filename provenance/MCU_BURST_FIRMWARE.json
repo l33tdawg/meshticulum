@@ -1,0 +1,56 @@
+{
+  "application": {
+    "burst_adapter.hpp": "a1e678a2f6bbe8b15bdf4bd34c46dd9f379f4249def21c515fa3cef86a3766fc",
+    "experimental/tx_burst.hpp": "828ce0d17950dcc36a1539ef25608fa1bac2f35aaf42a1fc4cb00c68af3b433a",
+    "gfsk250_profile.hpp": "379c0023940a6091a93c20f2199f2dcb0f70e7678c680681107622ea71cd6aba",
+    "gfsk_profile.hpp": "eae3b0883490663c89bdd6b636aa054e0031e294651185e52cf4ebd292cb4d82",
+    "main.cpp": "bae4a3e39cbd32cf26e5012259ebe4247baaca040f0bc1e3902108eeb0215319",
+    "protocol.hpp": "2cf78c6c31e42af16771941353e5c965c133185100d7ecf6161965a754d144cb"
+  },
+  "builds": [
+    {
+      "build_manifest_sha256": "9a3eeef72941850588fb550a7ca65542e893e3af985770648b5af9ace87d9708",
+      "elf": {
+        "bytes": 12141268,
+        "sha256": "26edcd3219d3ccaeff79b4ee27f0df41ea95cdfdebcf5154d18a1f6a6d113342"
+      },
+      "firmware": {
+        "bytes": 401392,
+        "sha256": "d56adfec7e94cda5a1dc85d5eaec84454ec1a41eeee3e5046b87520d51830cba"
+      },
+      "source_manifest_sha256": "4f5674310aaef19e964f659cff42f03cd9cb6498876dae510f94597fef990053"
+    },
+    {
+      "build_manifest_sha256": "6787148b59f4a4d92d8f11b620895d3dd324dd22a7ca7ccf5c33140c86c9e3c8",
+      "elf": {
+        "bytes": 12141268,
+        "sha256": "26edcd3219d3ccaeff79b4ee27f0df41ea95cdfdebcf5154d18a1f6a6d113342"
+      },
+      "firmware": {
+        "bytes": 401392,
+        "sha256": "d56adfec7e94cda5a1dc85d5eaec84454ec1a41eeee3e5046b87520d51830cba"
+      },
+      "source_manifest_sha256": "6d5026a1e9c1882bc3e217b4645e4c08b1a4c2dc92babfa3d3ee275458e8c496"
+    }
+  ],
+  "elf_bytes_identical": true,
+  "firmware_bytes_identical": true,
+  "flashed": false,
+  "identity": "mtb1-ace6f7df3e",
+  "independent_preparations": 2,
+  "lock_sha256": "9d2d534dbf784db3c13b729ab91d20832e0dd536dd8edf7ce2ccd79985c6dfb2",
+  "recipe_sha256": "4b6e1fd8353fcae0e98a2ea868696b2d0ad7442e1c888b2aea284ac1a8f57371",
+  "rf_qualified": false,
+  "same_host_reproduction": true,
+  "schema": "meshticulum.mcu-burst-firmware.v1",
+  "scope": "Two clean same-host source builds; no cross-host, device or RF qualification.",
+  "target": "mtbench_heltec_v4",
+  "toolchain": {
+    "compiler": "xtensa-esp32s3-elf-g++",
+    "compiler_release": "crosstool-NG esp-2021r2-patch5",
+    "compiler_version": "8.4.0",
+    "host": "darwin-arm64",
+    "platformio_version": "6.1.19",
+    "source_date_epoch": 1786709959
+  }
+}

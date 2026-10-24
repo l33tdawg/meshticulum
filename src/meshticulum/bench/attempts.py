@@ -92,6 +92,11 @@ class AttemptJournal:
                 finally:
                     os.close(fd)
             with self.transaction():
+                # Optional physical queue records share the same FULL commit
+                # as debt. They contain immutable metadata, never ciphertext.
+                self.db.execute('CREATE TABLE IF NOT EXISTS queued_attempts ('
+                    'request INTEGER PRIMARY KEY, metadata BLOB NOT NULL, '
+                    'terminal_event BLOB, released INTEGER NOT NULL DEFAULT 0)')
                 self._owner(allow_fenced=True)
                 pending = self.db.execute("SELECT count(*) FROM attempts WHERE state='RESERVED'").fetchone()[0]
                 if pending:
@@ -135,10 +140,12 @@ class AttemptJournal:
         with self.transaction():
             return self._next(self._owner(allow_fenced=containment))
 
-    def reserve(self, packet, estimated_us):
+    def reserve(self, packet, estimated_us, *, queue_metadata=None):
         require(type(packet) is bytes and 1 <= len(packet) <= 255, 'invalid_radio_packet')
         require(type(estimated_us) is int and 0 < estimated_us <= self.max_airtime_us,
                 'invalid_airtime_reservation')
+        require(queue_metadata is None or type(queue_metadata) is bytes
+                and 1 <= len(queue_metadata) <= 1024, 'invalid_queue_metadata')
         with self.transaction():
             owner = self._owner()
             count, reserved = self.db.execute('SELECT count(*),coalesce(sum(estimated_us),0) FROM attempts').fetchone()
@@ -147,7 +154,99 @@ class AttemptJournal:
             request = self._next(owner)
             self.db.execute('INSERT INTO attempts VALUES (?,?,?,?,?,NULL)',
                             (request, hashlib.sha256(packet).digest(), len(packet), estimated_us, 'RESERVED'))
+            if queue_metadata is not None:
+                self.db.execute('INSERT INTO queued_attempts(request,metadata) VALUES (?,?)',
+                                (request, queue_metadata))
         return request
+
+    def settle_queued(self, request, packet, outcome, evidence, terminal_event):
+        """Commit physical evidence before releasing its retained MCU slot.
+
+        Exact terminal replay is idempotent. A host UNKNOWN is never upgraded;
+        later exact native evidence may be retained solely for physical release.
+        """
+        require(outcome in ('RF_DONE', 'REFUSED', 'NOT_SENT', 'UNKNOWN'), 'invalid_attempt_outcome')
+        require(type(evidence) is str and len(evidence) <= 512, 'invalid_attempt_evidence')
+        require(terminal_event is None and outcome in ('UNKNOWN', 'NOT_SENT', 'REFUSED')
+                or type(terminal_event) is bytes and 1 <= len(terminal_event) <= 1024,
+                'invalid_queue_terminal_event')
+        with self.transaction():
+            self._owner(allow_fenced=True)
+            row = self.db.execute('SELECT a.packet_sha,a.bytes,a.state,q.terminal_event '
+                'FROM attempts a JOIN queued_attempts q USING(request) WHERE request=?',
+                (request,)).fetchone()
+            require(row is not None and row[:2] == (hashlib.sha256(packet).digest(), len(packet)),
+                    'wrong_attempt_settlement')
+            if row[2] != 'RESERVED':
+                require(row[2] == outcome and (row[3] == terminal_event
+                        or row[2] == 'UNKNOWN' and row[3] is None), 'attempt_already_settled')
+                if row[3] == terminal_event:
+                    return False
+            self.db.execute('UPDATE attempts SET state=?,evidence=? WHERE request=?',
+                            (outcome, evidence, request))
+            self.db.execute('UPDATE queued_attempts SET terminal_event=? WHERE request=?',
+                            (terminal_event, request))
+            if terminal_event is None and outcome in ('NOT_SENT', 'REFUSED'):
+                self.db.execute('UPDATE queued_attempts SET released=1 WHERE request=?', (request,))
+            if outcome == 'UNKNOWN':
+                self.db.execute('UPDATE owner SET fenced=1 WHERE id=1')
+        return True
+
+    def release_queued(self, request, terminal_event):
+        """Mark an exact, confirmed MCU release; retain immutable history/debt."""
+        require(type(terminal_event) is bytes and 1 <= len(terminal_event) <= 1024,
+                'invalid_queue_terminal_event')
+        with self.transaction():
+            self._owner(allow_fenced=True)
+            row = self.db.execute('SELECT a.state,q.terminal_event,q.released FROM attempts a '
+                'JOIN queued_attempts q USING(request) WHERE request=?', (request,)).fetchone()
+            require(row is not None and row[0] != 'RESERVED' and row[1] == terminal_event,
+                    'wrong_queue_release')
+            self.db.execute('UPDATE queued_attempts SET released=1 WHERE request=?', (request,))
+            return not bool(row[2])
+
+    def reconcile_queued_unknown(self, request, *, packet_sha, size, terminal_event, evidence):
+        """Attach exact cleanup evidence after recovery without payload or RF.
+
+        Only a previously UNKNOWN record qualifies. Its charged outcome and
+        fence remain UNKNOWN; the exact owner must validate native provenance
+        and immutable queue metadata before using this cleanup-only operation.
+        """
+        require(type(packet_sha) is bytes and len(packet_sha) == 32
+                and type(size) is int and 1 <= size <= 255, 'invalid_queue_packet_identity')
+        require(type(terminal_event) is bytes and 1 <= len(terminal_event) <= 1024,
+                'invalid_queue_terminal_event')
+        require(type(evidence) is str and len(evidence) <= 512, 'invalid_attempt_evidence')
+        with self.transaction():
+            owner = self._owner(allow_fenced=True)
+            row = self.db.execute('SELECT a.packet_sha,a.bytes,a.state,q.terminal_event '
+                'FROM attempts a JOIN queued_attempts q USING(request) WHERE request=?',
+                (request,)).fetchone()
+            require(owner[4] == 1 and row is not None
+                    and row[:3] == (packet_sha, size, 'UNKNOWN')
+                    and row[3] in (None, terminal_event), 'wrong_unknown_reconciliation')
+            if row[3] == terminal_event:
+                return False
+            self.db.execute('UPDATE queued_attempts SET terminal_event=? WHERE request=?',
+                            (terminal_event, request))
+            self.db.execute('UPDATE attempts SET evidence=? WHERE request=?', (evidence, request))
+        return True
+
+    def queued_records(self):
+        """Read durable physical state, including UNKNOWN left by recovery."""
+        with self._lock:
+            self._owner(allow_fenced=True)
+            return [dict(request=row[0], packet_sha=row[1], bytes=row[2],
+                         reserved_estimated_us=row[3], state=row[4], metadata=row[5],
+                         terminal_event=row[6], released=bool(row[7])) for row in
+                    self.db.execute('SELECT a.request,a.packet_sha,a.bytes,a.estimated_us,a.state,'
+                        'q.metadata,q.terminal_event,q.released FROM attempts a '
+                        'JOIN queued_attempts q USING(request) ORDER BY a.request')]
+
+    def fence(self):
+        with self.transaction():
+            self._owner(allow_fenced=True)
+            self.db.execute('UPDATE owner SET fenced=1 WHERE id=1')
 
     def settle(self, request, packet, outcome, evidence):
         require(outcome in ('RF_DONE', 'REFUSED', 'NOT_SENT', 'UNKNOWN'), 'invalid_attempt_outcome')

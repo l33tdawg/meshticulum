@@ -35,6 +35,16 @@ def native(tmp_path_factory):
 
 
 @pytest.mark.parametrize('scenario', [
+    'burst_capability', 'burst_closed', 'burst_open_mismatch', 'burst_legacy_replay',
+    'burst_bad_digest', 'burst_bad_estimate', 'burst_bad_role', 'burst_bad_token', 'burst_bad_deadline',
+    'burst_replay', 'burst_output_priority', 'burst_header_priority', 'burst_stale_header',
+    'burst_cancel_queued', 'burst_expiry_queued', 'burst_four_train', 'burst_dwell_rearm',
+    'burst_cancel_started', 'burst_containment_retry', 'burst_expiry_started',
+    'burst_serial_failure', 'burst_timestamp', 'burst_ack_replay',
+    'burst_start_failure', 'burst_clear_failure', 'burst_irq_failure', 'burst_standby_rx',
+    'burst_standby_header', 'burst_finish_failure', 'burst_clock_regression', 'burst_debt_regression',
+    'burst_header_rearm_age',
+    'burst_open_widen', 'burst_refusal_order', 'burst_reverse_legacy', 'burst_disarm_containment',
     'radio_notify_wakeup','radio_notify_decode','radio_notify_serial_failure',
     'usb_rx_allocation_failure','usb_rx_escaped_burst','usb_rx_queue_bound','usb_rx_legacy_queue_overflow',
     'usb_rx_read_error_idle','usb_rx_read_error_started','usb_rx_read_error_oversized',
@@ -52,6 +62,32 @@ def native(tmp_path_factory):
     'rx_boundary_lease_expiry'])
 def test_actual_firmware_faults(native, scenario):
     subprocess.run([str(native), scenario], check=True, capture_output=True, timeout=10)
+
+
+def test_actual_burst_firmware_events_match_python_wire_records(native):
+    from meshticulum.bench.burst_protocol import BurstEvent, BurstStatus, ACK
+    from meshticulum.bench.tx_burst import Stage
+    raw = subprocess.run([str(native), 'burst_codec'], check=True, capture_output=True,
+                         timeout=10).stdout
+    rows = Decoder().feed(raw)
+    events = [BurstEvent.from_frame(row, boot=BOOT) for row in rows
+              if row.type is Message.BURST_EVENT]
+    assert [event.stage for event in events] == [Stage.QUEUED, Stage.ISSUED,
+                                                Stage.STARTED, Stage.RF_DONE]
+    assert all(event.token == 2 and event.request == 3 and event.size == 255
+               and event.estimated_airtime_us == 100_000
+               and event.digest == hashlib.sha256(bytes(range(255))).digest()
+               for event in events)
+    assert [event.at_us for event in events] == sorted(event.at_us for event in events)
+    assert events[-1].driver_elapsed_us > 0 and events[-1].irq_flags == 1
+    releases = [row for row in rows if row.type is Message.BURST_ACK_REPLY]
+    assert [row.request for row in releases] == [4, 4, 5]
+    assert all(ACK.unpack(row.body) == (2, 3, Stage.RF_DONE, events[-1].at_us,
+                                      events[-1].digest) for row in releases)
+    status = BurstStatus.from_frame(rows[-1], boot=BOOT, request=90)
+    assert status.pending == status.retained == 0
+    assert status.attempts == 1 and status.airtime_us == 100_000
+    assert not status.fenced and not status.containment_required
 
 
 def test_cross_language_codec_and_every_fragment_boundary(native):

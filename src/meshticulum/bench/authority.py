@@ -5,7 +5,8 @@ The Linux launcher requires root; grants are installed over pinned management,
 never enrolled over radio. The provisioned peer IDs belong to the bench scope,
 not to a personal SAGE identity. No production service permission is inferred.
 Revocation takes the active-file exclusive lock; dispatch holds its shared lock
-through the bounded physical attempt. Removal, mutation, expiry or a new host
+through synchronous RF evidence, or explicit prepaid queue acceptance under an
+immutable opt-in bounded in-flight policy. Removal, mutation, expiry or a new host
 boot refuses new work. Restart requires a new grant and fresh wire state.
 """
 from contextlib import contextmanager
@@ -26,6 +27,9 @@ from ..contracts.negotiation import (CapabilityLimits, Feature,
 from ..scheduler.scheduler import DispatchGrant, LeaseScope
 from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
+from .burst_protocol import (CLOCK_MARGIN_US, INTER_PACKET_RX_US, MAX_CLOCK_RTT_US,
+                             REVERSE_LISTEN_US, validate_policy)
+from .tx_burst import MAX_AUTONOMOUS_HOLD_US, MAX_DEPTH, START_GUARD_US
 from .admission import RadioAdmission,GfskAdmission,Gfsk250Admission
 from .gfsk_profile import GfskProfile,radio_airtime_us,radio_is_fast,radio_is_sf5
 from .gfsk250_profile import Gfsk250Profile
@@ -91,6 +95,11 @@ class RunAuthority:
             local_deadline_field = 'application_deadline_monotonic_us'
             extras = {'service'} if is_service else set()
             if p.get('radio_modem') in ('gfsk125','gfsk250'):extras.add('radio_modem')
+            if 'data_burst' in p:
+                extras.add('data_burst')
+                validate_policy(p['data_burst'])
+                require(p.get('radio_modem') not in ('gfsk125', 'gfsk250'),
+                        'data_burst_requires_lora')
             if is_service and local_deadline_field in p:
                 extras.add(local_deadline_field)
             require(set(p) == fields | extras, 'invalid_bench_plan')
@@ -140,6 +149,13 @@ class RunAuthority:
                 self.profile = RadioProfile(**p['profile'])
             self.profile.encode(board_id=1)
             radio_admission.check(p['country'], p['antenna_confirmed'], self.profile)
+            if 'data_burst' in p:
+                train = MAX_DEPTH * (radio_airtime_us(self.profile, 255)
+                                    + START_GUARD_US + INTER_PACKET_RX_US)
+                require(train + REVERSE_LISTEN_US + MAX_CLOCK_RTT_US
+                        <= MAX_AUTONOMOUS_HOLD_US - CLOCK_MARGIN_US
+                        and radio_airtime_us(self.profile, 70) + 60000 <= REVERSE_LISTEN_US,
+                        'data_burst_profile_cannot_fit')
             obj = p['object']
             require(type(obj) is dict and set(obj) == {'sha256', 'bytes', 'chunk_index', 'object_id'}
                     and type(obj['bytes']) is int and 1 <= obj['bytes'] <= object_limit(p.get('service',{}))
@@ -154,6 +170,8 @@ class RunAuthority:
             self.route_record = {k: p[k] for k in ('initiator', 'responder', 'session_id', 'generation',
                                                   'profile', 'object', 'sender_unit', 'country')}
             if p.get('radio_modem') in ('gfsk125','gfsk250'):self.route_record['radio_modem']=p['radio_modem']
+            if 'data_burst' in p:
+                self.route_record['data_burst'] = p['data_burst']
             if is_service:
                 self.route_record['service'] = p['service']
             route_digest = hashlib.sha256(canonical(self.route_record)).digest()
@@ -225,6 +243,14 @@ class RunAuthority:
             # These are adapter bounds, not added RF airtime or a new lease.
             initial_rto = max(initial_rto, 1.75)
             minimum_rto = max(minimum_rto, 1.75)
+        # ACK coalescing uses the original PHY/host source bound. A queue's
+        # retry horizon must not silently enlarge the receiver's quiet timer.
+        self.source_initial_rto_seconds = initial_rto
+        if 'data_burst' in self.plan:
+            queued_rto = (MAX_AUTONOMOUS_HOLD_US + REVERSE_LISTEN_US
+                          + 2 * MAX_CLOCK_RTT_US + CLOCK_MARGIN_US) / 1000000
+            minimum_rto = max(minimum_rto, queued_rto)
+            initial_rto = max(initial_rto, minimum_rto)
         # SOURCE_FIXTURE is the frozen API's label for unmeasured source cost.
         # Receipts explicitly call this a calculation, never measured RF time.
         self.carrier_profile = CarrierProfile(CarrierKind.BINARY, 255, 31, 16, profile_digest,
@@ -262,6 +288,13 @@ class RunAuthority:
         """Original immutable service/object values; refuses any current drift."""
         require(self._admission_current(),'bench_admitted_plan_changed')
         return self._captured_admission()[6]
+
+    @property
+    def data_burst_policy(self):
+        """Original explicit handover policy; a copy cannot mutate admission."""
+        require(self._admission_current(), 'bench_admitted_plan_changed')
+        record = self._captured_admission()[0].get('data_burst')
+        return None if record is None else validate_policy(record)
 
     def live(self):
         if self.closed:

@@ -150,7 +150,9 @@ def prepare(archive_directory, output):
     project = locations['meshcore']
     app = project / 'examples/meshticulum_bench'
     app.mkdir()
-    for name in ('main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp'):
+    for name in ('main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
+                 'burst_adapter.hpp', 'experimental/tx_burst.hpp'):
+        (app / name).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(HERE / name, app / name)
     application = tree(app)
     identity = 'mtb1-' + hashlib.sha256(json.dumps(application, sort_keys=True).encode()).hexdigest()[:10]

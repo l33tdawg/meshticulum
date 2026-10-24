@@ -1,22 +1,30 @@
 # Host-backed MCU acceleration
 
-The first acceleration step is a bounded DATA ciphertext queue on the MCU. Linux
-keeps the transport session and its keys. The MCU can schedule several already
-paid packets without waiting for a Python/USB round trip after every driver
-completion.
+The source candidate now connects a bounded MCU DATA ciphertext queue to the
+serial worker, durable attempt journal and authenticated `BenchFlow` runtime.
+The firmware includes the adapter and starts with its queue closed. Existing
+plans use the synchronous path; an immutable grant record must opt into bounded
+queue handover. Linux retains session keys, AEAD, peer ACK authentication,
+credit, retries and application verification.
 
-This change is a **source-only prototype**. The queue header is not included by
-`main.cpp` or the firmware build recipe. The Python module has no serial access,
-wire opcode, grant issuer, durable journal or driver. Nothing here installs a
-capability, changes a service, or establishes improved RF performance.
+This is a functional **source candidate**, with host/native tests and a Heltec V4
+build (`mtb1-ace6f7df3e`). Two independent preparations on the same pinned
+macOS-arm64 host produced identical application BIN and ELF bytes. The
+[build record](../provenance/MCU_BURST_FIRMWARE.json) binds all six application
+inputs, recipe, lock and output hashes; the
+[verifier](../tools/verify_burst_firmware.py) checks that source/provenance binding.
+This is same-host reproduction, without cross-host, deployment or RF qualification.
+The [serial and admission contract](MCU_BURST_PROTOCOL.md) defines the exact
+policy, records, clock assumptions and closure requirements.
 
-## Why this boundary
+## Measured starting point
 
 The [24 October distance sample](../benchmarks/2026-10-24-lora-distance/results.json)
-delivered 8,164 useful bytes over about 20 m using two Heltec V4 USB radios,
-SF7/BW500/CR4:5 at 921.375 MHz and 0 dBm. The final receipt was authenticated and
-the publisher and whole-file hash were independently verified. There were 46
-DATA packets, no retries and no receive-drop counter increases.
+used source `b5fd674b20fc5d0416fc461dcd562731d0faf0b7` and firmware
+`mtb1-020e287255`. Two Heltec V4 USB radios about 20 m apart delivered 8,164 useful
+bytes at SF7/BW500/CR4:5, 921.375 MHz and 0 dBm. The receipt was authenticated,
+and publisher and whole-file verification passed. There were 46 DATA packets,
+no retries and no receive-drop counter increases.
 
 | Measurement | Result |
 | --- | ---: |
@@ -27,172 +35,92 @@ DATA packets, no retries and no receive-drop counter increases.
 | Median DATA worker / driver call | 132.347 / 108.781 ms |
 | Median estimated DATA airtime | 99.904 ms |
 
-The worker-minus-driver difference is 1.150117 s across DATA calls. It includes
-host and boundary work; this sample does not attribute every millisecond to a
-specific component. Driver elapsed time also includes driver work and is not an
-independent RF airtime measurement. Removing that whole difference would be an
-optimistic arithmetic counterfactual, not an achieved speedup.
+The worker-minus-driver difference is 1.150117 s. It includes host and boundary
+work; the sample does not attribute all of it to one component. Driver elapsed
+time includes driver work and is not an independent RF airtime measurement.
+These historical measurements do not establish a queue speedup.
 
 A separate CPU-only diagnostic ran 128 durable reserve/NOT_SENT-settle pairs per
 endpoint. Sender reserve and settle medians were 0.460 and 0.419 ms; receiver
 medians were 0.460 and 0.433 ms. A paired median was not measured. No transport or
-radio was opened. This does not establish journaling as the
-main delay. The useful next experiment is to remove repeated dispatch waits
-while preserving durable accounting and the receive path.
+radio was opened. Journaling was not established as the main delay.
 
-## Responsibility split
+## What the candidate implements
 
-| Linux host | MCU queue and trusted adapter |
+The grant's exact `data_burst` record participates in the original shared
+route/grant digest. It selects irrevocably charged carrier handover at queue
+acceptance, depth four, a maximum 2,000,000 us MCU hold, 5,000 us between-packet
+receive dwell and 200,000 us reverse listen. The full record is in the
+[protocol contract](MCU_BURST_PROTOCOL.md#admission-and-ownership). Locally
+classified DATA is the only queued lane. ACK snapshots and control remain on
+the synchronous host path; the MCU gets no keys and makes no retry decisions.
+
+[`BurstSerialWorker`](../src/meshticulum/bench/burst_worker.py) checks the exact
+firmware capability, samples a boot/ARM-bound clock and opens an immutable
+context. Every new burst takes a fresh clock sample and narrows its deadline
+against the original OPEN cap, ARM end and current host authority end. Clock
+mapping assumes at least 0.99 MCU microseconds per host microsecond, rejects RTT
+over 50 ms and subtracts a 20 ms margin. It never copies a host timestamp into an
+MCU deadline or extends an existing deadline.
+
+A DATA item binds the boot, OPEN token, exact request, ciphertext hash/length,
+independently checked airtime estimate and common burst deadline. The firmware
+recomputes the hash and estimate. At most four admissions share that deadline;
+retained terminal outcomes also occupy the four slots. Pending airtime, 100 ms
+start guards and receive cooldown must fit before it. The adapter drains RX
+before driver handover, defers to an active header, retains receive dwell and
+reverse listen, and reports stable MCU event timestamps. Legacy control waits
+for that reverse window rather than preempting it.
+
+The request-keyed host router accepts physical events while other serial
+commands wait. [`AttemptJournal`](../src/meshticulum/bench/attempts.py) commits
+exact ciphertext hash/length, immutable queue metadata and prepaid debt before
+any DATA write. It stores neither ciphertext nor keys. Acceptance leaves the
+physical attempt RESERVED. Terminal settlement commits before the exact native
+release ACK; a lost ACK reply can replay the same release without new RF or
+settlement. Read-only STATUS must confirm no pending, retained, active or
+containment work before successful closure.
+
+| Evidence | What it establishes |
 | --- | --- |
-| Session keys, AEAD, nonce allocation and exact ciphertext | Store exact DATA ciphertext, at most four packets |
-| Peer ACK authentication, credit and retry decisions | Check immutable admission and independent airtime estimate |
-| Durable attempt/airtime reservation before any queue write | Charge shared boot-lifetime attempt/airtime counters once |
-| Publisher, whole-file and application completion | Start one driver operation at a time within the short deadline |
-| Reconcile every pending physical result and uncertain write | Preserve RX priority and emit exact local physical evidence |
+| `QUEUED` | Charged carrier acceptance; no RF completion |
+| `ISSUED` / `STARTED` | Driver handover/start; missing later evidence cannot prove unsent |
+| `RF_DONE` | Exact successful local TX_DONE evidence; no authenticated peer receipt |
+| `NOT_SENT` | Definite pre-issue cancellation/expiry; debt remains |
+| `UNKNOWN` | Unresolved physical operation; sticky fence and checked containment |
 
-Phase 1 accepts only DATA from a locally established role. A remote priority
-label cannot turn ACK or control traffic into DATA. ACK snapshots and control
-traffic retain their synchronous host path. The MCU receives no session keys,
-does not authenticate peer ACKs, and does not retry automatically.
+Physical records survive peer ACKs and transport retirement. Same pending DATA
+is suppressed by flow/generation/sequence domain and exact plaintext digest
+before another AEAD seal. Ambiguous writes and recovered RESERVED attempts stay
+charged and become UNKNOWN/fenced. Later physical evidence can assist cleanup;
+it cannot upgrade recovered UNKNOWN, lift the fence or resume ciphertext. Shared
+MCU boot debt, mutation highwater and clock watermark survive queue/context
+changes. A physical reset or flash still needs separate debt carry and outcome
+reconciliation.
 
-## Queue contract
+## Flow timing and qualification
 
-The dormant native state machine is
-[`experimental/tx_burst.hpp`](../firmware/meshticulum-bench/experimental/tx_burst.hpp).
-The offline Python descriptor and evidence checks are
-[`bench/tx_burst.py`](../src/meshticulum/bench/tx_burst.py).
+The frozen flow modules are unchanged. Their generic `ACCEPTED` result means
+carrier disposition. The opt-in adapter uses it after exact queue acceptance;
+the synchronous path still returns it after RF_DONE. No second handover callback
+occurs on physical completion. Queue-aware retry bounds are constructed before
+the authority and scheduler, while ACK coalescing retains its separate original
+PHY timing. Physical backlog contributes conservative queued timing, and a
+pending logical DATA cannot be retried. An authenticated peer ACK alone cannot
+close outstanding physical work.
 
-Every item binds the current 16-byte MCU boot, an immutable grant/profile context
-digest, monotonic request ID, DATA role, exact ciphertext length and SHA-256,
-airtime estimate and absolute MCU deadline. The context digest must cover the
-exact admitted grant and encoded radio profile; the admission must already bind
-the authorized peers and lane. A matching digest is an identity check, not proof
-that a grant is valid or current. The future adapter must verify authority and
-hash the actual ciphertext rather than trusting host-supplied metadata.
+Source tests exercise the real session cipher, frozen scheduler, journal and
+serial worker against a modeled MCU, as well as native queue/adapter paths. They
+cover four-item handover, reordered or missing evidence, peer receipt before
+physical completion, replay, cancellation, ambiguous writes and durable drain.
+They do not qualify an installed image or prove faster delivery, sustained
+capacity, range or energy use.
 
-The first item fixes a common burst deadline. It must be no later than the
-original absolute MCU admission deadline, and at most 2,000,000 microseconds from
-admission. Subsequent items cannot renew that window. At admission, every pending
-item, including an active item conservatively, contributes its independently
-computed airtime plus a 100,000 microsecond start guard. The total must fit before
-the common deadline. Each issue repeats its own remaining-time check.
-
-Depth is at most four **including retained terminal outcomes**, and a burst has
-at most four admissions even if an outcome is acknowledged early. Its admission
-count and common deadline reset only when all retained slots are acknowledged.
-An exact retained replay returns its existing state without charging or extending
-the deadline. Changed metadata or bytes conflict. A released request remains
-stale under the same physical boot.
-
-The native `BootState` outlives queue objects and admission changes. It owns the
-shared cumulative counters, paid floor, request high-water mark, monotonic clock
-watermark, sticky fence, containment requirement and queue ownership. Every other
-radio path must use the same state. Recreating a queue, rebinding a grant or
-clearing a slot cannot reset debt, reuse an old request, or erase uncertainty.
-Retained packet outcomes belong to the queue object, so it must stay alive until
-acknowledgment, normally for the physical boot. Destroying it with retained work
-fences the boot state but does not preserve detailed outcomes. Destruction or a
-physical reset therefore requires separate reconciliation.
-
-A native issue requires no active operation, no pending RX evidence, and room to
-report evidence. It marks `ISSUED` before returning the packet to a driver
-adapter, and never calls a radio itself. The adapter must drain RX_DONE/USB receive
-evidence before the next claim and preserve the admitted reverse listen window
-after the finite burst. The 100 ms guard is a time allowance, not implementation
-of that receive window. Queueing must not starve ACK reception or bypass RX
-backpressure.
-
-| Local evidence | Meaning |
-| --- | --- |
-| `QUEUED` | Exact ciphertext retained and charged; no driver handover established |
-| `ISSUED` | Claimed for the driver; absence of later reports cannot prove it was unsent |
-| `STARTED` | Driver start evidence; does not establish RF completion or receipt |
-| `RF_DONE` | Matching successful local TX_DONE driver evidence; no peer receipt claim |
-| `NOT_SENT` | Definite cancellation/expiry before issue; paid debt remains |
-| `UNKNOWN` | An issued/started operation cannot be resolved; sticky fence and physical containment required |
-
-Queued cancellation/expiry becomes `NOT_SENT`. Cancellation/expiry after issue
-becomes `UNKNOWN`. No outcome refunds attempts or reserved airtime. Exact terminal
-replay settles once. Late exact RF_DONE may account an earlier issued operation
-if no terminal uncertainty has already been declared; it cannot authorize another
-send. Once UNKNOWN is recorded, a later RF_DONE does not rewrite it or lift the
-fence. A failed containment attempt must be retried, and acknowledging an UNKNOWN
-slot must wait for containment. Clearing a containment requirement does not clear
-the sticky fence.
-
-The Python evidence history can accept a terminal report when intermediate
-reports were lost. It validates shape and consistency, not provenance or driver
-truth. It is bounded in-memory state, not a recovery journal. `RF_DONE` and an
-empty pending set never establish authenticated transport or application success.
-
-## Offline descriptor
-
-`QueueDescriptor.encode()` is a canonical big-endian descriptor with magic
-`BTD1`: a 77-byte header followed by one to four 55-byte packet descriptors. It
-contains bindings and metadata and deliberately excludes ciphertext. A four-item
-descriptor is 297 bytes. Decoder checks include exact size, count, DATA role,
-nonzero identity digests, increasing request IDs, common deadline and aggregate
-time allowance. Evidence stage values agree with the native enum, but this is
-not a native structure serialization or a deployed serial ABI.
-
-Python evidence includes an event timestamp while native evidence does not. A
-future adapter must attach a stable boot-specific event time or retain the first
-normalized observation: generating a new timestamp on every USB replay would
-turn an exact native replay into conflicting host terminal evidence.
-
-`check_admission()` and `check_dispatch()` compare supplied independent estimates
-and remaining time. They do not derive airtime, map host clocks to the MCU clock,
-consult global debt, enforce a live lease, or authorize a driver operation. The
-future protocol needs a checked boot-specific MCU clock mapping with bounded
-uncertainty; copying a host timestamp into a descriptor is insufficient.
-
-## Integration gate
-
-Before a queue write, Linux must durably reserve each exact request, ciphertext,
-length, digest, estimate and immutable binding. It must retain unresolved physical
-records independently of flow retirement. A partial or ambiguous write remains
-charged and fenced on restart until reconciled; neither a missing acceptance
-report nor a peer ACK proves that an outstanding item was not sent. MCU evidence
-and counters must reconcile with the durable host journal without refunding
-cancellation or double charging an exact replay. The prototype provides no queue
-writer that can bypass this requirement.
-
-The current scheduler permits one live attempt handle per flow, with a dispatch
-lease held through one commit. Generic
-`CommitOutcome.ACCEPTED` is a carrier disposition, not inherently RF proof; the
-current BenchFlow adapter returns it only after RF_DONE. In today's synchronous
-path, retry timing uses the original pre-call pump timestamp rather than a
-measured RF_DONE time. A reviewed DATA queue adapter may be able to use that
-existing carrier-acceptance contract without changing frozen flow modules. It
-must make the altered handover explicit and preserve the following obligations:
-
-- Keep physical records pending after carrier acceptance, including after a
-  transport handle retires or an authenticated peer ACK arrives.
-- Include the maximum bounded queue wait and preceding radio operations in RTO,
-  or derive timing from validated dispatch evidence. Validate the frozen host
-  handover and retry timestamp model explicitly with queue latency; an early
-  timestamp could otherwise make retries premature.
-- Prevent retry of the same logical DATA while its earlier physical handover is
-  pending. `NOT_SENT` after accepted carrier handover is a physical result; it
-  does not undo carrier accounting.
-- Drain or settle all physical results before reporting successful closure.
-  Expiry and cancellation also require reconciliation and containment of an
-  uncertain active radio operation.
-- Keep ACK canonical snapshots on their synchronous actual-handover path until
-  their freshness and revision semantics receive separate review.
-
-There is a deployment-policy decision beyond queue correctness. Releasing a host
-service, broker or dispatch lease at queue acceptance delegates later RF starts.
-A boot/context digest and short deadline cannot preserve instantaneous host
-revocation while USB is disconnected. Integration must explicitly choose either
-an irrevocably charged in-flight carrier handover with an approved short
-cancellation/autonomy bound, or a host authorization check before each RF start.
-This prototype grants neither a revised deployment policy nor permission to
-weaken the current live-at-RF-start checks.
-
-Next work is a reviewed capability-negotiated adapter, checked admission
-receipt provenance, checked clock/deadline mapping, durable recovery and drain
-integration, and RX/backpressure fault tests. Reproducible firmware, rollback and
-a fresh finite RF comparison follow those checks. Native and Python unit tests
-exercise source models; they do not qualify the installed firmware, a sustained
-rate, range, energy use or a standalone MCU transport.
+Exact candidate wheel/source artifacts and a concrete rollback/deployment scope
+precede hardware work. The owner must explicitly accept the short autonomous-handover policy in
+that fresh finite scope: accepted DATA may start before its fixed deadline after
+host revocation or USB loss, so instantaneous disconnected cancellation is not
+promised. Preflight must preserve preflash attempt/airtime debt and retain
+boot-bound clock-rate observations. Compare legacy and queue modes on the same
+rebuilt firmware with fresh bounded grants, authenticated receipts and independent
+content verification before making any acceleration claim.

@@ -12,6 +12,7 @@ import importlib
 import json
 import math
 from pathlib import Path
+import struct
 import sys
 import types
 
@@ -56,6 +57,14 @@ class BenchFlow:
         self.authority, self.worker, self.cipher = authority, worker, cipher
         self.journal, self.clock, self.ledger = journal, clock, ledger
         self.sends = sends
+        policy = getattr(authority, 'data_burst_policy', None)
+        self.data_burst = sends and policy is not None
+        self._physical_data, self._pending_data_domains = {}, {}
+        if self.data_burst:
+            from .burst_worker import BurstSerialWorker
+            require(isinstance(worker, BurstSerialWorker)
+                    and worker.data_burst_policy == policy, 'missing_admitted_burst_worker')
+            worker.assert_drained()
         self._receipt_payload = self._receipt_link = self._receipt_ready = None
         self._receipt_dispatching = self._receipt_requested = self._receipt_attempted = False
         self.receipt_confirmed = False
@@ -85,9 +94,11 @@ class BenchFlow:
             # fast SF5 quiet at250 ms when its retry floor grows: retry and
             # inter-frame silence are different clocks. Other profiles retain
             # their negotiated control window.
-            quiet_rto = min(profile.initial_rto_seconds, .5) if fast_sf5 else profile.initial_rto_seconds
+            source_rto = getattr(authority, 'source_initial_rto_seconds', profile.initial_rto_seconds)
+            quiet_rto = min(source_rto, .5) if fast_sf5 else source_rto
             self.burst_quiet_us = max(self.burst_quiet_us, math.ceil(quiet_rto * 500000))
-        self.burst_max_hold_us = math.ceil(profile.initial_rto_seconds * 1000000)
+        self.burst_max_hold_us = math.ceil(getattr(authority, 'source_initial_rto_seconds',
+                                                  profile.initial_rto_seconds) * 1000000)
         if fast_sf5:
             # A bounded four-frame train can exceed the old 500ms hold under
             # native host work. Never let its total-time cap preempt a train
@@ -134,7 +145,16 @@ class BenchFlow:
         epoch, mono = self.clock()
         self.scheduler.open_flow(flow_key, contract, profile, now_us=mono,
                                  now_epoch=epoch / 1000000, attempt_owner=self.owner)
-        self.link = port.FlowPortLink(scheduler=self.scheduler, owner=self.owner,
+        class PhysicalLink(port.FlowPortLink):
+            def queued_bytes(link, sender):
+                queued = super().queued_bytes(sender)
+                if self.data_burst:
+                    delay = self.worker.pending_airtime_us
+                    require(type(delay) is int and delay >= 0, 'invalid_physical_queue_bound')
+                    queued += math.ceil(delay * link.profile(sender).capacity_bytes_per_second / 1000000)
+                return queued
+        self._link_class = PhysicalLink
+        self.link = PhysicalLink(scheduler=self.scheduler, owner=self.owner,
             flow=flow_key, authorize=authority.service_lease, broker=authority.broker_lease,
             carrier=self._send, monotonic_us=lambda: self.clock()[1],
             epoch_clock=lambda: self.clock()[0] / 1000000)
@@ -191,12 +211,70 @@ class BenchFlow:
             kind = FrameKind.ACK if parsed['kind'] == self.ack_kind else FrameKind.DATA
             require((frame.request.role is FrameRole.CONTROL) == (kind is FrameKind.ACK),
                     'inner_lane_mismatch')
+        domain = logical_id = plaintext_digest = None
+        if self.data_burst and kind is FrameKind.DATA:
+            require(self.worker.data_burst_policy == self.authority.data_burst_policy,
+                    'burst_policy_changed')
+            domain = (frame.request.flow, parsed['flow_id'], parsed['generation'], parsed['seq'])
+            plaintext_digest = hashlib.sha256(frame.payload).digest()
+            pending = self._pending_data_domains.get(domain)
+            if pending is not None:
+                require(pending[0] == plaintext_digest, 'pending_data_plaintext_changed')
+                self.counts['pending_DATA_refused'] += 1
+                self.owner.settle_sending()
+                return CommitOutcome.REFUSED_CARRIER
+            logical_id = hashlib.sha256(b'meshticulum.pending-data.v1\0'
+                + self.cipher.grant.digest + struct.pack('!QQQ', *domain[1:])
+                + plaintext_digest).digest()
+        elif self.data_burst:
+            # ACK/control keep their synchronous canonical-handover path.
+            self._collect_physical(self.worker.drain_physical())
         packet = self.cipher.seal(frame.payload, kind, authorize=self.authority.live)
         worker_started_us = self.clock()[1]
-        result = self.worker.transmit(packet)
+        result = (self.worker.queue_data(packet, logical_id=logical_id,
+                                       owner_frame_id=frame.request.frame_id)
+                  if self.data_burst and kind is FrameKind.DATA else self.worker.transmit(packet))
         worker_finished_us = self.clock()[1]
         require(type(worker_started_us) is int and type(worker_finished_us) is int
                 and worker_finished_us >= worker_started_us, 'invalid_worker_timing')
+        if result.outcome == 'QUEUED':
+            require(self.data_burst and kind is FrameKind.DATA and result.driver is None,
+                    'invalid_queue_acceptance')
+            self._pending_data_domains[domain] = (plaintext_digest, result.request)
+            self._physical_data[result.request] = dict(domain=domain,
+                packet_sha256=hashlib.sha256(packet).hexdigest(), bytes=len(packet),
+                queue_submit_mono_us=worker_started_us, queue_accept_mono_us=worker_finished_us,
+                queue_accept_elapsed_us=worker_finished_us - worker_started_us,
+                owner_frame_id=frame.request.frame_id, carrier_outcome='QUEUED')
+            self.counts['tx_QUEUED'] += 1
+            self.events.append(dict(event='tx_queued', mono_us=worker_finished_us,
+                outer_kind='DATA', request=result.request,
+                **{key: value for key, value in self._physical_data[result.request].items()
+                   if key != 'domain'}))
+            self.last_activity_us = worker_finished_us
+            self.burst_sent += 1
+            self.next_send_us = (0 if self.burst_frames > 1 else worker_finished_us
+                                 + self.worker.pending_airtime_us + self.receive_gap_us)
+            if self.burst_sent >= self.burst_frames:
+                self.next_send_us = (worker_finished_us + self.worker.pending_airtime_us
+                                     + self.sender_control_hold_us)
+                self.burst_sent = 0
+                self.owner.settle_sending()
+            return CommitOutcome.ACCEPTED
+        if self.data_burst and kind is FrameKind.DATA and result.outcome == 'UNKNOWN':
+            # Physical proof may already be buffered even though queue handover
+            # itself failed. Keep that request without inventing an accepted
+            # flow handover or losing the separately fenced physical record.
+            self._physical_data[result.request] = dict(domain=None,
+                packet_sha256=hashlib.sha256(packet).hexdigest(), bytes=len(packet),
+                queue_submit_mono_us=worker_started_us, queue_accept_mono_us=None,
+                queue_accept_elapsed_us=None, owner_frame_id=frame.request.frame_id,
+                carrier_outcome='UNKNOWN')
+            self.counts['queue_UNKNOWN'] += 1
+            self.events.append(dict(event='queue_unknown', mono_us=worker_finished_us,
+                                    request=result.request, outer_kind='DATA'))
+            self.owner.settle_sending()
+            return CommitOutcome.UNKNOWN
         driver = result.driver
         require(driver is None or type(driver) is TxEvidence, 'invalid_driver_timing')
         basis = result.driver_elapsed_clock_basis if driver is not None else None
@@ -250,6 +328,52 @@ class BenchFlow:
         self.owner.settle_sending()
         return CommitOutcome.UNKNOWN
 
+    def _collect_physical(self, results):
+        for result in results:
+            require(type(result.request) is int and result.outcome in ('RF_DONE', 'NOT_SENT', 'UNKNOWN'),
+                    'invalid_physical_result')
+            info = self._physical_data.pop(result.request, None)
+            if info is None:
+                # A queue write already returned UNKNOWN to the carrier. It
+                # has no accepted DATA handover, but its journal still drains.
+                require(self.worker.fenced and result.outcome == 'UNKNOWN',
+                        'foreign_physical_result')
+                continue
+            domain = info.pop('domain')
+            if domain is not None:
+                held = self._pending_data_domains.get(domain)
+                require(held is not None and held[1] == result.request, 'physical_data_identity_changed')
+                del self._pending_data_domains[domain]
+            else:
+                require(self.worker.fenced and info['carrier_outcome'] == 'UNKNOWN',
+                        'unaccepted_physical_result')
+            driver = result.driver
+            require(driver is None or type(driver) is TxEvidence, 'invalid_driver_timing')
+            self.counts['tx_' + result.outcome] += 1
+            self.events.append(dict(event='tx', mono_us=self.clock()[1], outer_kind='DATA',
+                request=result.request, outcome=result.outcome, **info,
+                worker_call_elapsed_us=None, physical_result_mono_us=self.clock()[1],
+                driver_estimated_airtime_us=driver.estimated_airtime_us if driver else None,
+                driver_elapsed_us=driver.driver_elapsed_us if driver else None,
+                driver_elapsed_clock_basis=result.driver_elapsed_clock_basis,
+                driver_irq_flags=driver.irq_flags if driver else None,
+                driver_error=driver.driver_error if driver else None))
+
+    def _poll_physical(self):
+        if self.data_burst:
+            self._collect_physical(self.worker.poll_physical())
+
+    def _completion_ready(self):
+        if not self.flow.complete:
+            return False
+        self._poll_physical()
+        if self.data_burst:
+            if self._physical_data or self.worker.pending_physical:
+                return False
+            self.worker.assert_drained()
+            require(not self.worker.fenced, 'worker_run_fenced')
+        return True
+
     @property
     def receipt_confirmation_enabled(self):
         return self._receipt_payload is not None
@@ -282,7 +406,7 @@ class BenchFlow:
                 'receipt_confirmation_exceeds_control_bound')
         self._receipt_payload, self._receipt_ready = payload, receiver_ready
         if self.sends:
-            self._receipt_link = port.FlowPortLink(scheduler=self.scheduler, owner=self.owner,
+            self._receipt_link = self._link_class(scheduler=self.scheduler, owner=self.owner,
                 flow=flow_key, authorize=self.authority.service_lease, broker=self.authority.broker_lease,
                 carrier=self._send, monotonic_us=lambda: self.clock()[1],
                 epoch_clock=lambda: self.clock()[0] / 1000000)
@@ -294,7 +418,7 @@ class BenchFlow:
         finite grace. Unknown writes/fences still fail this command.
         """
         require(self.receipt_confirmation_enabled and self.sends and not self.closed
-                and self.flow.complete and self.authority.application_live(),
+                and self._completion_ready() and self.authority.application_live(),
                 'receipt_confirmation_before_receipt')
         if not self._receipt_requested:
             self._receipt_requested = True
@@ -327,6 +451,7 @@ class BenchFlow:
 
     def step(self):
         require(not self.closed and self.authority.live(), 'bench_authority_not_live')
+        self._poll_physical()
         self.update_counter()
         # Bound unauthenticated ingress CPU and the accepted adapter's inbound
         # list even in a noisy environment. Invalid frames never reach MT05.
@@ -401,9 +526,10 @@ class BenchFlow:
                     and self.flow.queued_bytes() > 0
                     and self.flow.in_flight() < min(self.flow.limits.window_frames, self.flow._peer_credit)):
                 break
+        self._poll_physical()
         if self.receipt_confirmed:
             self._check_flow()
-            return self.flow.complete
+            return self._completion_ready()
         if not self.sends and self.flow.delivered:
             data = self.flow.consume(len(self.flow.delivered))
             require(len(self.received) + len(data) <= self.maximum_bytes, 'bench_receive_limit')
@@ -416,8 +542,9 @@ class BenchFlow:
         if (not self.sends and self.burst_received and self.clock()[1] < self.ack_due_us):
             self.owner.settle_sending()
             self._check_flow()
-            return self.flow.complete
-        if self.clock()[1] < self.next_send_us:
+            return self._completion_ready()
+        if (self.clock()[1] < self.next_send_us
+                or self.data_burst and not self.worker.has_capacity):
             self.owner.settle_sending()
         else:
             self.owner.resume_sending()
@@ -429,7 +556,7 @@ class BenchFlow:
         # application data is exported from it in the run receipt.
         del self.link.sent[:-64]
         self._check_flow()
-        return self.flow.complete
+        return self._completion_ready()
 
     def _check_flow(self):
         if self.flow.failure:
@@ -453,6 +580,10 @@ class BenchFlow:
                              'control_rate_us_per_second': self.scheduler.policy.control_rate_us_per_second},
             'attempt_journal': self.journal.snapshot(), 'events': list(self.events),
             'scheduler': self.scheduler.snapshot()}
+        if self.data_burst:
+            value['physical_queue'] = dict(pending=len(self._physical_data),
+                worker_pending=len(self.worker.pending_physical),
+                events=self.worker.physical_snapshot())
         if self.receipt_confirmation_enabled:
             value['receipt_confirmation'] = self.receipt_confirmation_snapshot()
         return value
@@ -461,4 +592,11 @@ class BenchFlow:
         if not self.closed:
             self.closed = True
             self.owner.settle_sending()
-            self.scheduler.close()
+            try:
+                if self.data_burst:
+                    if self.worker.pending_physical:
+                        self.worker.cancel_pending()
+                    self._collect_physical(self.worker.drain_physical())
+                    require(not self._physical_data, 'unresolved_physical_data_on_close')
+            finally:
+                self.scheduler.close()

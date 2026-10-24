@@ -1,6 +1,6 @@
 #pragma once
-// Dormant source prototype; not included by main.cpp or the firmware recipe.
-// This is a single-loop-owned state machine, not RF authority or a driver.
+// Fixed-memory state machine used by the opt-in LoRa burst adapter.
+// This is single-loop owned; it does not create authority or call a driver.
 // The adapter must verify the admitted DATA lane, actual profile/airtime,
 // original boot/context/deadline and durable host reservation before enqueue.
 // It must check RX and evidence-output capacity before issue(), bind every
@@ -55,6 +55,7 @@ enum class Code : std::uint8_t {
 struct Evidence {
     Binding binding;
     std::uint64_t request=0, estimated_airtime_us=0, driver_elapsed_us=0;
+    std::uint64_t event_us=0, deadline_us=0;
     std::uint16_t size=0;
     std::uint8_t digest[32]={};
     State state=State::Empty;
@@ -111,6 +112,8 @@ class TxBurstQueue {
         slot.evidence.size=slot.packet.size;
         std::memcpy(slot.evidence.digest,slot.packet.digest,32);
         slot.evidence.state=value;
+        slot.evidence.event_us=last_now_;
+        slot.evidence.deadline_us=slot.packet.deadline_us;
     }
     void stop(bool fence) {
         for(auto& slot:slots_) {
@@ -240,7 +243,9 @@ public:
             const bool done=value.state==State::RfDone && value.driver_elapsed_us>0
                 && (value.irq_flags&1u) && !(value.irq_flags&0x200u) && !value.driver_error;
             if(started || done) {
+                if(started && slot.state==State::Started) return Code::Replayed;
                 slot.evidence=value; slot.state=value.state;
+                slot.evidence.event_us=now; slot.evidence.deadline_us=slot.packet.deadline_us;
                 if(done) active_=TX_BURST_DEPTH;
                 if(burst_deadline_ && now>=burst_deadline_) stop(false);
                 return Code::Accepted;
@@ -256,6 +261,13 @@ public:
     void cancel() { stop(true); }
     bool containmentRequired() const { return containment_required_; }
     bool fenced() const { return fenced_; }
+    std::size_t retained() const { std::size_t count=0;for(const auto& s:slots_) if(s.state!=State::Empty) count++;return count; }
+    std::size_t pending() const { std::size_t count=0;for(const auto& s:slots_) if(s.state!=State::Empty && !terminal(s.state)) count++;return count; }
+    std::size_t queued() const { std::size_t count=0;for(const auto& s:slots_) if(s.state==State::Queued) count++;return count; }
+    bool evidenceAt(std::size_t index,Evidence& value) const {
+        if(index>=TX_BURST_DEPTH || slots_[index].state==State::Empty) return false;
+        value=slots_[index].evidence;return true;
+    }
     // Report checked physical containment; this never unfences or refunds debt.
     void containmentComplete(bool success) { if(success && owns_) containment_required_=false; }
     bool evidence(std::uint64_t request,Evidence& value) const {

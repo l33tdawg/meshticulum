@@ -55,6 +55,22 @@ def test_full_manifest_pin_mismatch_publishes_nothing(tmp_path):
     assert not output.exists()
 
 
+def test_exact_wired_queue_source_inventory_has_its_own_identity(tmp_path):
+    path, _, source = source_metadata(tmp_path)
+    source['application'].update({'burst_adapter.hpp': 'b' * 64,
+                                  'experimental/tx_burst.hpp': 'c' * 64})
+    source['identity'] = 'mtb1-' + example.sha(json.dumps(
+        source['application'], sort_keys=True).encode())[:10]
+    _, pin = write_source(path, source)
+    assert example.firmware_identity(path, pin) == source['identity']
+    del source['application']['experimental/tx_burst.hpp']
+    source['identity'] = 'mtb1-' + example.sha(json.dumps(
+        source['application'], sort_keys=True).encode())[:10]
+    _, pin = write_source(path, source)
+    with pytest.raises(WireError, match='firmware_source_mismatch'):
+        example.firmware_identity(path, pin)
+
+
 @pytest.mark.parametrize('pin', [None, 0, '', 'a' * 63, 'a' * 65, 'A' * 64, 'g' * 64])
 def test_invalid_pin_is_refused_before_source_read(tmp_path, pin):
     output = tmp_path / 'identity.json'

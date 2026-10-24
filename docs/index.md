@@ -14,7 +14,8 @@ Meshticulum brings bounded radio transfers, authenticated service boundaries and
 | [Architecture](ARCHITECTURE.md) | Component diagrams, service separation, a transfer's lifecycle and the intended mixed-path topology |
 | [MeshCore and Reticulum comparison](COMPARISON.md) | The upstream designs, their strengths, and what Meshticulum implements differently |
 | [Public SDK radio measurements](RADIO_SDK_MEASUREMENTS.md) | Inspect the GFSK files and the 24 October A/B LoRa distance sample |
-| [Host-backed MCU acceleration](MCU_ACCELERATION.md) | Review the dormant ciphertext queue prototype and the remaining host/firmware integration work |
+| [Host-backed MCU acceleration](MCU_ACCELERATION.md) | Review the opt-in DATA queue source candidate, durable physical accounting and remaining RF comparison |
+| [MCU burst protocol](MCU_BURST_PROTOCOL.md) | Inspect immutable handover policy, exact serial records, clock bounds and closure requirements |
 | [HTTP over radio](HTTP_GATEWAY.md) | Inspect the one-request text-browser gateway, its 53-second cold path and its limits |
 | [Performance and measurement](PERFORMANCE.md) | Useful encrypted goodput, reported results, exact units and the conditions for a fair comparison |
 | [Post-quantum status](POST_QUANTUM.md) | The classical default, hybrid prototype, radio overhead and remaining device work |
