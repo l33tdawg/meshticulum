@@ -2,9 +2,9 @@
 
 The [artifact audit](../provenance/FIRMWARE_LINKED_NOTICE_AUDIT.json), schema `meshticulum.linked-firmware-components.v1`, inventories **49 contributing archives per target** in the final build-05 ELF/map pair. It records archive hashes and retained member names, identifies primary notice texts and preserves unresolved source/license questions. It is an incomplete artifact-specific audit: `full_notice_closure`, `cross_host` and `rf_qualified` remain false.
 
-This advances the [firmware recipe's](FIRMWARE_RECIPE.md) input/build evidence into linked-content review. It does not establish exact source correspondence for every object, a distribution-wide license result or native qualification. This isolated package candidate is `1.0.0a1`; no alpha publication or device action follows from this record.
+This advances the [firmware recipe's](FIRMWARE_RECIPE.md) input/build evidence into linked-content review. It does not establish exact source correspondence for every object, a distribution-wide license result or native qualification. This audit accompanied the historical `1.0.0a1` package candidate; later SDK packaging does not expand its artifact scope. The DATA queue firmware has separate [build evidence](../provenance/MCU_BURST_FIRMWARE.json) and a [24 October RF comparison](../benchmarks/2026-10-24-mcu-queue-lora/README.md), without a claim of complete linked-notice closure for that image.
 
-## Current IRQ020 application artifacts
+## Retained IRQ020 application artifacts
 
 The separate [IRQ020 inventory](../provenance/FIRMWARE_IRQ020_LINKED_NOTICES.json) binds application source `2b9db9e71dfa7d115d4e465225893b828c760171`, source tag `mtb1-020e287255`, the four application hashes, recipe/input-lock hashes and both actual ELF/map pairs. The older build-05 inventory above remains historical evidence.
 
@@ -13,7 +13,7 @@ The separate [IRQ020 inventory](../provenance/FIRMWARE_IRQ020_LINKED_NOTICES.jso
 | `mtbench_heltec_v4` | 391,600 | 49 | 4,404 |
 | `mtbench_xiao_s3_wio` | 385,264 | 49 | 4,289 |
 
-The inventory records each application binary's SHA-256, ELF/map hashes, archive/member hashes and direct object hashes. The current SDK archives match the 39 distinct upstream blobs in the retained SDK review. The four compiler/runtime archive hashes and their 93 selected members also match the earlier bounded runtime review. These byte matches preserve those reviews' limits; they do not resolve the dirty SDK build or establish per-file license applicability.
+The inventory records each application binary's SHA-256, ELF/map hashes, archive/member hashes and direct object hashes. The recorded SDK archives match the 39 distinct upstream blobs in the retained SDK review. The four compiler/runtime archive hashes and their 93 selected members also match the earlier bounded runtime review. These byte matches preserve those reviews' limits; they do not resolve the dirty SDK build or establish per-file license applicability.
 
 The [source-material inventory](../provenance/FIRMWARE_IRQ020_SOURCE_MATERIALS.json) lists 833 retained source/header/configuration files, 460 generated dependency records and 210 linker LOAD input paths across both targets. The separate local review packet retains those exact bytes, complete source-file comments, current artifacts and applicable collected notice texts. This material collection has **not** been established as a complete usable corresponding-source or relinking kit. The source inventory is a manifest, not delivery of every upstream source archive. Bootloader and partition output hashes are recorded; their linked-content notice review is outside this application-image inventory.
 

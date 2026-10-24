@@ -3,8 +3,9 @@
 Build the selected target with the [pinned recipe](FIRMWARE_RECIPE.md), then keep
 `SOURCE.json`, `evidence/BUILD.json`, the application binary and their SHA-256
 values together. `SOURCE.json.identity` is the exact HELLO version expected by
-the host. It is derived from `main.cpp`, `protocol.hpp`, `gfsk_profile.hpp` and
-`gfsk250_profile.hpp`; a historical documentation tag is not your build identity.
+the host. Use the generated application inventory in that file: MCU020 used
+four inputs, while the DATA queue application uses six. A historical
+documentation tag is not your build identity.
 The application identity does not identify the complete linked binary or SDK.
 
 This procedure is for a board you own with an independently known current

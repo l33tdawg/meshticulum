@@ -1,4 +1,57 @@
-# Meshticulum 1.0.0-alpha release status
+# Meshticulum alpha release status
+
+## 1.0.0-alpha.2 candidate — 2026-10-24
+
+**Prepared for review; not published.** The next candidate uses Python package
+version **`1.0.0a2`** and proposed Git tag **`v1.0.0-alpha.2`**. The published
+`v1.0.0-alpha` / `1.0.0a1` release and its checksummed assets remain unchanged.
+
+The candidate adds opt-in host-backed MCU DATA queueing, request-aware serial
+event routing, durable physical-result recovery/drain, queue-aware retry timing,
+USB bundle sending, modem-aware LoRa admission, permanent-airtime-exhaustion
+diagnostics and separately bounded operation journals. Keys, authenticated ACKs,
+credit and retry decisions remain on the host. Frozen flow source remains pinned.
+See [MCU acceleration](MCU_ACCELERATION.md) and the [changelog](../CHANGELOG.md).
+
+The [24 October sanitized comparison](../benchmarks/2026-10-24-mcu-queue-lora/README.md)
+records one fixed-order pair at an operator-reported approximately 20 m on
+SF7/BW500. Both transfers verified 8,164 useful bytes. Sender startup through
+authenticated receipt improved from **8.766668 s / 931.255 B/s** synchronous to
+**7.526076 s / 1,084.762 B/s** queued, a **16.484%** goodput gain. All 46 queued
+DATA packets physically completed and were released; checked endpoint completion
+followed authenticated receipt by 27.456 ms. Both modes had zero retries, receive
+drops or new UNKNOWN outcomes, with unchanged boots and service lifetimes.
+This one pair does not establish sustained capacity, wider recovery, field range
+or an upstream performance/security ranking.
+
+That radio measurement used source `f06ebeb3e687da4688657311830e95326a0107d2`,
+wheel SHA-256 `7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0`
+and `mtb1-6cfde1fdd4` firmware. Its metadata still said `1.0.0a1`; it is not the
+17 October published wheel. The version-rebuilt alpha.2 wheel needs its own
+clean-install/content checks. Release correspondence must identify the 70
+unchanged runtime files and the sole `__version__` literal change separately;
+this is not fresh RF execution of the rebuilt wheel. Historical MCU020 and
+installed-alpha1 proofs retain their original identities and scope.
+
+The proposed distribution remains **selection A: SDK and firmware source build**.
+It includes a reproducible wheel and normalized source archive, source-build
+guide, project license/notices, current scoped proofs, candidate validation,
+manifest and checksums. It includes no prebuilt MCU BIN/ELF or third-party wheels.
+The [6cf build record](../provenance/MCU_BURST_FIRMWARE.json) retains its two
+same-host Heltec build scope; the separate comparison supplies installed/radio
+evidence. Its historical `flashed: false` and `rf_qualified: false` flags are not
+rewritten. MCU020 notice inventories and two-target proofs do not establish a
+new 6cf full linked-notice audit, vendor-source reconstruction or Xiao physical
+acceptance. Optional prebuilt firmware remains a separate distribution review.
+
+Before publication, review the exact candidate commit, Python 3.11–3.13/PQ CI,
+frozen-flow/boundary/docs/website/benchmark controls, independent artifact
+reproduction, clean installation, measured-code correspondence, selected archive
+contents/notices and SHA-256 manifest. The release's exact source and selected
+asset hashes belong in its final `RELEASE_MANIFEST.json` and `SHA256SUMS`.
+No release build creates device or RF authority.
+
+## Retained 1.0.0-alpha publication — 2026-10-17
 
 **Status on 2026-10-17: published as an experimental GitHub prerelease.** [`v1.0.0-alpha`](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) points to source `673eb60d24dc60f67371e24bc5c9caeec3a68508`, and package version `1.0.0a1`. The release provides the tested SDK wheel, normalized source archive, firmware source-build guide, notices, proof records, manifest and checksums. The source retains its published development history. [Repository history](https://github.com/l33tdawg/meshticulum/blob/main/docs/REPOSITORY_HISTORY.md) explains the separation. Any consuming Lantern pair retains its own dependency and qualification records.
 

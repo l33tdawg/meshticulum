@@ -1,4 +1,10 @@
-# Public SDK radio measurements: 17–22 October 2026
+# Public SDK radio measurements: 17–24 October 2026
+
+The latest [host-backed MCU queue comparison](#host-backed-mcu-queue-comparison-24-october-2026)
+verified two fresh 8,164-byte files over an approximately 20 m LoRa link.
+Startup-inclusive goodput rose from **931.3 to 1,084.8 B/s (+16.48%)** in one
+baseline-then-queue pair. Its exact source, boundaries and retained failures are
+separate from the earlier GFSK and LoRa samples below.
 
 The public SDK completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s)** of useful application throughput, from each file's first sender startup through its final authenticated receipt. Both five-part files and their publishers were independently verified. A separate **23,900-byte file reached 2.53 kB/s (20.28 kbit/s)** at the same timing boundary.
 
@@ -269,13 +275,81 @@ intervals to 4.984246 s; the 1.150117 s difference needs further attribution.
 Driver intervals include driver work and do not independently measure RF airtime.
 The sender's CPU-only median reservation and settlement times were 0.460 and
 0.419 ms respectively. These observations motivate the
-[host-backed MCU acceleration prototype](MCU_ACCELERATION.md); they do not
-measure a speedup from it. This single sample does not establish sustained
+[host-backed MCU acceleration work](MCU_ACCELERATION.md). This earlier sample
+does not measure a queue speedup; the later pair below has its own source and
+measurement pins. This single sample does not establish sustained
 capacity, field range or a completion distribution.
+
+## Host-backed MCU queue comparison: 24 October 2026
+
+A fresh finite comparison ran the synchronous baseline first and MCU queue
+mode second on two Heltec V4 USB radios, B sending to A, at the same
+operator-reported approximately **20 m** placement. Both endpoints used
+`mtb1-6cfde1fdd4`, SF7/BW500/CR4:5, preamble 8, sync `0x42`, 921.375 MHz and
+0 dBm. Each mode sent a fresh **8,164-byte useful file**, represented by an
+8,827-byte signed response. Each required 46 DATA packets and one authenticated
+receipt-confirmation CONTROL packet; the receiver sent 18 ACK packets.
+
+| Timing boundary | Baseline | Queue mode |
+| --- | ---: | ---: |
+| Sender startup → authenticated receipt | 8.766668 s; **931.254611 B/s** | 7.526076 s; **1,084.761833 B/s** |
+| First DATA worker call / queued submission → receipt | 8.013809 s; **1,018.741525 B/s** | 6.900232 s; **1,183.148625 B/s** |
+| Receipt → drained endpoint complete | 3.329 ms | **27.456 ms** |
+| Receipt → sender CLI complete | 129.734 ms | 178.999 ms |
+| Scope issue → both endpoints closed | 20.301626 s | 21.350294 s |
+
+Startup-inclusive useful goodput improved **16.483915%**, with 14.151237% less
+elapsed time. DATA-boundary goodput improved **16.138254%**. That boundary
+starts at a host worker call or queued submission, not an independently
+measured RF start. Authenticated receipt is observed immediately after ACK
+application, before the physical drain gate. Scope-to-closure also includes
+management, startup and cleanup; queue mode did not improve that boundary in
+this pair.
+
+Both whole files and their publishers verified. Both runs had zero DATA
+retries, new receive drops or new UNKNOWN outcomes, all four endpoint children
+exited zero and no forced cleanup was needed. Queue mode retained 46 each of
+QUEUED, ISSUED, STARTED and RF_DONE events, followed by 46 exact result releases;
+no physical records remained at closure. The pinned completion gate checked
+drained STATUS; its raw reply and RX-rearm timestamps were not independently
+retained. Historical UNKNOWN references and
+paid costs stayed retained and are not claimed resolved by these successes.
+
+The MCU driver totals for DATA were **4.983012 s baseline** and **4.989588 s
+queued**. Baseline DATA worker calls totaled **6.156631 s**, including the
+4.983012 s driver total. Their 1.173619 s difference includes host/transport
+work and is not CPU-only time. Queue acceptance calls totaled **1.118990 s**
+while MCU RF work continued; acceptance and driver totals overlap and must
+not be added. The result is consistent with reducing serial handoff delays
+while preserving the same radio profile. Independent RF airtime, energy and
+EIRP were not measured.
+
+The tested SDK source was `f06ebeb3e687da4688657311830e95326a0107d2`, with wheel
+SHA-256 `7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0`.
+This measured wheel identifies as `1.0.0a1`. Any future `1.0.0a2` build has a
+separate artifact identity and requires its own checks.
+
+The rollout history remains part of the record. The first deployment attempt
+timed out and both units were verified restored to the prior image. A later
+installation succeeded, but its baseline exhausted a 10,000,000 µs virtual
+pacing budget after 45 DATA frames, before the final DATA frame; queue mode
+was not attempted under that failed scope. Frozen accounting intentionally
+adds settled estimates to sampled worker usage. The failure led to cold-plan
+checks, an explicit exhaustion diagnostic and grant-bound per-operation
+journal limits independent of absolute MCU boot caps. The next fresh pair
+passed while retaining earlier debt and the failed ledger's sticky fence.
+
+[The sanitized comparison](../benchmarks/2026-10-24-mcu-queue-lora/results.json)
+retains exact timing, accounting, source pins and failures. The queue is
+explicit opt-in; Linux retains keys, AEAD, ACK authentication, credit, retries
+and verification. This single fixed-order pair does not establish sustained
+capacity, a completion distribution, loss/disconnect recovery, field range,
+energy use or a MeshCore/Reticulum speed ranking.
 
 ## What changed, and what remains
 
-The SDK now checks fresh kernel open-event evidence alongside descriptor, inode, mount and ownership bindings, avoiding repeated scans of every process descriptor during normal packet work. Verified `nodev` IPC namespaces allow ordinary shared-memory file churn without invalidating device ownership. Initial collision scans, existing-alias watches and fault refusal remain. These are host-side changes; these samples do not isolate a firmware speedup.
+The SDK now checks fresh kernel open-event evidence alongside descriptor, inode, mount and ownership bindings, avoiding repeated scans of every process descriptor during normal packet work. Verified `nodev` IPC namespaces allow ordinary shared-memory file churn without invalidating device ownership. Initial collision scans, existing-alias watches and fault refusal remain. Those earlier samples measure host-side changes. The later MCU comparison
+above holds the firmware/profile fixed and measures the opt-in handoff path.
 
 The earlier GFSK startup-inclusive samples exceed the **1 kB/s (8 kbit/s) alpha floor for their stated path**. The installed-wheel run adds a real installation and verified-piece continuation check. These finite files do not establish a sustained-throughput or completion distribution or a guarantee on another installation. The selected SDK/source-build artifacts are published as the [`v1.0.0-alpha` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) from source `673eb60`. Native/private integration, wider recovery and security qualification remain separate programme work.
 

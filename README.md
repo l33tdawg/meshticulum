@@ -8,6 +8,15 @@ A [SAGE Foundation](https://sage-foundation.net/) project, created and maintaine
 
 **Experimental `1.0.0-alpha` is public.** The [GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) provides the tested SDK wheel, normalized source archive, firmware source-build guide, notices and proof records from source `673eb60`. The alpha scope is reliable verified delivery, a deployable SDK and firmware build path, and useful encrypted goodput above **1 kB/s (8 kbit/s)** including sender startup on the declared tested path. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current work and roadmap](docs/ROADMAP.md).
 
+Current development adds an opt-in **host-backed MCU DATA queue**. In one
+24 October LoRa comparison, startup-inclusive useful goodput rose from
+**931.3 to 1,084.8 B/s (+16.48%)** for two fresh 8,164-byte files over the same
+approximately 20 m link. Both verified with zero retries, drops or new UNKNOWN
+outcomes. Linux still owns keys, authenticated ACKs, credit and retries.
+[Measured scope and retained failures](benchmarks/2026-10-24-mcu-queue-lora/README.md)
+accompany this single fixed-order pair. The measured source and wheel are
+separate from the published alpha and any future `1.0.0a2` artifacts.
+
 Meshticulum is an experimental transport and resource system for networks that mix LoRa and IP. We are building it to close the gap between practical embedded radio meshes and richer, secure networking across different transports—and to move more useful encrypted data through the radio time we have.
 
 It began in SAGE Lantern and now lives as a standalone project. The transport, public-resource and offline envelope code work without SAGE or Lantern. [Lantern](https://github.com/l33tdawg/sage-lantern) consumes Meshticulum and owns its device and private SAGE integrations.
@@ -129,6 +138,16 @@ range or sustained-capacity result. [The A/B record](benchmarks/2026-10-22-ab-cr
 retains the failed authentication attempt, exact evidence hashes and the
 B-firmware rollback boundary.
 
+The later 24 October MCU-queue pair used two Heltec V4 USB radios at
+SF7/BW500/CR4:5, sync `0x42`, 921.375 MHz and 0 dBm. Baseline sender startup to
+authenticated receipt took **8.766668 s**; queue mode took **7.526076 s**.
+From the first DATA worker call or queued submission, the intervals were
+**8.013809 and 6.900232 s**. Queue mode separately settled and released all
+46 DATA physical results; drained endpoint completion followed authenticated
+receipt by **27.456 ms**. The MCU driver time stayed about 4.99 s in both
+modes, consistent with overlapped host/MCU work on the same radio profile. [The acceleration guide](docs/MCU_ACCELERATION.md)
+explains the bounded policy and remaining repetition, loss and recovery work.
+
 Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/s median (9.6 kbit/s)**, and two later 16,356-byte public responses reached **1.037 and 1.071 kB/s** through reliable-flow ACK with zero DATA retries or duplicates. [Performance](docs/PERFORMANCE.md) retains those historical conditions and scoped upstream comparisons. The immediate target is sustained useful encrypted delivery above **1 kB/s (8 kbit/s) including startup**, with reliable completion and deployable code. **4 to 5 kB/s (32 to 40 kbit/s) is an optional later stretch**, not an alpha release gate. The new GFSK samples and earlier LoRa results retain their own source pins and measurement boundaries.
 
 [Performance](docs/PERFORMANCE.md) explains the available evidence, units, measurement boundaries and the scope of comparisons with published upstream figures.
@@ -139,6 +158,7 @@ Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/
 | --- | --- | --- |
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
 | Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
+| MCU DATA queue | Opt-in bounded ciphertext queue; one same-firmware LoRa pair improved startup-inclusive goodput by 16.48%, with every physical result settled | Repeated and reversed-order comparisons, loss/disconnect recovery, wider hardware and energy measurements |
 | Public resources | Two fresh 100 kB files reached 1.95 to 2.03 kB/s (15.6 to 16.2 kbit/s); fresh 250 kB, 500 kB and 1 MB files reached 2.111, 2.216 and 2.230 kB/s (16.9, 17.7 and 17.8 kbit/s), all with independent whole-file verification | Wider completion distribution, recovery, mixed-path coverage, field range and qualification |
 | HTTP gateway | Three plain-HTTP browser runs through a second unit's internet access rendered in 17.77–17.99 s with a 30 s timeout; gateway completion 16.81–17.08 s; both radio directions verified | Repeated-request latency and broader hardware; no HTTPS `CONNECT`, TUN or transparent routing |
 | Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
