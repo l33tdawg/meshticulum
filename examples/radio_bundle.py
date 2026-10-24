@@ -211,6 +211,7 @@ def main():
     run.add_argument('--grant-sha256', required=True)
     run.add_argument('--admission', required=True, type=Path)
     run.add_argument('--admission-sha256', required=True)
+    base.add_operation_limit_arguments(run)
     run.add_argument('--firmware-source', required=True, type=Path)
     run.add_argument('--firmware-source-sha256', required=True)
     run.add_argument('--unit', required=True)

@@ -19,7 +19,7 @@ import time
 
 from meshticulum.bench.admission import Gfsk250Admission, RadioAdmission
 from meshticulum.bench.attempts import AttemptJournal
-from meshticulum.bench.authority import RunAuthority
+from meshticulum.bench.authority import OperationLimits, RunAuthority
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.gfsk250_profile import Gfsk250Profile
 from meshticulum.bench.hat_worker import Gfsk250HATWorker, HATWorker, journal_binding as hat_binding
@@ -54,6 +54,24 @@ def plan_modem(plan):
         return 'lora'
     require(modem == 'gfsk250', 'example_unknown_radio_modem')
     return modem
+
+
+def add_operation_limit_arguments(parser):
+    parser.add_argument('--operation-attempt-limit', type=int,
+        help='reduce this operation journal attempt cap; never changes the MCU boot cap')
+    parser.add_argument('--operation-airtime-limit-us', type=int,
+        help='reduce this operation journal estimated-airtime cap in microseconds')
+
+
+def operation_journal_limits(args, admitted):
+    attempts = getattr(args, 'operation_attempt_limit', None)
+    airtime = getattr(args, 'operation_airtime_limit_us', None)
+    limits = OperationLimits(admitted.attempts if attempts is None else attempts,
+                             admitted.estimated_airtime_us if airtime is None else airtime)
+    require(limits.attempts <= admitted.attempts
+            and limits.estimated_airtime_us <= admitted.estimated_airtime_us,
+            'example_operation_limits_exceed_grant')
+    return limits
 
 
 def sha(data):
@@ -418,6 +436,8 @@ def transfer_chunk(args):
 
 def run_object(args, raw, admission, version, payload, window, factory):
     plan = json.loads(raw)
+    admitted_limits = OperationLimits.from_plan(plan)
+    limits = operation_journal_limits(args, admitted_limits)
     transport = (LinuxHAT() if args.interface == 'hat' else
                  ExclusiveSerial(args.device, usb_serial=args.usb_serial))
     cleanup, errors, result = [transport.close], [], None
@@ -429,6 +449,7 @@ def run_object(args, raw, admission, version, payload, window, factory):
             host_boot_id=host_boot(), clock=clock, owner_probe=lambda: owner.current() and window.current(), radio_admission=admission)
         cleanup.append(authority.close)
         require(authority.plan_bytes == raw and authority.application_live(), 'example_authority_changed')
+        require(authority.operation_limits == admitted_limits, 'example_operation_limits_changed')
         profile = authority.profile
         profile_cls, hat_cls, serial_cls, _ = modem_classes(plan_modem(plan))
         require(type(profile) is profile_cls, 'example_requires_matching_profile')
@@ -444,7 +465,7 @@ def run_object(args, raw, admission, version, payload, window, factory):
         else:
             binding = hat_binding(authority.grant.digest, transport.boot_id, profile)
         journal = AttemptJournal(args.grant_directory / 'attempts.db', binding=binding,
-            max_attempts=profile.max_boot_attempts, max_airtime_us=profile.max_boot_estimated_airtime_us,
+            max_attempts=limits.attempts, max_airtime_us=limits.estimated_airtime_us,
             create=True, request_clock=lambda: clock()[0])
         cleanup.append(journal.close)
         store = SessionStore(args.grant_directory / 'wire.db', authority.grant, authority.local_peer,
@@ -473,7 +494,9 @@ def run_object(args, raw, admission, version, payload, window, factory):
         window.check()
         result = {'chunk': args.chunk, 'sender_peer_receipt': authority.sends,
                   'receiver_chunk_verified': not authority.sends,
-                  'whole_file_verified': False, 'attempt_journal': journal.snapshot()}
+                  'whole_file_verified': False, 'attempt_journal': journal.snapshot(),
+                  'operation_limits': dict(attempts=limits.attempts,
+                                          estimated_airtime_us=limits.estimated_airtime_us)}
         if session.endpoint.receipt_confirmation_enabled:
             result['receipt_confirmation'] = session.endpoint.receipt_confirmation_snapshot()
     except BaseException as error:
@@ -512,6 +535,7 @@ def main():
     run.add_argument('--file-issued-epoch-us', required=True, type=int)
     run.add_argument('--admission', required=True, type=Path)
     run.add_argument('--admission-sha256', required=True)
+    add_operation_limit_arguments(run)
     for sub in (run, inspect, compact):
         sub.add_argument('--firmware-source', required=True, type=Path)
         sub.add_argument('--firmware-source-sha256', required=True)
