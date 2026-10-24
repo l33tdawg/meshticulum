@@ -1,12 +1,15 @@
 # Meshticulum alpha release status
 
-## 1.0.0-alpha.2 candidate — 2026-10-24
+## Published 1.0.0-alpha.2 — 2026-10-24
 
-**Prepared for review; not published.** The next candidate uses Python package
-version **`1.0.0a2`** and proposed Git tag **`v1.0.0-alpha.2`**. The published
-`v1.0.0-alpha` / `1.0.0a1` release and its checksummed assets remain unchanged.
+**Published as an experimental GitHub prerelease.** Python package version
+**`1.0.0a2`** is available at [`v1.0.0-alpha.2`](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.2),
+source [`62007e219ff7de1db6e0caf1db3066a8b56fb568`](https://github.com/l33tdawg/meshticulum/commit/62007e219ff7de1db6e0caf1db3066a8b56fb568).
+The eleven selected assets and their uploaded hashes are bound by the
+[alpha.2 release record](../provenance/ALPHA2_RELEASE.json). The original
+`v1.0.0-alpha` / `1.0.0a1` release and checksummed assets remain unchanged.
 
-The candidate adds opt-in host-backed MCU DATA queueing, request-aware serial
+The release adds opt-in host-backed MCU DATA queueing, request-aware serial
 event routing, durable physical-result recovery/drain, queue-aware retry timing,
 USB bundle sending, modem-aware LoRa admission, permanent-airtime-exhaustion
 diagnostics and separately bounded operation journals. Keys, authenticated ACKs,
@@ -27,15 +30,15 @@ or an upstream performance/security ranking.
 That radio measurement used source `f06ebeb3e687da4688657311830e95326a0107d2`,
 wheel SHA-256 `7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0`
 and `mtb1-6cfde1fdd4` firmware. Its metadata still said `1.0.0a1`; it is not the
-17 October published wheel. The version-rebuilt alpha.2 wheel needs its own
-clean-install/content checks. Release correspondence must identify the 70
-unchanged runtime files and the sole `__version__` literal change separately;
-this is not fresh RF execution of the rebuilt wheel. Historical MCU020 and
+17 October published wheel. The version-rebuilt alpha.2 wheel passed its own
+clean-install/content checks. Release correspondence found 70 unchanged runtime
+files, the sole `__version__` literal change and two unchanged examples.
+This is not fresh RF execution of the rebuilt wheel. Historical MCU020 and
 installed-alpha1 proofs retain their original identities and scope.
 
-The proposed distribution remains **selection A: SDK and firmware source build**.
+The published distribution is **selection A: SDK and firmware source build**.
 It includes a reproducible wheel and normalized source archive, source-build
-guide, project license/notices, current scoped proofs, candidate validation,
+guide, project license/notices, current scoped proofs, release validation,
 manifest and checksums. It includes no prebuilt MCU BIN/ELF or third-party wheels.
 The [6cf build record](../provenance/MCU_BURST_FIRMWARE.json) retains its two
 same-host Heltec build scope; the separate comparison supplies installed/radio
@@ -44,12 +47,21 @@ rewritten. MCU020 notice inventories and two-target proofs do not establish a
 new 6cf full linked-notice audit, vendor-source reconstruction or Xiao physical
 acceptance. Optional prebuilt firmware remains a separate distribution review.
 
-Before publication, review the exact candidate commit, Python 3.11–3.13/PQ CI,
-frozen-flow/boundary/docs/website/benchmark controls, independent artifact
-reproduction, clean installation, measured-code correspondence, selected archive
-contents/notices and SHA-256 manifest. The release's exact source and selected
-asset hashes belong in its final `RELEASE_MANIFEST.json` and `SHA256SUMS`.
-No release build creates device or RF authority.
+Eight source-CI jobs and Pages validation passed. Two clean builds produced
+matching wheels and normalized source archives; a third wheel rebuild and clean
+installation checked all 71 runtime files. Frozen-flow, boundary, documentation,
+website, benchmark, archive-content and notice controls passed for the selected
+release. `RELEASE_VALIDATION.json` records the checks; `RELEASE_MANIFEST.json`
+and `SHA256SUMS` bind the exact selected assets.
+
+| Published asset | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `meshticulum-1.0.0a2-py3-none-any.whl` | 285,149 | `d04d3746b07d467d31555e84a63b1771bb15afc728814263f0f64fb00c58f664` |
+| `meshticulum-1.0.0a2.tar.gz` | 1,007,893 | `8543dc81a834d379c27f8c99f159cf3d09b22e7b0c9ee6d6477806f37ff9354a` |
+| `SHA256SUMS` | 884 | `68199c9e073f1ba31ab43b026fd0768a2df4f5d8d942c2c7874822e37f6f918d` |
+
+No release build or publication creates device or RF authority. The sections
+below retain the original alpha.1 publication and qualification record.
 
 ## Retained 1.0.0-alpha publication — 2026-10-17
 
@@ -81,7 +93,7 @@ An alpha does not promise stable wire/API compatibility, autonomous routing, a M
 
 The published **selection A** contains the SDK wheel and source distribution, project `LICENSE`/`NOTICE`, the public firmware recipe and its retained notices. Recipients fetch the fourteen pinned vendor inputs directly from their publishers and build locally. No compiled firmware is bundled in these SDK packages. Package-content and notice review passed for that selection before publication.
 
-The [retained MCU020 proof](../provenance/PUBLIC_MCU020_PROOF.json), bound to candidate `673eb60`, matches the current four application files, recipe and input lock to independently prepared application BIN/ELF outputs for both named targets on the recorded macOS-arm64 host. This closes the application recipe-to-image check through those locked vendor inputs. The retained Heltec installation record checks its written application span by ROM MD5; later runs are linked by runtime-tag continuity after a boot change. Those records do not supply fresh full-device SHA-256 readback, attest how every vendor precompiled SDK library was originally built, prove a new installation, or transfer physical acceptance to the Xiao target. [Hardware provenance](HARDWARE.md#board-support-and-a-portable-build) retains these distinctions.
+The [retained MCU020 proof](../provenance/PUBLIC_MCU020_PROOF.json), bound to candidate `673eb60`, matches its four application files, recipe and input lock to independently prepared application BIN/ELF outputs for both named targets on the recorded macOS-arm64 host. This closes the application recipe-to-image check through those locked vendor inputs. The retained Heltec installation record checks its written application span by ROM MD5; later runs are linked by runtime-tag continuity after a boot change. Those records do not supply fresh full-device SHA-256 readback, attest how every vendor precompiled SDK library was originally built, prove a new installation, or transfer physical acceptance to the Xiao target. [Hardware provenance](HARDWARE.md#board-support-and-a-portable-build) retains these distinctions.
 
 **Selection B**, optional prebuilt development firmware, is a separate distribution decision. Its binary/source/object/relink/notice companions are prepared for review; complete notice closure and legal compliance are not asserted. Review and publish that selection only if it is included. Its unresolved vendor-source identities remain recorded even when selection A is chosen. No SDK source-build release implies approval of the optional binaries.
 

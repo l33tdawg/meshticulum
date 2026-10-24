@@ -1,15 +1,18 @@
 # Release notes
 
-## Unreleased — host-backed MCU queue, 24 October 2026
+## 1.0.0-alpha.2 (`1.0.0a2`) — 2026-10-24
 
-The next alpha candidate adds a bounded MCU DATA ciphertext queue connected to
+[Published GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.2), source
+`62007e219ff7de1db6e0caf1db3066a8b56fb568`.
+
+This release adds a bounded MCU DATA ciphertext queue connected to
 the serial worker, durable attempt journal and authenticated flow runtime.
 Queue mode requires an immutable opt-in grant; the default path stays
 synchronous. Linux retains keys, AEAD, peer ACK authentication, credit and
 retries. Queue acceptance, local RF_DONE, authenticated peer receipt and final
 physical drain remain separate evidence.
 
-The candidate also adds request-keyed physical-event routing, clock-bound
+The release also adds request-keyed physical-event routing, clock-bound
 burst deadlines, exact replay/release checks and recovery fencing. Per-role
 operation journal limits are now bound into the grant independently of absolute
 MCU boot-counter limits. An exhausted frozen scheduler budget reports a bounded
@@ -36,10 +39,13 @@ while preserving the original paid costs and unresolved historical references.
 The measured SDK source is `f06ebeb3e687da4688657311830e95326a0107d2`; its
 wheel SHA-256 is
 `7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0`.
-That wheel still identifies as `1.0.0a1`. A future `1.0.0a2` build requires
-its own source/artifact and installation checks; these measurements do not
-silently transfer to a changed build. The published `v1.0.0-alpha` tag and
-assets remain their original checkpoint.
+That measured wheel identifies as `1.0.0a1`. The published `1.0.0a2` assets
+passed independent builds, normalized source-distribution reproduction, a third
+wheel rebuild and clean installation. Measured-code comparison found 70 unchanged
+runtime files, one version-literal change and two unchanged examples. This is
+not fresh RF execution of the rebuilt wheel. The [alpha.2 release record](provenance/ALPHA2_RELEASE.json)
+binds the published assets and validation. The original `v1.0.0-alpha` tag and
+assets remain unchanged.
 
 ## Post-alpha cross-room A/B test — 2026-10-22
 

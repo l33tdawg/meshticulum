@@ -6,16 +6,18 @@
 
 A [SAGE Foundation](https://sage-foundation.net/) project, created and maintained by [Dhillon Andrew Kannabhiran (@l33tdawg)](https://github.com/l33tdawg). Part of the broader [SAGE project](https://github.com/l33tdawg/sage/).
 
-**Experimental `1.0.0-alpha` is public.** The [GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) provides the tested SDK wheel, normalized source archive, firmware source-build guide, notices and proof records from source `673eb60`. The alpha scope is reliable verified delivery, a deployable SDK and firmware build path, and useful encrypted goodput above **1 kB/s (8 kbit/s)** including sender startup on the declared tested path. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current work and roadmap](docs/ROADMAP.md).
+**Experimental `1.0.0-alpha.2` is public.** The [GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.2) provides the `1.0.0a2` SDK wheel, normalized source archive, firmware source-build guide, notices and validation records from source [`62007e2`](https://github.com/l33tdawg/meshticulum/commit/62007e219ff7de1db6e0caf1db3066a8b56fb568). The alpha scope is reliable verified delivery, a deployable SDK and firmware build path, and useful encrypted goodput above **1 kB/s (8 kbit/s)** including sender startup on the declared tested path. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current work and roadmap](docs/ROADMAP.md).
 
-Current development adds an opt-in **host-backed MCU DATA queue**. In one
+Alpha.2 adds an opt-in **host-backed MCU DATA queue**. In one
 24 October LoRa comparison, startup-inclusive useful goodput rose from
 **931.3 to 1,084.8 B/s (+16.48%)** for two fresh 8,164-byte files over the same
 approximately 20 m link. Both verified with zero retries, drops or new UNKNOWN
 outcomes. Linux still owns keys, authenticated ACKs, credit and retries.
 [Measured scope and retained failures](benchmarks/2026-10-24-mcu-queue-lora/README.md)
 accompany this single fixed-order pair. The measured source and wheel are
-separate from the published alpha and any future `1.0.0a2` artifacts.
+separate from the published alpha.2 artifacts: their runtime correspondence was
+checked, but the rebuilt wheel has no fresh RF execution. The original alpha.1
+release remains unchanged.
 
 Meshticulum is an experimental transport and resource system for networks that mix LoRa and IP. We are building it to close the gap between practical embedded radio meshes and richer, secure networking across different transports—and to move more useful encrypted data through the radio time we have.
 
