@@ -163,6 +163,26 @@ attempts remain on the current boot. Check the counter before preparing the
 plan. Do not reset the MCU or replace old journals to work around a spent
 limit.
 
+For an operation with a smaller allowance, the grant may include an
+`operation_limits` object with `sender` and `receiver` records. Each record has
+positive integer `attempts` and `estimated_airtime_us` fields, bounded by the
+profile's absolute boot caps. Both peers must carry the same complete map: it
+binds their shared grant, encryption context and journal identity. Each endpoint
+uses its own role's limits for the fresh attempt journal. Omitting the map keeps
+the existing profile-cap default.
+
+Both `radio_file.py transfer` and `radio_bundle.py transfer` also accept
+`--operation-attempt-limit` and `--operation-airtime-limit-us`. These options can
+only reduce the local grant's journal limits. They leave the absolute MCU ARM
+caps and the scheduler's conservative profile-based accounting unchanged.
+`RF_DONE`, known-unsent outcomes and `UNKNOWN` retain charged reservations;
+an uncertain operation remains fenced. The application must account for earlier
+operations and host uncertainty when choosing a new allowance. Neither a fresh
+journal nor these options reset MCU counters or refund previous debt.
+`BenchFlow` also refuses a supplied journal above its authority's local operation
+limits. A caller composing a worker directly must supply the bounded journal;
+the worker checks that journal against the profile and does not parse owner grants.
+
 ## Transfer one approved chunk
 
 Create a root-owned `0700` chunk-cache directory on each host. Fill the values

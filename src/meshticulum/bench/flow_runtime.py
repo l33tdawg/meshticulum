@@ -54,6 +54,11 @@ class BenchFlow:
         require(profile.payload_capacity == cipher.grant.max_plaintext == 208,
                 'unsupported_flow_frame_capacity')
         require(type(sends) is bool and callable(clock), 'invalid_flow_direction')
+        operation_limits = getattr(authority, 'operation_limits', None)
+        require(operation_limits is None
+                or journal.max_attempts <= operation_limits.attempts
+                and journal.max_airtime_us <= operation_limits.estimated_airtime_us,
+                'bench_journal_limits_exceed_operation_grant')
         self.authority, self.worker, self.cipher = authority, worker, cipher
         self.journal, self.clock, self.ledger = journal, clock, ledger
         self.sends = sends

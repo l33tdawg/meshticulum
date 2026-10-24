@@ -10,7 +10,7 @@ immutable opt-in bounded in-flight policy. Removal, mutation, expiry or a new ho
 boot refuses new work. Restart requires a new grant and fresh wire state.
 """
 from contextlib import contextmanager
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 import fcntl
 import hashlib
 import json
@@ -36,6 +36,40 @@ from .gfsk250_profile import Gfsk250Profile
 from .wire import BenchGrant, require
 from .public_block import (PUBLIC32_MARKER,REPRESENTATION_MARKER,TRANSPORT_DESCRIPTOR_MARKER,
                           public32_service,public_mb1_service,object_limit)
+
+
+@dataclass(frozen=True)
+class OperationLimits:
+    """One endpoint's incremental journal caps, separate from MCU boot totals."""
+
+    attempts: int
+    estimated_airtime_us: int
+
+    def __post_init__(self):
+        require(type(self.attempts) is int and 1 <= self.attempts <= 100000
+                and type(self.estimated_airtime_us) is int
+                and 1 <= self.estimated_airtime_us <= 300000000,
+                'invalid_operation_limits')
+
+    @classmethod
+    def from_plan(cls, plan):
+        profile = plan['profile']
+        absolute = cls(profile['max_boot_attempts'], profile['max_boot_estimated_airtime_us'])
+        if 'operation_limits' not in plan:
+            return absolute
+        record = plan['operation_limits']
+        require(type(record) is dict and set(record) == {'sender', 'receiver'},
+                'invalid_operation_limits')
+        limits = {}
+        for role, value in record.items():
+            require(type(value) is dict and set(value) == {'attempts', 'estimated_airtime_us'},
+                    'invalid_operation_limits')
+            limits[role] = cls(**value)
+            require(limits[role].attempts <= absolute.attempts
+                    and limits[role].estimated_airtime_us <= absolute.estimated_airtime_us,
+                    'operation_limits_exceed_profile')
+        role = 'sender' if plan['unit'] == plan['sender_unit'] else 'receiver'
+        return limits[role]
 
 
 SERVICE_FORMATS = {
@@ -100,6 +134,8 @@ class RunAuthority:
                 validate_policy(p['data_burst'])
                 require(p.get('radio_modem') not in ('gfsk125', 'gfsk250'),
                         'data_burst_requires_lora')
+            if 'operation_limits' in p:
+                extras.add('operation_limits')
             if is_service and local_deadline_field in p:
                 extras.add(local_deadline_field)
             require(set(p) == fields | extras, 'invalid_bench_plan')
@@ -149,6 +185,7 @@ class RunAuthority:
                 self.profile = RadioProfile(**p['profile'])
             self.profile.encode(board_id=1)
             radio_admission.check(p['country'], p['antenna_confirmed'], self.profile)
+            OperationLimits.from_plan(p)
             if 'data_burst' in p:
                 train = MAX_DEPTH * (radio_airtime_us(self.profile, 255)
                                     + START_GUARD_US + INTER_PACKET_RX_US)
@@ -172,6 +209,8 @@ class RunAuthority:
             if p.get('radio_modem') in ('gfsk125','gfsk250'):self.route_record['radio_modem']=p['radio_modem']
             if 'data_burst' in p:
                 self.route_record['data_burst'] = p['data_burst']
+            if 'operation_limits' in p:
+                self.route_record['operation_limits'] = p['operation_limits']
             if is_service:
                 self.route_record['service'] = p['service']
             route_digest = hashlib.sha256(canonical(self.route_record)).digest()
@@ -288,6 +327,12 @@ class RunAuthority:
         """Original immutable service/object values; refuses any current drift."""
         require(self._admission_current(),'bench_admitted_plan_changed')
         return self._captured_admission()[6]
+
+    @property
+    def operation_limits(self):
+        """Original local journal ceilings; both roles bind the shared context."""
+        require(self._admission_current(), 'bench_admitted_plan_changed')
+        return OperationLimits.from_plan(self._captured_admission()[0])
 
     @property
     def data_burst_policy(self):

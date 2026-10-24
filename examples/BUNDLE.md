@@ -8,6 +8,10 @@ requirements follow the [generic example](README.md): an Orange Pi 5 Plus
 SX1262 HAT or a supported USB radio sends DATA; a Heltec V4 receives and sends
 ACKs. A USB sender uses the existing serial worker, exact firmware identity,
 exclusive device owner and cumulative MCU debt checks.
+The [per-operation journal limits](README.md#prepare-the-file-and-approve-the-sessions)
+apply to this command too: a shared grant role map bounds each fresh journal,
+and the optional operation-limit flags can only reduce it. Absolute MCU boot
+caps and earlier reservations remain in force.
 On 17 October, this public SDK path completed **two fresh five-part 100,000-byte
 files at 2,030.2 and 1,949.2 useful B/s including sender startup**, with independent
 publisher and whole-file verification. Both endpoints used receipt confirmation
