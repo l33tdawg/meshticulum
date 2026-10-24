@@ -24,7 +24,9 @@ base = bundle.base
 
 
 @pytest.mark.parametrize('modem', ['lora', 'gfsk250'])
-def test_transfer_parses_modem_admission_before_running_object(tmp_path, published, monkeypatch, modem):
+@pytest.mark.parametrize('interface', ['hat', 'usb'])
+def test_transfer_accepts_modem_admission_and_sender_interface(
+        tmp_path, published, monkeypatch, modem, interface):
     from tests.radio_profiles import SOURCE_ADMISSION
 
     _, raw, signed, trust, digest, manifest, chunks = published
@@ -57,7 +59,7 @@ def test_transfer_parses_modem_admission_before_running_object(tmp_path, publish
         grant_directory=tmp_path, grant_sha256=base.sha(grant.read_bytes()),
         admission=admitted, admission_sha256=base.sha(admitted.read_bytes()),
         firmware_source=None, firmware_source_sha256=None, state=tmp_path / 'state',
-        manifest_sha256=digest, unit='sender', interface='hat', pack=pack)
+        manifest_sha256=digest, unit='sender', interface=interface, pack=pack)
     observed = []
 
     def run_object(args, raw_plan, parsed, version, actual_payload, window, factory):
