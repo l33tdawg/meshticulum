@@ -132,8 +132,6 @@ def transfer(args):
             'example_file_window_bound')
     admission = json.loads(base.read_file(args.admission, 8192, pin=args.admission_sha256, private=True))
     for name in ('frequencies_hz', 'powers_dbm'):
-        admission[name] = tuple(admission[name])
-    for name in ('frequencies_hz', 'powers_dbm'):
         if name in admission:
             admission[name] = tuple(admission[name])
     if 'waveforms' in admission:
