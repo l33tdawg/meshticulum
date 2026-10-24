@@ -1,0 +1,282 @@
+{
+  "authenticated_peer_receipt": true,
+  "capture_sha256": {
+    "RESULT.json": "8a318e5df4a77eaf89a3871442b70ea0be64ad2273785f30294adf51ef033dc5",
+    "SCOPE.json": "814eb5051b99c8c41764c2743e60f6aa2a24c9335c0b650044d561e1de58c962",
+    "prepared/PREPARED.json": "189b20fbc6543fa2dd288ed634c622cec96e86218c9ccf3d083ca7eccab19387"
+  },
+  "core_commit": "b5fd674b20fc5d0416fc461dcd562731d0faf0b7",
+  "date": "2026-10-24",
+  "endpoints": {
+    "unit-a": {
+      "DATA_signal": {
+        "count": 46,
+        "rssi_dbm": {
+          "max": -70.0,
+          "median": -73.0,
+          "min": -74.0
+        },
+        "snr_db": {
+          "max": 12.2,
+          "median": 11.0,
+          "min": 10.0
+        }
+      },
+      "attempt_journal": {
+        "attempts": 19,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 689149
+      },
+      "exit_zero": true,
+      "firmware": "mtb1-020e287255",
+      "forced_cleanup": false,
+      "mcu_counters": {
+        "boot_attempts": {
+          "after": 949,
+          "before": 930,
+          "delta": 19
+        },
+        "boot_reserved_estimated_airtime_us": {
+          "after": 19889696,
+          "before": 19280480,
+          "delta": 609216
+        },
+        "dropped_receive": {
+          "after": 0,
+          "before": 0,
+          "delta": 0
+        }
+      },
+      "retransmits": 0,
+      "services_and_boot_unchanged": true,
+      "tx": {
+        "ACK": {
+          "count": 19,
+          "timing_us": {
+            "driver_elapsed_us": {
+              "median": 39648,
+              "sum": 753298
+            },
+            "driver_estimated_airtime_us": {
+              "median": 32064,
+              "sum": 609216
+            },
+            "worker_call_elapsed_us": {
+              "median": 56126,
+              "sum": 1071995
+            }
+          },
+          "wire_bytes": 1330
+        }
+      }
+    },
+    "unit-b": {
+      "attempt_journal": {
+        "attempts": 47,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 5120545
+      },
+      "exit_zero": true,
+      "firmware": "mtb1-020e287255",
+      "forced_cleanup": false,
+      "mcu_counters": {
+        "boot_attempts": {
+          "after": 591,
+          "before": 544,
+          "delta": 47
+        },
+        "boot_reserved_estimated_airtime_us": {
+          "after": 9262464,
+          "before": 4650176,
+          "delta": 4612288
+        },
+        "dropped_receive": {
+          "after": 0,
+          "before": 0,
+          "delta": 0
+        }
+      },
+      "retransmits": 0,
+      "services_and_boot_unchanged": true,
+      "tx": {
+        "CONTROL": {
+          "count": 1,
+          "timing_us": {
+            "driver_elapsed_us": {
+              "median": 43531,
+              "sum": 43531
+            },
+            "driver_estimated_airtime_us": {
+              "median": 35904,
+              "sum": 35904
+            },
+            "worker_call_elapsed_us": {
+              "median": 59591,
+              "sum": 59591
+            }
+          },
+          "wire_bytes": 79
+        },
+        "DATA": {
+          "count": 46,
+          "timing_us": {
+            "driver_elapsed_us": {
+              "median": 108780.5,
+              "sum": 4984246
+            },
+            "driver_estimated_airtime_us": {
+              "median": 99904.0,
+              "sum": 4576384
+            },
+            "worker_call_elapsed_us": {
+              "median": 132346.5,
+              "sum": 6134363
+            }
+          },
+          "wire_bytes": 11679
+        }
+      }
+    }
+  },
+  "host_journal_diagnostic": {
+    "endpoints": {
+      "unit-a": {
+        "complete": true,
+        "host_boot_unchanged": true,
+        "radio_opened": false,
+        "reserve_us": {
+          "max": 3065.487,
+          "median": 460.2605,
+          "min": 425.551,
+          "n": 128,
+          "p95": 3015.028,
+          "sum": 164973.07900000017
+        },
+        "rf_attempts": 0,
+        "settle_us": {
+          "max": 7482.588,
+          "median": 432.55150000000003,
+          "min": 391.717,
+          "n": 128,
+          "p95": 3022.903,
+          "sum": 168514.8680000001
+        },
+        "transport_constructed": false
+      },
+      "unit-b": {
+        "complete": true,
+        "host_boot_unchanged": true,
+        "radio_opened": false,
+        "reserve_us": {
+          "max": 914.385,
+          "median": 459.9635,
+          "min": 437.796,
+          "n": 128,
+          "p95": 730.342,
+          "sum": 68182.50900000002
+        },
+        "rf_attempts": 0,
+        "settle_us": {
+          "max": 3093.159,
+          "median": 418.54650000000004,
+          "min": 400.462,
+          "n": 128,
+          "p95": 597.632,
+          "sum": 62543.947000000015
+        },
+        "transport_constructed": false
+      }
+    },
+    "radio_opened": false,
+    "result_sha256": "8b7ec353fe30dc6e3a6bfa3477cf2d46b9c470147cd8723b5b71accb50679873",
+    "rf_attempts": 0,
+    "schema": "meshticulum.cpu-only-journal-profile.v1",
+    "scope": "128 synthetic reserve/NOT_SENT-settle pairs per endpoint; separate journals; not RF debt or transfer goodput",
+    "source_sha256": "66ea143fd52e6bc619fbfbfec66abbf470105daaf99420552f48b6e2ff8df8fa"
+  },
+  "limits": {
+    "driver_clock": "coprocessor monotonic; includes driver work; not independent RF timing",
+    "eirp_dbm": null,
+    "energy_joules": null,
+    "field_range_qualified": false,
+    "global_quiescence_proven": false,
+    "measured_RF_airtime_us": null,
+    "single_sample": true,
+    "standalone_mcu_transport": false,
+    "sustained_capacity_qualified": false
+  },
+  "modem": {
+    "name": "lora",
+    "profile": {
+      "bandwidth_hz": 500000,
+      "chip_power_dbm": 0,
+      "coding_rate": 5,
+      "frequency_hz": 921375000,
+      "preamble": 8,
+      "spreading_factor": 7,
+      "sync_word": 66
+    },
+    "spreading_factor": 7,
+    "waveform": [
+      921375000,
+      500000,
+      7,
+      5,
+      0,
+      8,
+      66
+    ]
+  },
+  "parts": 1,
+  "publisher_and_whole_file_verified": true,
+  "retained_failures": [
+    {
+      "rf_tx": false,
+      "run": "v1",
+      "stage": "wheel staging"
+    },
+    {
+      "rf_tx": false,
+      "run": "v2",
+      "stage": "expired unconsumed scope"
+    },
+    {
+      "rf_tx": false,
+      "run": "v3",
+      "scope_sha256": "1b751c8d03a69687b86eb4dc474389b85cbe435150dae7a99c34c9ee5c1fa103",
+      "stage": "LoRa admission KeyError before RF"
+    }
+  ],
+  "schema": "meshticulum.sanitized-lora-distance-sample.v1",
+  "source_adaptations": {
+    "observed_sender_firmware_identity": true,
+    "original_sha256": "400c9739d2d53fcf64a2a2a5fd79b498bc405f2ffada7ad39d65c1b3aaed2612",
+    "patched_sha256": "22ba181f60442e4b18d0fc54f4a0a8db67de0e44e53eb7130cb7b862ddf6a7b3",
+    "source_manifest_equivalence_proven": false,
+    "usb_sender_guard": true
+  },
+  "timing_us": {
+    "first_DATA_worker_call_to_final_authenticated_receipt_us": 8001248,
+    "first_sender_startup_to_final_authenticated_receipt_us": 9183714,
+    "scope_issue_to_both_endpoints_closed_us": 16681269
+  },
+  "topology": {
+    "antennas_confirmed": true,
+    "distance_basis": "operator reported; two rooms",
+    "distance_metres": 20,
+    "receiver": "unit-a Heltec V4 USB radio",
+    "sender": "unit-b Heltec V4 USB radio",
+    "unit_c_excluded": true
+  },
+  "useful_Bps": {
+    "first_DATA_worker_call": 1020.3408268310144,
+    "scope_to_closure": 489.41120726486696,
+    "sender_startup": 888.9649655901741
+  },
+  "useful_bytes": 8164,
+  "useful_sha256": "be2b091eba7d2c75f82f00ffef87c0ff6e7823be48ac36a8d56079f609b93d2e",
+  "wheel_sha256": "9f67613630aae4d781894d1886b6254d8c929fd97e473caa2f350ce09a57ecb5",
+  "within_original_scope": true
+}
