@@ -234,11 +234,50 @@ rollback boundary. This is one cross-room GFSK250 sample. It does not establish
 field range, sustained capacity, LoRa-profile behavior, another installation or
 a completion distribution.
 
+## A/B LoRa distance sample — 24 October 2026
+
+One fresh **8,164-byte signed file** passed from a Unit B Heltec V4 USB radio
+to a Unit A Heltec V4 USB radio at an operator-reported **approximately 20 m
+across two rooms**, with antennas fitted to both. Unit C was excluded.
+Both coprocessors reported `mtb1-020e287255`. The profile was SF7/BW500,
+CR4/5, 921.375 MHz, 0 dBm, preamble 8 and sync word `0x42`.
+
+| Boundary | Duration | Useful throughput |
+| --- | ---: | ---: |
+| Sender startup → authenticated peer receipt | 9.183714 s | **0.889 kB/s** |
+| First DATA-worker call → authenticated peer receipt | 8.001248 s | 1.020 kB/s |
+| Scope issue → both endpoints closed | 16.681269 s | 0.489 kB/s |
+
+The receiver independently verified the publisher and whole-file hash. All 46
+DATA frames arrived without retransmissions; both receive-drop deltas were
+zero, both child processes exited zero and cleanup needed no forced action.
+Receiver DATA RSSI was -74 to -70 dBm, median -73; SNR was 10 to 12.2 dB,
+median 11. The startup-inclusive result is **below the 1 kB/s target**.
+
+The installed wheel was built from source `b5fd674b20fc5d0416fc461dcd562731d0faf0b7`
+with SHA-256 `9f67613630aae4d781894d1886b6254d8c929fd97e473caa2f350ce09a57ecb5`.
+The campaign adapted the example's USB sender guard and accepted Unit B's
+preflight-observed firmware identity; source-manifest equivalence for that
+identity was not proved by this run. The earlier wheel-staging failure,
+expired unconsumed scope and pre-RF LoRa-admission failure remain recorded.
+
+[The sanitized result](../benchmarks/2026-10-24-lora-distance/results.json)
+retains exact timing arithmetic, paid debt, signal summaries, adaptations
+and failures. It also separates a later CPU-only journal diagnostic from RF
+evidence. DATA worker intervals summed to 6.134363 s and coprocessor driver
+intervals to 4.984246 s; the 1.150117 s difference needs further attribution.
+Driver intervals include driver work and do not independently measure RF airtime.
+The sender's CPU-only median reservation and settlement times were 0.460 and
+0.419 ms respectively. These observations motivate the
+[host-backed MCU acceleration prototype](MCU_ACCELERATION.md); they do not
+measure a speedup from it. This single sample does not establish sustained
+capacity, field range or a completion distribution.
+
 ## What changed, and what remains
 
 The SDK now checks fresh kernel open-event evidence alongside descriptor, inode, mount and ownership bindings, avoiding repeated scans of every process descriptor during normal packet work. Verified `nodev` IPC namespaces allow ordinary shared-memory file churn without invalidating device ownership. Initial collision scans, existing-alias watches and fault refusal remain. These are host-side changes; these samples do not isolate a firmware speedup.
 
-These startup-inclusive samples exceed the **1 kB/s (8 kbit/s) alpha floor for their stated path**. The installed-wheel run adds a real installation and verified-piece continuation check. These finite files do not establish a sustained-throughput or completion distribution or a guarantee on another installation. The selected SDK/source-build artifacts are published as the [`v1.0.0-alpha` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) from source `673eb60`. Native/private integration, wider recovery and security qualification remain separate programme work.
+The earlier GFSK startup-inclusive samples exceed the **1 kB/s (8 kbit/s) alpha floor for their stated path**. The installed-wheel run adds a real installation and verified-piece continuation check. These finite files do not establish a sustained-throughput or completion distribution or a guarantee on another installation. The selected SDK/source-build artifacts are published as the [`v1.0.0-alpha` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) from source `673eb60`. Native/private integration, wider recovery and security qualification remain separate programme work.
 
 Measured RF airtime, energy, EIRP and field range remain unavailable. GFSK results do not replace the [earlier LoRa measurements and scoped upstream comparisons](PERFORMANCE.md). No general speed or security ranking against MeshCore or Reticulum follows from these samples.
 

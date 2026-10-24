@@ -371,6 +371,70 @@ def verify_level4_ab(record):
             'A/B scope inflated')
 
 
+def verify_lora_distance(record):
+    require(record['schema']=='meshticulum.sanitized-lora-distance-sample.v1', 'unsupported LoRa distance report')
+    require(record['core_commit']=='b5fd674b20fc5d0416fc461dcd562731d0faf0b7', 'wrong LoRa source')
+    require(record['wheel_sha256']=='9f67613630aae4d781894d1886b6254d8c929fd97e473caa2f350ce09a57ecb5', 'wrong LoRa wheel')
+    require(record['useful_bytes']==8164 and record['parts']==1, 'wrong LoRa workload')
+    require(record['useful_sha256']=='be2b091eba7d2c75f82f00ffef87c0ff6e7823be48ac36a8d56079f609b93d2e', 'wrong LoRa file hash')
+    require(record['topology']['distance_metres']==20
+            and record['topology']['distance_basis']=='operator reported; two rooms'
+            and record['topology']['antennas_confirmed'] is True
+            and record['topology']['unit_c_excluded'] is True, 'wrong LoRa physical scope')
+    require(record['modem']['profile']==dict(frequency_hz=921375000,bandwidth_hz=500000,
+            spreading_factor=7,coding_rate=5,chip_power_dbm=0,preamble=8,sync_word=66), 'wrong LoRa waveform')
+    for key in ('authenticated_peer_receipt','publisher_and_whole_file_verified','within_original_scope'):
+        require(record[key] is True, 'missing LoRa acceptance: '+key)
+    boundaries={'sender_startup':'first_sender_startup_to_final_authenticated_receipt_us',
+        'first_DATA_worker_call':'first_DATA_worker_call_to_final_authenticated_receipt_us',
+        'scope_to_closure':'scope_issue_to_both_endpoints_closed_us'}
+    for rate,boundary in boundaries.items():
+        duration=record['timing_us'][boundary]
+        require(type(duration) is int and duration>0, 'invalid LoRa duration')
+        require(close(record['useful_Bps'][rate],record['useful_bytes']*1000000/duration), 'LoRa goodput arithmetic mismatch')
+    require(record['useful_Bps']['sender_startup']<1000<record['useful_Bps']['first_DATA_worker_call'], 'LoRa timing target boundary changed')
+    require(set(record['endpoints'])=={'unit-a','unit-b'}, 'wrong LoRa endpoints')
+    for unit,e in record['endpoints'].items():
+        require(e['firmware']=='mtb1-020e287255' and e['services_and_boot_unchanged'] is True
+                and e['exit_zero'] is True and e['forced_cleanup'] is False, unit+' LoRa cleanup failure')
+        journal=e['attempt_journal']; counters=e['mcu_counters']
+        require(journal['fenced'] is False and journal['recovered_unknown']==0 and e['retransmits']==0, unit+' unsettled LoRa attempts')
+        for field,counter in counters.items():
+            require(counter['after']-counter['before']==counter['delta']>=0, unit+' counter arithmetic mismatch: '+field)
+        require(counters['boot_attempts']['delta']==journal['attempts']
+                and counters['boot_attempts']['after']<=1024
+                and counters['boot_reserved_estimated_airtime_us']['after']<=24650176
+                and counters['dropped_receive']['delta']==0, unit+' LoRa MCU debt or drop mismatch')
+        require(journal['reserved_estimated_airtime_us']>=counters['boot_reserved_estimated_airtime_us']['delta'], unit+' host reservation below MCU estimate')
+        require(sum(g['count'] for g in e['tx'].values())==journal['attempts'], unit+' TX count mismatch')
+        for group in e['tx'].values():
+            timing=group['timing_us']
+            for field in ('sum','median'):
+                require(timing['worker_call_elapsed_us'][field]>=timing['driver_elapsed_us'][field]
+                        >=timing['driver_estimated_airtime_us'][field]>0, 'invalid nested LoRa timing')
+    sender=record['endpoints']['unit-b']; receiver=record['endpoints']['unit-a']
+    require(sender['tx']['DATA']['count']==receiver['DATA_signal']['count']==46
+            and sender['tx']['CONTROL']['count']==1 and receiver['tx']['ACK']['count']==19, 'LoRa frame counts mismatch')
+    signal=receiver['DATA_signal']
+    require(signal['rssi_dbm']==dict(min=-74.0,median=-73.0,max=-70.0)
+            and signal['snr_db']==dict(min=10.0,median=11.0,max=12.2), 'LoRa signal summary mismatch')
+    require(record['source_adaptations']['usb_sender_guard'] is True
+            and record['source_adaptations']['observed_sender_firmware_identity'] is True
+            and record['source_adaptations']['source_manifest_equivalence_proven'] is False, 'LoRa firmware correspondence overstated')
+    require([v['run'] for v in record['retained_failures']]==['v1','v2','v3']
+            and all(v['rf_tx'] is False for v in record['retained_failures']), 'LoRa failures missing')
+    limits=record['limits']
+    require(limits['single_sample'] is True and all(limits[k] is False for k in
+            ('field_range_qualified','sustained_capacity_qualified','standalone_mcu_transport','global_quiescence_proven')), 'LoRa qualification inflated')
+    require(all(limits[k] is None for k in ('measured_RF_airtime_us','energy_joules','eirp_dbm')), 'LoRa missing measurements invented')
+    diagnostic=record['host_journal_diagnostic']
+    require(diagnostic['radio_opened'] is False and diagnostic['rf_attempts']==0, 'CPU diagnostic relabeled as RF')
+    for e in diagnostic['endpoints'].values():
+        require(e['complete'] is True and e['transport_constructed'] is False
+                and e['radio_opened'] is False and e['rf_attempts']==0, 'CPU diagnostic scope changed')
+        require(e['reserve_us']['n']==e['settle_us']['n']==128, 'CPU diagnostic denominator changed')
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('report',nargs='?',type=Path)
@@ -379,7 +443,8 @@ def main():
     paths=[args.report] if args.report else [root/'benchmarks/2026-10-09-radio/radio-results.json',
                                            root/'benchmarks/2026-10-17-public-sdk/results.json',
                                            root/'provenance/PUBLIC_INSTALLED_SDK_PROOF.json',
-                                           root/'benchmarks/2026-10-22-ab-cross-room/results.json']
+                                           root/'benchmarks/2026-10-22-ab-cross-room/results.json',
+                                           root/'benchmarks/2026-10-24-lora-distance/results.json']
     for path in paths:
         record=json.loads(path.read_text())
         if record['schema']=='meshticulum.published-sdk-file-samples.v1':
@@ -394,6 +459,9 @@ def main():
         elif record['schema']=='meshticulum.level4-a-b-verification.v1':
             verify_level4_ab(record)
             print('Verified the five-part A/B whole-file hash, authenticated receipts, timing arithmetic, attempt debt, zero receive-drop delta and bounded cross-room claim.')
+        elif record['schema']=='meshticulum.sanitized-lora-distance-sample.v1':
+            verify_lora_distance(record)
+            print('Verified the single 8,164-byte LoRa distance sample, original timing boundaries, paid debt, retained failures and separate CPU-only diagnostic. MCU acceleration and sustained capacity remain unqualified.')
         else:
             verify(record)
             print('Verified 30 unique RF samples, separate directional distributions and 1 retained setup failure. Missing metrics remain null.')
