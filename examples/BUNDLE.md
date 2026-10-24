@@ -4,8 +4,10 @@
 `byte_bundle`, MB1 encoding, `ServiceTransfer`, reliable flow, authenticated
 frames, durable journals and `byte_bundle.Receiver`. Its baseline path needs no
 firmware, RF cap, retry limit or frozen-flow change. The hardware and ownership
-requirements are the same as the [generic example](README.md): the verified
-Orange Pi 5 Plus SX1262 HAT sends DATA; a Heltec V4 receives and sends ACKs.
+requirements follow the [generic example](README.md): an Orange Pi 5 Plus
+SX1262 HAT or a supported USB radio sends DATA; a Heltec V4 receives and sends
+ACKs. A USB sender uses the existing serial worker, exact firmware identity,
+exclusive device owner and cumulative MCU debt checks.
 On 17 October, this public SDK path completed **two fresh five-part 100,000-byte
 files at 2,030.2 and 1,949.2 useful B/s including sender startup**, with independent
 publisher and whole-file verification. Both endpoints used receipt confirmation
@@ -112,12 +114,17 @@ secret, native permission or complete grant:
   --part 0 --file-expires-epoch-us "$ORIGINAL_EXPIRES_US"
 ```
 
-Use `meshticulum.service-run.v1`, `radio_modem=gfsk250`, exact object fields,
+Use `meshticulum.service-run.v1`, exact object fields,
 `kind=knowledge`, `format=MR1.response`, the original application expiry,
 `public_response_max_bytes=32768`, explicit representation `MB1`, and the exact
 `public_transport_descriptor_sha256`. The descriptor binds the signed chunk
 content address and the response length/hash. Both endpoints admit the same
 values. An MB1 payload under a legacy or merely relabelled grant refuses.
+
+For GFSK250, set `radio_modem=gfsk250` and supply the matching frequency/power
+admission. For LoRa, omit `radio_modem` and supply the exact LoRa profile and
+`waveforms` admission described in the [generic example](README.md). Both
+endpoints must use the same admitted waveform and cumulative profile ceilings.
 
 The prepared MR1 request binding is deterministic from the authenticated pack
 entry and approved response length. This example pushes the preapproved response;
@@ -131,8 +138,8 @@ limits, and GFSK250 has its separate cumulative limits. Check the exact plan
 profile. HAT DATA uses distinct approved run journals; all old journals and
 debt remain. MCU boot attempts/airtime remain cumulative across all sessions,
 and the first MCU boot/version is pinned in local file state. A reset or changed
-MCU identity refuses instead of resetting a file budget. This route does not
-make the MCU a bundle DATA sender.
+MCU identity refuses instead of resetting a file budget. On a USB sender,
+DATA and receipt confirmation also charge that MCU's cumulative boot counters.
 
 ## Run each approved pair
 
@@ -147,7 +154,7 @@ Prepare the [compact firmware identity](README.md#prepare-the-firmware-identity-
 and set `FIRMWARE_IDENTITY` and `FIRMWARE_IDENTITY_SHA256` before running either
 endpoint. The full build manifest can exceed the hardware reader's 64 KiB limit.
 
-Start each receiver command first, then its HAT sender promptly:
+Start each receiver command first, then its sender promptly:
 
 ```sh
 sudo .venv/bin/python examples/radio_bundle.py transfer \
@@ -164,9 +171,12 @@ sudo .venv/bin/python examples/radio_bundle.py transfer \
   --file-expires-epoch-us "$ORIGINAL_EXPIRES_US" --part 0
 ```
 
-On the sender, use the corresponding sender grant, `--interface hat`, sender
-unit, sender state directory, `--confirm-receipt` and full `--pack new-pack`; omit `--device` and
-`--usb-serial`. Keep all hashes, original clocks and part index consistent.
+On the sender, use the corresponding sender grant, sender unit, sender state
+directory, `--confirm-receipt` and full `--pack new-pack`. A HAT sender uses
+`--interface hat` and omits `--device` and `--usb-serial`. A USB sender uses
+`--interface usb --device "$BY_ID" --usb-serial "$USB_SERIAL"` with its own
+independently checked device identity and compact firmware identity.
+Keep all hashes, original clocks and part index consistent.
 No additional `--input` is used: the signed canonical source chunk supplies DATA.
 The command arms its hardware and may transmit encrypted DATA or ACKs.
 

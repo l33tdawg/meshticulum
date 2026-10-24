@@ -150,7 +150,7 @@ def transfer(args):
     args.chunk = index  # Shared hardware receipt index, not a new transport mode.
     sends = plan['sender_unit'] == args.unit
     if sends:
-        require(args.interface == 'hat', 'example_bundle_sender_requires_hat')
+        require(args.interface in ('hat', 'usb'), 'example_bundle_sender_requires_hat_or_usb')
         for prior in range(index):
             require(base.read_file(args.state / ('sent-' + str(prior) + '.json'), 4096, private=True)
                     == kp.canonical_json(dict(manifest_sha256=args.manifest_sha256,
