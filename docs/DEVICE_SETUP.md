@@ -2,7 +2,9 @@
 
 The Python [SDK](SDK_GUIDE.md) can be explored offline first. A device deployment additionally needs a matching board/image, an exclusive host connection and application-owned radio admission. Meshticulum supplies reusable drivers and a build recipe; [Lantern](https://github.com/l33tdawg/sage-lantern) owns its native device jobs, provisioning, fleet installation and rollback.
 
-There is **no prebuilt alpha firmware release** in this project preview. The [current MCU020 proof](../provenance/PUBLIC_MCU020_PROOF.json) ties both targets’ application BIN/ELF outputs to the locked recipe on the recorded macOS arm64 host. The retained Heltec installation has an application-span ROM-MD5 check and later runtime-tag continuity; it has completed the [installed-SDK radio check](../provenance/PUBLIC_INSTALLED_SDK_PROOF.json). This supplies no fresh full-device SHA-256 readback or physical Xiao acceptance. [Firmware validation](../provenance/FIRMWARE_RECIPE_VALIDATION.json) and [release readiness](RELEASE_READINESS.md) retain the distinct build, installation and distribution scopes.
+There is **no prebuilt alpha firmware release** in this project preview. The [retained MCU020 proof](../provenance/PUBLIC_MCU020_PROOF.json) ties both targets’ application BIN/ELF outputs to the locked recipe on the recorded macOS arm64 host. The retained Heltec installation has an application-span ROM-MD5 check and later runtime-tag continuity; it has completed the [installed-SDK radio check](../provenance/PUBLIC_INSTALLED_SDK_PROOF.json). This supplies no fresh full-device SHA-256 readback or physical Xiao acceptance. [Firmware validation](../provenance/FIRMWARE_RECIPE_VALIDATION.json) and [release readiness](RELEASE_READINESS.md) retain the distinct build, installation and distribution scopes.
+
+The DATA queue application has separate [same-host Heltec build evidence](../provenance/MCU_BURST_FIRMWARE.json) and a [24 October installed LoRa comparison](../benchmarks/2026-10-24-mcu-queue-lora/README.md). That finite Heltec result does not extend the older proof to Xiao or establish complete new-image notice closure.
 
 ## Choose the correct hardware path
 
@@ -38,7 +40,7 @@ build/firmware-work/project/.pio/build/<target>/
     firmware.map
 ```
 
-Retain the ELF, map, source/input lock and hashes. `firmware.bin` is an **application image**, not a universal whole-flash image. The historical `mtb1-9816f92488` tag identifies the earlier two-file application. The current recipe includes `main.cpp`, `protocol.hpp`, `gfsk_profile.hpp` and `gfsk250_profile.hpp` in the application manifest and derives its tag from those exact bytes. Use that build's `SOURCE.json`; neither tag identifies the complete BSP/toolchain or binary.
+Retain the ELF, map, source/input lock and hashes. `firmware.bin` is an **application image**, not a universal whole-flash image. The historical `mtb1-9816f92488` tag identifies the earlier two-file application. MCU020 used a four-file application manifest; the DATA queue application uses six inputs. Read the exact application inventory and derived tag from that build's generated `SOURCE.json`. Neither tag identifies the complete BSP/toolchain or binary.
 
 ## Understand the recorded flash layout
 

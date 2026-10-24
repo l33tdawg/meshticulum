@@ -8,7 +8,7 @@ include tests/vectors/XWING_NOTICE.txt
 include tests/vectors/XWING_LICENSE.txt
 recursive-include examples *.py
 global-exclude __pycache__ *.py[cod] .DS_Store
-recursive-include benchmarks *.json
+recursive-include benchmarks *.json *.md
 include .github/workflows/tests.yml
 recursive-include firmware/meshticulum-bench/notices *
 recursive-include examples *.py *.md

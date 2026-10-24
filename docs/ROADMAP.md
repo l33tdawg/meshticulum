@@ -6,7 +6,23 @@ Meshticulum is a public experimental transport and resource project with a publi
 
 The [public repository](https://github.com/l33tdawg/meshticulum), [project website](https://l33tdawg.github.io/meshticulum/) and [experimental `1.0.0-alpha` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) are live. The release is published from source `673eb60` and provides the tested SDK wheel, normalized source archive and firmware source-build materials. You can [install from source](../README.md#install-and-explore) or review the release assets.
 
-The measured SDK source, `da247a1`, has [passing source CI on Python 3.11, 3.12 and 3.13](https://github.com/l33tdawg/meshticulum/actions/runs/39028024473). The published documentation head passed the same source-control matrix with unchanged runtime and firmware. The hardware samples below supply separate physical evidence. Future release candidates need their own exact source checks and artifacts.
+The earlier measured SDK source, `da247a1`, has [passing source CI on Python 3.11, 3.12 and 3.13](https://github.com/l33tdawg/meshticulum/actions/runs/39028024473). The published documentation head passed the same source-control matrix with unchanged runtime and firmware. The hardware samples below supply separate physical evidence. Future release candidates need their own exact source checks and artifacts.
+
+On **24 October 2026**, a fresh fixed-order LoRa comparison at approximately
+20 m verified 8,164 bytes in each mode. The opt-in MCU DATA queue raised
+sender-start-to-authenticated-receipt goodput from **931.255 to 1,084.762 B/s
+(+16.484%)**, with zero retries, receive-drop increases or new UNKNOWN outcomes.
+Both modes used the same Heltec firmware and SF7/BW500 profile. All queued
+physical results were settled and released; checked endpoint completion followed
+receipt by 27.456 ms. This is one pair, with repeated performance, loss and
+recovery qualification still open. The [sanitized comparison](../benchmarks/2026-10-24-mcu-queue-lora/README.md)
+records the measured source and wheel separately from the next `1.0.0a2` build.
+
+The next alpha adds the default-closed queue adapter, durable physical-result
+tracking, fail-fast budget diagnostics and independent per-operation journal
+limits. Keys, authenticated ACKs, credit and retries remain on the host. A
+versioned rebuild needs its own artifact and release-readiness checks; the
+published `v1.0.0-alpha` assets remain unchanged.
 
 The optional [post-quantum source prototype](POST_QUANTUM_PROTOTYPE.md) adds hybrid key establishment and dual signatures without changing current radio, TCP or envelope formats. Adoption requires independent protocol review, persistent replay and key lifecycle integration, and actual device measurements of setup cost, completion and goodput. Its source controls and calculated fragment counts do not qualify a post-quantum network.
 
@@ -77,18 +93,13 @@ Compare performance and security with published MeshCore and Reticulum evidence 
 
 ## After alpha
 
-- **Host-backed MCU acceleration.** The 24 October A/B LoRa distance sample
-  verified 8,164 bytes at **0.889 kB/s including startup**, below the 1 kB/s
-  target for that boundary. The [functional source candidate](MCU_ACCELERATION.md)
-  now connects a bounded MCU DATA ciphertext queue to the serial worker,
-  durable journal and frozen flow runtime. Firmware starts queue-closed; an
-  immutable grant opts into short autonomous handover. Host crypto, peer-ACK
-  authentication, credit and retries remain on Linux. Source tests cover
-  capability/clock negotiation, replay, cancellation and physical-result drain;
-  a Heltec V4 candidate has two matching same-host builds. Candidate wheel/source
-  artifacts, debt-preserving finite
-  deployment approval and a fresh legacy/queue RF comparison remain required
-  before any acceleration claim.
+- **Host-backed MCU acceleration.** The [24 October comparison](MCU_ACCELERATION.md#measured-comparison-24-october-2026)
+  measured a 16.484% startup-inclusive goodput gain on one fixed-order LoRa pair.
+  The bounded DATA ciphertext queue is opt-in; firmware starts queue-closed and
+  an immutable grant delegates a short autonomous handover window. The earlier
+  rollout failure and under-budget baseline remain retained, with no old fence
+  cleared or debt refunded. Next work is reversed-order repeats, loss and
+  disconnect recovery, sustained completion and hardware energy measurements.
 - **More headroom and broader measurements.** Establish repeated startup-inclusive performance before treating the new finite rates as sustained capacity. Improve startup latency, retry cost, completion consistency and resource use. Expand file sizes, topology, range and power measurements under fresh bounded admission.
 - **Repeated-request and warm-path latency.** The normal 30-second browser
   target is met with a bounded cold-start gap. Reduce repeated-request latency

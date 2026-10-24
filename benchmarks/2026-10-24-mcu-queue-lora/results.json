@@ -1,0 +1,521 @@
+{
+  "budget": {
+    "failed_predecessor_paid": {
+      "unit-a": {
+        "attempts": 34,
+        "estimated_airtime_us": 1233214
+      },
+      "unit-b": {
+        "attempts": 45,
+        "estimated_airtime_us": 4990275
+      }
+    },
+    "failed_predecessor_scopes": 1,
+    "inclusive_paid": {
+      "unit-a": {
+        "attempts": 70,
+        "estimated_airtime_us": 2538970
+      },
+      "unit-b": {
+        "attempts": 139,
+        "estimated_airtime_us": 15231365
+      }
+    },
+    "max_attempts_per_endpoint": 480,
+    "max_host_estimated_airtime_us_per_endpoint": 20000000,
+    "new_scopes_completed": 2,
+    "old_failed_fences_unchanged": true,
+    "older_unresolved_history_claimed_resolved": false,
+    "remaining": {
+      "unit-a": {
+        "attempts": 410,
+        "estimated_airtime_us": 17461030
+      },
+      "unit-b": {
+        "attempts": 341,
+        "estimated_airtime_us": 4768635
+      }
+    }
+  },
+  "claim": "One fixed-order synchronous/queued LoRa comparison, B to A at operator-reported approximately 20 m; authenticated receipt and physical drain separately checked.",
+  "comparison": {
+    "common_boundary": "sender child startup through authenticated ACK application",
+    "elapsed_reduction_percent": 14.15123739144678,
+    "elapsed_saved_us": 1240592,
+    "goodput_gain_percent": 16.483915389639957,
+    "historical_goodput_gain_percent": 22.025262567130575,
+    "historical_sender_startup_Bps": 888.96496559
+  },
+  "core_commit": "f06ebeb3e687da4688657311830e95326a0107d2",
+  "date": "2026-10-24",
+  "evidence": {
+    "comparison_summary_sha256": "6f7be35245fe0a213c9d0cd13a06a2196aac882940726e30e8c5ff754fe40493",
+    "execution_closure_sha256": "bde8ca406842fbeb4ab2341d01b02132a49a6ae83d4bbf1afacfd2a593e10e57",
+    "final_report_sha256": "1c982308086691566537e42efa31a7e5d05e4a41fa8e6100426d5e7d31e31c9f",
+    "independent_authority_accounting_and_trace_review": "passed"
+  },
+  "firmware": {
+    "application_bytes": 401408,
+    "application_sha256": "fed657cc073912f1b20fc2b006b4bb2c9a85b47a6ec367cd5d01e7a1c8d9188d",
+    "identity": "mtb1-6cfde1fdd4",
+    "source_build_record": "provenance/MCU_BURST_FIRMWARE.json"
+  },
+  "host_retains": [
+    "session keys",
+    "authenticated peer ACKs",
+    "credit",
+    "retries"
+  ],
+  "interpretation": "Driver elapsed sums were 4,983,012 us synchronous and 4,989,588 us queued. Queue acceptance overlaps ongoing RF and must not be added to driver time; outside-driver timing is not a CPU-only measurement. The waveforms and airtime estimates did not change.",
+  "limits": {
+    "eirp_dbm": null,
+    "energy_joules": null,
+    "field_range_qualified": false,
+    "global_quiescence_proven": false,
+    "measured_RF_airtime_us": null,
+    "new_alpha_wheel_executed_over_RF": false,
+    "private_production_qualified": false,
+    "single_fixed_order_pair": true,
+    "standalone_mcu_transport": false,
+    "sustained_capacity_qualified": false,
+    "upstream_superiority_qualified": false
+  },
+  "measured_package_version": "1.0.0a1",
+  "measured_wheel_sha256": "7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0",
+  "modem": {
+    "bandwidth_hz": 500000,
+    "chip_power_dbm": 0,
+    "coding_rate": 5,
+    "frequency_hz": 921375000,
+    "preamble": 8,
+    "spreading_factor": 7,
+    "sync_word": 66
+  },
+  "order": [
+    "baseline",
+    "queued"
+  ],
+  "parts_each": 1,
+  "queued_data_policy": {
+    "inter_packet_rx_us": 5000,
+    "max_depth": 4,
+    "max_hold_us": 2000000,
+    "opt_in": true,
+    "reverse_listen_us": 100000,
+    "sender_only": true
+  },
+  "retained_failures": [
+    {
+      "outcome": "Aborted before RF; both previous application images were restored and checked.",
+      "phase": "initial firmware deployment",
+      "rf_tx": false
+    },
+    {
+      "outcome": "45 DATA packets acknowledged; the doubled pacing-ledger reservation exhausted an under-sized budget before the final DATA and queued comparison. Host handle-retention failure followed repeated refusal; diagnostics and operation-journal limits were corrected.",
+      "phase": "later synchronous baseline",
+      "queued_run_started": false,
+      "rf_tx": true
+    }
+  ],
+  "runs": {
+    "baseline": {
+      "authenticated_peer_receipt": true,
+      "authenticated_receipt_to_drained_endpoint_complete_us": 3329,
+      "complete": true,
+      "endpoints": {
+        "unit-a": {
+          "attempt_journal": {
+            "attempts": 18,
+            "fenced": false,
+            "recovered_unknown": 0,
+            "reserved_estimated_airtime_us": 652878
+          },
+          "exit_zero": true,
+          "firmware": "mtb1-6cfde1fdd4",
+          "forced_cleanup": false,
+          "installed_wheel": {
+            "editable": false,
+            "isolated": true,
+            "runtime_files_verified": 71,
+            "runtime_inventory_sha256": "c0f878e22c5214db9ddb221705a67e02b8cdc756c26034c2de9ffe3d39757f6a",
+            "sha256": "7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0"
+          },
+          "mcu_counters": {
+            "boot_attempts": {
+              "after": 52,
+              "before": 34,
+              "delta": 18
+            },
+            "boot_reserved_estimated_airtime_us": {
+              "after": 1667328,
+              "before": 1090176,
+              "delta": 577152
+            },
+            "dropped_receive": {
+              "after": 0,
+              "before": 0,
+              "delta": 0
+            }
+          },
+          "retransmits": 0,
+          "tx": {
+            "ACK": {
+              "count": 18,
+              "outcomes": [
+                "RF_DONE"
+              ],
+              "timing_us": {
+                "driver_elapsed_us": {
+                  "measured_count": 18,
+                  "median": 39604.0,
+                  "missing_count": 0,
+                  "sum": 712876
+                },
+                "driver_estimated_airtime_us": {
+                  "measured_count": 18,
+                  "median": 32064.0,
+                  "missing_count": 0,
+                  "sum": 577152
+                },
+                "worker_call_elapsed_us": {
+                  "measured_count": 18,
+                  "median": 56407.0,
+                  "missing_count": 0,
+                  "sum": 1021972
+                }
+              }
+            }
+          },
+          "unchanged_host_services_and_mcu_boot": true
+        },
+        "unit-b": {
+          "attempt_journal": {
+            "attempts": 47,
+            "fenced": false,
+            "recovered_unknown": 0,
+            "reserved_estimated_airtime_us": 5120545
+          },
+          "exit_zero": true,
+          "firmware": "mtb1-6cfde1fdd4",
+          "forced_cleanup": false,
+          "installed_wheel": {
+            "editable": false,
+            "isolated": true,
+            "runtime_files_verified": 71,
+            "runtime_inventory_sha256": "c0f878e22c5214db9ddb221705a67e02b8cdc756c26034c2de9ffe3d39757f6a",
+            "sha256": "7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0"
+          },
+          "mcu_counters": {
+            "boot_attempts": {
+              "after": 92,
+              "before": 45,
+              "delta": 47
+            },
+            "boot_reserved_estimated_airtime_us": {
+              "after": 9107968,
+              "before": 4495680,
+              "delta": 4612288
+            },
+            "dropped_receive": {
+              "after": 0,
+              "before": 0,
+              "delta": 0
+            }
+          },
+          "retransmits": 0,
+          "tx": {
+            "CONTROL": {
+              "count": 1,
+              "outcomes": [
+                "RF_DONE"
+              ],
+              "timing_us": {
+                "driver_elapsed_us": {
+                  "measured_count": 1,
+                  "median": 43484,
+                  "missing_count": 0,
+                  "sum": 43484
+                },
+                "driver_estimated_airtime_us": {
+                  "measured_count": 1,
+                  "median": 35904,
+                  "missing_count": 0,
+                  "sum": 35904
+                },
+                "worker_call_elapsed_us": {
+                  "measured_count": 1,
+                  "median": 59915,
+                  "missing_count": 0,
+                  "sum": 59915
+                }
+              }
+            },
+            "DATA": {
+              "count": 46,
+              "outcomes": [
+                "RF_DONE"
+              ],
+              "timing_us": {
+                "driver_elapsed_us": {
+                  "measured_count": 46,
+                  "median": 108753.5,
+                  "missing_count": 0,
+                  "sum": 4983012
+                },
+                "driver_estimated_airtime_us": {
+                  "measured_count": 46,
+                  "median": 99904.0,
+                  "missing_count": 0,
+                  "sum": 4576384
+                },
+                "worker_call_elapsed_us": {
+                  "measured_count": 46,
+                  "median": 131838.5,
+                  "missing_count": 0,
+                  "sum": 6156631
+                }
+              }
+            }
+          },
+          "unchanged_host_services_and_mcu_boot": true
+        }
+      },
+      "evidence": {
+        "prepared_sha256": "a8d8b3cedf01b9378c5cbad42fb2e799dc848f65e91e1c601cdeb57d8e0f075c",
+        "result_sha256": "7ced2c0c68c706ab7dbdd09bed24d8d8145db2ee86ddccda4f843b93f7d68a06",
+        "scope_sha256": "70d76af2b1f52f0b4de80c13224bc4e752d694e112f8e01ebed0e53d812d28c6"
+      },
+      "publisher_and_whole_file_verified": true,
+      "timing_us": {
+        "first_DATA_worker_call_to_final_authenticated_receipt_us": 8013809,
+        "first_sender_startup_to_final_authenticated_receipt_us": 8766668,
+        "first_sender_startup_to_final_cli_complete_us": 8896402,
+        "first_sender_startup_to_final_session_retired_us": 8843007,
+        "scope_issue_to_both_endpoints_closed_us": 20301626
+      },
+      "useful_Bps": {
+        "whole_file_DATA_boundary_goodput_useful_Bps": 1018.7415247855296,
+        "whole_file_sender_startup_goodput_useful_Bps": 931.2546112160287
+      },
+      "useful_bytes_verified": 8164,
+      "useful_sha256": "3becaeb389675d3e0400373541f421ab7db1b350ec284ea7460f839e0eeebb53",
+      "within_original_scope": true
+    },
+    "queued": {
+      "authenticated_peer_receipt": true,
+      "authenticated_receipt_to_drained_endpoint_complete_us": 27456,
+      "complete": true,
+      "endpoints": {
+        "unit-a": {
+          "attempt_journal": {
+            "attempts": 18,
+            "fenced": false,
+            "recovered_unknown": 0,
+            "reserved_estimated_airtime_us": 652878
+          },
+          "exit_zero": true,
+          "firmware": "mtb1-6cfde1fdd4",
+          "forced_cleanup": false,
+          "installed_wheel": {
+            "editable": false,
+            "isolated": true,
+            "runtime_files_verified": 71,
+            "runtime_inventory_sha256": "c0f878e22c5214db9ddb221705a67e02b8cdc756c26034c2de9ffe3d39757f6a",
+            "sha256": "7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0"
+          },
+          "mcu_counters": {
+            "boot_attempts": {
+              "after": 70,
+              "before": 52,
+              "delta": 18
+            },
+            "boot_reserved_estimated_airtime_us": {
+              "after": 2244480,
+              "before": 1667328,
+              "delta": 577152
+            },
+            "dropped_receive": {
+              "after": 0,
+              "before": 0,
+              "delta": 0
+            }
+          },
+          "retransmits": 0,
+          "tx": {
+            "ACK": {
+              "count": 18,
+              "outcomes": [
+                "RF_DONE"
+              ],
+              "timing_us": {
+                "driver_elapsed_us": {
+                  "measured_count": 18,
+                  "median": 39605.5,
+                  "missing_count": 0,
+                  "sum": 712906
+                },
+                "driver_estimated_airtime_us": {
+                  "measured_count": 18,
+                  "median": 32064.0,
+                  "missing_count": 0,
+                  "sum": 577152
+                },
+                "worker_call_elapsed_us": {
+                  "measured_count": 18,
+                  "median": 56252.5,
+                  "missing_count": 0,
+                  "sum": 1015635
+                }
+              }
+            }
+          },
+          "unchanged_host_services_and_mcu_boot": true
+        },
+        "unit-b": {
+          "attempt_journal": {
+            "attempts": 47,
+            "fenced": false,
+            "recovered_unknown": 0,
+            "reserved_estimated_airtime_us": 5120545
+          },
+          "exit_zero": true,
+          "firmware": "mtb1-6cfde1fdd4",
+          "forced_cleanup": false,
+          "installed_wheel": {
+            "editable": false,
+            "isolated": true,
+            "runtime_files_verified": 71,
+            "runtime_inventory_sha256": "c0f878e22c5214db9ddb221705a67e02b8cdc756c26034c2de9ffe3d39757f6a",
+            "sha256": "7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0"
+          },
+          "mcu_counters": {
+            "boot_attempts": {
+              "after": 139,
+              "before": 92,
+              "delta": 47
+            },
+            "boot_reserved_estimated_airtime_us": {
+              "after": 13720256,
+              "before": 9107968,
+              "delta": 4612288
+            },
+            "dropped_receive": {
+              "after": 0,
+              "before": 0,
+              "delta": 0
+            }
+          },
+          "retransmits": 0,
+          "tx": {
+            "CONTROL": {
+              "count": 1,
+              "outcomes": [
+                "RF_DONE"
+              ],
+              "timing_us": {
+                "driver_elapsed_us": {
+                  "measured_count": 1,
+                  "median": 43509,
+                  "missing_count": 0,
+                  "sum": 43509
+                },
+                "driver_estimated_airtime_us": {
+                  "measured_count": 1,
+                  "median": 35904,
+                  "missing_count": 0,
+                  "sum": 35904
+                },
+                "worker_call_elapsed_us": {
+                  "measured_count": 1,
+                  "median": 62959,
+                  "missing_count": 0,
+                  "sum": 62959
+                }
+              }
+            },
+            "DATA": {
+              "count": 46,
+              "outcomes": [
+                "RF_DONE"
+              ],
+              "timing_us": {
+                "driver_elapsed_us": {
+                  "measured_count": 46,
+                  "median": 108816.0,
+                  "missing_count": 0,
+                  "sum": 4989588
+                },
+                "driver_estimated_airtime_us": {
+                  "measured_count": 46,
+                  "median": 99904.0,
+                  "missing_count": 0,
+                  "sum": 4576384
+                },
+                "worker_call_elapsed_us": {
+                  "measured_count": 0,
+                  "median": null,
+                  "missing_count": 46,
+                  "sum": null
+                }
+              }
+            }
+          },
+          "unchanged_host_services_and_mcu_boot": true
+        }
+      },
+      "evidence": {
+        "prepared_sha256": "6196ace08f77840225d727377585586339fb48a81afef5bf52e19a01be0219ac",
+        "result_sha256": "47302828b906d9198aa5093af2901529f62d78f91a9566a2a2439b31f0ad3b06",
+        "scope_sha256": "a44ede9a699399e4a6aeb6be9d769d61539566776e4e173c93ee7f9f4ce94791"
+      },
+      "physical_queue": {
+        "RF_DONE": 46,
+        "STATUS_drain_gate": "pinned BenchFlow assert_drained checked pending, retained, transmitting and containment false",
+        "all_deadlines_met": true,
+        "exact_request_sets_match": true,
+        "peak_retained": 4,
+        "pending": 0,
+        "raw_RX_rearm_timestamps_retained": false,
+        "raw_STATUS_body_retained": false,
+        "released": 46,
+        "submitted_DATA": 46,
+        "worker_pending": 0
+      },
+      "publisher_and_whole_file_verified": true,
+      "queue_accept_calls": {
+        "count": 46,
+        "elapsed_us": {
+          "measured_count": 46,
+          "median": 21643.0,
+          "missing_count": 0,
+          "sum": 1118990
+        }
+      },
+      "timing_us": {
+        "first_queued_DATA_submit_to_final_authenticated_receipt_us": 6900232,
+        "first_sender_startup_to_final_authenticated_receipt_us": 7526076,
+        "first_sender_startup_to_final_cli_complete_us": 7705075,
+        "first_sender_startup_to_final_session_retired_us": 7666079,
+        "scope_issue_to_both_endpoints_closed_us": 21350294
+      },
+      "useful_Bps": {
+        "whole_file_queued_submit_goodput_useful_Bps": 1183.1486245679855,
+        "whole_file_sender_startup_goodput_useful_Bps": 1084.7618333909995
+      },
+      "useful_bytes_verified": 8164,
+      "useful_sha256": "c81fefb4207da846e70565307f76b081dd367fbf5586ce706df916f044c1bde4",
+      "within_original_scope": true
+    }
+  },
+  "schema": "meshticulum.sanitized-mcu-queue-comparison.v1",
+  "topology": {
+    "antennas_confirmed": true,
+    "boards": "Two Heltec LoRa 32 V4 boards",
+    "distance_basis": "operator reported; two rooms",
+    "distance_metres": 20,
+    "receiver": "unit-a",
+    "sender": "unit-b",
+    "unit_c_excluded": true
+  },
+  "useful_bytes_each": 8164
+}

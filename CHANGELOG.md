@@ -1,5 +1,46 @@
 # Release notes
 
+## Unreleased — host-backed MCU queue, 24 October 2026
+
+The next alpha candidate adds a bounded MCU DATA ciphertext queue connected to
+the serial worker, durable attempt journal and authenticated flow runtime.
+Queue mode requires an immutable opt-in grant; the default path stays
+synchronous. Linux retains keys, AEAD, peer ACK authentication, credit and
+retries. Queue acceptance, local RF_DONE, authenticated peer receipt and final
+physical drain remain separate evidence.
+
+The candidate also adds request-keyed physical-event routing, clock-bound
+burst deadlines, exact replay/release checks and recovery fencing. Per-role
+operation journal limits are now bound into the grant independently of absolute
+MCU boot-counter limits. An exhausted frozen scheduler budget reports a bounded
+failure instead of repeatedly admitting refused handles; its conservative
+accounting and retained debt are unchanged.
+
+One fixed-order baseline-then-queue comparison sent two fresh **8,164-byte**
+signed files between Heltec V4 radios about **20 m apart**. Both used firmware
+`mtb1-6cfde1fdd4`, SF7/BW500/CR4:5, sync `0x42`, 921.375 MHz and 0 dBm.
+Startup to authenticated receipt improved from **8.766668 s / 931.254611 B/s**
+to **7.526076 s / 1,084.761833 B/s**, a **16.483915% goodput gain**.
+Both files and publishers verified with zero DATA retries, receive-drop
+increases or new UNKNOWN outcomes. Queue mode settled and released all 46 DATA
+physical records; drained endpoint completion followed receipt by **27.456 ms**.
+This is one paired sample, not sustained-capacity, field-range or production
+qualification. See the [sanitized comparison](benchmarks/2026-10-24-mcu-queue-lora/results.json).
+
+The failed rollout and verified restoration are retained. A later baseline
+exhausted an undersized pacing budget before the final DATA frame; it remains
+failed and fenced. Its diagnostics led to cold-transfer feasibility checks and
+separate journal/native limits. The successful pair used fresh finite scopes
+while preserving the original paid costs and unresolved historical references.
+
+The measured SDK source is `f06ebeb3e687da4688657311830e95326a0107d2`; its
+wheel SHA-256 is
+`7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0`.
+That wheel still identifies as `1.0.0a1`. A future `1.0.0a2` build requires
+its own source/artifact and installation checks; these measurements do not
+silently transfer to a changed build. The published `v1.0.0-alpha` tag and
+assets remain their original checkpoint.
+
 ## Post-alpha cross-room A/B test — 2026-10-22
 
 The published installed wheel from source

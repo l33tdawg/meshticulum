@@ -29,7 +29,8 @@ python examples/offline_resource_demo.py
 ```
 
 Keep the commit printed by `git rev-parse HEAD`. The import check should show
-`1.0.0a1` and a path in your virtual environment's `site-packages`. CLI help
+the version in that checkout's `pyproject.toml` (`1.0.0a2` for this candidate)
+and a path in your virtual environment's `site-packages`. CLI help
 should list `serve`, `serve-cache` and `fetch`; it starts no service.
 
 The example should finish with `Verified public chunk: 287 bytes`. It creates

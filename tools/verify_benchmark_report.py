@@ -435,6 +435,103 @@ def verify_lora_distance(record):
         require(e['reserve_us']['n']==e['settle_us']['n']==128, 'CPU diagnostic denominator changed')
 
 
+def verify_mcu_queue(record):
+    require(record['schema']=='meshticulum.sanitized-mcu-queue-comparison.v1', 'unsupported MCU queue report')
+    require(record['core_commit']=='f06ebeb3e687da4688657311830e95326a0107d2'
+            and record['measured_wheel_sha256']=='7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0'
+            and record['measured_package_version']=='1.0.0a1', 'measured MCU queue source changed')
+    require(record['firmware']['identity']=='mtb1-6cfde1fdd4'
+            and record['firmware']['application_sha256']=='fed657cc073912f1b20fc2b006b4bb2c9a85b47a6ec367cd5d01e7a1c8d9188d', 'wrong queue firmware')
+    require(record['useful_bytes_each']==8164 and record['parts_each']==1
+            and record['order']==['baseline','queued'], 'wrong MCU queue sample denominator')
+    require(record['topology']['distance_metres']==20
+            and record['topology']['distance_basis']=='operator reported; two rooms'
+            and record['topology']['antennas_confirmed'] is True
+            and record['topology']['unit_c_excluded'] is True, 'wrong queue physical scope')
+    require(record['modem']==dict(frequency_hz=921375000,bandwidth_hz=500000,
+            spreading_factor=7,coding_rate=5,chip_power_dbm=0,preamble=8,sync_word=66), 'wrong queue waveform')
+    require(record['queued_data_policy']==dict(opt_in=True,sender_only=True,max_depth=4,
+            max_hold_us=2000000,inter_packet_rx_us=5000,reverse_listen_us=100000), 'wrong queue policy')
+    for mode in record['order']:
+        row=record['runs'][mode]
+        require(all(row[k] is True for k in ('complete','authenticated_peer_receipt',
+                'publisher_and_whole_file_verified','within_original_scope'))
+                and row['useful_bytes_verified']==8164, 'queue delivery or completion missing')
+        timings=row['timing_us']; rates=row['useful_Bps']
+        require(close(rates['whole_file_sender_startup_goodput_useful_Bps'],
+                8164*1000000/timings['first_sender_startup_to_final_authenticated_receipt_us']), 'queue startup rate mismatch')
+        data_key=('first_DATA_worker_call_to_final_authenticated_receipt_us' if mode=='baseline'
+                  else 'first_queued_DATA_submit_to_final_authenticated_receipt_us')
+        rate_key=('whole_file_DATA_boundary_goodput_useful_Bps' if mode=='baseline'
+                  else 'whole_file_queued_submit_goodput_useful_Bps')
+        require(close(rates[rate_key],8164*1000000/timings[data_key]), 'queue DATA rate mismatch')
+        require(timings['scope_issue_to_both_endpoints_closed_us']>=timings['first_sender_startup_to_final_authenticated_receipt_us']
+                and row['authenticated_receipt_to_drained_endpoint_complete_us']>=0, 'queue completion precedes receipt')
+        require(set(row['endpoints'])=={'unit-a','unit-b'}, 'wrong queue endpoints')
+        for unit,e in row['endpoints'].items():
+            journal=e['attempt_journal']; counters=e['mcu_counters']; env=e['installed_wheel']
+            require(all(type(journal[k]) is int and journal[k]>0 for k in
+                    ('attempts','reserved_estimated_airtime_us')), 'invalid queue journal cost')
+            require(e['firmware']==record['firmware']['identity']
+                    and e['unchanged_host_services_and_mcu_boot'] is True
+                    and e['exit_zero'] is True and e['forced_cleanup'] is False
+                    and e['retransmits']==0 and journal['fenced'] is False
+                    and journal['recovered_unknown']==0, 'queue endpoint failed or changed')
+            require(env['sha256']==record['measured_wheel_sha256']
+                    and env['runtime_files_verified']==71 and env['isolated'] is True
+                    and env['editable'] is False, 'queue installed wheel changed')
+            for counter in counters.values():
+                require(counter['after']-counter['before']==counter['delta']>=0, 'queue counter arithmetic mismatch')
+            require(counters['dropped_receive']['delta']==0
+                    and counters['boot_attempts']['delta']==journal['attempts'], 'queue native attempt/drop mismatch')
+            tx=e['tx']; expected={'ACK':18} if unit=='unit-a' else {'DATA':46,'CONTROL':1}
+            require({k:v['count'] for k,v in tx.items()}==expected
+                    and sum(expected.values())==journal['attempts'], 'queue TX/journal count mismatch')
+            require(all(v['outcomes']==['RF_DONE'] for v in tx.values()), 'queue physical outcome missing')
+            native=sum(v['timing_us']['driver_estimated_airtime_us']['sum'] for v in tx.values())
+            require(native==counters['boot_reserved_estimated_airtime_us']['delta']
+                    and journal['reserved_estimated_airtime_us']>=native, 'queue airtime/debt mismatch')
+    queue=record['runs']['queued']['physical_queue']
+    require(queue['submitted_DATA']==queue['RF_DONE']==queue['released']==46
+            and queue['peak_retained']==4 and queue['pending']==queue['worker_pending']==0
+            and queue['exact_request_sets_match'] is True and queue['all_deadlines_met'] is True,
+            'queue physical conservation failed')
+    require(queue['raw_STATUS_body_retained'] is False
+            and queue['raw_RX_rearm_timestamps_retained'] is False, 'missing raw queue evidence invented')
+    a=record['runs']['baseline']['timing_us']['first_sender_startup_to_final_authenticated_receipt_us']
+    b=record['runs']['queued']['timing_us']['first_sender_startup_to_final_authenticated_receipt_us']
+    comparison=record['comparison']
+    require(a==8766668 and b==7526076 and comparison['elapsed_saved_us']==a-b
+            and close(comparison['goodput_gain_percent'],100*(a/b-1))
+            and close(comparison['elapsed_reduction_percent'],100*(1-b/a)), 'queue comparison arithmetic mismatch')
+    require(record['runs']['queued']['authenticated_receipt_to_drained_endpoint_complete_us']==27456,
+            'queue physical/authenticated boundary changed')
+    budget=record['budget']
+    require(budget['max_attempts_per_endpoint']==480 and budget['max_host_estimated_airtime_us_per_endpoint']==20000000
+            and budget['new_scopes_completed']==2 and budget['failed_predecessor_scopes']==1
+            and budget['old_failed_fences_unchanged'] is True
+            and budget['older_unresolved_history_claimed_resolved'] is False, 'queue lineage or debt scope changed')
+    for unit in ('unit-a','unit-b'):
+        for field,cap in (('attempts',480),('estimated_airtime_us',20000000)):
+            require(all(type(budget[group][unit][field]) is int
+                        and 0<=budget[group][unit][field]<=cap for group in
+                        ('failed_predecessor_paid','inclusive_paid','remaining')),
+                    'invalid or over-budget queue cost')
+            journal_field='attempts' if field=='attempts' else 'reserved_estimated_airtime_us'
+            paid=budget['failed_predecessor_paid'][unit][field]+sum(
+                record['runs'][m]['endpoints'][unit]['attempt_journal'][journal_field] for m in record['order'])
+            require(budget['inclusive_paid'][unit][field]==paid
+                    and paid+budget['remaining'][unit][field]==cap, 'queue old spend lost or budget exceeded')
+    require(len(record['retained_failures'])==2
+            and record['retained_failures'][1]['queued_run_started'] is False, 'queue failure history missing')
+    limits=record['limits']
+    require(limits['single_fixed_order_pair'] is True and all(limits[k] is False for k in
+            ('sustained_capacity_qualified','field_range_qualified','private_production_qualified',
+             'upstream_superiority_qualified','standalone_mcu_transport','global_quiescence_proven',
+             'new_alpha_wheel_executed_over_RF')), 'queue qualification inflated')
+    require(all(limits[k] is None for k in ('measured_RF_airtime_us','energy_joules','eirp_dbm')), 'queue missing metric invented')
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('report',nargs='?',type=Path)
@@ -444,7 +541,8 @@ def main():
                                            root/'benchmarks/2026-10-17-public-sdk/results.json',
                                            root/'provenance/PUBLIC_INSTALLED_SDK_PROOF.json',
                                            root/'benchmarks/2026-10-22-ab-cross-room/results.json',
-                                           root/'benchmarks/2026-10-24-lora-distance/results.json']
+                                           root/'benchmarks/2026-10-24-lora-distance/results.json',
+                                           root/'benchmarks/2026-10-24-mcu-queue-lora/results.json']
     for path in paths:
         record=json.loads(path.read_text())
         if record['schema']=='meshticulum.published-sdk-file-samples.v1':
@@ -461,7 +559,10 @@ def main():
             print('Verified the five-part A/B whole-file hash, authenticated receipts, timing arithmetic, attempt debt, zero receive-drop delta and bounded cross-room claim.')
         elif record['schema']=='meshticulum.sanitized-lora-distance-sample.v1':
             verify_lora_distance(record)
-            print('Verified the single 8,164-byte LoRa distance sample, original timing boundaries, paid debt, retained failures and separate CPU-only diagnostic. MCU acceleration and sustained capacity remain unqualified.')
+            print('Verified the single 8,164-byte LoRa distance sample, original timing boundaries, paid debt, retained failures and separate CPU-only diagnostic. This earlier sample alone does not measure MCU queue acceleration or sustained capacity.')
+        elif record['schema']=='meshticulum.sanitized-mcu-queue-comparison.v1':
+            verify_mcu_queue(record)
+            print('Verified one LoRa synchronous/MCU-queue pair, separate authenticated/physical boundaries, 46 queued DATA completions/releases and inclusive failed-run debt. Sustained qualification remains open.')
         else:
             verify(record)
             print('Verified 30 unique RF samples, separate directional distributions and 1 retained setup failure. Missing metrics remain null.')

@@ -1,5 +1,54 @@
 # Performance and measurement
 
+The latest LoRa comparison measured **1,084.8 useful B/s including sender
+startup with the opt-in MCU DATA queue**, versus **931.3 B/s** synchronously on
+the same firmware/profile. The result below is one fixed-order pair; the
+historical GFSK and LoRa samples keep their own conditions and boundaries.
+
+## Host-backed MCU queue: 24 October 2026
+
+Two fresh **8,164-byte signed files** crossed an operator-reported
+approximately **20 m** direct link between Heltec V4 USB radios, baseline first
+and queue mode second. Both used `mtb1-6cfde1fdd4`, SF7/BW500/CR4:5, preamble 8,
+sync `0x42`, 921.375 MHz and 0 dBm. The receiver independently verified each
+publisher and whole file; both runs had zero DATA retries, receive-drop
+increases or new UNKNOWN outcomes.
+
+| Sender timing boundary | Synchronous baseline | MCU queue |
+| --- | ---: | ---: |
+| Startup → authenticated receipt | 8.766668 s; **931.254611 B/s** | 7.526076 s; **1,084.761833 B/s** |
+| First DATA worker call / queue submission → receipt | 8.013809 s; **1,018.741525 B/s** | 6.900232 s; **1,183.148625 B/s** |
+| Receipt → drained endpoint completion | 3.329 ms | **27.456 ms** |
+
+Startup-inclusive goodput increased **16.483915%** and elapsed time decreased
+14.151237%. At the DATA boundary, goodput increased 16.138254%. The queued
+sample crosses the 1,000 B/s startup target on this tested path; a single pair
+does not establish a completion distribution or sustained rate.
+
+For 46 DATA packets, synchronous worker calls totaled **6.156631 s**, including
+**4.983012 s** inside the MCU driver. The 1.173619 s difference includes host
+and transport work; it is not a CPU-only measurement. Queued acceptance calls
+totaled **1.118990 s** while MCU work continued asynchronously. Their time
+must not be added to the queued driver total, **4.989588 s**. The nearly
+unchanged driver time supports a handoff/overlap improvement, without a faster
+PHY or an independent RF-airtime measurement.
+
+All 46 queued physical results reached RF_DONE and were released; no physical
+records remained at successful closure. Authenticated receipt was observed
+immediately after ACK application, before the separate drain gate. Linux kept
+keys, ACK authentication, credit and retries; queue mode remained explicit opt-in.
+
+Measured source `f06ebeb3e687da4688657311830e95326a0107d2` and wheel
+`7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0`
+are pinned in the [sanitized comparison](../benchmarks/2026-10-24-mcu-queue-lora/results.json).
+They are separate from a future `1.0.0a2` artifact. The record preserves the
+failed rollout/restoration and the underbudget failed baseline that preceded
+the fresh successful pair. [The measurement report](RADIO_SDK_MEASUREMENTS.md#host-backed-mcu-queue-comparison-24-october-2026)
+keeps those accounting boundaries. Reversed-order repetition, loss/disconnect,
+range, energy and wider hardware remain open.
+
+## Earlier public SDK milestones
+
 The 17 October public SDK radio samples completed **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s) including sender startup**, plus a **23,900-byte file at 2.53 kB/s (20.28 kbit/s)**. They used **GFSK at 250 kbit/s**, on a direct HAT-to-MCU link about one metre apart. Both 100 kB intervals include all five sequential parts and coordination gaps. Scope issue through endpoint closure reached **1.86 and 1.76 kB/s (14.85 and 14.05 kbit/s)**. [The 17 October report](RADIO_SDK_MEASUREMENTS.md) gives the exact source, elapsed boundaries, confirmations and sanitized record.
 
 On 18 October, source `1f85608` also completed fresh **250 kB, 500 kB and 1 MB signed bundles** on that path. Final sender-startup-inclusive rates were **2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s)**; scope-to-closure rates were **2.063, 2.190 and 2.218 kB/s (16.500, 17.521 and 17.742 kbit/s)**. Every receiver independently verified every part and the exact whole file.
@@ -48,7 +97,7 @@ sustained-throughput distribution, broader repetition and wider
 [qualification](RELEASE_READINESS.md) remain open. The optional later 4 to
 5 kB/s (32 to 40 kbit/s) stretch remains in the [roadmap](ROADMAP.md).
 
-This page retains the earlier 30-sample LoRa distribution, seven finite native LoRa public samples and the 15 October GFSK campaign at their original source pins and timing boundaries. The new GFSK measurements are separate from the LoRa evidence and upstream comparison below.
+This page retains the earlier 30-sample LoRa distribution, seven finite native LoRa public samples and the 15 October GFSK campaign at their original source pins and timing boundaries. Each later comparison remains separate from the historical LoRa evidence and upstream comparison below.
 
 ## Retained radio results
 
@@ -143,7 +192,7 @@ Use decimal units consistently:
 - **kB/s** means 1,000 bytes per second. The measured medians are approximately 1.19–1.23 kB/s.
 - **kbit/s** means 1,000 bits per second. 1.5 kB/s equals 12 kbit/s; 1.5 kbit/s equals 187.5 B/s.
 
-The retained records use B/s. No retained repeated sample reviewed for this publication reaches 1,500 B/s. The **1 to 1.5 kB/s (8 to 12 kbit/s) programme target** is tracked alongside completion, latency and retry cost, rather than reported as an achieved 1.5 kB/s result. The owner has also set a **4 to 5 kB/s (32 to 40 kbit/s) useful encrypted stretch target**. At the recorded SF7/BW500/CR4/5 settings, the nominal raw PHY calculation is `(500000 / 2**7) × 7 × (4/5) / 8 = 2,734.375 B/s`, before packet, encryption and reliable-flow overhead. That ceiling cannot support the stretch target. A faster PHY needs independently verified radio/firmware capabilities, fresh bounded admission and new measurements; faster-profile range is unmeasured. Verify modulation support against [Semtech's SX1262 specifications](https://www.semtech.com/products/wireless-rf/lora-connect/sx1262) and the actual MCU chipset and firmware before admitting any faster profile.
+The retained records use B/s. None of the 30 historical LoRa samples reaches 1,500 B/s. The **1 to 1.5 kB/s (8 to 12 kbit/s) programme target** is tracked alongside completion, latency and retry cost, rather than reported as an achieved 1.5 kB/s result. The owner has also set a **4 to 5 kB/s (32 to 40 kbit/s) useful encrypted stretch target**. At the recorded SF7/BW500/CR4/5 settings, the nominal raw PHY calculation is `(500000 / 2**7) × 7 × (4/5) / 8 = 2,734.375 B/s`, before packet, encryption and reliable-flow overhead. That ceiling cannot support the stretch target. A faster PHY needs independently verified radio/firmware capabilities, fresh bounded admission and new measurements; faster-profile range is unmeasured. Verify modulation support against [Semtech's SX1262 specifications](https://www.semtech.com/products/wireless-rf/lora-connect/sx1262) and the actual MCU chipset and firmware before admitting any faster profile.
 
 ## Where the useful-byte gains come from
 

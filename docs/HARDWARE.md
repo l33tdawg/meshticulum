@@ -25,9 +25,11 @@ The later [MCU020 proof](../provenance/PUBLIC_MCU020_PROOF.json), bound to candi
 The [host-backed DATA queue candidate](MCU_ACCELERATION.md) has its own
 [six-input Heltec V4 build record](../provenance/MCU_BURST_FIRMWARE.json), identity
 `mtb1-6cfde1fdd4`. Two independently prepared builds on the same pinned
-macOS-arm64 host produced identical application BIN/ELF bytes. This candidate
-has not been flashed or RF-qualified, and the earlier installation evidence
-does not transfer to it.
+macOS-arm64 host produced identical application BIN/ELF bytes. That record
+is build-only evidence. A later [24 October installed comparison](../benchmarks/2026-10-24-mcu-queue-lora/README.md)
+used this firmware on two Heltec V4 boards: one synchronous/queued LoRa pair
+verified 8,164 bytes per mode at approximately 20 m. This separate finite RF
+result does not qualify Xiao, field range or a rebuilt firmware image.
 
 RadioLib, MeshCore-derived board support and platform components keep their upstream licenses. The Meshticulum source license does not relicense those inputs. The published SDK/source-build alpha passed its selected source/license/notice coverage review. Optional prebuilt firmware remains a separate distribution decision, with source/object/relink/notice companions and unresolved vendor-source identities retained for review. Full vendor SDK/compiler source-to-build correspondence and complete notice closure are not asserted. See the [published alpha scope](RELEASE_READINESS.md#published-distribution-sdk-and-firmware-source-build); a host-native stub test cannot close physical or distribution requirements.
 
