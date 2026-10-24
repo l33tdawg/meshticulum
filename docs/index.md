@@ -1,6 +1,6 @@
 # Meshticulum documentation
 
-Meshticulum brings bounded radio transfers, authenticated service boundaries and verified resources into a system intended to span LoRa and IP. This guide starts with the design, then follows the source and the evidence needed to qualify it.
+Meshticulum brings bounded radio transfers, authenticated service boundaries and verified resources into a system intended to span LoRa and IP. This guide starts with the design, then follows the source and the evidence needed to qualify it. [Experimental alpha.2 is published](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.2); start with the [SDK installation guide](SDK_GUIDE.md#install-the-alpha-or-checkout).
 
 ## Understand the project
 
@@ -39,7 +39,7 @@ Start with [installation and the standalone test command](../README.md#install-a
 | [Lantern's SAGE integration](SAGE_INTEGRATION.md) | Understand the separate owning repository for protected capture, replay and private inbox admission |
 | [Extraction and provenance](EXTRACTION.md) | Trace code to its original snapshot, inspect frozen flow pins or understand package bridges |
 | [Coordinated public pilot](HARDWARE_PILOT.md) | Follow native provisioning, relay provenance, publisher verification and the remaining physical checks |
-| [Alpha release status](RELEASE_READINESS.md) | Check the alpha.2 candidate, published alpha.1 history, artifacts and remaining qualification |
+| [Alpha release status](RELEASE_READINESS.md) | Check the published alpha.2 assets, retained alpha.1 history and remaining qualification |
 | [Third-party inventory](THIRD_PARTY.md) | Identify runtime and firmware dependencies and outstanding redistribution requirements |
 | [Repository instructions](../AGENTS.md) | Change transport or integration behavior while preserving its contracts and writer ownership |
 | [Frozen flow history](../src/meshticulum/flow/README.md) | Inspect the accepted candidate's revisions, invariants and historical source controls |

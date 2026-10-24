@@ -1,0 +1,98 @@
+{
+  "all_public_downloads_match_reviewed_assets": true,
+  "asset_count": 11,
+  "assets": [
+    {
+      "bytes": 5150,
+      "name": "FIRMWARE_SOURCE_BUILD.md",
+      "sha256": "a41ee54a4271287f2257f5d3a49d91993aca34f01c5c50bec9919c82ffeb5bbc",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/FIRMWARE_SOURCE_BUILD.md"
+    },
+    {
+      "bytes": 10778,
+      "name": "LICENSE",
+      "sha256": "ba61a1c596f3e771e379455f68124f793985196b84be0a6a41d2c489050facef",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/LICENSE"
+    },
+    {
+      "bytes": 2382,
+      "name": "MCU_BURST_FIRMWARE.json",
+      "sha256": "f370c34f4f2c189c008a43ff3b67068938ac239bddf7e929dcf92f75e65eba6d",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/MCU_BURST_FIRMWARE.json"
+    },
+    {
+      "bytes": 285149,
+      "name": "meshticulum-1.0.0a2-py3-none-any.whl",
+      "sha256": "d04d3746b07d467d31555e84a63b1771bb15afc728814263f0f64fb00c58f664",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/meshticulum-1.0.0a2-py3-none-any.whl"
+    },
+    {
+      "bytes": 1007893,
+      "name": "meshticulum-1.0.0a2.tar.gz",
+      "sha256": "8543dc81a834d379c27f8c99f159cf3d09b22e7b0c9ee6d6477806f37ff9354a",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/meshticulum-1.0.0a2.tar.gz"
+    },
+    {
+      "bytes": 974,
+      "name": "NOTICE",
+      "sha256": "387c1c228cbaf7a40b6729ae692603402387ac7308810709524bbde44d86e26c",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/NOTICE"
+    },
+    {
+      "bytes": 17550,
+      "name": "PUBLIC_MCU_QUEUE_COMPARISON.json",
+      "sha256": "ebf63bc2011d91654db5b17cef150ddff4bef7871a7ee9be9322a59dd2f40533",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/PUBLIC_MCU_QUEUE_COMPARISON.json"
+    },
+    {
+      "bytes": 2867,
+      "name": "RELEASE_MANIFEST.json",
+      "sha256": "6ef522cd26d98d94effb8f94e8f6b541f47f877c1f1bc072c472ed8ad936ebe9",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/RELEASE_MANIFEST.json"
+    },
+    {
+      "bytes": 4579,
+      "name": "RELEASE_NOTES.md",
+      "sha256": "bd7d17bceb192cf0a58fc765b614048eed482a93e9a3897c100ca1a846dcc8b5",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/RELEASE_NOTES.md"
+    },
+    {
+      "bytes": 13408,
+      "name": "RELEASE_VALIDATION.json",
+      "sha256": "fbf9c4b7aa529d0dd724611ed277a0caae68782a3f003c6fc80e0001163a08c4",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/RELEASE_VALIDATION.json"
+    },
+    {
+      "bytes": 884,
+      "name": "SHA256SUMS",
+      "sha256": "68199c9e073f1ba31ab43b026fd0768a2df4f5d8d942c2c7874822e37f6f918d",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.2/SHA256SUMS"
+    }
+  ],
+  "independent_artifact_notice_and_source_review": "passed",
+  "manifest_sha256": "6ef522cd26d98d94effb8f94e8f6b541f47f877c1f1bc072c472ed8ad936ebe9",
+  "prebuilt_firmware_included": false,
+  "prerelease": true,
+  "previous_alpha_source": "673eb60d24dc60f67371e24bc5c9caeec3a68508",
+  "previous_alpha_tag_unchanged": true,
+  "published_at": "2026-10-24T07:46:31Z",
+  "python_distribution_version": "1.0.0a2",
+  "runtime_correspondence": {
+    "change": "__version__ literal a1 to a2",
+    "examples_byte_identical": true,
+    "measured_source": "f06ebeb3e687da4688657311830e95326a0107d2",
+    "measured_wheel_sha256": "7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0",
+    "new_a2_wheel_RF_execution": false,
+    "sole_changed_runtime_file": "meshticulum/__init__.py",
+    "unchanged_runtime_files": 70
+  },
+  "schema": "meshticulum.public-alpha-release.v1",
+  "scope": "Exact-source prerelease artifacts, independent byte reproduction, clean local installation, offline resource verification and public download checks. The separate single-pair LoRa measurement retains its original development-wheel identity and qualification limits.",
+  "selection": "SDK and firmware source build",
+  "sha256sums_sha256": "68199c9e073f1ba31ab43b026fd0768a2df4f5d8d942c2c7874822e37f6f918d",
+  "source_commit": "62007e219ff7de1db6e0caf1db3066a8b56fb568",
+  "tag": "v1.0.0-alpha.2",
+  "third_party_wheels_included": false,
+  "url": "https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.2",
+  "validation_sha256": "fbf9c4b7aa529d0dd724611ed277a0caae68782a3f003c6fc80e0001163a08c4"
+}

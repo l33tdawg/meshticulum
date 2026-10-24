@@ -4,7 +4,7 @@ Meshticulum is a public experimental transport and resource project with a publi
 
 ## Current status
 
-The [public repository](https://github.com/l33tdawg/meshticulum), [project website](https://l33tdawg.github.io/meshticulum/) and [experimental `1.0.0-alpha` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) are live. The release is published from source `673eb60` and provides the tested SDK wheel, normalized source archive and firmware source-build materials. You can [install from source](../README.md#install-and-explore) or review the release assets.
+The [public repository](https://github.com/l33tdawg/meshticulum), [project website](https://l33tdawg.github.io/meshticulum/) and [experimental `1.0.0-alpha.2` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.2) are live. The release is published from source [`62007e2`](https://github.com/l33tdawg/meshticulum/commit/62007e219ff7de1db6e0caf1db3066a8b56fb568) and provides the tested SDK wheel, normalized source archive and firmware source-build materials. You can [install from source](../README.md#install-and-explore) or review the release assets.
 
 The earlier measured SDK source, `da247a1`, has [passing source CI on Python 3.11, 3.12 and 3.13](https://github.com/l33tdawg/meshticulum/actions/runs/39028024473). The published documentation head passed the same source-control matrix with unchanged runtime and firmware. The hardware samples below supply separate physical evidence. Future release candidates need their own exact source checks and artifacts.
 
@@ -16,13 +16,16 @@ Both modes used the same Heltec firmware and SF7/BW500 profile. All queued
 physical results were settled and released; checked endpoint completion followed
 receipt by 27.456 ms. This is one pair, with repeated performance, loss and
 recovery qualification still open. The [sanitized comparison](../benchmarks/2026-10-24-mcu-queue-lora/README.md)
-records the measured source and wheel separately from the next `1.0.0a2` build.
+records the measured source and wheel separately from the published `1.0.0a2`
+assets. Runtime correspondence and clean installation passed; this rebuilt wheel
+has no fresh RF execution.
 
-The next alpha adds the default-closed queue adapter, durable physical-result
+Alpha.2 adds the default-closed queue adapter, durable physical-result
 tracking, fail-fast budget diagnostics and independent per-operation journal
-limits. Keys, authenticated ACKs, credit and retries remain on the host. A
-versioned rebuild needs its own artifact and release-readiness checks; the
-published `v1.0.0-alpha` assets remain unchanged.
+limits. Keys, authenticated ACKs, credit and retries remain on the host. The
+release passed its artifact and release-readiness checks. The
+[release record](../provenance/ALPHA2_RELEASE.json) binds the selected assets;
+original `v1.0.0-alpha` assets remain unchanged.
 
 The optional [post-quantum source prototype](POST_QUANTUM_PROTOTYPE.md) adds hybrid key establishment and dual signatures without changing current radio, TCP or envelope formats. Adoption requires independent protocol review, persistent replay and key lifecycle integration, and actual device measurements of setup cost, completion and goodput. Its source controls and calculated fragment counts do not qualify a post-quantum network.
 
@@ -87,7 +90,7 @@ The selected SDK/firmware-source alpha passed the [release-readiness checklist](
 2. **A deployable SDK and firmware path.** Qualify the documented public SDK examples on real hardware, including installation, finite grants, lifecycle, disarm and rollback. Preserve exact source/firmware correspondence and supported-device limits. The public SDK now has two fresh 100 kB measurements and a clean installed-wheel 100 kB verified-piece continuation check. The source-build artifacts are published; those finite checks do not qualify every installation, supported mode or recovery path.
 3. **Mixed-carrier and native integration.** Retain real radio/IP, loss, verified-piece resume and measured-return coverage against the exact consuming application dependency. Preserve peer, boot, expiry, replay and accounting bindings. Kernel acceptance, RF completion, peer receipt and application acceptance need their own evidence.
 4. **Private admission and security.** Complete the inherited native owner, consent, revocation, encrypted-backend, capture and uncertain-write recovery checks in Lantern. Keep durable replay and the experimental forward-session/PFS qualification gates, including key purpose, lifecycle, compromise behavior and native erasure. Classical default transport and static recipient envelopes do not acquire deployed forward secrecy from source tests. See [forward-session status](FORWARD_SECRECY.md) and [security properties and gaps](COMPARISON.md#security-properties-and-gaps).
-5. **Reviewed release artifacts.** Bind standalone and paired integration results to the exact candidate, reproduce and inspect the wheel/source distribution, and retain installation checks. The `v1.0.0-alpha` source-build tag and assets are published. Future distributions and paired integrations still need their own firmware source/deployed-image, notices, corresponding-source/relinking and redistribution review.
+5. **Reviewed release artifacts.** Bind standalone and paired integration results to the exact candidate, reproduce and inspect the wheel/source distribution, and retain installation checks. The `v1.0.0-alpha.2` source-build tag and assets are published; the original alpha.1 assets remain unchanged. Future distributions and paired integrations still need their own firmware source/deployed-image, notices, corresponding-source/relinking and redistribution review.
 
 Compare performance and security with published MeshCore and Reticulum evidence only at stated, comparable boundaries. Keep hardware, profile, payload, encryption, topology and missing measurements visible. Meeting the alpha floor alone does not establish overall superiority; separate upstream benchmark campaigns are not required.
 
