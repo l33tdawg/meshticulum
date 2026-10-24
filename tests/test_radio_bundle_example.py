@@ -1,9 +1,11 @@
 """Five-part public MB1 composition. Models are not native/RF qualification."""
 from dataclasses import asdict
+from functools import partial
 import json
 import os
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -19,6 +21,55 @@ from tests.test_radio_file_example import Clock, ModelWorker, BOOT, PROFILE, ADM
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'examples'))
 import radio_bundle as bundle
 base = bundle.base
+
+
+@pytest.mark.parametrize('modem', ['lora', 'gfsk250'])
+def test_transfer_parses_modem_admission_before_running_object(tmp_path, published, monkeypatch, modem):
+    from tests.radio_profiles import SOURCE_ADMISSION
+
+    _, raw, signed, trust, digest, manifest, chunks = published
+    expected = byte_bundle.descriptor(manifest)
+    pack = tmp_path / 'pack'
+    pack.mkdir()
+    kp.write_pack(pack, manifest, chunks, json.loads(signed))
+    monkeypatch.setattr(bundle, 'load_bundle', lambda args: (raw, signed, trust, manifest, expected))
+    monkeypatch.setattr(base, 'firmware_identity', lambda *args: 'mtb1-0123456789')
+    monkeypatch.setattr(base, 'FileWindow', partial(base.FileWindow, boot_reader=lambda: BOOT))
+    issued = base.clock()[0]
+    expires = issued + 240_000_000
+    entry = manifest['chunks'][0]
+    payload = bundle.response_for(digest, entry, kp.chunk_bytes(chunks[entry['sha256']]))
+    plan = dict(schema='meshticulum.service-run.v1', sender_unit='sender',
+        issued_epoch_us=issued, expires_epoch_us=expires,
+        object=dict(object_id=expected['sha256'], chunk_index=0,
+                    bytes=len(payload), sha256=base.sha(payload)),
+        service=bundle.service_for(entry, payload, expires))
+    admission = SOURCE_ADMISSION if modem == 'lora' else ADMISSION
+    if modem == 'gfsk250':
+        plan['radio_modem'] = modem
+    grant = tmp_path / 'grant.json'
+    grant.write_bytes(kp.canonical_json(plan))
+    grant.chmod(0o600)
+    admitted = tmp_path / 'admission.json'
+    admitted.write_text(json.dumps(asdict(admission)))
+    admitted.chmod(0o600)
+    args = SimpleNamespace(part=0, file_issued_epoch_us=issued, file_expires_epoch_us=expires,
+        grant_directory=tmp_path, grant_sha256=base.sha(grant.read_bytes()),
+        admission=admitted, admission_sha256=base.sha(admitted.read_bytes()),
+        firmware_source=None, firmware_source_sha256=None, state=tmp_path / 'state',
+        manifest_sha256=digest, unit='sender', interface='hat', pack=pack)
+    observed = []
+
+    def run_object(args, raw_plan, parsed, version, actual_payload, window, factory):
+        observed.append(parsed)
+        assert raw_plan == grant.read_bytes()
+        assert version == 'mtb1-0123456789' and actual_payload == payload
+        return {'parsed': True}
+
+    monkeypatch.setattr(base, 'run_object', run_object)
+    assert bundle.transfer(args) == {'parsed': True}
+    assert observed == [admission]
+    assert (args.state / 'sent-0.json').is_file()
 
 
 @pytest.mark.parametrize(('part_count', 'expected'), [
