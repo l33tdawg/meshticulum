@@ -10,6 +10,7 @@ import termios
 import time
 
 from .linux_hat import HardwareError, _existing_openers, require
+from .host_timing import Phase, check_timing, phase, timed
 
 
 def usb_identity(tty):
@@ -24,7 +25,9 @@ def usb_identity(tty):
 class ExclusiveSerial:
     monotonic = staticmethod(time.monotonic)
 
-    def __init__(self, by_id, *, usb_serial):
+    def __init__(self, by_id, *, usb_serial, host_timing=None):
+        check_timing(host_timing)
+        self.host_timing = host_timing
         self.fd = self.lock_fd = None
         require(platform.system() == 'Linux' and os.geteuid() == 0, 'requires_linux_root_owner')
         path = Path(by_id)
@@ -63,19 +66,26 @@ class ExclusiveSerial:
             self.close()
             raise
 
+    @timed(Phase.SERIAL_WRITE)
     def write(self, data, deadline):
         require(type(data) is bytes and 0 < len(data) <= 710, 'invalid_serial_write')
+        timing = getattr(self, 'host_timing', None)
         view = memoryview(data)
         while view:
             remaining = deadline - self.monotonic()
             require(remaining > 0, 'serial_write_deadline')
-            require(select.select([], [self.fd], [], remaining)[1], 'serial_write_deadline')
+            with phase(timing, Phase.SERIAL_WAIT_WRITABLE):
+                writable = select.select([], [self.fd], [], remaining)[1]
+            require(writable, 'serial_write_deadline')
             try:
                 # ESP32-S3 USB CDC ignores the nominal UART baud rate. The
                 # retained MCU core has a 256-byte RX queue and drops overflow
                 # in its USB ISR. Pace whole encoded frames, including SLIP
                 # expansion, so a full 255-byte radio packet reaches the MCU.
-                size = os.write(self.fd, view[:64])
+                with phase(timing, Phase.SERIAL_OS_WRITE):
+                    # Readiness can return after the original write deadline.
+                    require(self.monotonic() < deadline, 'serial_write_deadline')
+                    size = os.write(self.fd, view[:64])
             except BlockingIOError:
                 continue
             require(size > 0, 'serial_write_disconnected')
@@ -86,14 +96,20 @@ class ExclusiveSerial:
                 # STATUS frames at this gap without dropped bytes. Keep USB
                 # packet boundaries; a whole-frame burst still overflows.
                 require(remaining > .002, 'serial_write_deadline')
-                time.sleep(.002)
+                with phase(timing, Phase.SERIAL_PACING_SLEEP):
+                    time.sleep(.002)
 
+    @timed(Phase.SERIAL_READ)
     def read(self, timeout):
         require(0 <= timeout <= 30, 'invalid_serial_timeout')
-        if not select.select([self.fd], [], [], timeout)[0]:
+        timing = getattr(self, 'host_timing', None)
+        with phase(timing, Phase.SERIAL_READ_WAIT):
+            readable = select.select([self.fd], [], [], timeout)[0]
+        if not readable:
             return b''
         try:
-            data = os.read(self.fd, 4096)
+            with phase(timing, Phase.SERIAL_OS_READ):
+                data = os.read(self.fd, 4096)
         except BlockingIOError:
             return b''
         require(bool(data), 'serial_read_disconnected')

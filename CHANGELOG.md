@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+The file and signed-bundle checkout examples accept `--profile-host` for bounded
+[host phase timings](docs/HOST_PROFILING.md). The opt-in report separates queue,
+journal, serial wait/write/pacing, physical release and flow-loop intervals.
+Diagnostic failures preserve transport outcomes. Serial writes also recheck the
+original deadline after readiness returns, preventing a late-ready write.
+
 Attempt-journal accounting reads and reservation budget checks now use durable
 aggregate totals instead of repeatedly scanning retained history. The totals
 rebuild from original attempt records on open and update atomically with each
