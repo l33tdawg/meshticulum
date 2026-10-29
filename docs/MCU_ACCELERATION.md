@@ -51,8 +51,9 @@ modulation.
 The measured source is `f06ebeb3e687da4688657311830e95326a0107d2`; the installed
 wheel SHA-256 is
 `7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0`.
-It identifies as `1.0.0a1`; future `1.0.0a2` artifacts need their own source and
-installation checks. The [sanitized result](../benchmarks/2026-10-24-mcu-queue-lora/results.json)
+It identifies as `1.0.0a1`; the later alpha.2 and alpha.3 artifacts retain their
+own source and installation records in [release status](RELEASE_READINESS.md).
+The [sanitized result](../benchmarks/2026-10-24-mcu-queue-lora/results.json)
 retains both samples and exact boundaries. This single pair does not establish
 sustained capacity, a completion distribution, loss/disconnect recovery, energy
 use, field range or operation on another installation.
@@ -166,11 +167,12 @@ reconciliation.
 
 The [30 October local host profile](../benchmarks/2026-10-30-host-journal/README.md)
 found history-length-dependent journal scans on the flow's accounting path.
-The unreleased journal change maintains durable totals in each reservation's
+The alpha.3 journal change maintains durable totals in each reservation's
 existing FULL transaction and reconstructs them from retained evidence on open.
 It removes the repeated scans without changing radio or listening policy. The
-profile and retained-trace analysis are source/local evidence; the latest
-physical comparison remains the 24 October pair above.
+profile and retained-trace analysis are source/local evidence. The
+[alpha.3 hardware evidence](RELEASE_READINESS.md#alpha3-hardware-evidence)
+is separate from the historical 24 October pair above.
 
 The checkout examples can now collect [host phase timings](HOST_PROFILING.md)
 for queue reservation, serial writes/waits, physical release and flow refill.

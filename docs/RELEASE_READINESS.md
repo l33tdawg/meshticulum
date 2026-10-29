@@ -1,5 +1,57 @@
 # Meshticulum alpha release status
 
+## 1.0.0-alpha.3 — 2026-10-30
+
+Python package **`1.0.0a3`** is the alpha.3 SDK update. The
+[`v1.0.0-alpha.3` release assets](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3)
+carry the final source identity, wheel and normalized source archive, validation
+record, manifest and `SHA256SUMS`. Earlier release tags and checksummed assets
+remain unchanged.
+
+The update replaces repeated full-history journal scans with durable aggregate
+accounting, adds opt-in host phase timings, and prevents a serial write after a
+late writable-readiness result has crossed its original deadline. Aggregate
+updates share the reservation's FULL commit; history, charged debt and recovery
+fences are retained. Startup still rebuilds the aggregate from history.
+
+The [local journal profile](../benchmarks/2026-10-30-host-journal/README.md)
+shows constant SQLite instruction counts across the measured history sizes.
+Its wall timings are one fixed-order macOS comparison with synthetic history.
+They do not measure target-device storage or radio goodput. The
+[profiling guide](HOST_PROFILING.md) documents the 24 bounded host phases,
+their overlap and diagnostic failure behavior. No firmware image, frozen flow,
+USB pacing gap or MCU reverse-listening policy changes in this update.
+
+### Alpha.3 hardware evidence
+
+The isolated C-host installation passed with candidate wheel SHA-256
+`ed3f8d23d4aa37cffa3764214f1d9f6a793e09bfabcd6c5bd0b05b858c263520`.
+All 72 runtime files and pinned dependencies were checked in a normal,
+noneditable virtual environment. The offline signed-resource demo and synthetic
+WAL/FULL journal recovery and timing controls passed. All 20 tracked service
+states and lifetimes were unchanged, all children joined, and no radio was
+opened or production runtime activated. This qualifies the bounded host check;
+it does not establish a C radio result.
+
+**A/B transfer evidence pending.** Insert the bounded transfer results, exact
+firmware, retained failures, physical drain and service-preservation checks
+before publication. Final release artifacts retain their own source and runtime
+correspondence record.
+The [30 October qualification record](../benchmarks/2026-10-30-alpha3-qualification/README.md)
+will retain the measured files and timing boundaries. Profiling-enabled runs
+must be labeled as such; they are not a direct alpha.2-to-alpha.3 speed comparison.
+
+### Alpha.3 artifact validation
+
+The initial local candidate passed two independent clean-export builds,
+byte-identical wheels and normalized source archives, a wheel rebuild from the
+normalized archive, and a clean noneditable install with all 72 runtime files
+checked. The installed public-resource CLI and offline signed-resource example
+passed. Final release artifacts must repeat these checks after documentation
+is complete; their exact hashes belong in the external release manifest and
+validation record. Changes to README metadata or archive timestamps can change
+wheel bytes even when runtime files are unchanged.
+
 ## Published 1.0.0-alpha.2 — 2026-10-24
 
 **Published as an experimental GitHub prerelease.** Python package version

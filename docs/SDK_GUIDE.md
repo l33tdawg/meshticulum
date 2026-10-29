@@ -6,18 +6,18 @@ The [public radio examples](../examples/README.md) have two fresh five-part 100 
 
 ## Install the alpha or checkout
 
-Use Python **3.11 or later**. Package version **`1.0.0a2`** is published as the [`v1.0.0-alpha.2` GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.2), from source `62007e219ff7de1db6e0caf1db3066a8b56fb568`. Download the wheel from that release page and install the local file, or use the source-checkout commands below.
+Use Python **3.11 or later**. Package version **`1.0.0a3`** is distributed through the [`v1.0.0-alpha.3` GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). Download the wheel from that release page and install the local file, or use the source-checkout commands below. [Release status](RELEASE_READINESS.md) distinguishes the artifact checks from hardware measurements.
 
-Verify the downloaded wheel against `SHA256SUMS` before installation. Its SHA-256 is `d04d3746b07d467d31555e84a63b1771bb15afc728814263f0f64fb00c58f664`. The release also includes the normalized source archive, firmware source-build guide and validation records. Prebuilt firmware is not included. See the [published asset record](../provenance/ALPHA2_RELEASE.json).
+Verify the downloaded wheel against the release's `SHA256SUMS` before installation. The accompanying manifest records the source commit and each asset hash. The release also includes the normalized source archive, firmware source-build guide and validation records. Prebuilt firmware is not included.
 
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install ./meshticulum-1.0.0a2-py3-none-any.whl
+python -m pip install ./meshticulum-1.0.0a3-py3-none-any.whl
 ```
 
 ```sh
-git clone --branch v1.0.0-alpha.2 https://github.com/l33tdawg/meshticulum.git
+git clone --branch v1.0.0-alpha.3 https://github.com/l33tdawg/meshticulum.git
 cd meshticulum
 python3 -m venv .venv
 source .venv/bin/activate
@@ -31,10 +31,11 @@ python -I -c "from importlib.metadata import version; import meshticulum; print(
 meshticulum-seed --help
 ```
 
-Expect `1.0.0a2` and a path inside your virtual environment. Alpha.2 clean-install
-checks covered all 71 runtime files. Comparison with the measured SDK found 70
-unchanged runtime files, one version-literal change and two unchanged examples;
-the release wheel itself has no fresh RF measurement. The earlier
+Expect `1.0.0a3` and a path inside your virtual environment. Alpha.3 contains 72
+runtime files, including the optional host timing collector. Its artifact
+validation and exact hardware scope are recorded in [release status](RELEASE_READINESS.md).
+To measure an already admitted radio operation, see [host phase timings](HOST_PROFILING.md);
+profiling is off by default. The earlier
 [alpha.1 installed-wheel record](../provenance/PUBLIC_INSTALLED_SDK_PROOF.json) used normal virtual environments on Linux aarch64 with Python 3.11.2 and 3.14.4, hash-pinned dependency wheels and all 67 runtime files checked against release source `673eb60`. The package dependencies are `cryptography` and `PyNaCl`, with the supported ranges in [pyproject.toml](../pyproject.toml). For development, install the optional `dev` extra in editable mode to run the standalone tests:
 
 ```sh

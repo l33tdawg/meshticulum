@@ -1,10 +1,16 @@
 # Project preview
 
-Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project created and maintained by [Dhillon Andrew Kannabhiran](https://github.com/l33tdawg). The source and project website introduce the design, invite review and share measured results while development continues. The [experimental `1.0.0-alpha` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha) is now public.
+Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project created and maintained by [Dhillon Andrew Kannabhiran](https://github.com/l33tdawg). The source and project website introduce the design, invite review and share measured results while development continues. The latest SDK update is the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3).
 
 ## Scope of the announcement
 
-The repository contains reusable protocol, crypto, reliable flow, radio/IP drivers and verified public-resource code. It includes architecture diagrams, comparisons with published upstream figures, source tests and benchmark metadata. The original preview used `0.1.0`; the current package uses `1.0.0a1`. The source-build alpha is published from source `673eb60` as a GitHub prerelease with the SDK wheel, normalized source archive and firmware source-build materials. Optional prebuilt firmware is not included.
+The repository contains reusable protocol, crypto, reliable flow, radio/IP drivers and verified public-resource code. It includes architecture diagrams, comparisons with published upstream figures, source tests and benchmark metadata. The original preview used `0.1.0`; the current package uses `1.0.0a3`. The release includes the SDK wheel, normalized source archive and firmware source-build materials. Its exact source, artifacts and hardware scope are recorded in [release status](RELEASE_READINESS.md). Optional prebuilt firmware is not included.
+
+Alpha.3 reduces repeated journal-accounting work as retained history grows,
+adds opt-in host phase timings and rechecks serial deadlines after writable
+readiness. [Local journal measurements](../benchmarks/2026-10-30-host-journal/README.md)
+and [phase timing documentation](HOST_PROFILING.md) explain these changes without
+turning host timings into a radio speed claim.
 
 [SAGE](https://github.com/l33tdawg/sage/) supplies the broader agent-memory project. [SAGE Lantern](https://github.com/l33tdawg/sage-lantern) owns product UI, protected SAGE adapters, native device/profile policy, provisioning, pilot control and deployment. Lantern consumes Meshticulum. Those product implementations and private deployment materials belong in Lantern's separate repository.
 

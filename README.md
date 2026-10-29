@@ -6,9 +6,15 @@
 
 A [SAGE Foundation](https://sage-foundation.net/) project, created and maintained by [Dhillon Andrew Kannabhiran (@l33tdawg)](https://github.com/l33tdawg). Part of the broader [SAGE project](https://github.com/l33tdawg/sage/).
 
-**Experimental `1.0.0-alpha.2` is public.** The [GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.2) provides the `1.0.0a2` SDK wheel, normalized source archive, firmware source-build guide, notices and validation records from source [`62007e2`](https://github.com/l33tdawg/meshticulum/commit/62007e219ff7de1db6e0caf1db3066a8b56fb568). The alpha scope is reliable verified delivery, a deployable SDK and firmware build path, and useful encrypted goodput above **1 kB/s (8 kbit/s)** including sender startup on the declared tested path. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current work and roadmap](docs/ROADMAP.md).
+**Experimental `1.0.0-alpha.3`.** The [GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3) provides the `1.0.0a3` SDK wheel, normalized source archive, firmware source-build guide, notices and validation records. See [release status](docs/RELEASE_READINESS.md) for the exact artifacts and hardware evidence. The alpha scope is reliable verified delivery, a deployable SDK and firmware build path, and useful encrypted goodput above **1 kB/s (8 kbit/s)** including sender startup on the declared tested path. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current work and roadmap](docs/ROADMAP.md).
 
-Alpha.2 adds an opt-in **host-backed MCU DATA queue**. In one
+Alpha.3 keeps journal accounting reads independent of retained-history length,
+adds opt-in [host phase timings](docs/HOST_PROFILING.md), and rechecks the serial
+write deadline after writable readiness. Durable reservations, charged debt and
+the MCU's receive/listening guards remain in force. The [local journal profile](benchmarks/2026-10-30-host-journal/README.md)
+shows the host scaling change; it is not a measurement of radio throughput.
+
+Alpha.2 introduced the opt-in **host-backed MCU DATA queue**. In one
 24 October LoRa comparison, startup-inclusive useful goodput rose from
 **931.3 to 1,084.8 B/s (+16.48%)** for two fresh 8,164-byte files over the same
 approximately 20 m link. Both verified with zero retries, drops or new UNKNOWN

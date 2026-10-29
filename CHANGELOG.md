@@ -1,6 +1,11 @@
 # Release notes
 
-## Unreleased
+## 1.0.0-alpha.3 (`1.0.0a3`) — 2026-10-30
+
+This update reduces repeated host accounting work and adds optional phase
+timings for investigating queue refill, USB dispatch and cleanup. Release
+artifacts are listed at the [alpha.3 prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3);
+the [release status](docs/RELEASE_READINESS.md) keeps artifact and hardware evidence separate.
 
 The file and signed-bundle checkout examples accept `--profile-host` for bounded
 [host phase timings](docs/HOST_PROFILING.md). The opt-in report separates queue,
@@ -15,7 +20,19 @@ reservation; FULL durability, charged debt, recovery fencing and the public
 snapshot format remain unchanged. New offline tools profile journal scaling
 and summarize retained MCU queue traces with separate host/MCU clocks.
 The [local profile](benchmarks/2026-10-30-host-journal/README.md) records the measured
-host cost and its limits; no new RF performance result is claimed.
+host cost and its limits. At 10,000 retained synthetic attempts, the local
+snapshot median changed from 166.250 to 3.334 microseconds. This is one fixed-order
+macOS comparison, not a radio throughput result. Small-history reservations can
+cost more because they also maintain the aggregate.
+
+### Alpha.3 hardware evidence
+
+The isolated C-host installation passed: 72 runtime files and pinned dependencies
+verified, offline signed-resource and synthetic journal-recovery controls passed,
+20 tracked service states and lifetimes unchanged, all children joined, and no
+radio opened. The [release status](docs/RELEASE_READINESS.md#alpha3-hardware-evidence)
+identifies the tested candidate. A/B transfer evidence remains pending; record
+the exact firmware, retained failures and cleanup before publication.
 
 ## 1.0.0-alpha.2 (`1.0.0a2`) — 2026-10-24
 

@@ -1,5 +1,10 @@
 # Host phase timings
 
+Available in Python package `1.0.0a3` and the alpha.3 checkout examples.
+The [release record](RELEASE_READINESS.md) identifies the tested artifacts;
+the [journal profile](../benchmarks/2026-10-30-host-journal/README.md) covers
+separate local measurements on synthetic retained history.
+
 Add `--profile-host` to an already approved `radio_file.py transfer` or
 `radio_bundle.py transfer` invocation to include host duration aggregates in
 its result. Original grants, deadlines and cleanup govern every action.
@@ -73,7 +78,8 @@ write. Existing pacing and MCU reverse-listening windows remain intact.
 
 Source tests cover diagnostic failures, cancellation, enabled/disabled wire and
 debt parity, encrypted flow composition, refusal, ambiguous writes, release
-retry and post-expiry physical cleanup. Real phase distributions, target-host
-costs and larger-transfer/recovery performance still need fresh bounded
-measurements. The last physical queue comparison remains the
-[24 October run](MCU_ACCELERATION.md#measured-comparison-24-october-2026).
+retry and post-expiry physical cleanup. The [alpha.3 hardware evidence](RELEASE_READINESS.md#alpha3-hardware-evidence)
+has its own exact wheel and execution scope. Repeated phase distributions,
+larger-transfer recovery and broader target-host performance remain separate
+measurement work. The earlier [24 October comparison](MCU_ACCELERATION.md#measured-comparison-24-october-2026)
+used a different SDK artifact and had no phase collector.
