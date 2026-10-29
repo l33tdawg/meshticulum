@@ -164,6 +164,14 @@ reconciliation.
 
 ## Flow timing and qualification
 
+The [30 October local host profile](../benchmarks/2026-10-30-host-journal/README.md)
+found history-length-dependent journal scans on the flow's accounting path.
+The unreleased journal change maintains durable totals in each reservation's
+existing FULL transaction and reconstructs them from retained evidence on open.
+It removes the repeated scans without changing radio or listening policy. The
+profile and retained-trace analysis are source/local evidence; the latest
+physical comparison remains the 24 October pair above.
+
 The frozen flow modules are unchanged. Their generic `ACCEPTED` result means
 carrier disposition. The opt-in adapter uses it after exact queue acceptance;
 the synchronous path still returns it after RF_DONE. No second handover callback
