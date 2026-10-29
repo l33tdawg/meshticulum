@@ -24,6 +24,7 @@ from ..scheduler.budget import CounterSample, Ledger
 from ..scheduler.scheduler import FrameRole, Scheduler, SchedulerPolicy
 from .wire import FrameKind, WireError, require
 from .serial_protocol import TxEvidence
+from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .public_block import object_limit
 
@@ -45,7 +46,9 @@ class BenchFlow:
     call time; neither is a refund or peer-delivery assertion.
     """
     def __init__(self, *, authority, worker, cipher, journal, flow_key, contract,
-                 profile, ledger, scheduler_epoch, broker_epoch, sends, clock):
+                 profile, ledger, scheduler_epoch, broker_epoch, sends, clock,
+                 host_timing=None):
+        self.host_timing = check_timing(host_timing)
         require(type(flow_key) is FlowKey and type(contract) is NegotiatedContract
                 and type(profile) is CarrierProfile and type(ledger) is Ledger,
                 'invalid_flow_composition')
@@ -194,6 +197,7 @@ class BenchFlow:
         self.closed = False
         self.update_counter()
 
+    @timed(Phase.FLOW_ACCOUNTING)
     def update_counter(self):
         state = self.journal.snapshot()
         require(not state['fenced'], 'worker_run_fenced')
@@ -455,6 +459,7 @@ class BenchFlow:
                 'invalid_bench_object')
         self.flow.send(data)
 
+    @timed(Phase.FLOW_STEP)
     def step(self):
         require(self.dispatch_budget_failure is None, 'bench_own_airtime_budget_exhausted')
         require(not self.closed and self.authority.live(), 'bench_authority_not_live')
@@ -463,7 +468,8 @@ class BenchFlow:
         # Bound unauthenticated ingress CPU and the accepted adapter's inbound
         # list even in a noisy environment. Invalid frames never reach MT05.
         for _ in range(8):
-            item = self.worker.receive(timeout=0)
+            with phase(self.host_timing, Phase.FLOW_RECEIVE):
+                item = self.worker.receive(timeout=0)
             if item is None:
                 break
             at, raw = item
@@ -555,10 +561,12 @@ class BenchFlow:
             self.owner.settle_sending()
         else:
             self.owner.resume_sending()
-            self.link.dispatch_queued()
+            with phase(self.host_timing, Phase.FLOW_DISPATCH):
+                self.link.dispatch_queued()
             if self.clock()[1] < self.next_send_us:
                 self.owner.settle_sending()
-        self.flow.pump(self.link.now, max_frames=1, drain=False)
+        with phase(self.host_timing, Phase.FLOW_PUMP):
+            self.flow.pump(self.link.now, max_frames=1, drain=False)
         # Keep the reviewed adapter's diagnostic history bounded too; no
         # application data is exported from it in the run receipt.
         del self.link.sent[:-64]
@@ -621,6 +629,11 @@ class BenchFlow:
                 events=self.worker.physical_snapshot())
         if self.receipt_confirmation_enabled:
             value['receipt_confirmation'] = self.receipt_confirmation_snapshot()
+        if self.host_timing is not None:
+            try:
+                value['host_phase_timings'] = self.host_timing.snapshot()
+            except Exception:
+                value['host_phase_timings_unavailable'] = True
         return value
 
     def close(self):

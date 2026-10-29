@@ -13,6 +13,7 @@ import math
 import secrets
 
 from .linux_hat import HardwareError, require
+from .host_timing import check_timing
 from .serial_protocol import (Decoder, FirmwareIdentity, Frame, Message, Outcome,
                               RadioProfile, RawReceive, SerialError, TxEvidence)
 
@@ -71,7 +72,8 @@ class SerialWorker:
         if name=='_SerialWorker__mode_check':raise HardwareError('serial_modem_guard_changed')
         object.__delattr__(self,name)
 
-    def __init__(self, channel):
+    def __init__(self, channel, *, host_timing=None):
+        self.host_timing = check_timing(host_timing)
         self.channel = channel
         names=('_profile_type','_arm_message','_arm_reply','_receive_message','_receive_record','_airtime','_exact_driver_estimate')
         original=tuple(getattr(self,name) for name in names)
@@ -296,8 +298,8 @@ class Gfsk250SerialWorker(SerialWorker):
     _exact_driver_estimate = True
     __slots__ = ('__capability_check', '__discover250')
 
-    def __init__(self, channel):
-        super().__init__(channel)
+    def __init__(self, channel, *, host_timing=None):
+        super().__init__(channel, host_timing=host_timing)
         binding = None
         discover_identity = super().discover
         send, wait = self._send, self._wait

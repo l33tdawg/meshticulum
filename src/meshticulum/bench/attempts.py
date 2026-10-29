@@ -15,6 +15,8 @@ import stat
 import threading
 import time
 
+from .host_timing import Phase, check_timing, phase
+
 
 class AttemptError(RuntimeError):
     pass
@@ -27,7 +29,8 @@ def require(ok, reason):
 
 class AttemptJournal:
     def __init__(self, path, *, binding, max_attempts, max_airtime_us, create=False,
-                 request_clock=None):
+                 request_clock=None, host_timing=None):
+        self.host_timing = check_timing(host_timing)
         require(type(binding) is bytes and len(binding) == 32, 'invalid_binding')
         require(type(max_attempts) is int and 1 <= max_attempts <= 100000
                 and type(max_airtime_us) is int and 1 <= max_airtime_us <= 300000000,
@@ -112,7 +115,7 @@ class AttemptJournal:
 
     @contextmanager
     def transaction(self):
-        with self._lock:
+        with phase(self.host_timing, Phase.JOURNAL_TRANSACTION), self._lock:
             self.db.execute('BEGIN IMMEDIATE')
             try:
                 yield

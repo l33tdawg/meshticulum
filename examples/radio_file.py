@@ -21,6 +21,7 @@ from meshticulum.bench.admission import Gfsk250Admission, RadioAdmission
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import OperationLimits, RunAuthority
 from meshticulum.bench.flow_runtime import BenchFlow
+from meshticulum.bench.host_timing import HostPhaseTimings, Phase, phase
 from meshticulum.bench.gfsk250_profile import Gfsk250Profile
 from meshticulum.bench.hat_worker import Gfsk250HATWorker, HATWorker, journal_binding as hat_binding
 from meshticulum.bench.linux_hat import LinuxHAT
@@ -61,6 +62,11 @@ def add_operation_limit_arguments(parser):
         help='reduce this operation journal attempt cap; never changes the MCU boot cap')
     parser.add_argument('--operation-airtime-limit-us', type=int,
         help='reduce this operation journal estimated-airtime cap in microseconds')
+
+
+def add_host_timing_argument(parser):
+    parser.add_argument('--profile-host', action='store_true',
+        help='include bounded host phase timings; diagnostic only, adds measurement overhead')
 
 
 def operation_journal_limits(args, admitted):
@@ -357,7 +363,8 @@ class ChunkTransfer:
             journal=journal, flow_key=authority.flow_key, contract=authority.contract,
             profile=authority.carrier_profile, ledger=ledger,
             scheduler_epoch=authority.scheduler_epoch, broker_epoch=authority.broker_epoch,
-            sends=authority.sends, clock=clock)
+            sends=authority.sends, clock=clock,
+            host_timing=getattr(journal, 'host_timing', None))
         self.authority, self.descriptor, self.cache, self.clock = authority, descriptor, cache, clock
         require(authority.application_deadline_us - clock()[1] > ACK_GRACE_US,
                 'example_no_room_for_ack_retirement')
@@ -438,8 +445,10 @@ def run_object(args, raw, admission, version, payload, window, factory):
     plan = json.loads(raw)
     admitted_limits = OperationLimits.from_plan(plan)
     limits = operation_journal_limits(args, admitted_limits)
+    timing = HostPhaseTimings() if getattr(args, 'profile_host', False) else None
+    timing_kw = {} if timing is None else dict(host_timing=timing)
     transport = (LinuxHAT() if args.interface == 'hat' else
-                 ExclusiveSerial(args.device, usb_serial=args.usb_serial))
+                 ExclusiveSerial(args.device, usb_serial=args.usb_serial, **timing_kw))
     cleanup, errors, result = [transport.close], [], None
     try:
         owner = HeldHardware(transport, by_id=args.device if args.interface == 'usb' else None,
@@ -456,8 +465,8 @@ def run_object(args, raw, admission, version, payload, window, factory):
         policy = authority.data_burst_policy
         require(not policy or not authority.sends or args.interface == 'usb',
                 'data_burst_sender_requires_usb')
-        worker = ((BurstSerialWorker(transport, policy=policy) if policy and authority.sends
-                   else serial_cls(transport)) if args.interface == 'usb' else None)
+        worker = ((BurstSerialWorker(transport, policy=policy, **timing_kw) if policy and authority.sends
+                   else serial_cls(transport, **timing_kw)) if args.interface == 'usb' else None)
         if worker is not None:
             identity = worker.discover(expected_board_id=1, expected_version=version)
             window.pin_mcu(identity)
@@ -466,7 +475,7 @@ def run_object(args, raw, admission, version, payload, window, factory):
             binding = hat_binding(authority.grant.digest, transport.boot_id, profile)
         journal = AttemptJournal(args.grant_directory / 'attempts.db', binding=binding,
             max_attempts=limits.attempts, max_airtime_us=limits.estimated_airtime_us,
-            create=True, request_clock=lambda: clock()[0])
+            create=True, request_clock=lambda: clock()[0], **timing_kw)
         cleanup.append(journal.close)
         store = SessionStore(args.grant_directory / 'wire.db', authority.grant, authority.local_peer,
                              boot_id=host_boot(), clock=clock, create=True)
@@ -490,7 +499,8 @@ def run_object(args, raw, admission, version, payload, window, factory):
             session.send(payload)
         while not session.step():
             window.check()
-            time.sleep(.005)
+            with phase(timing, Phase.HOST_LOOP_SLEEP):
+                time.sleep(.005)
         window.check()
         result = {'chunk': args.chunk, 'sender_peer_receipt': authority.sends,
                   'receiver_chunk_verified': not authority.sends,
@@ -508,7 +518,19 @@ def run_object(args, raw, admission, version, payload, window, factory):
             except BaseException as error:
                 errors.append(error)
     if errors:
-        raise BaseExceptionGroup('File transfer or cleanup failed; retain all run state', errors)
+        failure = BaseExceptionGroup('File transfer or cleanup failed; retain all run state', errors)
+        if timing is not None:
+            try:
+                failure.host_phase_timings = timing.snapshot()
+            except BaseException:
+                # Optional diagnostics cannot replace the original failures.
+                failure.host_phase_timings_unavailable = True
+        raise failure
+    if timing is not None:
+        try:
+            result['host_phase_timings'] = timing.snapshot()
+        except Exception:
+            result['host_phase_timings_unavailable'] = True
     return result
 
 
@@ -536,6 +558,7 @@ def main():
     run.add_argument('--admission', required=True, type=Path)
     run.add_argument('--admission-sha256', required=True)
     add_operation_limit_arguments(run)
+    add_host_timing_argument(run)
     for sub in (run, inspect, compact):
         sub.add_argument('--firmware-source', required=True, type=Path)
         sub.add_argument('--firmware-source-sha256', required=True)

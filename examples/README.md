@@ -62,6 +62,10 @@ python3 -m venv .venv
 Use a pinned checkout and retain its revision. The example is a checkout file,
 not an installed console command. Package installation performs no device work.
 
+For an approved measurement, add `--profile-host` to `transfer` to collect bounded
+host duration aggregates. See [host phase timings](../docs/HOST_PROFILING.md) for
+phase boundaries, overlapping intervals and failure-report attributes.
+
 ## Prepare the firmware identity offline
 
 The firmware build's `SOURCE.json` can contain a large source inventory. Make a

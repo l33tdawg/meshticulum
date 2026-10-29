@@ -172,6 +172,10 @@ It removes the repeated scans without changing radio or listening policy. The
 profile and retained-trace analysis are source/local evidence; the latest
 physical comparison remains the 24 October pair above.
 
+The checkout examples can now collect [host phase timings](HOST_PROFILING.md)
+for queue reservation, serial writes/waits, physical release and flow refill.
+These opt-in aggregates identify host costs without changing the radio policy.
+
 The frozen flow modules are unchanged. Their generic `ACCEPTED` result means
 carrier disposition. The opt-in adapter uses it after exact queue acceptance;
 the synchronous path still returns it after RF_DONE. No second handover callback

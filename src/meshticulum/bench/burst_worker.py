@@ -15,6 +15,7 @@ from .burst_protocol import (CAPABILITY, CANCEL, TOKEN, INTER_PACKET_RX_US,
     ClockSnapshot, OpenBinding, ack_frame, check_capability, data_frame,
     open_frame, query_frame, validate_policy)
 from .linux_hat import HardwareError, require
+from .host_timing import Phase, phase, timed
 from .serial_protocol import Frame, Message, Outcome, RadioProfile, SerialError, TxEvidence
 from .serial_worker import AttemptResult, SerialWorker
 from .tx_burst import (BurstContractError, PacketDescriptor, Stage, TERMINAL,
@@ -30,7 +31,7 @@ class BurstSerialWorker(SerialWorker):
     One event-loop owner serializes reservations and mutations. In particular,
     terminal ACKs are never written from an event callback inside another wait.
     """
-    def __init__(self, channel, *, policy):
+    def __init__(self, channel, *, policy, host_timing=None):
         copied = validate_policy(policy)
         self._burst_policy = tuple(sorted(copied.items()))
         self._burst_capability = None
@@ -51,7 +52,7 @@ class BurstSerialWorker(SerialWorker):
         self.last_burst_status = None
         self._last_clock = None
         self._last_clock_received_us = None
-        super().__init__(channel)
+        super().__init__(channel, host_timing=host_timing)
 
     @property
     def data_burst_policy(self):
@@ -195,6 +196,7 @@ class BurstSerialWorker(SerialWorker):
             self._poison('burst_open_failure')
             raise
 
+    @timed(Phase.QUEUE_CLOCK)
     def _new_burst(self):
         require(not self._physical and self._burst_count == 0, 'burst_not_drained')
         clock, sent, received = self._sample_clock()
@@ -212,6 +214,7 @@ class BurstSerialWorker(SerialWorker):
             logical_id=logical_id.hex(), owner_frame_id=owner_frame_id),
             sort_keys=True, separators=(',', ':')).encode('ascii')
 
+    @timed(Phase.QUEUE_CALL)
     def queue_data(self, packet, *, logical_id, owner_frame_id=None):
         self._capability()
         require(type(packet) is bytes and 1 <= len(packet) <= 255, 'invalid_transmit')
@@ -219,7 +222,8 @@ class BurstSerialWorker(SerialWorker):
                 'invalid_pending_data_identity')
         require(owner_frame_id is None or type(owner_frame_id) is int and owner_frame_id > 0,
                 'invalid_pending_owner_frame')
-        self._pump_physical()
+        with phase(self.host_timing, Phase.QUEUE_PUMP):
+            self._pump_physical()
         self._live(.05)
         require(self.has_capacity, 'burst_queue_capacity')
         require(logical_id not in self._logical, 'duplicate_pending_data')
@@ -236,7 +240,8 @@ class BurstSerialWorker(SerialWorker):
         template = PacketDescriptor.from_ciphertext(1, packet, estimate, self._burst_deadline)
         reservation = math.ceil(estimate * 1.10) + 1000
         metadata = self._metadata(logical_id, owner_frame_id, estimate)
-        request = self.journal.reserve(packet, reservation, queue_metadata=metadata)
+        with phase(self.host_timing, Phase.QUEUE_RESERVE):
+            request = self.journal.reserve(packet, reservation, queue_metadata=metadata)
         descriptor = PacketDescriptor(request, template.size, template.digest,
                                       template.estimated_airtime_us, template.deadline_us)
         record = dict(packet=packet, descriptor=descriptor, logical_id=logical_id,
@@ -253,7 +258,7 @@ class BurstSerialWorker(SerialWorker):
             try:
                 self._live(.05)
             except HardwareError:
-                self.journal.settle_queued(request, packet, 'NOT_SENT',
+                self._settle_queued(request, packet, 'NOT_SENT',
                                            'authority_changed_before_write', None)
                 self._forget(request)
                 return AttemptResult(request, 'NOT_SENT', reservation, None)
@@ -261,33 +266,43 @@ class BurstSerialWorker(SerialWorker):
             deadline = min(self.deadline, self.channel.monotonic() + .25)
             # The only newly reserved mutation is written before allocating any
             # release command. No batch of IDs can be overtaken by a later ACK.
-            self._send(frame, deadline)
+            with phase(self.host_timing, Phase.QUEUE_SERIAL_WRITE):
+                self._send(frame, deadline)
             self._burst_count += 1
             self._waiting += 1
             try:
-                while record['event'] is None:
-                    reply = self._pop_reply(request)
-                    if reply is not None:
-                        require(reply.type is Message.REFUSED and len(reply.body) == 1,
-                                'unexpected_burst_admission_reply')
-                        self.journal.settle_queued(request, packet, 'REFUSED',
-                            'firmware_reason_' + str(reply.body[0]), None)
-                        self._burst_count -= 1
-                        self._forget(request)
-                        return AttemptResult(request, 'REFUSED', reservation, None)
-                    left = deadline - self.channel.monotonic()
-                    require(left > 0, 'burst_admission_deadline')
-                    self._ingest(self.channel.read(min(left, .05)))
+                with phase(self.host_timing, Phase.QUEUE_ADMISSION_WAIT):
+                    return self._admit(record, request, packet, reservation, deadline)
             finally:
                 self._waiting -= 1
-            require(record['event'].stage is not Stage.UNKNOWN, 'burst_admission_unknown')
-            return AttemptResult(request, 'QUEUED', reservation, None)
         except _FAILURES:
             self._poison('ambiguous_burst_write_or_evidence')
             return AttemptResult(request, 'UNKNOWN', reservation, None)
         except BaseException:
             self._poison('interrupted_burst_write')
             raise
+
+    def _admit(self, record, request, packet, reservation, deadline):
+        """Original serialized admission path, timed independently of writing."""
+        while record['event'] is None:
+            reply = self._pop_reply(request)
+            if reply is not None:
+                require(reply.type is Message.REFUSED and len(reply.body) == 1,
+                        'unexpected_burst_admission_reply')
+                self._settle_queued(request, packet, 'REFUSED',
+                    'firmware_reason_' + str(reply.body[0]), None)
+                self._burst_count -= 1
+                self._forget(request)
+                return AttemptResult(request, 'REFUSED', reservation, None)
+            left = deadline - self.channel.monotonic()
+            require(left > 0, 'burst_admission_deadline')
+            self._ingest(self.channel.read(min(left, .05)))
+        require(record['event'].stage is not Stage.UNKNOWN, 'burst_admission_unknown')
+        return AttemptResult(request, 'QUEUED', reservation, None)
+
+    @timed(Phase.QUEUE_TERMINAL_SETTLE)
+    def _settle_queued(self, *args):
+        return self.journal.settle_queued(*args)
 
     def _event(self, frame):
         event = BurstEvent.from_frame(frame, boot=self.identity.boot)
@@ -316,7 +331,7 @@ class BurstSerialWorker(SerialWorker):
                 driver_estimate_us=event.estimated_airtime_us,
                 driver_elapsed_us=event.driver_elapsed_us,
                 irq=event.irq_flags, error=event.driver_error), separators=(',', ':'))
-            self.journal.settle_queued(event.request, record['packet'], outcome, evidence, frame.body)
+            self._settle_queued(event.request, record['packet'], outcome, evidence, frame.body)
             if outcome == 'UNKNOWN':
                 self.fenced = True
             if not record['terminal_reported']:
@@ -342,7 +357,7 @@ class BurstSerialWorker(SerialWorker):
         for request, record in self._physical.items():
             if record['event'] is not None and record['event'].stage in TERMINAL:
                 continue
-            self.journal.settle_queued(request, record['packet'], 'UNKNOWN', reason, None)
+            self._settle_queued(request, record['packet'], 'UNKNOWN', reason, None)
             record['host_unknown'] = True
             self._physical_events.append(dict(event='unknown', request=request,
                 host_mono_us=math.floor(self.channel.monotonic() * 1_000_000), reason=reason))
@@ -383,7 +398,8 @@ class BurstSerialWorker(SerialWorker):
                 continue
             if event.stage is Stage.UNKNOWN and self._status().containment_required:
                 continue
-            command = self.journal.command_request(containment=True)
+            with phase(self.host_timing, Phase.RELEASE_REQUEST):
+                command = self.journal.command_request(containment=True)
             frame = ack_frame(self.identity.boot, command, event)
             # Release has no RF side effect. Replay the same exact command if
             # its reply was lost after native slot release; never allocate a
@@ -391,8 +407,9 @@ class BurstSerialWorker(SerialWorker):
             for attempt in range(2):
                 deadline = self.channel.monotonic() + .1
                 try:
-                    self._send(frame, deadline)
-                    reply = self._wait(command, deadline)
+                    with phase(self.host_timing, Phase.RELEASE_ROUNDTRIP):
+                        self._send(frame, deadline)
+                        reply = self._wait(command, deadline)
                     break
                 except (OSError, HardwareError) as error:
                     if attempt or (isinstance(error, HardwareError)
@@ -403,7 +420,8 @@ class BurstSerialWorker(SerialWorker):
             for duplicate in self._routed.pop(command, ()):
                 require(duplicate == reply, 'contradictory_burst_release_reply')
             self._release_replies.append(reply)
-            self.journal.release_queued(request, record['event_body'])
+            with phase(self.host_timing, Phase.RELEASE_COMMIT):
+                self.journal.release_queued(request, record['event_body'])
             self._released_events.append((request, record['event_body']))
             self._physical_events.append(dict(event='release', request=request,
                 host_mono_us=math.floor(self.channel.monotonic() * 1_000_000),
