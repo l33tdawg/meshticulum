@@ -1,0 +1,116 @@
+{
+  "diagnostics": {
+    "acceptance_order_errors": 0,
+    "conflicting_duplicate_events": 0,
+    "exact_duplicate_events": 0,
+    "expected_but_unobserved_requests": 0,
+    "expected_queued_requests": 46,
+    "observed_requests": 46,
+    "physical_host_order_errors": 0,
+    "requests_with_failure": 0,
+    "requests_with_invalid_acceptance": 0,
+    "requests_with_invalid_clock_order": 0,
+    "requests_with_invalid_release": 0,
+    "requests_with_missing_stages": 0,
+    "submission_acceptance_sequence_mismatch": false,
+    "submission_order_errors": 0
+  },
+  "host_intervals": {
+    "post_reservation_submit_to_queued_report": {
+      "clock": "host_monotonic",
+      "max_us": 33864,
+      "measured_count": 46,
+      "median_us": 16473.5,
+      "min_us": 12568,
+      "missing_or_invalid_count": 0,
+      "observed_sum_us": 888827
+    },
+    "queue_call_to_acceptance": {
+      "clock": "host_monotonic",
+      "max_us": 49495,
+      "measured_count": 46,
+      "median_us": 21643.0,
+      "min_us": 15829,
+      "missing_or_invalid_count": 0,
+      "observed_sum_us": 1118990
+    },
+    "queue_call_to_post_reservation_submit": {
+      "clock": "host_monotonic",
+      "max_us": 15566,
+      "measured_count": 46,
+      "median_us": 3455.0,
+      "min_us": 3188,
+      "missing_or_invalid_count": 0,
+      "observed_sum_us": 228476
+    },
+    "settled_rf_done_report_to_confirmed_release": {
+      "clock": "host_monotonic",
+      "max_us": 43745,
+      "measured_count": 46,
+      "median_us": 11838.0,
+      "min_us": 4419,
+      "missing_or_invalid_count": 0,
+      "observed_sum_us": 555275
+    }
+  },
+  "limits": [
+    "Single host and MCU boot are caller claims; capture provenance is not authenticated.",
+    "Completeness concerns recorded events, not successful delivery or hardware qualification.",
+    "Observed sums may overlap; do not add them or subtract them from end-to-end time.",
+    "Submit is logged after reservation; terminal host report is logged after durable settlement.",
+    "USB, journal commit, CPU, RX guards and ACK wait costs are not isolated by these events."
+  ],
+  "mcu_intervals": {
+    "issued_to_started": {
+      "clock": "mcu_monotonic",
+      "max_us": 9173,
+      "measured_count": 46,
+      "median_us": 8746.5,
+      "min_us": 8331,
+      "missing_or_invalid_count": 0,
+      "observed_sum_us": 404879
+    },
+    "queued_to_issued": {
+      "clock": "mcu_monotonic",
+      "max_us": 231209,
+      "measured_count": 46,
+      "median_us": 75347.5,
+      "min_us": 343,
+      "missing_or_invalid_count": 0,
+      "observed_sum_us": 4894072
+    },
+    "started_to_rf_done": {
+      "clock": "mcu_monotonic",
+      "max_us": 100759,
+      "measured_count": 46,
+      "median_us": 100436.5,
+      "min_us": 81255,
+      "missing_or_invalid_count": 0,
+      "observed_sum_us": 4601313
+    }
+  },
+  "nominal_four_frame_groups": {
+    "available": true,
+    "basis": "nominal consecutive owner frames, groups of four",
+    "between_groups_rf_done_to_next_issued": {
+      "clock": "mcu_monotonic",
+      "max_us": 180734,
+      "measured_count": 11,
+      "median_us": 119672,
+      "min_us": 110681,
+      "missing_or_invalid_count": 0,
+      "observed_sum_us": 1376196
+    },
+    "within_group_rf_done_to_next_issued": {
+      "clock": "mcu_monotonic",
+      "max_us": 12451,
+      "measured_count": 34,
+      "median_us": 11708.5,
+      "min_us": 11198,
+      "missing_or_invalid_count": 0,
+      "observed_sum_us": 399334
+    }
+  },
+  "schema": "meshticulum.mcu-queue-timing.v1",
+  "trace_complete": true
+}

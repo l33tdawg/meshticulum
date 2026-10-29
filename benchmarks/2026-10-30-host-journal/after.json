@@ -1,0 +1,237 @@
+{
+  "cases": [
+    {
+      "actual_reservations": 26,
+      "durability": {
+        "journal_mode": "wal",
+        "synchronous": 2
+      },
+      "final_state": {
+        "attempts": 26,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 26000
+      },
+      "initial_state": {
+        "attempts": 0,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 0
+      },
+      "pending_attempts": 0,
+      "sql_totals_match": true,
+      "synthetic_history_attempts": 0,
+      "timing_history_range": {
+        "reserve_queued": [
+          0,
+          24
+        ],
+        "settle_not_sent": [
+          1,
+          25
+        ],
+        "snapshot": [
+          0,
+          0
+        ]
+      },
+      "timings_ns": {
+        "reserve_queued": {
+          "count": 25,
+          "maximum": 200083,
+          "median": 112417,
+          "minimum": 80125,
+          "p95": 181708,
+          "p95_method": "nearest_rank"
+        },
+        "settle_not_sent": {
+          "count": 25,
+          "maximum": 142958,
+          "median": 74583,
+          "minimum": 59250,
+          "p95": 96584,
+          "p95_method": "nearest_rank"
+        },
+        "snapshot": {
+          "count": 25,
+          "maximum": 6584,
+          "median": 3500,
+          "minimum": 3208,
+          "p95": 5625,
+          "p95_method": "nearest_rank"
+        }
+      },
+      "unreleased_queue_records": 0,
+      "vm_diagnostic": {
+        "history_before_snapshot_and_reserve": 25,
+        "reserve_queued_instructions": 126,
+        "settle_not_sent_instructions": 98,
+        "snapshot_instructions": 23,
+        "timings_excluded": true
+      }
+    },
+    {
+      "actual_reservations": 26,
+      "durability": {
+        "journal_mode": "wal",
+        "synchronous": 2
+      },
+      "final_state": {
+        "attempts": 1026,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 1026000
+      },
+      "initial_state": {
+        "attempts": 1000,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 1000000
+      },
+      "pending_attempts": 0,
+      "sql_totals_match": true,
+      "synthetic_history_attempts": 1000,
+      "timing_history_range": {
+        "reserve_queued": [
+          1000,
+          1024
+        ],
+        "settle_not_sent": [
+          1001,
+          1025
+        ],
+        "snapshot": [
+          1000,
+          1000
+        ]
+      },
+      "timings_ns": {
+        "reserve_queued": {
+          "count": 25,
+          "maximum": 224958,
+          "median": 96541,
+          "minimum": 61000,
+          "p95": 132083,
+          "p95_method": "nearest_rank"
+        },
+        "settle_not_sent": {
+          "count": 25,
+          "maximum": 95042,
+          "median": 68500,
+          "minimum": 47417,
+          "p95": 90083,
+          "p95_method": "nearest_rank"
+        },
+        "snapshot": {
+          "count": 25,
+          "maximum": 4958,
+          "median": 3375,
+          "minimum": 3208,
+          "p95": 4000,
+          "p95_method": "nearest_rank"
+        }
+      },
+      "unreleased_queue_records": 0,
+      "vm_diagnostic": {
+        "history_before_snapshot_and_reserve": 1025,
+        "reserve_queued_instructions": 126,
+        "settle_not_sent_instructions": 98,
+        "snapshot_instructions": 23,
+        "timings_excluded": true
+      }
+    },
+    {
+      "actual_reservations": 26,
+      "durability": {
+        "journal_mode": "wal",
+        "synchronous": 2
+      },
+      "final_state": {
+        "attempts": 10026,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 10026000
+      },
+      "initial_state": {
+        "attempts": 10000,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 10000000
+      },
+      "pending_attempts": 0,
+      "sql_totals_match": true,
+      "synthetic_history_attempts": 10000,
+      "timing_history_range": {
+        "reserve_queued": [
+          10000,
+          10024
+        ],
+        "settle_not_sent": [
+          10001,
+          10025
+        ],
+        "snapshot": [
+          10000,
+          10000
+        ]
+      },
+      "timings_ns": {
+        "reserve_queued": {
+          "count": 25,
+          "maximum": 149583,
+          "median": 87959,
+          "minimum": 65542,
+          "p95": 113459,
+          "p95_method": "nearest_rank"
+        },
+        "settle_not_sent": {
+          "count": 25,
+          "maximum": 117666,
+          "median": 66250,
+          "minimum": 51041,
+          "p95": 89625,
+          "p95_method": "nearest_rank"
+        },
+        "snapshot": {
+          "count": 25,
+          "maximum": 4875,
+          "median": 3334,
+          "minimum": 3125,
+          "p95": 4375,
+          "p95_method": "nearest_rank"
+        }
+      },
+      "unreleased_queue_records": 0,
+      "vm_diagnostic": {
+        "history_before_snapshot_and_reserve": 10025,
+        "reserve_queued_instructions": 126,
+        "settle_not_sent_instructions": 98,
+        "snapshot_instructions": 23,
+        "timings_excluded": true
+      }
+    }
+  ],
+  "created_at": "2026-10-29T23:09:37.534199+00:00",
+  "environment": {
+    "clock": "time.perf_counter_ns",
+    "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+    "python": "3.14.8",
+    "sqlite": "3.53.4"
+  },
+  "fixture": {
+    "history_seed": "synthetic_NOT_SENT_rows_in_one_FULL_transaction",
+    "latency_progress_handler_enabled": false,
+    "reserved_estimate_per_attempt_us": 1000,
+    "samples": 25,
+    "sampling": "actual_AttemptJournal_API",
+    "storage": "fresh_local_temporary_files"
+  },
+  "schema": "meshticulum.attempt-journal-profile.v1",
+  "scope": "Local CPU and filesystem timings only. Synthetic history is not observed radio activity. VM diagnostics are separate from latency samples. No RF or application throughput is measured.",
+  "source": {
+    "journal_source_dirty": true,
+    "journal_source_sha256": "3255cde153bf7ba6ef5e51b84c5773e1d146a5b72ce92702989bc8f049c640d3",
+    "profiler_source_sha256": "0f2a583abdc2c9a0f0dc44ceb14edf9788d2d290d2ac9094aa5a2e3dda99a26a",
+    "revision": "05a5dbcf683f445ea7491d0335142d7b55f70675"
+  }
+}

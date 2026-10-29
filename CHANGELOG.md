@@ -1,5 +1,16 @@
 # Release notes
 
+## Unreleased
+
+Attempt-journal accounting reads and reservation budget checks now use durable
+aggregate totals instead of repeatedly scanning retained history. The totals
+rebuild from original attempt records on open and update atomically with each
+reservation; FULL durability, charged debt, recovery fencing and the public
+snapshot format remain unchanged. New offline tools profile journal scaling
+and summarize retained MCU queue traces with separate host/MCU clocks.
+The [local profile](benchmarks/2026-10-30-host-journal/README.md) records the measured
+host cost and its limits; no new RF performance result is claimed.
+
 ## 1.0.0-alpha.2 (`1.0.0a2`) — 2026-10-24
 
 [Published GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.2), source

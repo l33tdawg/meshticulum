@@ -98,6 +98,7 @@ class AttemptJournal:
                     'request INTEGER PRIMARY KEY, metadata BLOB NOT NULL, '
                     'terminal_event BLOB, released INTEGER NOT NULL DEFAULT 0)')
                 self._owner(allow_fenced=True)
+                self._rebuild_totals()
                 pending = self.db.execute("SELECT count(*) FROM attempts WHERE state='RESERVED'").fetchone()[0]
                 if pending:
                     self.db.execute("UPDATE attempts SET state='UNKNOWN',evidence='process_recovery' WHERE state='RESERVED'")
@@ -136,6 +137,36 @@ class AttemptJournal:
         self.db.execute('UPDATE owner SET request=? WHERE id=1', (request,))
         return request
 
+    def _rebuild_totals(self):
+        # Derived accounting, rebuilt under the opening write transaction
+        # after validating the owner. Retained attempts remain the evidence.
+        # Older journals need no conversion outside this transaction, and
+        # older clients using plain INSERT still maintain the projection.
+        self.db.execute('CREATE TABLE IF NOT EXISTS attempt_totals ('
+            'id INTEGER PRIMARY KEY CHECK(id=1), '
+            "attempts INTEGER NOT NULL CHECK(typeof(attempts)='integer' AND attempts>=0), "
+            "reserved_us INTEGER NOT NULL CHECK(typeof(reserved_us)='integer' AND reserved_us>=0))")
+        self.db.execute('INSERT OR REPLACE INTO attempt_totals '
+            'SELECT 1,count(*),coalesce(sum(estimated_us),0) FROM attempts')
+        self.db.execute('CREATE TRIGGER IF NOT EXISTS attempt_totals_insert '
+            'AFTER INSERT ON attempts BEGIN '
+            'UPDATE attempt_totals SET attempts=attempts+1, '
+            'reserved_us=reserved_us+NEW.estimated_us WHERE id=1; END')
+        self.db.execute('CREATE TRIGGER IF NOT EXISTS attempt_totals_delete '
+            'AFTER DELETE ON attempts BEGIN '
+            'UPDATE attempt_totals SET attempts=attempts-1, '
+            'reserved_us=reserved_us-OLD.estimated_us WHERE id=1; END')
+        self.db.execute('CREATE TRIGGER IF NOT EXISTS attempt_totals_update '
+            'AFTER UPDATE OF estimated_us ON attempts BEGIN '
+            'UPDATE attempt_totals SET reserved_us=reserved_us-OLD.estimated_us+NEW.estimated_us '
+            'WHERE id=1; END')
+
+    def _totals(self):
+        row = self.db.execute('SELECT attempts,reserved_us FROM attempt_totals WHERE id=1').fetchone()
+        require(row is not None and all(type(value) is int and value >= 0 for value in row),
+                'invalid_attempt_totals')
+        return row
+
     def command_request(self, *, containment=False):
         with self.transaction():
             return self._next(self._owner(allow_fenced=containment))
@@ -148,7 +179,7 @@ class AttemptJournal:
                 and 1 <= len(queue_metadata) <= 1024, 'invalid_queue_metadata')
         with self.transaction():
             owner = self._owner()
-            count, reserved = self.db.execute('SELECT count(*),coalesce(sum(estimated_us),0) FROM attempts').fetchone()
+            count, reserved = self._totals()
             require(count < self.max_attempts and reserved + estimated_us <= self.max_airtime_us,
                     'attempt_budget_exhausted')
             request = self._next(owner)
@@ -264,7 +295,7 @@ class AttemptJournal:
     def snapshot(self):
         with self._lock:
             row = self._owner(allow_fenced=True)
-            count, reserved = self.db.execute('SELECT count(*),coalesce(sum(estimated_us),0) FROM attempts').fetchone()
+            count, reserved = self._totals()
             return {'attempts': count, 'reserved_estimated_airtime_us': reserved,
                     'fenced': bool(row[4]), 'recovered_unknown': self.recovered_unknown}
 
