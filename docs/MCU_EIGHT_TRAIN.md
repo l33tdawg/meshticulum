@@ -7,6 +7,8 @@ legacy synchronous mode keep their previous behavior. The first finite hardware
 sample verified a file at 801.424349 useful bytes/s including startup; the target
 of at least 3000 B/s remains open. See the
 [measured sample and limits](../benchmarks/2026-10-30-sf5-eight-profile/README.md).
+A [matched R11 run](../benchmarks/2026-10-30-sf5-r11/README.md) verified the same
+useful bytes at 1,053.284286 B/s, still below the target. Its loss pattern differed.
 
 This uses the existing scalar handover: prepare one flow frame, seal a fresh
 ciphertext, reserve its durable attempt charge, write its descriptor, and wait

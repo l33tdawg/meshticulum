@@ -54,3 +54,11 @@ the source. Independent loss/receiver/port controls are retained in the review
 evidence. The [revision record](../src/meshticulum/flow/README.md#revision-11-selective-repair-backoff-30-october-2026)
 records the explicit acceptance. Separately authorized physical evidence is
 required for any R11 speed claim.
+
+## Subsequent physical sample
+
+The [matched hardware record](../benchmarks/2026-10-30-sf5-r11/README.md) verified
+23,900 identical useful bytes at 1,053.284286 B/s including startup. The earlier
+R10 sample measured 801.424349 B/s. DATA retries changed from 14 to 10, so this
+pair does not isolate R11's causal gain. Neither reaches the throughput target;
+the acceptance and controls above remain source evidence.
