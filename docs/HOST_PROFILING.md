@@ -237,3 +237,21 @@ independent origins. These fields can expose repeated ACKs, partial progress and
 host train accounting, but cannot establish a physical collision from timestamp
 overlap across unsynchronized endpoints. Controlled loss and complete native
 traces remain separate evidence.
+
+
+## Selective DATA recovery
+
+The [reviewed flow revision](../src/meshticulum/flow/README.md#revision-10-selective-retry-30-october-2026)
+adds a default-off explicit selective retry API. The queued SF5 receipt-confirmation
+adapter can offer one repair after three distinct later accepted SACK positions
+identify a hole. It first verifies local physical drain and original live authority;
+peer SACK is receipt evidence, never local drain proof. The same owner, cipher,
+journal, attempt ceilings and timeout fallback remain active. `fast_retry_offers`
+counts offers, including refused or deferred ones; `fast_retransmits` counts actual
+handovers. Neither implies peer delivery. A timeout consumes unused early evidence.
+
+The [dated recovery record](../benchmarks/2026-10-30-sf5-recovery/README.md)
+separates ACK-only hardware observations, paired selective source controls and
+any separately scoped selective hardware trial. Reproduce the incremental source
+comparison with `tools/benchmarks/compare_sf5_selective_recovery.py`; both arms use
+the same ACK policy and differ only in the selective retry flag.

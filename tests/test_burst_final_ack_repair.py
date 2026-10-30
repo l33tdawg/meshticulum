@@ -1,5 +1,6 @@
 """Paired source recovery controls; modeled time is not an RF speed claim."""
 from collections import Counter
+from dataclasses import replace
 import math
 from types import SimpleNamespace
 
@@ -12,7 +13,14 @@ from meshticulum.scheduler.budget import Cost
 from tests import test_burst_sf5_recovery as model
 
 
-class PreviousAckPolicy(BenchFlow):
+class AckPolicyOnly(BenchFlow):
+    """Keep the separately reviewed selective-retry policy out of this A/B."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.flow.limits = replace(self.flow.limits, selective_fast_retry=False)
+
+
+class PreviousAckPolicy(AckPolicyOnly):
     """Keep both examples opted in; disable only the new scheduling hook."""
     def _service_ack_recovery(self, now_us):
         return False
@@ -22,7 +30,9 @@ def paired(tmp_path, monkeypatch, **faults):
     with monkeypatch.context() as patch:
         patch.setattr(model, 'BenchFlow', PreviousAckPolicy)
         before = model.exercise(tmp_path / 'before', receipt_confirmation=True, **faults)
-    after = model.exercise(tmp_path / 'after', receipt_confirmation=True, **faults)
+    with monkeypatch.context() as patch:
+        patch.setattr(model, 'BenchFlow', AckPolicyOnly)
+        after = model.exercise(tmp_path / 'after', receipt_confirmation=True, **faults)
     return before, after
 
 

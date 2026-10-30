@@ -189,7 +189,8 @@ class BenchFlow:
                 # Separate endpoint processes can take more than four seconds
                 # to reach first DATA. Keep startup failure bounded at eight
                 # seconds instead of losing a valid transfer to host startup.
-                max_persist_acks=16),
+                max_persist_acks=16,
+                selective_fast_retry=self.data_burst and fast_sf5),
             flow_id=flow_key.flow_id, generation=1, sends=sends, receive=not sends,
             startup=None)
         self.sender_control_hold_us = (max(self.burst_quiet_us,
@@ -547,6 +548,13 @@ class BenchFlow:
         # flow use its exact existing interval, including its clock origin.
         return self._ack_persistence_streak > 0 and now_us < self._ack_persistence_due_us
 
+    def _hold_fast_retry_turn(self):
+        # One selective repair owns the reverse-control opportunity; do not
+        # fill more DATA from the same pump after its accepted handover.
+        self.next_send_us = self.clock()[1] + self.worker.pending_airtime_us + self.sender_control_hold_us
+        self.burst_sent = 0
+        self.owner.settle_sending()
+
     @timed(Phase.FLOW_STEP)
     def step(self):
         require(self.dispatch_budget_failure is None, 'bench_own_airtime_budget_exhausted')
@@ -666,10 +674,32 @@ class BenchFlow:
             self.owner.settle_sending()
         else:
             self.owner.resume_sending()
+            fast_before = self.flow.fast_retransmits
             with phase(self.host_timing, Phase.FLOW_DISPATCH):
                 self.link.dispatch_queued()
+            if self.data_burst and self.flow.fast_retransmits > fast_before:
+                self._hold_fast_retry_turn()
+                self._check_flow()
+                return self._completion_ready()
             if self.clock()[1] < self.next_send_us:
                 self.owner.settle_sending()
+            elif (self.data_burst and self.receipt_confirmation_enabled
+                    and self.flow.selective_retry_ready()
+                    and not self._physical_data and not self.worker.pending_physical):
+                # Peer SACK is logical evidence, never local physical drain.
+                # Verify release/STATUS before offering one early retransmit;
+                # the normal held owner, cipher and journal still authorize it.
+                self.worker.assert_drained()
+                require(not self.worker.fenced and self.authority.application_live(),
+                        'selective_retry_authority_not_live')
+                now_us = self.clock()[1]
+                self.link.now = now_us / 1000000
+                fast_before = self.flow.fast_retransmits
+                if self.flow.retry_selective_gap(self.link.now):
+                    if self.flow.fast_retransmits > fast_before:
+                        self._hold_fast_retry_turn()
+                    self._check_flow()
+                    return self._completion_ready()
         with phase(self.host_timing, Phase.FLOW_PUMP):
             self.flow.pump(self.link.now, max_frames=1, drain=False)
         # Keep the reviewed adapter's diagnostic history bounded too; no
@@ -715,6 +745,8 @@ class BenchFlow:
     def snapshot(self):
         value = {'complete': self.flow.complete, 'received_bytes': len(self.received),
             'counts': dict(self.counts), 'retransmits': self.flow.retransmits,
+            'fast_retry_offers': self.flow.fast_retry_offers,
+            'fast_retransmits': self.flow.fast_retransmits,
             'acked_frames': self.flow.acked_frames(), 'duplicates': self.flow.duplicates,
             'startup_pending': self.flow.startup_pending, 'rto_seconds': self.flow.rto,
             'timing_policy': {'receive_gap_us': self.receive_gap_us,

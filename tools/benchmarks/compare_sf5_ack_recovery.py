@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Repeat bounded source-only ACK recovery comparisons; never opens a radio."""
 import argparse
+from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
@@ -21,7 +22,13 @@ def main():
     from meshticulum.bench.flow_runtime import BenchFlow
     from tests import test_burst_sf5_recovery as model
 
-    class PreviousAckPolicy(BenchFlow):
+    class AckOnlyPolicy(BenchFlow):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            if hasattr(self.flow.limits, 'selective_fast_retry'):
+                self.flow.limits = replace(self.flow.limits, selective_fast_retry=False)
+
+    class PreviousAckPolicy(AckOnlyPolicy):
         def _service_ack_recovery(self, now_us):
             return False
 
@@ -39,7 +46,7 @@ def main():
         with tempfile.TemporaryDirectory(prefix='meshticulum-ack-comparison-') as temporary:
             for name, parameters in cases:
                 pair = dict(case=name, modeled_faults=parameters, receipt_confirmation=True)
-                for label, cls in [('before', PreviousAckPolicy), ('after', BenchFlow)]:
+                for label, cls in [('before', PreviousAckPolicy), ('after', AckOnlyPolicy)]:
                     model.BenchFlow = cls
                     results, air = model.exercise(Path(temporary) / name / label,
                                                   receipt_confirmation=True, **parameters)
@@ -67,7 +74,7 @@ def main():
              'tests/test_burst_final_ack_repair.py']
     report = dict(schema='meshticulum.sf5-ack-recovery-source-comparison.v1', source_only=True,
         evidence_boundary='Deterministic modeled host/USB/RF time and explicit injected losses; not measured RF throughput or proof of the cause of retained hardware losses.',
-        baseline='Same current source and receipt-confirmation opt-in; subclass disables only _service_ack_recovery. Original retry floors, clocks, grants, ciphertext and durable charging remain active.',
+        baseline='Same current source and receipt-confirmation opt-in; selective retry is disabled in both arms and the before subclass disables only _service_ack_recovery. Original retry floors, clocks, grants, ciphertext and durable charging remain active.',
         object_bytes=len(model.PAYLOAD), data_frames=9, radio_devices_opened=0,
         python=sys.version.split()[0], sqlite=sqlite3.sqlite_version, platform=platform.platform(),
         source_commit=subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip(),

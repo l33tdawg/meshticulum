@@ -1,6 +1,6 @@
 # Meshticulum bounded reliable flow — Ember, isolated candidate
 
-**Status: ISOLATED CANDIDATE, revision 9. No radio, no serial port, no broker, no
+**Historical status through revision 9: ISOLATED CANDIDATE. No radio, no serial port, no broker, no
 socket and no runtime import. Nothing is wired into `sage_lantern`, nothing is
 installed or deployed, and no measurement below is a radio result.**
 
@@ -13,6 +13,45 @@ bytes this one replaces are held in
 `work/meshticulum-plan-audit-20261004/credit-contract-review/inputs/`, and the
 revision 8 bytes this one repairs are held in
 `work/rook-meshticulum-r8e-review-20261006/candidate/`.
+
+## Revision 10: selective retry, 30 October 2026
+
+The owner requested repair of the measured SF5 recovery stalls. This explicit
+flow revision was independently reviewed by `journal_review`; `meshticulum_checkpoint`
+added independent real-port regressions. Review approved the exact `flow.py`
+SHA-256 `0a2464816e53c239018a4c33af43e927007512018bedb2d558e99f0fad5ac7b8` and
+`bench/flow_runtime.py` SHA-256
+`78b506e3723ded401bcd78a82f36878be8ca39f4bebedde87333c6412b607ce3`.
+The unchanged `flow_port.py` retains SHA-256
+`57596421d916f0c49d61599653b5ab75154d64e5bc806ba1444fa5905ad025ca`.
+These replace only the accepted flow pin above; the historical review remains below.
+
+`FlowLimits.selective_fast_retry` defaults to false. `selective_retry_ready()`
+is a logical hint; an explicit `retry_selective_gap(now)` can offer one early
+retry per original flight after three distinct later SACK receipts, fully
+accepted by the canonical receipt and owner checks. Evidence retains at most
+three sequence positions per outstanding frame. Repeated, stale, impossible,
+conflicting or owner-refused ACKs add no evidence. `pump()` never invokes the
+new API. A normal timeout offer consumes any unused early opportunity.
+
+The existing owner, cipher, retry ceiling, deadline and journal still decide
+and charge each attempt. Refusal, cancellation and DEFERRED consume the early
+offer without inventing a handover. Exact owed deferred retry records settle
+even after cumulative receipt completes the flow, preserving terminal state
+and physical debt. Retries now preserve the original LAST flag, including a
+full-sized final frame, rather than inferring it from payload length.
+
+The reviewed BenchFlow path additionally requires the existing receipt option,
+admitted queued SF5 mode, no local outstanding DATA or worker request, bound
+native drain/STATUS proof and live original authority. It gives the one repair
+its existing reverse-control hold before further DATA. Ordinary timeout recovery
+and wire bytes remain compatible. This source review grants no RF authority.
+
+Independent review passed 56 new logical/real-port cases; the combined focused
+flow, port, ACK and source-model controls passed 248 tests. The review reproduced
+and fixed terminal deferred settlement and stale-evidence duplicate retry before
+acceptance. Source cases and separately scoped hardware evidence are retained in
+[the dated recovery record](../../../benchmarks/2026-10-30-sf5-recovery/README.md).
 
 ## Revision 2
 

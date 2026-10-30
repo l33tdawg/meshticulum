@@ -1,0 +1,1279 @@
+{
+  "baseline": "Same current source, ACK recovery policy and receipt-confirmation opt-in; subclass disables only FlowLimits.selective_fast_retry. Original timeout floors, clocks, grants, ciphertext and durable charging remain active.",
+  "cases": [
+    {
+      "after": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 4,
+              "rx_ACK_progress": 3,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 9,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 356194
+            },
+            "received_bytes": 0,
+            "retransmits": 0,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 3,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 4
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 4,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 52228
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 712140,
+        "modeled_injected_losses": 0,
+        "retained_physical_requests": 0
+      },
+      "before": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 4,
+              "rx_ACK_progress": 3,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 9,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 356194
+            },
+            "received_bytes": 0,
+            "retransmits": 0,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 3,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 4
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 4,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 52228
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 712140,
+        "modeled_injected_losses": 0,
+        "retained_physical_requests": 0
+      },
+      "case": "clean",
+      "modeled_faults": {},
+      "receipt_confirmation": true
+    },
+    {
+      "after": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 4,
+              "rx_ACK_progress": 3,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 9,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 356194
+            },
+            "received_bytes": 0,
+            "retransmits": 0,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "final_ACK_reannouncement_requested": 1,
+              "final_ACK_reannouncement_satisfied": 1,
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 3,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_ACK_RF_DONE_unchanged": 1,
+              "tx_RF_DONE": 5
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 5,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 65285
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 1134100,
+        "modeled_injected_losses": 1,
+        "retained_physical_requests": 0
+      },
+      "before": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 4,
+              "rx_ACK_progress": 3,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 9,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 356194
+            },
+            "received_bytes": 0,
+            "retransmits": 0,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "final_ACK_reannouncement_requested": 1,
+              "final_ACK_reannouncement_satisfied": 1,
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 3,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_ACK_RF_DONE_unchanged": 1,
+              "tx_RF_DONE": 5
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 5,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 65285
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 1134100,
+        "modeled_injected_losses": 1,
+        "retained_physical_requests": 0
+      },
+      "case": "lost_final_ack",
+      "modeled_faults": {
+        "drop_final_ack": true
+      },
+      "receipt_confirmation": true
+    },
+    {
+      "after": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 5,
+              "rx_ACK_progress": 4,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 10,
+              "tx_RF_DONE": 11
+            },
+            "error": null,
+            "fast_retransmits": 1,
+            "fast_retry_offers": 1,
+            "journal": {
+              "attempts": 11,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 395298
+            },
+            "received_bytes": 0,
+            "retransmits": 1,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 4,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 5
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 5,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 65285
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 1215520,
+        "modeled_injected_losses": 1,
+        "retained_physical_requests": 0
+      },
+      "before": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 7,
+              "rx_ACK_progress": 4,
+              "rx_ACK_startup": 1,
+              "rx_ACK_unchanged": 2,
+              "tx_QUEUED": 10,
+              "tx_RF_DONE": 11
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 11,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 395298
+            },
+            "received_bytes": 0,
+            "retransmits": 1,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 4,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_ACK_RF_DONE_unchanged": 2,
+              "tx_RF_DONE": 7
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 7,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 91399
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 3232999,
+        "modeled_injected_losses": 1,
+        "retained_physical_requests": 0
+      },
+      "case": "first_data_lost",
+      "modeled_faults": {
+        "drop_data": {
+          "0": 1
+        }
+      },
+      "receipt_confirmation": true
+    },
+    {
+      "after": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 5,
+              "rx_ACK_progress": 4,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 10,
+              "tx_RF_DONE": 11
+            },
+            "error": null,
+            "fast_retransmits": 1,
+            "fast_retry_offers": 1,
+            "journal": {
+              "attempts": 11,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 395298
+            },
+            "received_bytes": 0,
+            "retransmits": 1,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 4,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 5
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 5,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 65285
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 1348300,
+        "modeled_injected_losses": 1,
+        "retained_physical_requests": 0
+      },
+      "before": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 7,
+              "rx_ACK_progress": 4,
+              "rx_ACK_startup": 1,
+              "rx_ACK_unchanged": 2,
+              "tx_QUEUED": 10,
+              "tx_RF_DONE": 11
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 11,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 395298
+            },
+            "received_bytes": 0,
+            "retransmits": 1,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 4,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_ACK_RF_DONE_unchanged": 2,
+              "tx_RF_DONE": 7
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 7,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 91399
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 3350366,
+        "modeled_injected_losses": 1,
+        "retained_physical_requests": 0
+      },
+      "case": "middle_data_lost",
+      "modeled_faults": {
+        "drop_data": {
+          "3": 1
+        }
+      },
+      "receipt_confirmation": true
+    },
+    {
+      "after": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 6,
+              "rx_ACK_progress": 5,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 11,
+              "tx_RF_DONE": 12
+            },
+            "error": null,
+            "fast_retransmits": 2,
+            "fast_retry_offers": 2,
+            "journal": {
+              "attempts": 12,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 434402
+            },
+            "received_bytes": 0,
+            "retransmits": 2,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 5,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 6
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 6,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 78342
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 1714444,
+        "modeled_injected_losses": 2,
+        "retained_physical_requests": 0
+      },
+      "before": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 10,
+              "rx_ACK_progress": 5,
+              "rx_ACK_startup": 1,
+              "rx_ACK_unchanged": 4,
+              "tx_QUEUED": 11,
+              "tx_RF_DONE": 12
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 12,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 434402
+            },
+            "received_bytes": 0,
+            "retransmits": 2,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 5,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_ACK_RF_DONE_unchanged": 4,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 130570
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 5606144,
+        "modeled_injected_losses": 2,
+        "retained_physical_requests": 0
+      },
+      "case": "two_data_holes",
+      "modeled_faults": {
+        "drop_data": {
+          "0": 1,
+          "5": 1
+        }
+      },
+      "receipt_confirmation": true
+    },
+    {
+      "after": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 11,
+              "rx_ACK_progress": 5,
+              "rx_ACK_startup": 1,
+              "rx_ACK_unchanged": 5,
+              "tx_QUEUED": 13,
+              "tx_RF_DONE": 14
+            },
+            "error": null,
+            "fast_retransmits": 1,
+            "fast_retry_offers": 1,
+            "journal": {
+              "attempts": 14,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 512610
+            },
+            "received_bytes": 0,
+            "retransmits": 4,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 5,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_ACK_RF_DONE_unchanged": 5,
+              "tx_RF_DONE": 11
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 11,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 143627
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 8413780,
+        "modeled_injected_losses": 4,
+        "retained_physical_requests": 0
+      },
+      "before": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 12,
+              "rx_ACK_progress": 5,
+              "rx_ACK_startup": 1,
+              "rx_ACK_unchanged": 6,
+              "tx_QUEUED": 13,
+              "tx_RF_DONE": 14
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 14,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 512610
+            },
+            "received_bytes": 0,
+            "retransmits": 4,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 5,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_ACK_RF_DONE_unchanged": 6,
+              "tx_RF_DONE": 12
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 12,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 156684
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 10442984,
+        "modeled_injected_losses": 4,
+        "retained_physical_requests": 0
+      },
+      "case": "four_data_losses_receiver_cap20",
+      "modeled_faults": {
+        "drop_data": {
+          "0": 1,
+          "2": 1,
+          "5": 2
+        },
+        "receiver_cap": 20
+      },
+      "receipt_confirmation": true
+    },
+    {
+      "after": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 11,
+              "rx_ACK_progress": 5,
+              "rx_ACK_startup": 1,
+              "rx_ACK_unchanged": 5,
+              "tx_QUEUED": 13,
+              "tx_RF_DONE": 14
+            },
+            "error": null,
+            "fast_retransmits": 1,
+            "fast_retry_offers": 1,
+            "journal": {
+              "attempts": 14,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 512610
+            },
+            "received_bytes": 0,
+            "retransmits": 4,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 5,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_ACK_RF_DONE_unchanged": 5,
+              "tx_RF_DONE": 11
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 11,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 143627
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 8413780,
+        "modeled_injected_losses": 4,
+        "retained_physical_requests": 0
+      },
+      "before": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 12,
+              "rx_ACK_progress": 5,
+              "rx_ACK_startup": 1,
+              "rx_ACK_unchanged": 6,
+              "tx_QUEUED": 13,
+              "tx_RF_DONE": 14
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 14,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 512610
+            },
+            "received_bytes": 0,
+            "retransmits": 4,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 5,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_ACK_RF_DONE_unchanged": 6,
+              "tx_RF_DONE": 12
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 12,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 156684
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 10442984,
+        "modeled_injected_losses": 4,
+        "retained_physical_requests": 0
+      },
+      "case": "four_data_losses_receiver_cap64",
+      "modeled_faults": {
+        "drop_data": {
+          "0": 1,
+          "2": 1,
+          "5": 2
+        },
+        "receiver_cap": 64
+      },
+      "receipt_confirmation": true
+    },
+    {
+      "after": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 4,
+              "rx_ACK_progress": 3,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 9,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 356194
+            },
+            "received_bytes": 0,
+            "retransmits": 0,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 3,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 4
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 4,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 52228
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 726640,
+        "modeled_injected_losses": 0,
+        "retained_physical_requests": 0
+      },
+      "before": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 4,
+              "rx_ACK_progress": 3,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 9,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 356194
+            },
+            "received_bytes": 0,
+            "retransmits": 0,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 3,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 4
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 4,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 52228
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 726640,
+        "modeled_injected_losses": 0,
+        "retained_physical_requests": 0
+      },
+      "case": "host_cost_10_10_ms",
+      "modeled_faults": {
+        "host_work_us": [
+          10000,
+          10000
+        ]
+      },
+      "receipt_confirmation": true
+    },
+    {
+      "after": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 4,
+              "rx_ACK_progress": 3,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 9,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 356194
+            },
+            "received_bytes": 0,
+            "retransmits": 0,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 3,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 4
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 4,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 52228
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 945940,
+        "modeled_injected_losses": 0,
+        "retained_physical_requests": 0
+      },
+      "before": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 4,
+              "rx_ACK_progress": 3,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 9,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 356194
+            },
+            "received_bytes": 0,
+            "retransmits": 0,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 3,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 4
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 4,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 52228
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 945940,
+        "modeled_injected_losses": 0,
+        "retained_physical_requests": 0
+      },
+      "case": "host_cost_40_10_ms",
+      "modeled_faults": {
+        "host_work_us": [
+          40000,
+          10000
+        ]
+      },
+      "receipt_confirmation": true
+    },
+    {
+      "after": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 4,
+              "rx_ACK_progress": 3,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 9,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 356194
+            },
+            "received_bytes": 0,
+            "retransmits": 0,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 3,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 4
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 4,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 52228
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 1724240,
+        "modeled_injected_losses": 0,
+        "retained_physical_requests": 0
+      },
+      "before": {
+        "all_radios_disarmed": true,
+        "complete": true,
+        "endpoints": [
+          {
+            "acked_frames": 9,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_ACK": 4,
+              "rx_ACK_progress": 3,
+              "rx_ACK_startup": 1,
+              "tx_QUEUED": 9,
+              "tx_RF_DONE": 10
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 10,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 356194
+            },
+            "received_bytes": 0,
+            "retransmits": 0,
+            "role": "sender"
+          },
+          {
+            "acked_frames": 0,
+            "cleanup_error_types": [],
+            "complete": true,
+            "counts": {
+              "rx_DATA": 9,
+              "tx_ACK_RF_DONE_new": 3,
+              "tx_ACK_RF_DONE_startup": 1,
+              "tx_RF_DONE": 4
+            },
+            "error": null,
+            "fast_retransmits": 0,
+            "fast_retry_offers": 0,
+            "journal": {
+              "attempts": 4,
+              "fenced": false,
+              "recovered_unknown": 0,
+              "reserved_estimated_airtime_us": 52228
+            },
+            "received_bytes": 1665,
+            "retransmits": 0,
+            "role": "receiver"
+          }
+        ],
+        "modeled_collision_frames": 0,
+        "modeled_elapsed_us": 1724240,
+        "modeled_injected_losses": 0,
+        "retained_physical_requests": 0
+      },
+      "case": "host_cost_120_40_ms",
+      "modeled_faults": {
+        "host_work_us": [
+          120000,
+          40000
+        ]
+      },
+      "receipt_confirmation": true
+    }
+  ],
+  "data_frames": 9,
+  "evidence_boundary": "Deterministic modeled host/USB/RF time and explicit injected losses; not measured RF throughput or proof of the cause of retained hardware losses.",
+  "helper_sha256": "67ef70c1be17018d1b16fbafb05593df2e88c55f63e31b4abecc5fdc652b54d0",
+  "object_bytes": 1665,
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "python": "3.12.9",
+  "radio_devices_opened": 0,
+  "schema": "meshticulum.sf5-selective-recovery-source-comparison.v1",
+  "source_commit": "81786885b2dab2e55507fcbeda8f2f3a67c402b7",
+  "source_commit_note": "Parent commit during reviewed working-tree comparison; exact executed file hashes are recorded below.",
+  "source_only": true,
+  "source_sha256": {
+    "src/meshticulum/bench/flow_runtime.py": "78b506e3723ded401bcd78a82f36878be8ca39f4bebedde87333c6412b607ce3",
+    "src/meshticulum/flow/flow.py": "0a2464816e53c239018a4c33af43e927007512018bedb2d558e99f0fad5ac7b8",
+    "tests/test_burst_final_ack_repair.py": "088b03f69c59fb71ebf4a588edab5f0f09c9e99c969a803e50ecf2472c8057d7",
+    "tests/test_burst_sf5_recovery.py": "201078956521c608c3fea7bd856c813560db768f44120738bf4bd65f576eabf7",
+    "tests/test_flow_selective_fast_retry.py": "6085aee6a014acfdcf7d39b72b613f01c0ee1d007c86e1e9a6f5285471ee54a9",
+    "tests/test_selective_retry_adapter.py": "5905f988bc50b482ef89dcb1cb0f559e306f93f3a3f09390af0b4595b3f13920"
+  },
+  "sqlite": "3.47.1"
+}

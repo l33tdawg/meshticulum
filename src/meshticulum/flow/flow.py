@@ -99,7 +99,7 @@ runtime.
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 import math
 import struct
@@ -200,8 +200,13 @@ class FlowLimits:
     # can be the one frame the reverse link loses.
     persist_interval_s: float = 0.5
     max_persist_acks: int = 3
+    # Explicit host-driven recovery only. Three distinct later SACK receipts
+    # may justify one early retry; ordinary pump() remains timeout-driven.
+    selective_fast_retry: bool = False
 
     def __post_init__(self):
+        if type(self.selective_fast_retry) is not bool:
+            raise FlowError("invalid limit: selective_fast_retry must be a bool")
         for name, value in (
             ("frame_payload_bytes", self.frame_payload_bytes), ("window_frames", self.window_frames),
             ("initial_credit_frames", self.initial_credit_frames),
@@ -501,6 +506,17 @@ class _Pending:
     # an estimate of when it finished transmitting. Only this one is a real past
     # instant, so only this one may be used to measure a round trip.
     handed_over_at: float = 0.0
+    original_last: bool = False
+    selective_evidence: set[int] = field(default_factory=set)
+    selective_evidence_at: float = 0.0
+    fast_retry_offered: bool = False
+
+
+@dataclass(frozen=True)
+class _DeferredRetry:
+    payload: bytes
+    original_last: bool
+    fast: bool = False
 
 
 class ReliableFlow:
@@ -603,7 +619,7 @@ class ReliableFlow:
         # Retransmissions this flow has queued under a live handle and not yet
         # been told about, by sequence, with the exact bytes that were queued.
         # They are owed a handover even if their flight is acknowledged first.
-        self._deferred_retries: dict[int, deque[bytes]] = {}
+        self._deferred_retries: dict[int, deque[_DeferredRetry]] = {}
         # Sequence numbers whose frame state this flow has already spent on its
         # own synchronous handover, cleared as each one is acknowledged. A
         # control frame reports a handover too, and it borrows the sequence
@@ -667,6 +683,9 @@ class ReliableFlow:
         self.out_of_window = 0
         self.corrupt_rejected = 0
         self.retransmits = 0
+        self.fast_retry_offers = 0
+        self.fast_retransmits = 0
+        self._selective_retry_clock: float | None = None
         self.refused_sends = 0
         self.impossible_acks = 0
         self.stale_acks = 0
@@ -762,6 +781,61 @@ class ReliableFlow:
 
     def settled(self) -> bool:
         return not self._outbound and not self._in_flight
+
+    def selective_retry_ready(self) -> bool:
+        """Read-only eligibility hint, never physical readiness or authority.
+
+        A host must still preserve its own dispatch/physical-drain boundaries;
+        retry_selective_gap() rechecks logical eligibility before any offer.
+        """
+        return (self.limits.selective_fast_retry and not self._fenced and self.failure is None
+                and self.send_state is FlowState.OPEN
+                and any(not pending.fast_retry_offered and len(pending.selective_evidence) >= 3
+                        and pending.attempts < self.limits.max_retries
+                        and pending.seq not in self._deferred_retries
+                        for pending in self._in_flight.values()))
+
+    def retry_selective_gap(self, now: float) -> bool:
+        """Offer at most one early retry backed by three distinct later SACKs.
+
+        Default off; pump() never invokes this API. True means one offer was
+        made, including refusal or DEFERRED, not a physical transmission or a
+        peer receipt. One opportunity is consumed per logical flight before
+        offering, so repetition, refusal, cancellation or a queued handover
+        cannot turn the same evidence into repeated early retries. Attempts,
+        backoff and retransmission counts change only at the normal handover.
+        An ordinary timeout offer consumes any unused early opportunity too;
+        this API never turns evidence from before that retry into another one.
+        Timeout recovery is unchanged if this offer is lost or never sent.
+        """
+        try:
+            valid_time = type(now) in (int, float) and math.isfinite(now) and now >= 0
+        except OverflowError:
+            valid_time = False
+        if not valid_time:
+            raise FlowError("fast retry time must be finite and non-negative")
+        if not self.limits.selective_fast_retry:
+            return False
+        if self._selective_retry_clock is not None and now < self._selective_retry_clock:
+            raise FlowError("fast retry time regressed")
+        self._selective_retry_clock = now
+        if not self.selective_retry_ready():
+            return False
+        if self.link.incarnation(self.peer) != self._peer_incarnation:
+            self._fail_session("peer_restarted")
+            return False
+        for pending in self._in_flight.values():
+            if (pending.fast_retry_offered or len(pending.selective_evidence) < 3
+                    or pending.attempts >= self.limits.max_retries
+                    or pending.seq in self._deferred_retries
+                    or now < max(pending.handed_over_at, pending.selective_evidence_at)
+                    or now - pending.sent_at >= pending.rto):
+                continue
+            pending.fast_retry_offered = True
+            self.fast_retry_offers += 1
+            self._offer_retry(pending, now, fast=True)
+            return True
+        return False
 
     def stall(self) -> None:
         """Model a consumer that stops taking delivery; credit must fall to zero."""
@@ -1212,11 +1286,12 @@ class ReliableFlow:
 
     def _consume_handover(self, seq: int, payload: bytes, now: float) -> None:
         """Take exactly the state one frame consumes when it is handed over."""
+        original_last = len(self._outbound) <= self.limits.frame_payload_bytes
         del self._outbound[:len(payload)]
         self._in_flight[seq] = _Pending(seq=seq, payload=payload,
                                         sent_at=now + self._airtime_delay(),
                                         attempts=1, rto=self._rto,
-                                        handed_over_at=now)
+                                        handed_over_at=now, original_last=original_last)
         self._next_seq = (seq + 1) % self.seq_modulus
         self._handed_over.add(seq)
 
@@ -1232,8 +1307,6 @@ class ReliableFlow:
         count ahead of the flow's and lets the next pump start a further attempt
         against a clock that never restarted.
         """
-        if self.send_state is not FlowState.OPEN:
-            return False
         # A retry or a probe repeats an emission that was already spent, so both
         # are settled before anything asks whether this sequence was consumed:
         # the retry of a frame this flow sent synchronously reuses its sequence
@@ -1248,14 +1321,21 @@ class ReliableFlow:
             # refusal re-offers the same bytes under the same sequence number, so
             # the oldest outstanding one is settled first.
             queued = self._deferred_retries[seq]
-            payload = queued.popleft()
+            retry = queued.popleft()
             if not queued:
                 del self._deferred_retries[seq]
             pending = self._in_flight.get(seq)
-            if pending is not None and pending.payload != payload:
+            if pending is not None and (pending.payload != retry.payload
+                                        or pending.original_last != retry.original_last):
                 pending = None
-            self._settle_retry(pending, at)
+            self._settle_retry(pending, at, fast=retry.fast)
             return True
+        # A terminal direction cannot admit new DATA or a new probe. An exact
+        # deferred retry above is already owed a handover record, however: its
+        # original flight may have completed or been cancelled while the host
+        # retained that emission. Settling it never reopens the direction.
+        if self.send_state is not FlowState.OPEN:
+            return False
         if self._probe_outstanding and self._in_flight.get(seq) is None:
             # The probe repeats the last frame the receiver acknowledged, so it
             # names a sequence that is not in flight and its bytes are identical
@@ -1283,36 +1363,45 @@ class ReliableFlow:
             if pending.attempts >= self.limits.max_retries:
                 self._fail_send("retry_ceiling")
                 return
-            frame = build_data_frame(flow_id=self.flow_id, generation=self.generation,
-                                     seq=pending.seq, total=self._total,
-                                     last=len(pending.payload) < self.limits.frame_payload_bytes,
-                                     payload=pending.payload, modulus=self.seq_modulus,
-                                     limits=self.limits)
-            outcome = self.link.send(self.endpoint, frame)
-            if outcome is DEFERRED:
-                # The retransmission is already queued under a live handle. It
-                # keeps its place and its clock, so a host that has not
-                # dispatched it cannot be charged with a second attempt - but it
-                # is remembered, because the acknowledgement it was answering
-                # may still arrive and retire the pending frame before the host
-                # gets round to dispatching it. The handover is owed either way.
-                self.deferred_sends += 1
-                # One queued reservation carries exactly one outcome record. The
-                # flow re-offers the same bytes on every pump while the host holds
-                # them, so appending unconditionally would grow a record per call
-                # against a single held frame: 1000 identical pumps would leave
-                # 1000 markers for one emission and a single real handover would
-                # remove one, stranding the other 999.
-                outstanding = self._deferred_retries.setdefault(pending.seq, deque())
-                if pending.payload not in outstanding:
-                    outstanding.append(pending.payload)
-                continue
-            if not outcome:
-                self.refused_sends += 1
-                continue
-            self._settle_retry(pending, now)
+            # The original flight has already entered timeout recovery. Its
+            # earlier SACK evidence must not trigger another immediate retry
+            # after this offer settles, even when this offer is deferred or
+            # refused. No attempt/clock is spent until the normal handover.
+            pending.fast_retry_offered = True
+            self._offer_retry(pending, now)
 
-    def _settle_retry(self, pending: _Pending | None, at: float) -> None:
+    def _offer_retry(self, pending: _Pending, now: float, *, fast: bool = False) -> None:
+        frame = build_data_frame(flow_id=self.flow_id, generation=self.generation,
+                                 seq=pending.seq, total=self._total,
+                                 last=pending.original_last,
+                                 payload=pending.payload, modulus=self.seq_modulus,
+                                 limits=self.limits)
+        outcome = self.link.send(self.endpoint, frame)
+        if outcome is DEFERRED:
+            # The retransmission is already queued under a live handle. It
+            # keeps its place and its clock, so a host that has not
+            # dispatched it cannot be charged with a second attempt - but it
+            # is remembered, because the acknowledgement it was answering
+            # may still arrive and retire the pending frame before the host
+            # gets round to dispatching it. The handover is owed either way.
+            self.deferred_sends += 1
+            # One queued reservation carries exactly one outcome record. The
+            # flow re-offers the same bytes on every pump while the host holds
+            # them, so appending unconditionally would grow a record per call
+            # against a single held frame: 1000 identical pumps would leave
+            # 1000 markers for one emission and a single real handover would
+            # remove one, stranding the other 999.
+            outstanding = self._deferred_retries.setdefault(pending.seq, deque())
+            if not any(value.payload == pending.payload and value.original_last == pending.original_last
+                       for value in outstanding):
+                outstanding.append(_DeferredRetry(pending.payload, pending.original_last, fast))
+            return
+        if not outcome:
+            self.refused_sends += 1
+            return
+        self._settle_retry(pending, now, fast=fast)
+
+    def _settle_retry(self, pending: _Pending | None, at: float, *, fast: bool = False) -> None:
         """Spend exactly one retry attempt on a frame that has really been handed over.
 
         One emission consumes one retry attempt, one new retry clock and one
@@ -1334,6 +1423,8 @@ class ReliableFlow:
                               max(self.limits.min_rto_s, pending.rto * 2))
             pending.handed_over_at = at
         self.retransmits += 1
+        if fast:
+            self.fast_retransmits += 1
         # A retransmission has taken this handover, so no queued probe is still
         # waiting for one. A probe is only ever queued with nothing in flight,
         # which is why a retry and a probe can never both be outstanding.
@@ -1370,14 +1461,14 @@ class ReliableFlow:
         queued = self._deferred_retries.get(seq)
         if not queued:
             return False
-        for payload in list(queued):
+        for retry in list(queued):
             attempt = build_data_frame(flow_id=self.flow_id, generation=self.generation,
                                        seq=seq, total=self._total,
-                                       last=len(payload) < self.limits.frame_payload_bytes,
-                                       payload=payload, modulus=self.seq_modulus,
+                                       last=retry.original_last,
+                                       payload=retry.payload, modulus=self.seq_modulus,
                                        limits=self.limits)
             if attempt == frame:
-                queued.remove(payload)
+                queued.remove(retry)
                 if not queued:
                     del self._deferred_retries[seq]
                 return True
@@ -1618,6 +1709,19 @@ class ReliableFlow:
         for pending in newly:
             del self._in_flight[pending.seq]
             self._handed_over.discard(pending.seq)
+        if self.limits.selective_fast_retry:
+            # Only fully accepted canonical receipt can add evidence. Record
+            # distinct later SACK positions actually retired from live flights;
+            # cumulative guesses, unsent positions and repeated ACKs add none.
+            # At most three positions per remaining hole are retained.
+            for hole in self._in_flight.values():
+                for retired in newly:
+                    offset = (retired.seq - acked) % self.seq_modulus
+                    if (len(hole.selective_evidence) < 3 and 0 < offset <= SACK_BITS
+                            and frame['sack'] & (1 << (SACK_BITS - offset))
+                            and _before(hole.seq, retired.seq, self.seq_modulus)):
+                        hole.selective_evidence.add(retired.seq)
+                        hole.selective_evidence_at = max(hole.selective_evidence_at, now)
         for pending in newly:
             self._acked_frames += 1
             if pending.attempts == 1:
