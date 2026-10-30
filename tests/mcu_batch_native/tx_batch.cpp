@@ -57,6 +57,7 @@ void finish(TxBatchJob& q,const Fixture& f) {
         auto now=NOW+n*110000;
         assert(q.issue(now,false,true).code==Code::Accepted);
         assert(q.settle(evidence(f.packets[n]),now+100000)==Code::Accepted);
+        assert(q.receiveStarted(f.packets[n].request,now+100000,true)==Code::Accepted);
     }
 }
 void run(const char* name) {
@@ -150,13 +151,17 @@ void run(const char* name) {
         assert(q.issue(NOW,false,false).code==Code::OutputBlocked);
         assert(q.issue(NOW,false,true).code==Code::Accepted);
         assert(q.settle(evidence(f.packets[0]),NOW+100000)==Code::Accepted);
+        assert(q.receiveStarted(11,NOW+100000,true)==Code::Accepted);
         assert(q.issue(NOW+104999,false,true).code==Code::Busy);
         assert(q.issue(NOW+105000,false,true).code==Code::Accepted);
         assert(q.settle(evidence(f.packets[1]),NOW+205000)==Code::Accepted);
+        assert(q.receiveStarted(12,NOW+205000,true)==Code::Accepted);
         assert(q.issue(NOW+210000,false,true).code==Code::Accepted);
         assert(q.settle(evidence(f.packets[2]),NOW+310000)==Code::Accepted);
+        assert(q.receiveStarted(13,NOW+310000,true)==Code::Accepted);
         assert(q.issue(NOW+315000,false,true).code==Code::Accepted);
         assert(q.settle(evidence(f.packets[3]),NOW+415000)==Code::Accepted);
+        assert(q.receiveStarted(14,NOW+415000,true)==Code::Accepted);
         assert(f.pacing.next_issue_us==NOW+515000);
     } else if(!std::strcmp(name,"release_atomic")) {
         f.commit(q);finish(q,f);BatchRelease entries[4];releaseEntries(q,entries);
@@ -209,6 +214,7 @@ void run(const char* name) {
         assert(q.commit(f.d,12,NOW)==Code::Accepted);
         assert(q.issue(NOW,false,true).code==Code::Accepted);
         assert(q.settle(evidence(f.packets[0]),NOW+100000)==Code::Accepted);
+        assert(q.receiveStarted(11,NOW+100000,true)==Code::Accepted);
         assert(f.pacing.next_issue_us==NOW+200000 && f.b.counters.attempts==1);
     } else if(!std::strcmp(name,"poll_unknown")) {
         f.commit(q);assert(q.issue(NOW,false,true).code==Code::Accepted);
@@ -218,6 +224,71 @@ void run(const char* name) {
         assert(q.release(f.d,16,entries,4,END)==Code::Accepted);
         assert(q.issue(END+100000,false,true).code==Code::Fenced);
         assert(f.b.fenced && f.b.counters.attempts==4);
+    } else if(!std::strcmp(name,"receive_delayed")) {
+        f.commit(q);assert(q.issue(NOW,false,true).code==Code::Accepted);
+        assert(q.settle(evidence(f.packets[0]),NOW+100000)==Code::Accepted);
+        assert(f.pacing.receive_request==11 && f.pacing.receive_delay_us==5000);
+        // Both the old 5 ms and 100 ms RF_DONE-based floors have elapsed.
+        assert(q.issue(NOW+250000,false,true).code==Code::Busy);
+        assert(q.receiveStarted(11,NOW+250000,true)==Code::Accepted);
+        assert(q.issue(NOW+254999,false,true).code==Code::Busy);
+        assert(q.issue(NOW+255000,false,true).code==Code::Accepted);
+        assert(f.b.counters.attempts==4 && f.b.counters.reserved_airtime_us==400000);
+    } else if(!std::strcmp(name,"receive_stale")) {
+        f.commit(q);assert(q.issue(NOW,false,true).code==Code::Accepted);
+        assert(q.settle(evidence(f.packets[0]),NOW+100000)==Code::Accepted);
+        assert(q.receiveStarted(12,NOW+100000,true)==Code::Mismatch);
+        assert(q.issue(NOW+110000,false,true).code==Code::Busy);
+        assert(q.receiveStarted(11,NOW+110000,true)==Code::Accepted);
+        const auto floor=f.pacing.next_issue_us;
+        assert(q.receiveStarted(11,NOW+111000,true)==Code::Missing);
+        assert(f.pacing.next_issue_us==floor);
+        assert(q.issue(NOW+115000,false,true).code==Code::Accepted);
+        assert(q.settle(evidence(f.packets[1]),NOW+215000)==Code::Accepted);
+        assert(q.receiveStarted(11,NOW+215000,true)==Code::Mismatch);
+        assert(q.issue(NOW+225000,false,true).code==Code::Busy);
+        assert(q.receiveStarted(12,NOW+225000,true)==Code::Accepted);
+        assert(q.issue(NOW+229999,false,true).code==Code::Busy);
+    } else if(!std::strcmp(name,"receive_failed")) {
+        f.commit(q);assert(q.issue(NOW,false,true).code==Code::Accepted);
+        assert(q.settle(evidence(f.packets[0]),NOW+100000)==Code::Accepted);
+        assert(q.receiveStarted(11,NOW+110000,false)==Code::Fenced);
+        assert(q.receiveStarted(11,NOW+120000,true)==Code::Fenced);
+        assert(q.issue(NOW+500000,false,true).code==Code::Fenced);
+        BatchRelease entries[4];releaseEntries(q,entries);
+        assert(entries[0].state==State::RfDone);
+        for(unsigned n=1;n<4;n++) assert(entries[n].state==State::NotSent);
+        assert(q.release(f.d,16,entries,4,NOW+500000)==Code::Accepted);
+        assert(f.pacing.receive_request==11 && f.b.counters.attempts==4);
+    } else if(!std::strcmp(name,"receive_clock")) {
+        f.commit(q);assert(q.issue(NOW,false,true).code==Code::Accepted);
+        assert(q.settle(evidence(f.packets[0]),NOW+100000)==Code::Accepted);
+        assert(q.receiveStarted(11,NOW+99999,true)==Code::ClockRegressed);
+        assert(q.receiveStarted(11,NOW+110000,true)==Code::Fenced);
+        assert(q.issue(NOW+500000,false,true).code==Code::Fenced);
+        assert(f.pacing.receive_request==11 && f.b.counters.attempts==4);
+    } else if(!std::strcmp(name,"receive_expiry")) {
+        f.commit(q);assert(q.issue(NOW,false,true).code==Code::Accepted);
+        assert(q.settle(evidence(f.packets[0]),NOW+100000)==Code::Accepted);
+        assert(q.issue(END,false,true).code==Code::Busy);
+        assert(q.receiveStarted(11,END,true)==Code::Accepted);
+        assert(q.issue(END+99999,false,true).code==Code::Busy);
+        assert(q.issue(END+100000,false,true).code==Code::Missing);
+        BatchRelease entries[4];releaseEntries(q,entries);
+        assert(entries[0].state==State::RfDone);
+        for(unsigned n=1;n<4;n++) assert(entries[n].state==State::NotSent);
+        assert(f.b.counters.attempts==4 && f.b.counters.reserved_airtime_us==400000);
+    } else if(!std::strcmp(name,"receive_expiry_after_rearm")) {
+        f.commit(q);assert(q.issue(END-200000,false,true).code==Code::Accepted);
+        auto done=evidence(f.packets[0]);done.driver_elapsed_us=110000;
+        assert(q.settle(done,END-90000)==Code::Accepted);
+        assert(q.receiveStarted(11,END-80000,true)==Code::Accepted);
+        assert(f.pacing.next_issue_us==END-75000);
+        assert(q.issue(END,false,true).code==Code::Busy);
+        assert(f.pacing.next_issue_us==END+20000 && f.pacing.receive_delay_us==100000);
+        assert(q.issue(END+19999,false,true).code==Code::Busy);
+        assert(q.issue(END+20000,false,true).code==Code::Missing);
+        assert(f.b.counters.attempts==4 && f.b.counters.reserved_airtime_us==400000);
     } else { assert(false); }
     assert(allocations==before);
 }
@@ -256,6 +327,48 @@ int main(int argc,char** argv) {
         assert(next.begin(f.d,END)==Code::Fenced);
         assert(next.issue(END+100000,false,true).code==Code::Fenced);
         assert(f.b.counters.attempts==4);
+    } else if(!std::strcmp(argv[1],"receive_tail_new_owner")) {
+        Fixture f;f.d.count=1;assert(batchManifest(f.d,f.packets,hash,f.d.manifest));
+        {
+            TxBatchJob q(f.a,1,f.b,f.pacing,hash);
+            assert(q.begin(f.d,NOW)==Code::Accepted);
+            assert(q.stage(f.d,0,f.packets[0],100000,NOW)==Code::Accepted);
+            assert(q.commit(f.d,12,NOW)==Code::Accepted);
+            assert(q.issue(NOW,false,true).code==Code::Accepted);
+            assert(q.settle(evidence(f.packets[0]),NOW+100000)==Code::Accepted);
+            Evidence held;assert(q.evidence(11,held));BatchRelease entry;
+            entry.request=11;entry.event_us=held.event_us;entry.state=held.state;
+            std::memcpy(entry.digest,held.digest,32);
+            assert(q.release(f.d,13,&entry,1,NOW+100000)==Code::Accepted);
+            assert(q.commit(f.d,12,NOW+100001)==Code::Replayed);
+            assert(q.release(f.d,13,&entry,1,NOW+100001)==Code::Replayed);
+            assert(f.pacing.receive_request==11 && f.pacing.receive_delay_us==100000);
+        }
+        TxBatchJob next(f.a,1,f.b,f.pacing,hash);
+        f.d.job=20;f.packets[0].request=21;assert(batchManifest(f.d,f.packets,hash,f.d.manifest));
+        assert(next.begin(f.d,NOW+200000)==Code::Accepted);
+        assert(next.stage(f.d,0,f.packets[0],100000,NOW+200000)==Code::Accepted);
+        assert(next.commit(f.d,22,NOW+200000)==Code::Accepted);
+        assert(next.issue(NOW+300000,false,true).code==Code::Busy);
+        assert(next.receiveStarted(21,NOW+300000,true)==Code::Mismatch);
+        assert(next.receiveStarted(11,NOW+300000,true)==Code::Accepted);
+        assert(next.issue(NOW+399999,false,true).code==Code::Busy);
+        assert(next.issue(NOW+400000,false,true).code==Code::Accepted);
+        assert(f.b.counters.attempts==2 && f.b.counters.reserved_airtime_us==200000);
+    } else if(!std::strcmp(argv[1],"receive_failed_new_owner")) {
+        Fixture f;
+        {
+            TxBatchJob q(f.a,1,f.b,f.pacing,hash);f.commit(q);
+            assert(q.issue(NOW,false,true).code==Code::Accepted);
+            assert(q.settle(evidence(f.packets[0]),NOW+100000)==Code::Accepted);
+            assert(q.receiveStarted(11,NOW+100000,false)==Code::Fenced);
+            BatchRelease entries[4];releaseEntries(q,entries);
+            assert(q.release(f.d,16,entries,4,NOW+100000)==Code::Accepted);
+        }
+        TxBatchJob next(f.a,1,f.b,f.pacing,hash);
+        assert(next.receiveStarted(11,NOW+300000,true)==Code::Fenced);
+        assert(next.issue(NOW+500000,false,true).code==Code::Fenced);
+        assert(f.b.counters.attempts==4 && f.pacing.receive_request==11);
     } else if(!std::strcmp(argv[1],"native_cap")) {
         Fixture f;f.a.max_attempts=1025;
         TxBatchJob q(f.a,1,f.b,f.pacing,hash);
@@ -274,6 +387,8 @@ int main(int argc,char** argv) {
         assert(q.stage(f.d,0,f.packets[0],100000,now)==Code::Accepted);
         assert(q.commit(f.d,12,now)==Code::Accepted && q.issue(now,false,true).code==Code::Accepted);
         assert(q.settle(evidence(f.packets[0]),UINT64_MAX-50000)==Code::Accepted);
+        assert(!q.fenced() && f.pacing.receive_request==11);
+        assert(q.receiveStarted(11,UINT64_MAX-50000,true)==Code::Fenced);
         assert(q.fenced() && f.pacing.next_issue_us==UINT64_MAX && f.b.counters.attempts==1);
     } else run(argv[1]);
 }

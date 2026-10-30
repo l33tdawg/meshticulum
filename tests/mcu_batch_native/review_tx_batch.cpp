@@ -71,7 +71,8 @@ int main(int argc,char** argv) {
         BatchRelease entries[4];releaseEntries(q,entries);
         assert(entries[0].state==State::RfDone);
         for(unsigned n=1;n<4;n++) assert(entries[n].state==State::NotSent);
-        assert(q.issue(END+1,false,true).code==Code::Busy); // Retained tail floor.
+        assert(q.issue(END+1,false,true).code==Code::Busy); // RX not yet rearmed.
+        assert(q.receiveStarted(11,END+1,true)==Code::Accepted);
         assert(q.release(f.d,16,entries,4,END+1)==Code::Accepted);
         assert(q.issue(END+100001,false,true).code==Code::Missing);
         assert(f.b.counters.attempts==4 && f.b.counters.reserved_airtime_us==400000);

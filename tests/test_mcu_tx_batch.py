@@ -31,6 +31,9 @@ def batch_native(tmp_path_factory):
     'stage_expiry', 'active_mutation', 'count', 'one_tail', 'poll_unknown',
     'new_owner', 'poll_new_owner',
     'native_cap', 'boot_changed', 'pacing_overflow',
+    'receive_delayed', 'receive_stale', 'receive_failed', 'receive_clock',
+    'receive_expiry', 'receive_tail_new_owner', 'receive_failed_new_owner',
+    'receive_expiry_after_rearm',
 ])
 def test_native_batch_faults(batch_native, scenario):
     subprocess.run([str(batch_native), scenario], check=True, capture_output=True, timeout=10)

@@ -59,6 +59,14 @@ consume it. It demonstrates bounded validation/accounting behavior in source.
 Production integration needs the reviewed multi-emission owner contract and
 atomic durable reservation described in that document.
 
+Production wiring is not yet justified by a demonstrated timing benefit. DATA
+and STAGE each have a 59-byte body header, so the staged ciphertext retains the
+same USB pacing cost. The current prototype adds BEGIN/COMMIT, waits for all
+members before first RF, and retains one job until complete release. A proposed
+overlap design needs its own whole-path comparison. The next measurement should
+isolate native setup and host sealing costs before selecting a larger owner
+revision on the assumption that batching is faster.
+
 Current queue depth and train length remain four. At SF5/BW500/CR4/5 with a
 12-symbol preamble, a full-frame
 steady-cycle estimate is four 193-byte transport payloads divided by four
@@ -91,6 +99,7 @@ source/firmware correspondence and original finite budgets. Retain failed runs
 and complete allocations. No modeled result renews old authority, resets native
 counters or qualifies a release artifact.
 
-The combined host-pump and dormant batch-prototype source passed **3,276 tests,
-37 skips and 49 subtests** locally. Separate independent edge controls supplement
-that run. These source results supply no new hardware qualification.
+The corrected combined host-pump and dormant batch-prototype source passed
+**3,291 tests, 37 skips and 49 subtests** locally. This includes the RX-rearm
+controls and separate independent edge controls. These source results supply no
+new hardware qualification.

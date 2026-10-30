@@ -13,8 +13,11 @@ struct BatchDescriptor {
     std::uint8_t count=0, manifest[32]={};
 };
 // Keep alongside BootState for the entire boot, including between job owners.
-// No ARM/rebinding/owner reconstruction may clear this listening floor.
-struct BatchPacing { std::uint64_t next_issue_us=0; };
+// No ARM/rebinding/release/owner reconstruction may clear the RX-rearm
+// obligation or listening floor. RF_DONE does not prove RX has started.
+struct BatchPacing {
+    std::uint64_t next_issue_us=0, receive_request=0, receive_delay_us=0;
+};
 struct BatchRelease {
     std::uint64_t request=0, event_us=0;
     State state=State::Empty;
@@ -77,10 +80,22 @@ class TxBatchJob {
         return a.request==b.request && a.event_us==b.event_us && a.state==b.state
             && std::memcmp(a.digest,b.digest,32)==0;
     }
-    Code clock(std::uint64_t now) { return queue_.poll(now); }
-    void listen(std::uint64_t now,std::uint64_t duration) {
-        if(now>UINT64_MAX-duration) { queue_.cancel();pacing_.next_issue_us=UINT64_MAX; }
-        else if(pacing_.next_issue_us<now+duration) pacing_.next_issue_us=now+duration;
+    Code clock(std::uint64_t now) {
+        const auto observed=queue_.poll(now);
+        // Expiry can retire the remaining queued suffix after an RF_DONE.
+        // That makes the last completed packet the actual empty tail. Keep
+        // the full reverse floor, even if its 5 ms RX floor already started.
+        if(pacing_.receive_delay_us==BATCH_RX_US && !queue_.queued()) {
+            pacing_.receive_delay_us=BATCH_REVERSE_US;
+            if(!pacing_.receive_request) {
+                const auto extra=BATCH_REVERSE_US-BATCH_RX_US;
+                if(pacing_.next_issue_us>UINT64_MAX-extra) {
+                    queue_.cancel();pacing_.next_issue_us=UINT64_MAX;
+                } else pacing_.next_issue_us+=extra;
+            }
+        }
+        if(observed==Code::ClockRegressed) return observed;
+        return queue_.fenced() ? Code::Fenced : observed;
     }
 public:
     TxBatchJob(const Admission& admission,std::uint64_t original_open_token,
@@ -170,15 +185,35 @@ public:
     Dispatch issue(std::uint64_t now,bool rx_pending,bool output_available) {
         const auto observed=clock(now);if(observed!=Code::Accepted) return {observed,nullptr};
         if(!committed_ || released_all_ || revoked_) return {Code::Missing,nullptr};
-        if(now<pacing_.next_issue_us) return {Code::Busy,nullptr};
-        return queue_.issue(now,rx_pending,output_available);
+        if(pacing_.receive_request || now<pacing_.next_issue_us) return {Code::Busy,nullptr};
+        const auto dispatched=queue_.issue(now,rx_pending,output_available);
+        if(dispatched.code==Code::Accepted) pacing_.receive_delay_us=0;
+        return dispatched;
     }
     Code settle(const Evidence& evidence,std::uint64_t now) {
         const auto result=queue_.settle(evidence,now);
-        if(result==Code::Accepted && evidence.state==State::RfDone)
-            listen(now,queue_.queued() ? BATCH_RX_US : BATCH_REVERSE_US);
-        if(queue_.fenced()) listen(now,BATCH_REVERSE_US);
+        if(result==Code::Accepted && evidence.state==State::RfDone) {
+            pacing_.receive_request=evidence.request;
+            pacing_.receive_delay_us=queue_.queued() ? BATCH_RX_US : BATCH_REVERSE_US;
+        }
         return result;
+    }
+    // The trusted radio owner calls this synchronously AFTER startReceive has
+    // returned, using a fresh clock and the exact completed physical request.
+    // Host input, RF_DONE, successful standby or terminal release is not proof.
+    // Failed rearm fences permanently; a later success cannot renew authority.
+    Code receiveStarted(std::uint64_t completed_request,std::uint64_t now,bool success) {
+        const auto observed=clock(now);if(observed!=Code::Accepted) return observed;
+        if(!pacing_.receive_request) return Code::Missing;
+        if(completed_request!=pacing_.receive_request) return Code::Mismatch;
+        if(!success) { cancel();return Code::Fenced; }
+        if(now>UINT64_MAX-pacing_.receive_delay_us) {
+            cancel();pacing_.next_issue_us=UINT64_MAX;return Code::Fenced;
+        }
+        const auto next=now+pacing_.receive_delay_us;
+        if(next>pacing_.next_issue_us) pacing_.next_issue_us=next;
+        pacing_.receive_request=0;
+        return Code::Accepted;
     }
     Code release(const BatchDescriptor& d,std::uint64_t request,const BatchRelease* entries,
                  std::size_t count,std::uint64_t now) {
@@ -211,7 +246,7 @@ public:
         boot_.request_highwater=request;release_request_=request;released_all_=true;
         return Code::Accepted;
     }
-    void cancel() { revoked_=true;queue_.cancel();listen(boot_.last_now_us,BATCH_REVERSE_US); }
+    void cancel() { revoked_=true;queue_.cancel(); }
     bool evidence(std::uint64_t request,Evidence& out) const { return queue_.evidence(request,out); }
     std::size_t retained() const { return queue_.retained(); }
     bool fenced() const { return queue_.fenced(); }

@@ -126,11 +126,22 @@ poll-triggered containment to ensure it cannot send again.
 The queue depth stays four. The first packet can issue immediately after a
 successful full commit, subject to the actual driver/RX/output/deadline checks.
 The existing 100 ms start guard is admission/deadline headroom, not an initial
-transmit delay. Between successful packets the wrapper retains a 5 ms listening
-floor. At the actual empty tail it retains a 100 ms reverse-listen floor, including
-a one-packet job. `BatchPacing` must live alongside `BootState` for the whole boot,
-so a new job owner cannot erase this floor. A cancelled or uncertain job stays
-fenced regardless of elapsed listening time.
+transmit delay. RF_DONE records a pending receive-rearm obligation; it does not
+start the listening clock. After the actual radio `startReceive` returns, the
+trusted owner must call `receiveStarted` with the exact completed physical
+request, a fresh clock and the checked result. Only success starts the full
+5 ms inter-packet listening floor or 100 ms actual-empty-tail floor, including
+a one-packet job. Delayed rearm cannot consume that interval. Failed rearm fences
+the boot; a later success cannot un-fence it. Wrong or stale callback identities
+cannot clear a newer obligation.
+
+`BatchPacing` must live alongside `BootState` for the whole boot. Terminal
+release, exact command replay and a new job owner cannot erase either pending
+rearm or the listening floor. If expiry retires a queued suffix, the preceding
+completion becomes the actual tail and retains the full 100 ms floor from
+checked RX start. No receive callback extends the original job deadline or
+refunds its charges. A cancelled or uncertain job stays fenced regardless of
+elapsed listening time; cancellation never requires reopening receive.
 
 The native wrapper calls no driver. Production integration would still need the
 existing RX_DONE drain, header/receive-in-progress checks, evidence-output
