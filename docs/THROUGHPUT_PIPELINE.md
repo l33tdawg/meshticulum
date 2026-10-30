@@ -1,8 +1,9 @@
 # Throughput pipeline work
 
-The acceptance target is above 2,800 useful file bytes per second, including
-sender process startup, on comparable finite workloads; 3,000 bytes/s is the
-stretch. Neither has been established by the current physical recovery trial. The
+The active goal is at least 3,000 useful file bytes per second, including
+sender process startup through authenticated receipt, on comparable finite
+workloads with publisher and whole-file verification. Strictly above 2,800
+bytes/s remains the net-win checkpoint. Neither has been established by the current physical recovery trial. The
 [latest physical recovery case](../benchmarks/2026-10-30-sf5-recovery/README.md)
 uses the earlier exact candidate and must not acquire the qualification of
 subsequent source-only changes.
@@ -67,7 +68,7 @@ overlap design needs its own whole-path comparison. The next measurement should
 isolate native setup and host sealing costs before selecting a larger owner
 revision on the assumption that batching is faster.
 
-Current queue depth and train length remain four. At SF5/BW500/CR4/5 with a
+The default queue depth and train length remain four. At SF5/BW500/CR4/5 with a
 12-symbol preamble, a full-frame
 steady-cycle estimate is four 193-byte transport payloads divided by four
 34,640 us airtimes, three 5 ms receive gaps and one 100 ms reverse turn: about
@@ -81,18 +82,32 @@ identifies another cost in the retained trials. In 18 transitions where the next
 packet was already queued, local RF_DONE to next STARTED averaged 10.630 ms:
 6.780 ms before ISSUED, then 3.850 ms in checked transmit setup. The pre-issue
 bucket includes RX rearm and the full listening floor; neither bucket is proven
-wholly removable. Bounded native phase profiling should isolate that setup cost
-alongside the separate host-refill work.
+wholly removable. [Bounded native phase profiling](MCU_NATIVE_PROFILING.md)
+now separates those calls in an opt-in, separately identified firmware build.
+It has no reset command and can be queried only after disarm and complete
+physical reconciliation. Host `cipher_seal` and `cipher_open` timings include
+their durable nonce/replay transactions and authorization, alongside crypto;
+they do not claim to isolate CPU encryption time.
 
-An eight-frame train is a separate proposed protocol experiment. Keeping the
+An [explicit eight-frame scalar train](MCU_EIGHT_TRAIN.md) is now a source
+candidate. Keeping the
 same gap and reverse-turn durations would provide an ideal estimate of about
 3,645 useful bytes/s with that fixture, leaving some margin for the target.
-It requires an explicitly negotiated capability, consistent logical/reassembly
-and native memory bounds, original finite delegation, and independent ACK-loss,
-revocation, UNKNOWN/debt and legacy four-frame controls. Increasing only the
-logical window cannot remove the current physical train boundary. An eight-entry
-terminal-release vector would also exceed the current 320-byte body limit; its
-framing and atomic-release protocol need explicit design, not a constant change.
+It binds a distinct policy and local capability, with consistent flow,
+reassembly and native bounds. Each ciphertext still takes an individual durable
+reservation, queue acceptance and terminal release. The frozen flow and owner
+APIs already support this window; they remain unchanged. No aggregate serial
+frame or atomic release vector is introduced. The 2-second hold and 5/100 ms
+receive floors remain unchanged, including when an expired queued suffix turns
+an earlier completion into the actual tail. Source controls cover ACK loss,
+every DATA position, underfilled trains, UNKNOWN, expiry and legacy four-frame
+behavior. Target build and physical performance qualification remain separate.
+
+The [22-case scalar four/eight source comparison](../benchmarks/2026-10-30-sf5-eight-source/README.md)
+uses the same full signed part and fault boundaries. Its clean idealized native
+schedule rises from 2,924.5 to 3,592.8 modeled useful B/s; with 40/10 ms injected
+sender/receiver seal work, it reaches 2,873.7 B/s. Real process startup and CPU/
+fsync time are excluded, so these are not physical acceptance results.
 
 The next physical comparison must use equal useful workloads, exact installed
 source/firmware correspondence and original finite budgets. Retain failed runs

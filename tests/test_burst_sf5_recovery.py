@@ -22,7 +22,7 @@ from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.burst_protocol import (
     ACK, CAPABILITY, CANCEL, CLOCK, DATA, EVENT, OPEN, POLICY, STATUS, TOKEN,
-    INTER_PACKET_RX_US, REVERSE_LISTEN_US,
+    INTER_PACKET_RX_US, REVERSE_LISTEN_US, CAPABILITY8, policy_for_depth,
 )
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.flow_runtime import BenchFlow
@@ -139,10 +139,14 @@ class AirFrame:
 
 
 class Air:
-    def __init__(self, timeline, *, drop_data=None, drop_final_ack=False):
+    def __init__(self, timeline, *, drop_data=None, drop_final_ack=False,
+                 drop_ack_seqs=None, payload=PAYLOAD):
         self.timeline = timeline
         self.drop_data = dict(drop_data or {})
         self.drop_final_ack = drop_final_ack
+        self.drop_ack_seqs = dict(drop_ack_seqs or {})
+        self.payload = payload
+        self.data_count = math.ceil(len(payload) / 193)
         self.frames, self.channels = [], []
         self.sealed = {}
 
@@ -153,7 +157,10 @@ class Air:
         if 'seq' in inner and self.drop_data.get(inner['seq'], 0):
             self.drop_data[inner['seq']] -= 1
             frame.lost = True
-        elif 'ack_seq' in inner and inner['ack_seq'] == 9 and self.drop_final_ack:
+        elif 'ack_seq' in inner and self.drop_ack_seqs.get(inner['ack_seq'], 0):
+            self.drop_ack_seqs[inner['ack_seq']] -= 1
+            frame.lost = True
+        elif 'ack_seq' in inner and inner['ack_seq'] == self.data_count and self.drop_final_ack:
             self.drop_final_ack = False
             frame.lost = True
         self.frames.append(frame)
@@ -182,8 +189,9 @@ class Air:
 
 class RadioChannel:
     """Profile-aware keyless MCU record peer with asynchronous physical events."""
-    def __init__(self, timeline, air, index):
+    def __init__(self, timeline, air, index, *, train_depth=4):
         self.timeline, self.air, self.index = timeline, air, index
+        self.train_depth = train_depth
         self.inbound = bytearray()
         self.events, self.ack_receipts = {}, {}
         self.arm_request = self.arm_end = self.token = self.open_end = 0
@@ -243,7 +251,7 @@ class RadioChannel:
             self.transmitting = False
             self.event(request, Stage.RF_DONE, at)
             self.train_count += 1
-            tail = self.train_count >= 4 or not self.queued
+            tail = self.train_count >= self.train_depth or not self.queued
             self.next_start_us = at + (REVERSE_LISTEN_US if tail else INTER_PACKET_RX_US)
             if tail:
                 self.train_count = 0
@@ -268,7 +276,9 @@ class RadioChannel:
             reply(Message.HELLO_REPLY, struct.pack('!BBH', 1, 1, 255)
                   + (VERSION.encode() + b'\0').ljust(16, b'\0'))
         elif frame.type is Message.BURST_CAPABILITIES:
-            reply(Message.BURST_CAPABILITIES_REPLY, CAPABILITY)
+            assert frame.body == (b'\x08' if self.train_depth == 8 else b'')
+            reply(Message.BURST_CAPABILITIES_REPLY,
+                  CAPABILITY8 if self.train_depth == 8 else CAPABILITY)
         elif frame.type is Message.ARM:
             self.armed = True
             self.arm_request, self.arm_end = frame.request, self.now_us() + PROFILE.lease_ms * 1000
@@ -281,7 +291,11 @@ class RadioChannel:
         elif frame.type is Message.BURST_CLOCK:
             reply(Message.BURST_CLOCK_REPLY, CLOCK.pack(self.now_us(), self.arm_request, self.arm_end))
         elif frame.type is Message.BURST_OPEN:
-            self.context, arm, self.open_end = OPEN.unpack(frame.body)
+            body = frame.body
+            if self.train_depth == 8:
+                assert len(body) == OPEN.size + 1 and body[:1] == b'\x08'
+                body = body[1:]
+            self.context, arm, self.open_end = OPEN.unpack(body)
             assert arm == self.arm_request and self.open_end <= self.arm_end
             self.token = frame.request
             reply(Message.BURST_OPEN_REPLY, frame.body)
@@ -296,6 +310,7 @@ class RadioChannel:
             self.airtime += estimate
             self.events[frame.request] = (token, Stage.QUEUED, self.now_us(), digest,
                                           estimate, size, end, 0, 0, 0)
+            assert len(self.events) <= self.train_depth, 'native retained capacity exceeded'
             self.peak = max(self.peak, len(self.events))
             self.queued.append((frame.request, packet))
             self.schedule_dispatch()
@@ -356,15 +371,17 @@ class RadioChannel:
 
 
 def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
-             receipt_confirmation=False, host_work_us=(0, 0), host_pump=False):
+             receipt_confirmation=False, host_work_us=(0, 0), host_pump=False,
+             train_depth=4, sender_cap=20, drop_ack_seqs=None, payload=PAYLOAD):
     timeline = Timeline()
-    air = Air(timeline, drop_data=drop_data, drop_final_ack=drop_final_ack)
-    air.channels = [RadioChannel(timeline, air, i) for i in range(2)]
+    air = Air(timeline, drop_data=drop_data, drop_final_ack=drop_final_ack,
+              drop_ack_seqs=drop_ack_seqs, payload=payload)
+    air.channels = [RadioChannel(timeline, air, i, train_depth=train_depth) for i in range(2)]
     results = [{}, {}]
     tmp_path.mkdir(mode=0o700, parents=True, exist_ok=True)
     for unit in ('unit-a', 'unit-b'):
-        plan = provision(tmp_path / unit, unit, PAYLOAD, timeline.clock, PROFILE)
-        plan['data_burst'] = dict(POLICY)
+        plan = provision(tmp_path / unit, unit, payload, timeline.clock, PROFILE)
+        plan['data_burst'] = policy_for_depth(train_depth)
         (tmp_path / unit / 'grant.json').write_text(json.dumps(plan))
 
     def host(index):
@@ -381,7 +398,7 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
             identity = worker.discover(expected_board_id=1, expected_version=VERSION)
             journal = AttemptJournal(path / 'attempts.db', create=True,
                 binding=journal_binding(authority.grant.digest, identity, PROFILE),
-                max_attempts=20 if index == 0 else receiver_cap, max_airtime_us=60_000_000,
+                max_attempts=sender_cap if index == 0 else receiver_cap, max_airtime_us=60_000_000,
                 request_clock=lambda: timeline.clock()[0])
             opened.append(journal.close)
             worker.arm(journal=journal, profile=PROFILE, context_digest=authority.grant.digest,
@@ -414,9 +431,9 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
             if receipt_confirmation:
                 endpoint.enable_receipt_confirmation(bytes.fromhex('ab' * 32),
                     receiver_ready=None if index == 0 else lambda: (
-                        endpoint.flow.complete and bytes(endpoint.received) == PAYLOAD))
+                        endpoint.flow.complete and bytes(endpoint.received) == payload))
             if index == 0:
-                endpoint.send(PAYLOAD)
+                endpoint.send(payload)
             received_at = None
             def drive_step():
                 nonlocal received_at
@@ -474,8 +491,8 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
 def assert_complete(results, air):
     assert all('error' not in r and not r.get('cleanup_errors') for r in results), results
     assert all(r['complete'] for r in results)
-    assert results[0]['snapshot']['acked_frames'] == 9
-    assert results[1]['received'] == PAYLOAD
+    assert results[0]['snapshot']['acked_frames'] == air.data_count
+    assert results[1]['received'] == air.payload
     assert all(not r['snapshot']['attempt_journal']['fenced'] for r in results)
     assert results[0]['snapshot']['physical_queue']['pending'] == 0
     assert results[0]['snapshot']['physical_queue']['worker_pending'] == 0

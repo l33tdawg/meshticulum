@@ -29,6 +29,8 @@ No new file or diagnostic network endpoint is created.
 | `serial_write`, `serial_wait_writable`, `serial_os_write`, `serial_pacing_sleep` | Full encoded write, readiness wait, syscall/deadline check, and pacing sleep calls |
 | `serial_read`, `serial_read_wait`, `serial_os_read` | Full read, readiness wait, and read syscall |
 | `flow_step`, `flow_accounting`, `flow_receive`, `flow_dispatch`, `flow_pump` | Flow step and its accounting, receive polling, queued dispatch and flow-pump calls |
+| `cipher_seal` | The flow's whole packet-sealing call: authority checks, durable nonce reservation, envelope construction and authenticated encryption |
+| `cipher_open` | The flow's whole packet-opening call: validation, authority checks, authenticated decryption and durable replay admission before plaintext returns |
 | `host_loop_sleep` | The example's actual 5 ms loop sleep calls, outside `flow_step` |
 
 All intervals use `time.perf_counter_ns`. They measure elapsed host time,
@@ -42,14 +44,25 @@ Do not add these totals into an end-to-end latency or subtract overlapping
 totals to invent a missing component. Pacing branches create no fabricated wait
 intervals: only actual sleep/wait calls are measured.
 
+The two cipher phases are available in the current source checkout. They include
+storage and authorization work as well as cryptography; they do not isolate CPU
+encryption time or SQLite commit time. `cipher_seal` ends before the worker queue
+or transmit call. `cipher_open` ends before inner-flow parsing and delivery, and
+is separate from `flow_receive`, which measures the worker receive poll. Both
+remain nested within the enclosing flow step/pump/dispatch where applicable.
+Refused, unauthenticated, replayed and cancelled calls can still contribute a
+valid duration; a count does not prove successful sealing or plaintext admission.
+
 ## Format and failure handling
 
-The schema is `meshticulum.host-phase-timing.v1`. Each of its fixed 24 phase
+The schema is `meshticulum.host-phase-timing.v1`. Each of its fixed 26 phase
 names has `count`, `total_ns`, `min_ns`, `max_ns`, `invalid`, `dropped` and
 `saturated`. A valid measured call increments `count` even if that call raises;
 counts do not establish successful completion. An empty phase has null
 minimum/maximum and zero totals. Invalid clock samples are dropped, not recorded
 as zero-duration calls. Counters saturate at `2**63 - 1` and flag saturation.
+Earlier artifacts contain the original 24 phases. An absent cipher phase in
+those records means it was not measured, rather than zero cipher calls or cost.
 
 The collector retains no per-call history, absolute timestamps, request IDs,
 packet bytes, hashes, keys or exception text. Ordinary diagnostic faults do not

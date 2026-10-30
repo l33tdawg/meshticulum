@@ -1,6 +1,6 @@
 # Roadmap
 
-Meshticulum is a public experimental transport and resource project with a published source-build alpha. The next LoRa performance target is repeated reliable completion **above 2.8 kB/s (22.4 kbit/s)** of useful encrypted file bytes, including sender startup, with **3 kB/s (24 kbit/s)** as the immediate stretch. Neither is established by the latest physical trial. The longer-term **4 to 5 kB/s (32 to 40 kbit/s)** goal follows that qualification. There are no promised release dates.
+Meshticulum is a public experimental transport and resource project with a published source-build alpha. The active SF5/BW500 goal is repeated reliable completion at **3 kB/s (24 kbit/s)** of useful encrypted file bytes, measured from sender process startup through authenticated receipt with publisher and whole-file verification. **Above 2.8 kB/s (22.4 kbit/s)** remains the net-win checkpoint. Neither is established by the latest physical trial. The longer-term **4 to 5 kB/s (32 to 40 kbit/s)** goal follows that qualification. There are no promised release dates.
 
 ## Current status
 

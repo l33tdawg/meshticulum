@@ -37,6 +37,8 @@ class Phase(Enum):
     FLOW_DISPATCH = 'flow_dispatch'
     FLOW_PUMP = 'flow_pump'
     HOST_LOOP_SLEEP = 'host_loop_sleep'
+    CIPHER_SEAL = 'cipher_seal'
+    CIPHER_OPEN = 'cipher_open'
 
 
 MAX_VALUE = 2**63 - 1

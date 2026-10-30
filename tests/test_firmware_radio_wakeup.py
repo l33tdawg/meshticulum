@@ -64,8 +64,8 @@ def test_reviewed_radio_helpers_and_burst_integration_preserve_wake_service_orde
     expected = {
         'static int16_t readIrqFlags(uint32_t& flags)': '500c5d67b827509f7601db9571030e03dc1aeae9757ee18ea47d732c3712bef7',
         'static bool drainCompletedReceive(bool rearm,bool alreadyStandby=false)': 'ee4f4b6bb456fa12507d524adf68447a09d83b6fd19d9ce90c983442ddbf24b8',
-        'static void command(const Frame& frame)': 'b4456e5da46721c247aabd3e22985273d546e143306d2dba5a9ecf491364dc46',
-        'static void serviceRadio()': '28f76235c8238ed8e1045cd250fc716352d4af6db24d68610ea0ddf24fb20915',
+        'static void command(const Frame& frame)': 'b87ed071a6b487130f6eb8eb274af81e7236fe1affeeaf9b2b8471704b1846c8',
+        'static void serviceRadio()': '32dbbea3b1575bab8fa22b732cafae13dbf0b6af12dae1264c4728af919f0eac',
         'static void serialReadFailed()': '632e5585b19508ba0d49c431e340bd29253e4bcc5292a28f1f2afcfa9fcb9108',
     }
     for signature, pin in expected.items():

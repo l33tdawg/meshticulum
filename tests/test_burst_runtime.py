@@ -10,9 +10,10 @@ from types import SimpleNamespace
 
 import pytest
 
+from meshticulum.bench.admission import RadioAdmission
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import RunAuthority
-from meshticulum.bench.burst_protocol import ACK, POLICY
+from meshticulum.bench.burst_protocol import ACK, POLICY, policy_for_depth
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.serial_protocol import Decoder, Frame, Message
@@ -28,11 +29,12 @@ from tests.test_meshticulum_bench_runtime import BOOT, Clock, provision
 
 class RadioChannel(Channel):
     """Exact USB records with explicitly stepped local RF/result delivery."""
-    def __init__(self, clock):
+    def __init__(self, clock, *, train_depth=4, profile=None):
         self.clock = clock
         self.peer = None
         self.packets, self.delivered, self.held = {}, set(), {}
-        super().__init__()
+        options = {} if profile is None else {'profile': profile}
+        super().__init__(train_depth=train_depth, **options)
         self.on_data = lambda frame, packet: self.packets.__setitem__(frame.request, packet)
 
     @property
@@ -83,26 +85,31 @@ class RadioChannel(Channel):
 @pytest.fixture
 def composition(tmp_path):
     opened = []
-    def make(data=b'x' * 100, *, burst=True):
+    def make(data=b'x' * 100, *, burst=True, train_depth=4):
         clock = Clock()
         directory = tmp_path / str(len(opened))
         directory.mkdir(mode=0o700)
-        channels = [RadioChannel(clock), RadioChannel(clock)]
-        channels[0].peer, channels[1].peer = channels[1], channels[0]
         endpoints, journals, authorities, stores, workers = [], [], [], [], []
         profile = profile_for('sf7-500')
+        admission = SOURCE_ADMISSION
+        if train_depth == 8:
+            profile = replace(profile, spreading_factor=5, preamble=12)
+            admission = RadioAdmission('MY', ((921375000, 500000, 5, 5, 0, 12, 0x42),),
+                                       10000, 180000, 256, 60_000_000)
+        channels = [RadioChannel(clock, train_depth=train_depth, profile=profile) for _ in range(2)]
+        channels[0].peer, channels[1].peer = channels[1], channels[0]
         # Provision the shared original session times before serial negotiation
         # advances either clock. A later endpoint cannot mint a later grant.
         for unit in ('unit-a', 'unit-b'):
             path = directory / unit
             plan = provision(path, unit, data, clock, profile)
             if burst:
-                plan['data_burst'] = dict(POLICY)
+                plan['data_burst'] = policy_for_depth(train_depth)
                 (path / 'grant.json').write_text(json.dumps(plan))
         for index, unit in enumerate(('unit-a', 'unit-b')):
             path = directory / unit
             authority = RunAuthority(path, expected_unit=unit, host_boot_id=BOOT,
-                clock=clock, owner_probe=lambda: True, radio_admission=SOURCE_ADMISSION)
+                clock=clock, owner_probe=lambda: True, radio_admission=admission)
             worker = (BurstSerialWorker(channels[index], policy=authority.data_burst_policy)
                       if burst and index == 0 else SerialWorker(channels[index]))
             identity = worker.discover(expected_board_id=1, expected_version=VERSION)

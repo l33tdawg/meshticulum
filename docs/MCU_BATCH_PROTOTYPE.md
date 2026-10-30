@@ -2,9 +2,9 @@
 
 This is source-only work toward reducing per-packet host/USB admission and
 release round trips. It is **not installed firmware**, a supported serial
-capability, or a measured throughput improvement. Current workers still use
-MBQ1. The production serial enum, framing limits, firmware loop, flow engine,
-owner, durable journal and radio adapter are unchanged.
+capability, or a measured throughput improvement. Workers use scalar MBQ1 or
+the separately admitted [MBQ8 source path](MCU_EIGHT_TRAIN.md). This prototype
+adds no production batch opcode, vector handover or durable batch reservation.
 
 The prototype consists of:
 
@@ -90,6 +90,12 @@ nor another task may mutate boot state during preflight/commit.
 No dynamic allocation is used. The native test bounds the job object at 8 KiB;
 commit additionally holds a fixed temporary queue/boot copy on the stack. Actual
 target stack/RAM headroom must be checked before firmware integration.
+The shared queue now reserves storage for eight scalar slots even when its
+admission remains four. Current native host ABI sizes are 5,672 bytes for the job,
+3,880 for the queue and 72 for boot state; the pinned Xtensa ESP32-S3 compiler
+reports 5,632/3,848/72 bytes respectively. MBQ2 still admits at most four members.
+These `sizeof` values exclude other live stack frames and do not qualify the
+target's stack or internal RAM headroom.
 
 ## Ambiguity, release and original authority
 

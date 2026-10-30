@@ -18,9 +18,10 @@
 #define MESHTICULUM_FIRMWARE "host-fault-test"
 struct FakeBoard {
     unsigned before=0, after=0;
+    uint64_t before_advance_us=0, after_advance_us=0;
     void begin() {}
-    void onBeforeTransmit() { before++; }
-    void onAfterTransmit() { after++; }
+    void onBeforeTransmit() { before++;fake_time+=before_advance_us; }
+    void onAfterTransmit() { after++;fake_time+=after_advance_us; }
 };
 inline FakeBoard board;
 struct FakeRadio {
@@ -34,17 +35,19 @@ struct FakeRadio {
     bool receiving=false, shared_fifo=false, overwrite_during_read=false;
     uint32_t irq_on_standby=0, irq_on_receive=0;
     uint64_t read_advance_us=0, receive_advance_us=0;
+    uint64_t standby_advance_us=0, clear_advance_us=0, start_advance_us=0,
+        finish_advance_us=0, irq_advance_us=0;
     std::vector<uint8_t> received={0xc0,0xdb,0,255};
-    int16_t standby() { receiving=false; flags|=irq_on_standby; irq_on_standby=0; return standby_error; }
+    int16_t standby() { receiving=false; flags|=irq_on_standby; irq_on_standby=0;fake_time+=standby_advance_us; return standby_error; }
     int16_t setStandbyXOSC(bool enabled) { if(warm_error) return warm_error; warm=enabled; return standby(); }
-    int16_t clearIrqFlags(uint32_t) { if(!clear_error) flags=0; return clear_error; }
-    int16_t startTransmit(uint8_t* p,size_t n) { starts++; if(shared_fifo) received.assign(p,p+n); return start_error; }
-    int16_t finishTransmit() { flags=0; return finish_error; }
+    int16_t clearIrqFlags(uint32_t) { if(!clear_error) flags=0;fake_time+=clear_advance_us; return clear_error; }
+    int16_t startTransmit(uint8_t* p,size_t n) { starts++; if(shared_fifo) received.assign(p,p+n);fake_time+=start_advance_us; return start_error; }
+    int16_t finishTransmit() { flags=0;fake_time+=finish_advance_us; return finish_error; }
     int16_t startReceive() { receive_starts++; flags=irq_on_receive;irq_on_receive=0;receiving=true;fake_time+=receive_advance_us;return receive_error; }
     uint32_t getIrqFlags() { return flags; }
     FakeRadio* getMod() { return this; }
     int16_t SPIreadStream(uint16_t,uint8_t* data,size_t) {
-        data[0]=flags>>8; data[1]=flags; return irq_error;
+        data[0]=flags>>8; data[1]=flags;fake_time+=irq_advance_us; return irq_error;
     }
     uint64_t getTimeOnAir(size_t) { return 100000; }
     size_t getPacketLength() { return received.size(); }

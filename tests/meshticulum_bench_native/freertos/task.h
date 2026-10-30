@@ -2,6 +2,10 @@
 #include "FreeRTOS.h"
 inline TaskHandle_t fake_loop_task=reinterpret_cast<TaskHandle_t>(1);
 inline uint32_t fake_notifications=0,fake_notify_gives=0,fake_notify_waits=0,fake_notify_yields=0;
+inline uint32_t fake_stack_min_bytes=4096,fake_stack_queries=0;
+inline UBaseType_t uxTaskGetStackHighWaterMark(TaskHandle_t task) {
+    assert(task==fake_loop_task && task!=nullptr);fake_stack_queries++;return fake_stack_min_bytes;
+}
 inline TaskHandle_t xTaskGetCurrentTaskHandle() { return fake_loop_task; }
 inline void vTaskNotifyGiveFromISR(TaskHandle_t task,BaseType_t* woke) {
     assert(task==fake_loop_task && task!=nullptr);fake_notify_gives++;fake_notifications++;*woke=pdTRUE;

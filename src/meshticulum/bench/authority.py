@@ -28,7 +28,7 @@ from ..scheduler.scheduler import DispatchGrant, LeaseScope
 from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
 from .burst_protocol import (CLOCK_MARGIN_US, INTER_PACKET_RX_US, MAX_CLOCK_RTT_US,
-                             REVERSE_LISTEN_US, validate_policy)
+                             REVERSE_LISTEN_US, validate_policy, policy_depth)
 from .tx_burst import MAX_AUTONOMOUS_HOLD_US, MAX_DEPTH, START_GUARD_US
 from .admission import RadioAdmission,GfskAdmission,Gfsk250Admission
 from .gfsk_profile import GfskProfile,radio_airtime_us,radio_is_fast,radio_is_sf5
@@ -187,7 +187,9 @@ class RunAuthority:
             radio_admission.check(p['country'], p['antenna_confirmed'], self.profile)
             OperationLimits.from_plan(p)
             if 'data_burst' in p:
-                train = MAX_DEPTH * (radio_airtime_us(self.profile, 255)
+                depth = policy_depth(p['data_burst'])
+                require(depth == 4 or radio_is_sf5(self.profile), 'burst_eight_requires_sf5')
+                train = depth * (radio_airtime_us(self.profile, 255)
                                     + START_GUARD_US + INTER_PACKET_RX_US)
                 require(train + REVERSE_LISTEN_US + MAX_CLOCK_RTT_US
                         <= MAX_AUTONOMOUS_HOLD_US - CLOCK_MARGIN_US
@@ -304,7 +306,8 @@ class RunAuthority:
                                     self.deadline_us / 1000000,
                                     self.grant.expires_epoch_us / 1000000)
         maximum = object_limit(self.plan.get('service',{}))
-        limits = CapabilityLimits(208, 832, maximum, 0, 4, maximum, 4, 1, 1,
+        depth = policy_depth(self.plan['data_burst']) if 'data_burst' in self.plan else 4
+        limits = CapabilityLimits(208, 208 * depth, maximum, 0, depth, maximum, 4, 1, 1,
                                   256 if self.public32 and self.service_format == 'MR1.response' else 128, 32)
         private = self.service_kind is ServiceKind.MESSAGE
         feature = Feature.PROTECTED_MESSAGE_V2 if private else Feature.OBJECT_RESUME

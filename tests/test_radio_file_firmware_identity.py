@@ -71,6 +71,39 @@ def test_exact_wired_queue_source_inventory_has_its_own_identity(tmp_path):
         example.firmware_identity(path, pin)
 
 
+def test_profiled_inventory_pins_both_profiler_and_generated_build_option(tmp_path):
+    path, _, source = source_metadata(tmp_path)
+    source['application'].update({'burst_adapter.hpp': 'b' * 64,
+        'experimental/tx_burst.hpp': 'c' * 64, 'native_profile.hpp': 'd' * 64,
+        'native_profile_config.hpp': 'e' * 64})
+    def identity():
+        return 'mtb1-' + example.sha(json.dumps(
+            source['application'], sort_keys=True).encode())[:10]
+    source['identity'] = identity()
+    _, pin = write_source(path, source)
+    assert example.firmware_identity(path, pin) == source['identity']
+    old_identity = source['identity']
+    source['application']['native_profile_config.hpp'] = 'f' * 64
+    source['identity'] = identity()
+    _, pin = write_source(path, source)
+    assert example.firmware_identity(path, pin) != old_identity
+    # Neither a partial profiler inventory nor an unrecognized file is accepted,
+    # even if its self-reported identity correctly hashes that inventory.
+    for removed, added in [('native_profile.hpp', None),
+                           ('native_profile_config.hpp', None),
+                           (None, 'extra.hpp')]:
+        original = dict(source['application'])
+        if removed:
+            del source['application'][removed]
+        if added:
+            source['application'][added] = 'a' * 64
+        source['identity'] = identity()
+        _, pin = write_source(path, source)
+        with pytest.raises(WireError, match='firmware_source_mismatch'):
+            example.firmware_identity(path, pin)
+        source['application'] = original
+
+
 @pytest.mark.parametrize('pin', [None, 0, '', 'a' * 63, 'a' * 65, 'A' * 64, 'g' * 64])
 def test_invalid_pin_is_refused_before_source_read(tmp_path, pin):
     output = tmp_path / 'identity.json'
