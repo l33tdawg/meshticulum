@@ -51,6 +51,9 @@ _POLICY_TERMINAL_RETRY_ITEMS = tuple(POLICY_TERMINAL_RETRY.items())
 POLICY_SCALAR_FILL_PAIR = dict(POLICY_TERMINAL_RETRY, schema='meshticulum.data-burst-policy.v6',
                               scalar_fill_pair=True)
 _POLICY_SCALAR_FILL_PAIR_ITEMS = tuple(POLICY_SCALAR_FILL_PAIR.items())
+POLICY_REPEAT_RETRY = dict(POLICY_SCALAR_FILL_PAIR, schema='meshticulum.data-burst-policy.v7',
+                           selective_repeat_retry=True)
+_POLICY_REPEAT_RETRY_ITEMS = tuple(POLICY_REPEAT_RETRY.items())
 
 
 def validate_policy(value):
@@ -60,7 +63,7 @@ def validate_policy(value):
                   for key, expected in items)
           for items in (_POLICY_ITEMS, _POLICY8_ITEMS, _POLICY32_ITEMS,
                         _POLICY_REPAIR_FILL_ITEMS, _POLICY_TERMINAL_RETRY_ITEMS,
-                        _POLICY_SCALAR_FILL_PAIR_ITEMS)), 'invalid_data_burst_policy')
+                        _POLICY_SCALAR_FILL_PAIR_ITEMS, _POLICY_REPEAT_RETRY_ITEMS)), 'invalid_data_burst_policy')
     return dict(value)
 
 
@@ -111,6 +114,15 @@ def policy_for_scalar_fill_pair():
 
 def policy_scalar_fill_pair(policy):
     return validate_policy(policy).get('scalar_fill_pair', False)
+
+
+def policy_for_repeat_retry():
+    """Explicit v7 admission for fresh proof after a confirmed retry handover."""
+    return dict(_POLICY_REPEAT_RETRY_ITEMS)
+
+
+def policy_repeat_retry(policy):
+    return validate_policy(policy).get('selective_repeat_retry', False)
 
 
 def capability_for_depth(depth=4):
