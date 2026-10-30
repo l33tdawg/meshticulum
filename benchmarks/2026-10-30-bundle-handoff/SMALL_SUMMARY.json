@@ -1,0 +1,153 @@
+{
+  "all_full_allowances_retained": true,
+  "automatic_retry": false,
+  "complete": false,
+  "completed_parts": [
+    4
+  ],
+  "endpoints": {
+    "unit-a": {
+      "all_attempts_RF_DONE": true,
+      "child_terminal": true,
+      "disarmed_status_gate_passed": true,
+      "native_after": {
+        "boot_attempts": 359,
+        "boot_reserved_estimated_airtime_us": 11070960,
+        "dropped_receive": 17
+      },
+      "native_before": {
+        "boot_attempts": 334,
+        "boot_reserved_estimated_airtime_us": 10796960,
+        "dropped_receive": 2
+      },
+      "new_UNKNOWN": 0,
+      "paid_attempts": 25,
+      "paid_reserved_us": 326425,
+      "same_boot": true,
+      "tracked_services_unchanged": true,
+      "unfenced": true
+    },
+    "unit-b": {
+      "all_attempts_RF_DONE": true,
+      "child_terminal": true,
+      "disarmed_status_gate_passed": true,
+      "native_after": {
+        "boot_attempts": 923,
+        "boot_reserved_estimated_airtime_us": 87044864,
+        "dropped_receive": 22
+      },
+      "native_before": {
+        "boot_attempts": 899,
+        "boot_reserved_estimated_airtime_us": 86254464,
+        "dropped_receive": 7
+      },
+      "new_UNKNOWN": 0,
+      "paid_attempts": 24,
+      "paid_reserved_us": 893443,
+      "same_boot": true,
+      "tracked_services_unchanged": true,
+      "unfenced": true
+    }
+  },
+  "full_allocations": {
+    "max_boot_attempts": 1024,
+    "max_boot_estimated_airtime_us": 300000000,
+    "max_frames": 64,
+    "operation_attempt_allowance": 20,
+    "operation_estimated_airtime_allowance_us": 1000000,
+    "radio_lease_ms": 60000,
+    "receiver_operation_attempt_allowance": 20,
+    "receiver_operation_estimated_airtime_allowance_us": 1000000,
+    "scope_seconds": 180,
+    "unit_limits": {
+      "unit-a": {
+        "max_boot_attempts": 1024,
+        "max_boot_estimated_airtime_us": 300000000
+      },
+      "unit-b": {
+        "max_boot_attempts": 1024,
+        "max_boot_estimated_airtime_us": 300000000
+      }
+    }
+  },
+  "goodput_kBps": null,
+  "historical_debt_unchanged": true,
+  "input_sha256": {
+    "PREPARED.json": "ac4faeba1f001836659d2fec85c139080755de9be1a43b6713f838ffd76c3695",
+    "RECONCILED_unit-a.json": "ea8f8b2a168c551fed1abf8362490dd7bb7a5c289c63b5392d0cc9ad2edd622b",
+    "RECONCILED_unit-b.json": "1c844b0ed0ad12e52b83fe3d1a3d1e7fa3e0ffcacaadc1d9f68bf99ca0b4a794",
+    "RESULT.json": "233c4625b5f1819c98b26b7713cc344e64128aa2eb4d646ec6e9b5b5faa65dd4",
+    "SCOPE.json": "d4e0e08aca1f94ca0aba81bff7003d8d7d7f027d4fabc7cf7bd9940dcc7c045b",
+    "file-unit-b-RESULT.json": "28b787b47c1422614125fe19d6b85d9e905d822ca6a672701709ef3924db1255",
+    "part-2-unit-a-RESULT.json": "5af459896fc4f6ee0282c1459a01434d2fe21e0371353145ceb318bf9cd3cbc5",
+    "part-4-unit-b-RESULT.json": "1758331ce99e25921d5f9bd18afbec6231b4ac8b7f46fb08b875f95d0ebc3cc7"
+  },
+  "matched_speedup_claim": false,
+  "order": [
+    4,
+    2,
+    0,
+    3,
+    1
+  ],
+  "part_bytes": 1000,
+  "profile": {
+    "bandwidth_hz": 500000,
+    "chip_power_dbm": 0,
+    "coding_rate": 5,
+    "frequency_hz": 921375000,
+    "lease_ms": 60000,
+    "max_boot_attempts": 1024,
+    "max_boot_estimated_airtime_us": 300000000,
+    "preamble": 12,
+    "spreading_factor": 5,
+    "sync_word": 66
+  },
+  "receiver": "unit-a",
+  "receiver_verified_parts": [
+    4,
+    2
+  ],
+  "recovery_failure": {
+    "final_ACK_could_not_be_sent_after_cap": true,
+    "last_allowed_ACK_to_endpoint_completion_us": 786717,
+    "last_allowed_ACK_to_verified_receive_us": 848783,
+    "packet_loss_cause_unresolved": true,
+    "part": 2,
+    "planned_DATA_frames": 9,
+    "receiver_ACK_attempts": 20,
+    "receiver_cap": 20,
+    "sender_acked_frames": 8,
+    "sender_retransmits": 5,
+    "sender_transmissions": 14
+  },
+  "refunds": 0,
+  "run_budget": {
+    "unit-a": {
+      "attempts": 100,
+      "estimated_airtime_us": 5000000
+    },
+    "unit-b": {
+      "attempts": 100,
+      "estimated_airtime_us": 5000000
+    }
+  },
+  "schema": "meshticulum.sf5-small-partial-handoff.v1",
+  "scope_sha256": "d4e0e08aca1f94ca0aba81bff7003d8d7d7f027d4fabc7cf7bd9940dcc7c045b",
+  "sender": "unit-b",
+  "source_commit": "541a3796454291b1d8cb573b5e5e60dd4fc4d1ac",
+  "transition": {
+    "four_handoff_target_proven": false,
+    "from_part": 4,
+    "host_submit_not_measured_RF_start": true,
+    "receipt_to_next_first_queued_DATA_us": 382220,
+    "receipt_to_next_invocation_us": 245293,
+    "required_transitions": 4,
+    "sender_monotonic_clock": true,
+    "to_part": 2,
+    "transitions_measured": 1
+  },
+  "useful_bytes_planned": 5000,
+  "wheel_sha256": "cab6694a2004916af169b929b55bc7e3acd5c0971f8af1210428ffbabf346f1d",
+  "whole_file_verified": false
+}

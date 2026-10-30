@@ -1,0 +1,316 @@
+{
+  "allocation": {
+    "all_reserved_allowances_retained": true,
+    "automatic_retry": false,
+    "full_scope_reserved": {
+      "unit-a": {
+        "attempts": 420,
+        "estimated_airtime_us": 20000000
+      },
+      "unit-b": {
+        "attempts": 140,
+        "estimated_airtime_us": 5000000
+      }
+    },
+    "historical_debt_or_fences_changed": false,
+    "note": "Native boot counters, paid host reservations, and full scope allocations are distinct quantities. Failed or unstarted parts do not refund the allocation.",
+    "parts_reserved": [
+      4,
+      2,
+      0,
+      3,
+      1
+    ],
+    "refunds": {
+      "unit-a": {
+        "attempts": 0,
+        "estimated_airtime_us": 0
+      },
+      "unit-b": {
+        "attempts": 0,
+        "estimated_airtime_us": 0
+      }
+    },
+    "scope_seconds": 180
+  },
+  "cleanup": {
+    "global_quiescence_proven": false,
+    "postflight_status_gates_passed_both": true,
+    "receiver_forced_cleanup": true,
+    "sender_forced_cleanup": false,
+    "supervised_sdk_children_terminal": true,
+    "tracked_services_unchanged_both": true
+  },
+  "complete": false,
+  "endpoints": {
+    "unit-a": {
+      "child": {
+        "failure": {
+          "reason": "batch_child_failed",
+          "type": "AssertionError"
+        },
+        "forced_cleanup": false,
+        "returncode": 1,
+        "terminal": true
+      },
+      "durable_journal": {
+        "airtime_limit_us": 4000000,
+        "attempt_limit": 84,
+        "attempts": 34,
+        "fenced": false,
+        "part": 4,
+        "read_only_reconciled": true,
+        "reserved_estimated_airtime_us": 1329536,
+        "states": {
+          "RESERVED": 0,
+          "RF_DONE": 34,
+          "UNKNOWN": 0
+        }
+      },
+      "flow_diagnostics_available": true,
+      "native": {
+        "after": {
+          "attempts": 334,
+          "dropped_receive": 2,
+          "reserved_estimated_airtime_us": 10796960
+        },
+        "before": {
+          "attempts": 300,
+          "dropped_receive": 0,
+          "reserved_estimated_airtime_us": 9619200
+        },
+        "boot_identity_unchanged": true,
+        "delta": {
+          "attempts": 34,
+          "dropped_receive": 2,
+          "reserved_estimated_airtime_us": 1177760
+        },
+        "postflight_gate_requires": [
+          "disarmed",
+          "not_transmitting",
+          "not_fenced"
+        ],
+        "postflight_status_gate_passed": true
+      },
+      "role": "sender",
+      "runtime": {
+        "editable": false,
+        "system_site_packages": false,
+        "verified_files": 72,
+        "wheel_sha256": "cab6694a2004916af169b929b55bc7e3acd5c0971f8af1210428ffbabf346f1d"
+      },
+      "tracked_host_state": {
+        "host_boot_unchanged": true,
+        "service_lifetimes_unchanged": true,
+        "service_states_unchanged": true,
+        "tracked_services": 20
+      }
+    },
+    "unit-b": {
+      "child": {
+        "failure": {
+          "reason": "management_stdin_closed",
+          "type": "AssertionError"
+        },
+        "forced_cleanup": true,
+        "returncode": 1,
+        "terminal": true
+      },
+      "durable_journal": {
+        "airtime_limit_us": 1000000,
+        "attempt_limit": 28,
+        "attempts": 28,
+        "fenced": false,
+        "part": 4,
+        "read_only_reconciled": true,
+        "reserved_estimated_airtime_us": 365596,
+        "states": {
+          "RESERVED": 0,
+          "RF_DONE": 28,
+          "UNKNOWN": 0
+        }
+      },
+      "flow_diagnostics_available": false,
+      "native": {
+        "after": {
+          "attempts": 899,
+          "dropped_receive": 7,
+          "reserved_estimated_airtime_us": 86254464
+        },
+        "before": {
+          "attempts": 871,
+          "dropped_receive": 0,
+          "reserved_estimated_airtime_us": 85947584
+        },
+        "boot_identity_unchanged": true,
+        "delta": {
+          "attempts": 28,
+          "dropped_receive": 7,
+          "reserved_estimated_airtime_us": 306880
+        },
+        "postflight_gate_requires": [
+          "disarmed",
+          "not_transmitting",
+          "not_fenced"
+        ],
+        "postflight_status_gate_passed": true
+      },
+      "role": "receiver",
+      "runtime": {
+        "editable": false,
+        "system_site_packages": false,
+        "verified_files": 72,
+        "wheel_sha256": "cab6694a2004916af169b929b55bc7e3acd5c0971f8af1210428ffbabf346f1d"
+      },
+      "tracked_host_state": {
+        "host_boot_unchanged": true,
+        "service_lifetimes_unchanged": true,
+        "service_states_unchanged": true,
+        "tracked_services": 18
+      }
+    }
+  },
+  "evidence": {
+    "artifact_sha256": {
+      "PAID_JOURNAL_unit-a.json": "f15a3fda0a50661bfd26ebbab7057ee17b58a99be62988198526d52da8b2384b",
+      "PAID_JOURNAL_unit-b.json": "58fe7a355b885cf1ec8b28c5534c12276a87c5ee9da48cbc941536ca25f5cbe9",
+      "PREPARED.json": "a68261a1ef4917f8a804ff6bfc0e1d267b3dc29b846c4272b2f39b576b3155cd",
+      "RECONCILED_unit-a.json": "f3062420b4614399b118bb536496f42aa7f68a142a030d4bd25c6127aaf5c956",
+      "RECONCILED_unit-b.json": "5178b7821b322fd0a785deb467e2d7e6758995ce20d6a5bfc467840812d58853",
+      "RESULT.json": "bf50310b3cd43af48a15a1f9ab2ce12dc07789a8b44e368b3685dd7f16b15a11",
+      "SCOPE.json": "6cdaf76331572169209da91e524da86a4b022b45fda829070276e7f57cbbf3c0",
+      "file-unit-a-RESULT.json": "d6440689cb02e89c79b40967fe5b783f227738a0888a8a8ea7eade5147514d46"
+    },
+    "original_result_preserved": true,
+    "original_result_sha256": "bf50310b3cd43af48a15a1f9ab2ce12dc07789a8b44e368b3685dd7f16b15a11",
+    "readbacks_created_grants": 0,
+    "readbacks_opened_radio": false,
+    "reconciled_after_original_result": true
+  },
+  "failure": {
+    "diagnosis": {
+      "first_part_source_planned_data_frames": 56,
+      "interpretation": "The receiver exhausted its admitted per-part ACK attempt allowance before the part completed. This is consistent with the observed sender stall; the retained record does not establish a sole cause or the sender WireError subtype.",
+      "receiver_attempt_cap": 28,
+      "receiver_attempt_cap_reached": true,
+      "sender_acked_frames": 28
+    },
+    "first_part_only": true,
+    "handoff_occurred": false,
+    "receiver_stop_followed_peer_failure": true,
+    "receiver_stop_reason": "management_stdin_closed",
+    "sender_error_subtype": null,
+    "sender_error_subtype_unavailable_reason": "Failure export retained exception types, not WireError message.",
+    "sender_exception_type": {
+      "errors": [
+        {
+          "type": "WireError"
+        }
+      ],
+      "type": "ExceptionGroup"
+    }
+  },
+  "limits": [
+    "No completed transfer, handoff latency, useful goodput, or range result is established.",
+    "Direction, SF5/preamble-12 waveform, workload, and supervisor lifecycle differ from the earlier SF7 qualification; this is not a matched performance comparison.",
+    "Receive-drop counter increments are device diagnostics, not a measured application packet-loss rate.",
+    "Missing receiver flow/profile values remain null; readback resolves paid journal and native counters only.",
+    "Reconciliation records the failure and retained debt; it does not revise the original failed result or authorize a successor."
+  ],
+  "outcome": "failed",
+  "planning_observation": {
+    "difference_us": 28,
+    "explanation": "The deployed ceil(estimate * 1.10) calculation reserves one extra microsecond per ACK versus the integer cold model for this estimate. Actual journal values are retained.",
+    "receiver_host_reserved_actual_us": 365596,
+    "receiver_host_reserved_cold_estimate_us": 365568
+  },
+  "profiling": {
+    "missing_receiver_profile_reason": "No final receiver batch metrics were returned.",
+    "unit-a": {
+      "dropped_samples": 0,
+      "invalid_samples": 0,
+      "phases": 24,
+      "saturated_phases": 0
+    },
+    "unit-b": null
+  },
+  "radio_profile": {
+    "bandwidth_hz": 500000,
+    "chip_power_dbm": 0,
+    "coding_rate": 5,
+    "frequency_hz": 921375000,
+    "lease_ms": 60000,
+    "max_boot_attempts": 1024,
+    "max_boot_estimated_airtime_us": 300000000,
+    "preamble": 12,
+    "spreading_factor": 5,
+    "sync_word": 66
+  },
+  "receiver_flow": {
+    "available": false,
+    "duplicates": null,
+    "reason": "The receiver child emitted no final batch metrics before management-EOF containment; its durable journal and native counters were separately read back.",
+    "received_bytes": null,
+    "retransmits": null
+  },
+  "record_date": "2026-10-30",
+  "sanitized": true,
+  "schema": "meshticulum.bundle-handoff-failure-summary.v1",
+  "sender_flow": {
+    "acked_frames": 28,
+    "complete": false,
+    "duplicates": 0,
+    "physical_pending": 0,
+    "queued_data": 34,
+    "received_ack_frames": 25,
+    "retained_trace": {
+      "all_recorded_attempts_covered": true,
+      "complete_ordered_lifecycles": 34,
+      "driver_estimate_sum_matches_native_delta": true,
+      "events": 204,
+      "requests": 34
+    },
+    "retransmits": 5,
+    "rf_done": 34,
+    "worker_pending": 0
+  },
+  "source": {
+    "commit": "541a3796454291b1d8cb573b5e5e60dd4fc4d1ac",
+    "firmware": "mtb1-6cfde1fdd4",
+    "release_qualification_claim": false,
+    "wheel_sha256": "cab6694a2004916af169b929b55bc7e3acd5c0971f8af1210428ffbabf346f1d"
+  },
+  "timing": {
+    "child_launch_to_first_part_invocation_us": 420445,
+    "child_launch_to_process_start_us": 30898,
+    "clock_basis": "same sender host monotonic clock; elapsed host time",
+    "first_part_invocation_to_failure_return_us": 42086329,
+    "first_part_invocation_to_first_queued_data_submit_us": 704599,
+    "interpart_receipt_to_next_invocation_us": null,
+    "interpart_receipt_to_next_queued_data_us": null,
+    "unavailable_reason": "No first-part authenticated receipt, verified whole file, or inter-part transition occurred.",
+    "whole_file_goodput_bytes_per_second": null,
+    "whole_file_sender_startup_to_authenticated_receipt_us": null
+  },
+  "workload": {
+    "authenticated_part_receipt_observed": false,
+    "completed_parts": [],
+    "host_profile_enabled": true,
+    "mode": "queued",
+    "part_useful_bytes": 10000,
+    "planned_order": [
+      4,
+      2,
+      0,
+      3,
+      1
+    ],
+    "receiver": "unit-b",
+    "sender": "unit-a",
+    "started_parts": [
+      4
+    ],
+    "useful_bytes": 50000,
+    "whole_file_verified": false
+  }
+}
