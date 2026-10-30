@@ -14,7 +14,7 @@ from meshticulum.bench.admission import RadioAdmission
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.burst_protocol import (ACK, POLICY, policy_for_depth,
-    policy_for_flow_window, policy_for_repair_fill, policy_for_terminal_retry, policy_for_scalar_fill_pair, policy_for_repeat_retry, policy_for_repair_train)
+    policy_for_flow_window, policy_for_repair_fill, policy_for_terminal_retry, policy_for_scalar_fill_pair, policy_for_repeat_retry, policy_for_repair_train, policy_for_train12)
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.serial_protocol import Decoder, Frame, Message
@@ -30,12 +30,12 @@ from tests.test_meshticulum_bench_runtime import BOOT, Clock, provision
 
 class RadioChannel(Channel):
     """Exact USB records with explicitly stepped local RF/result delivery."""
-    def __init__(self, clock, *, train_depth=4, profile=None):
+    def __init__(self, clock, *, train_depth=4, train_frames=None, profile=None):
         self.clock = clock
         self.peer = None
         self.packets, self.delivered, self.held = {}, set(), {}
         options = {} if profile is None else {'profile': profile}
-        super().__init__(train_depth=train_depth, **options)
+        super().__init__(train_depth=train_depth, train_frames=train_frames, **options)
         self.on_data = lambda frame, packet: self.packets.__setitem__(frame.request, packet)
 
     @property
@@ -86,7 +86,7 @@ class RadioChannel(Channel):
 @pytest.fixture
 def composition(tmp_path):
     opened = []
-    def make(data=b'x' * 100, *, burst=True, train_depth=4, flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False):
+    def make(data=b'x' * 100, *, burst=True, train_depth=4, flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False, train12=False):
         clock = Clock()
         directory = tmp_path / str(len(opened))
         directory.mkdir(mode=0o700)
@@ -97,7 +97,7 @@ def composition(tmp_path):
             profile = replace(profile, spreading_factor=5, preamble=12)
             admission = RadioAdmission('MY', ((921375000, 500000, 5, 5, 0, 12, 0x42),),
                                        10000, 180000, 256, 60_000_000)
-        channels = [RadioChannel(clock, train_depth=train_depth, profile=profile) for _ in range(2)]
+        channels = [RadioChannel(clock, train_depth=train_depth, train_frames=12 if train12 else None, profile=profile) for _ in range(2)]
         channels[0].peer, channels[1].peer = channels[1], channels[0]
         # Provision the shared original session times before serial negotiation
         # advances either clock. A later endpoint cannot mint a later grant.
@@ -105,7 +105,7 @@ def composition(tmp_path):
             path = directory / unit
             plan = provision(path, unit, data, clock, profile)
             if burst:
-                plan['data_burst'] = (policy_for_repair_train() if repair_train else policy_for_repeat_retry() if repeat_retry else policy_for_scalar_fill_pair() if scalar_fill_pair else policy_for_terminal_retry() if terminal_retry else
+                plan['data_burst'] = (policy_for_train12() if train12 else policy_for_repair_train() if repair_train else policy_for_repeat_retry() if repeat_retry else policy_for_scalar_fill_pair() if scalar_fill_pair else policy_for_terminal_retry() if terminal_retry else
                                      policy_for_repair_fill() if repair_fill else
                                      policy_for_depth(train_depth) if flow_window is None
                                       else policy_for_flow_window(flow_window))

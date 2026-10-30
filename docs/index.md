@@ -101,3 +101,8 @@ an explicit v8 policy. After original FINAL handover and authenticated peer
 receipt, they group distinct, already proven missing frames into trains of at
 most eight packets. The original per-frame accounting and listening floors
 remain. Source controls passed, but v8 has no physical qualification result.
+
+[Twelve-frame trains with eight queue slots](MCU_TWELVE_TRAIN.md) describes the
+explicit v9 source experiment, its new capability/OPEN binding and paired
+source model. It retains the original two-second deadline and receive floors;
+no physical qualification or throughput gain is claimed.

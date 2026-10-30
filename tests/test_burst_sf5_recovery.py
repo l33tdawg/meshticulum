@@ -23,7 +23,7 @@ from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.burst_protocol import (
     ACK, CAPABILITY, CANCEL, CLOCK, DATA, EVENT, OPEN, POLICY, STATUS, TOKEN,
     INTER_PACKET_RX_US, REVERSE_LISTEN_US, CAPABILITY8, policy_for_depth, policy_for_flow_window,
-    policy_for_repair_fill, policy_for_terminal_retry, policy_for_scalar_fill_pair, policy_for_repeat_retry, policy_for_repair_train,
+    policy_for_repair_fill, policy_for_terminal_retry, policy_for_scalar_fill_pair, policy_for_repeat_retry, policy_for_repair_train, policy_for_train12, capability_for_depth, capability_request_body,
 )
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.flow_runtime import BenchFlow
@@ -190,15 +190,17 @@ class Air:
 
 class RadioChannel:
     """Profile-aware keyless MCU record peer with asynchronous physical events."""
-    def __init__(self, timeline, air, index, *, train_depth=4):
+    def __init__(self, timeline, air, index, *, train_depth=4, train_frames=None):
         self.timeline, self.air, self.index = timeline, air, index
         self.train_depth = train_depth
+        self.train_frames = train_depth if train_frames is None else train_frames
+        self.admitted = self.burst_deadline = 0
         self.inbound = bytearray()
         self.events, self.ack_receipts = {}, {}
         self.arm_request = self.arm_end = self.token = self.open_end = 0
         self.context = bytes(32)
         self.attempts = self.airtime = self.train_count = 0
-        self.next_start_us = 0
+        self.next_start_us = self.last_rx_start_us = 0
         self.armed = self.fenced = False
         self.transmitting = False
         self.queued = []
@@ -243,6 +245,16 @@ class RadioChannel:
             self.dispatch_scheduled = True
             self.timeline.schedule(at, self.dispatch)
             return
+        # Actual native latest-start admission retains100ms headroom. A late
+        # queued suffix becomes known-unsent; it does not acquire another hold.
+        if now + self.events[self.queued[0][0]][4] + 100_000 > self.burst_deadline:
+            for request, _ in self.queued:
+                self.event(request, Stage.NOT_SENT, now)
+            self.queued.clear()
+            if self.train_count:
+                self.next_start_us = max(self.next_start_us, self.last_rx_start_us + REVERSE_LISTEN_US)
+                self.train_count = 0
+            return
         request, packet = self.queued.pop(0)
         self.event(request, Stage.ISSUED, now)
         self.event(request, Stage.STARTED, now)
@@ -252,7 +264,8 @@ class RadioChannel:
             self.transmitting = False
             self.event(request, Stage.RF_DONE, at)
             self.train_count += 1
-            tail = self.train_count >= self.train_depth or not self.queued
+            self.last_rx_start_us = at
+            tail = self.train_count >= self.train_frames or not self.queued
             self.next_start_us = at + (REVERSE_LISTEN_US if tail else INTER_PACKET_RX_US)
             if tail:
                 self.train_count = 0
@@ -277,9 +290,9 @@ class RadioChannel:
             reply(Message.HELLO_REPLY, struct.pack('!BBH', 1, 1, 255)
                   + (VERSION.encode() + b'\0').ljust(16, b'\0'))
         elif frame.type is Message.BURST_CAPABILITIES:
-            assert frame.body == (b'\x08' if self.train_depth == 8 else b'')
+            assert frame.body == capability_request_body(self.train_depth, train_frames=self.train_frames)
             reply(Message.BURST_CAPABILITIES_REPLY,
-                  CAPABILITY8 if self.train_depth == 8 else CAPABILITY)
+                  capability_for_depth(self.train_depth, train_frames=self.train_frames))
         elif frame.type is Message.ARM:
             self.armed = True
             self.arm_request, self.arm_end = frame.request, self.now_us() + PROFILE.lease_ms * 1000
@@ -292,10 +305,9 @@ class RadioChannel:
         elif frame.type is Message.BURST_CLOCK:
             reply(Message.BURST_CLOCK_REPLY, CLOCK.pack(self.now_us(), self.arm_request, self.arm_end))
         elif frame.type is Message.BURST_OPEN:
-            body = frame.body
-            if self.train_depth == 8:
-                assert len(body) == OPEN.size + 1 and body[:1] == b'\x08'
-                body = body[1:]
+            prefix = capability_request_body(self.train_depth, train_frames=self.train_frames)
+            assert len(frame.body) == OPEN.size + len(prefix) and frame.body[:len(prefix)] == prefix
+            body = frame.body[len(prefix):]
             self.context, arm, self.open_end = OPEN.unpack(body)
             assert arm == self.arm_request and self.open_end <= self.arm_end
             self.token = frame.request
@@ -307,8 +319,19 @@ class RadioChannel:
             assert digest == hashlib.sha256(packet).digest()
             assert estimate == estimated_airtime_us(PROFILE, size)
             assert self.now_us() < end <= self.open_end
+            assert end - self.now_us() <= 2_000_000
+            needed = estimate + 105_000 + sum(e[4] + 105_000 for e in self.events.values()
+                if e[1] not in (Stage.RF_DONE, Stage.NOT_SENT, Stage.UNKNOWN))
+            needed += max(0, self.next_start_us - self.now_us())
+            if (self.admitted >= self.train_frames or len(self.events) >= self.train_depth
+                    or self.burst_deadline and end != self.burst_deadline
+                    or needed > end - self.now_us()):
+                reply(Message.REFUSED, b'\x08')
+                return
             self.attempts += 1
             self.airtime += estimate
+            self.admitted += 1
+            self.burst_deadline = end
             self.events[frame.request] = (token, Stage.QUEUED, self.now_us(), digest,
                                           estimate, size, end, 0, 0, 0)
             assert len(self.events) <= self.train_depth, 'native retained capacity exceeded'
@@ -324,6 +347,8 @@ class RadioChannel:
                 held = self.events[request]
                 assert (token, stage, at, digest) == (held[0], held[1], held[2], held[3])
                 del self.events[request]
+                if not self.events:
+                    self.admitted = self.burst_deadline = 0
                 self.ack_receipts[frame.request] = frame.body
             reply(Message.BURST_ACK_REPLY, frame.body)
         elif frame.type is Message.BURST_STATUS:
@@ -374,16 +399,16 @@ class RadioChannel:
 def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
              receipt_confirmation=False, host_work_us=(0, 0), host_step_work_us=(0, 0), host_pump=False,
              train_depth=4, sender_cap=20, drop_ack_seqs=None, payload=PAYLOAD,
-             flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False, service=None, operation_limits=None, observe=None):
+             flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False, train12=False, service=None, operation_limits=None, observe=None):
     timeline = Timeline()
     air = Air(timeline, drop_data=drop_data, drop_final_ack=drop_final_ack,
               drop_ack_seqs=drop_ack_seqs, payload=payload)
-    air.channels = [RadioChannel(timeline, air, i, train_depth=train_depth) for i in range(2)]
+    air.channels = [RadioChannel(timeline, air, i, train_depth=train_depth, train_frames=12 if train12 else None) for i in range(2)]
     results = [{}, {}]
     tmp_path.mkdir(mode=0o700, parents=True, exist_ok=True)
     for unit in ('unit-a', 'unit-b'):
         plan = provision(tmp_path / unit, unit, payload, timeline.clock, PROFILE)
-        plan['data_burst'] = (policy_for_repair_train() if repair_train else policy_for_repeat_retry() if repeat_retry else policy_for_scalar_fill_pair() if scalar_fill_pair else policy_for_terminal_retry() if terminal_retry else
+        plan['data_burst'] = (policy_for_train12() if train12 else policy_for_repair_train() if repair_train else policy_for_repeat_retry() if repeat_retry else policy_for_scalar_fill_pair() if scalar_fill_pair else policy_for_terminal_retry() if terminal_retry else
                                      policy_for_repair_fill() if repair_fill else
                              policy_for_depth(train_depth) if flow_window is None
                               else policy_for_flow_window(flow_window))
@@ -562,6 +587,7 @@ def test_queue_model_uses_actual_occupancy_for_reverse_listen(queued_tail):
             hashlib.sha256(packet).digest(), estimate, len(packet),
             timeline.now + 2_000_000, 0, 0, 0)
         channel.queued.append((request, packet))
+    channel.burst_deadline = timeline.now + 2_000_000
     channel.dispatch()
     assert air.frames[0].start == timeline.now
     # Service only through the first terminal event. A host cannot assume a

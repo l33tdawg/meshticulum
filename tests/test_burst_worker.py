@@ -10,7 +10,7 @@ import pytest
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.burst_protocol import (
     ACK, CAPABILITY, CANCEL, CLOCK, DATA, EVENT, OPEN, POLICY, STATUS, TOKEN,
-    capability_for_depth, capability_request_body, policy_for_depth,
+    capability_for_depth, capability_request_body, policy_for_depth, policy_for_train12,
 )
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.linux_hat import HardwareError
@@ -24,8 +24,9 @@ PROFILE = RadioProfile(921375000, 500000, 7, 5, 0, 8, 0x42, 60000, 128, 20_000_0
 
 
 class Channel:
-    def __init__(self, fault=None, *, train_depth=4, profile=PROFILE):
+    def __init__(self, fault=None, *, train_depth=4, train_frames=None, profile=PROFILE):
         self.train_depth = train_depth
+        self.train_frames = train_depth if train_frames is None else train_frames
         self.profile = profile
         self.time = 100.
         self.inbound = bytearray()
@@ -81,12 +82,12 @@ class Channel:
             reply(Message.HELLO_REPLY, struct.pack('!BBH', 1, 1, 255)
                   + (VERSION.encode() + b'\0').ljust(16, b'\0'))
         elif frame.type is Message.BURST_CAPABILITIES:
-            if frame.body != capability_request_body(self.train_depth):
+            if frame.body != capability_request_body(self.train_depth, train_frames=self.train_frames):
                 reply(Message.REFUSED, b'\x01')
                 return
             reply(Message.BURST_CAPABILITIES_REPLY,
                   b'?' * len(CAPABILITY) if self.fault == 'capability'
-                  else capability_for_depth(self.train_depth))
+                  else capability_for_depth(self.train_depth, train_frames=self.train_frames))
         elif frame.type is Message.DISARM:
             reply(Message.DISARM_REPLY, b'\0')
         elif frame.type is Message.ARM:
@@ -100,7 +101,7 @@ class Channel:
             if self.fault == 'slow_clock':
                 self.time += .051
         elif frame.type is Message.BURST_OPEN:
-            prefix = capability_request_body(self.train_depth)
+            prefix = capability_request_body(self.train_depth, train_frames=self.train_frames)
             assert frame.body[:len(prefix)] == prefix
             self.context, arm, self.open_end = OPEN.unpack(frame.body[len(prefix):])
             assert arm == self.arm_request and self.open_end <= self.arm_end
@@ -182,9 +183,9 @@ class Channel:
 def setup(tmp_path):
     tmp_path.chmod(0o700)
     journals = []
-    def make(fault=None, authorize=lambda: True, profile=PROFILE, train_depth=4):
-        channel = Channel(fault, train_depth=train_depth, profile=profile)
-        worker = BurstSerialWorker(channel, policy=policy_for_depth(train_depth))
+    def make(fault=None, authorize=lambda: True, profile=PROFILE, train_depth=4, train12=False):
+        channel = Channel(fault, train_depth=train_depth, train_frames=12 if train12 else None, profile=profile)
+        worker = BurstSerialWorker(channel, policy=policy_for_train12() if train12 else policy_for_depth(train_depth))
         identity = worker.discover(expected_board_id=1, expected_version=VERSION)
         path = tmp_path / (str(len(journals)) + '.sqlite')
         journal = AttemptJournal(path, binding=journal_binding(b'c' * 32, identity, profile),
