@@ -28,7 +28,13 @@ The separate [v6 scalar-fill pair sample](../benchmarks/2026-10-30-sf5-scalar-fi
 retained the SPI8 firmware and both MCU boots, and verified the file in
 19.551794 seconds including startup, or 1,222.394221 B/s. It recorded 17 extra
 offers and 26 DATA retries. Different loss and recovery patterns prevent
-causal attribution of its higher rate to v6. All seven samples miss the target.
+causal attribution of its higher rate to v6. The subsequent
+[header-preservation sample](../benchmarks/2026-10-30-sf5-header-preserve-profile/README.md)
+kept v6 and 8 MHz SPI after a genuine firmware upgrade. It verified the same
+file in 14.138817 seconds including startup, or 1,690.381876 B/s, with 17 DATA
+retries. Its observed 38.284511% increase over the preceding sample does not
+isolate the firmware effect: boots and loss patterns also differed. All eight
+samples miss the target; the earlier 2,026.493477 B/s sample remains the best.
 
 ## Existing piece and recovery behavior
 
@@ -172,10 +178,22 @@ outstanding was 10.346933 seconds. Neither that interval nor the observed
 rate increase isolates the benefit of an extra offer; the matched source
 model remains separate evidence.
 
-Further work examines queue refill, receive handling and release/host costs while keeping
-canonical ACK evidence, one selective offer per flight, paid attempts and
-original finite deadlines. A source model or a faster isolated number cannot
-qualify the 3,000 useful B/s goal.
+The header-preservation sample recorded 7.590718 seconds inside DATA envelopes
+and 5.848771 seconds without DATA outstanding. Its 0.430709-second process
+startup and 0.268619-second wait to first DATA complete the disjoint
+14.138817-second sender-clock partition. Fifteen retries were selective and two
+were ordinary; 18 scalar extra offers and 14 repair-fill turns were recorded.
+These observations do not identify which change caused the shorter transfer.
+The historical `IRQ_RESTART_HEADER_ONLY` category includes selective clearing
+on this firmware and therefore does not prove an actual restart or packet drop.
+
+Further work examines recovery, queue refill, receive handling and release/host
+costs while preserving canonical ACK evidence, paid attempts and original finite
+deadlines. The [accepted R13 source revision](FLOW_R13_REPEAT_RETRY_REVIEW.md)
+permits another selective opportunity only after an accepted retry handover and
+fresh proof for that attempt; the eight physical samples above do not test it.
+A source model or a faster isolated number cannot qualify the 3,000 useful B/s
+goal.
 
 Further physical comparisons must use equal useful workloads, exact installed
 source/firmware correspondence and original finite budgets. Retain failed runs

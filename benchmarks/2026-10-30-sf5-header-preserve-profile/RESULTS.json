@@ -1,0 +1,935 @@
+{
+  "ACK_attempts": 25,
+  "ACK_received": 21,
+  "CONTROL_attempts": 1,
+  "DATA_attempts": 145,
+  "DATA_retries": 17,
+  "all_bursts_drained": true,
+  "all_serial_channels_closed": true,
+  "checkpoint_above_2800_achieved": false,
+  "comparison": {
+    "fresh_pack_signature_sessions_and_grants": true,
+    "genuine_header_preserve_firmware_upgrade": true,
+    "heltec_spi_hz_from": 8000000,
+    "heltec_spi_hz_to": 8000000,
+    "identical_useful_payload": true,
+    "isolated_causal_gain_established": false,
+    "loss_patterns_controlled": false,
+    "observed_rate_change_percent": 38.28451135621884,
+    "previous_result_sha256": "ef0852b8a426031cc8e2d502909e918855b9d00a4d1554da7f4f310bc3ad39cd",
+    "previous_useful_bytes_per_second": 1222.3942212157103,
+    "rx_header_preserve_from": false,
+    "rx_header_preserve_to": true,
+    "same_RF_waveform": true,
+    "same_firmware": false,
+    "same_host_runtime": true,
+    "same_logical_window": true,
+    "same_mcu_boots": false,
+    "same_physical_train_bound_and_guards": true,
+    "scalar_fill_pair_from": true,
+    "scalar_fill_pair_to": true,
+    "selective_repair_fill_unchanged": true,
+    "selective_terminal_retry_unchanged": true
+  },
+  "date": "2026-10-30",
+  "endpoints": {
+    "receiver": {
+      "after_observation_sha256": "06d767a87f4c31823d8d0579c7f8cb86106bede7c9c5eaf4790d9a36bdd58024",
+      "attempts": 25,
+      "before_observation_sha256": "b135f69df25ef8a91b8ee34a30435d322e942e29764f3f80174eac0c02dbf6cb",
+      "host_phase_timings": {
+        "clock": "time.perf_counter_ns",
+        "inclusive": true,
+        "phases": {
+          "cipher_open": {
+            "count": 128,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 5023780,
+            "min_ns": 981772,
+            "saturated": false,
+            "total_ns": 179090580
+          },
+          "cipher_seal": {
+            "count": 25,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 38327322,
+            "min_ns": 815519,
+            "saturated": false,
+            "total_ns": 72231419
+          },
+          "flow_accounting": {
+            "count": 3203,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 389967,
+            "min_ns": 75835,
+            "saturated": false,
+            "total_ns": 346976840
+          },
+          "flow_dispatch": {
+            "count": 2255,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 5834,
+            "min_ns": 875,
+            "saturated": false,
+            "total_ns": 3566891
+          },
+          "flow_pump": {
+            "count": 2255,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 67714858,
+            "min_ns": 7875,
+            "saturated": false,
+            "total_ns": 873951290
+          },
+          "flow_receive": {
+            "count": 3330,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 11760265,
+            "min_ns": 1985711,
+            "saturated": false,
+            "total_ns": 7757806585
+          },
+          "flow_step": {
+            "count": 3202,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 70042702,
+            "min_ns": 2275926,
+            "saturated": false,
+            "total_ns": 9962491388
+          },
+          "host_loop_sleep": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "journal_transaction": {
+            "count": 54,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 4576644,
+            "min_ns": 477760,
+            "saturated": false,
+            "total_ns": 43525516
+          },
+          "queue_admission_wait": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "queue_call": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "queue_clock": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "queue_pump": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "queue_reserve": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "queue_serial_write": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "queue_terminal_settle": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "release_commit": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "release_request": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "release_roundtrip": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "serial_os_read": {
+            "count": 197,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 26542,
+            "min_ns": 3500,
+            "saturated": false,
+            "total_ns": 1715332
+          },
+          "serial_os_write": {
+            "count": 54,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 56001,
+            "min_ns": 9042,
+            "saturated": false,
+            "total_ns": 1066068
+          },
+          "serial_pacing_sleep": {
+            "count": 26,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 2121923,
+            "min_ns": 2057172,
+            "saturated": false,
+            "total_ns": 53615958
+          },
+          "serial_read": {
+            "count": 3385,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 15684144,
+            "min_ns": 14000,
+            "saturated": false,
+            "total_ns": 479795472
+          },
+          "serial_read_wait": {
+            "count": 6586,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 15661394,
+            "min_ns": 5542,
+            "saturated": false,
+            "total_ns": 16469780855
+          },
+          "serial_wait_writable": {
+            "count": 54,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 42293,
+            "min_ns": 4083,
+            "saturated": false,
+            "total_ns": 603766
+          },
+          "serial_write": {
+            "count": 28,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 2408054,
+            "min_ns": 60960,
+            "saturated": false,
+            "total_ns": 56466193
+          }
+        },
+        "schema": "meshticulum.host-phase-timing.v1"
+      },
+      "host_reserved_estimated_airtime_us": 326425,
+      "memory_after": {
+        "internal_free_bytes": 340272,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335124,
+        "loop_stack_minimum_free_bytes": 4632,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "memory_before": {
+        "internal_free_bytes": 340372,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335224,
+        "loop_stack_minimum_free_bytes": 5398,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "native_receive_drop_delta": 69,
+      "native_reserved_estimated_airtime_us": 274000,
+      "native_rx_reasons": {
+        "all_counters_exact": true,
+        "backpressure_counts_visits_not_packets": true,
+        "counters": {
+          "BACKPRESSURE_DEFER_VISITS": 0,
+          "INVALID_REPORTED_LENGTH": 1,
+          "IRQ_RESTART_BOTH": 0,
+          "IRQ_RESTART_CRC_ONLY": 0,
+          "IRQ_RESTART_HEADER_ONLY": 66,
+          "OUTPUT_OFFER_FAILED": 0,
+          "OUTPUT_RESERVE_LOW": 0,
+          "QUEUED_HEADER_STALL": 0,
+          "READ_BOTH": 0,
+          "READ_HEADER": 2,
+          "READ_INTEGRITY_UNATTRIBUTED": 0,
+          "READ_OTHER_ERROR": 0,
+          "READ_PAYLOAD_CRC": 0,
+          "READ_TIMEOUT": 0,
+          "RX_EXPORTED": 128,
+          "SYNC_TX_HEADER_PREEMPTED": 0,
+          "TIMEOUT_ONLY_RESTART": 0
+        },
+        "dropped_total": 69,
+        "missing_authenticated_packet_cause_known": false,
+        "radio_quality_qualified": false,
+        "rx_export_is_peer_authentication": false,
+        "same_boot_difference": true,
+        "schema": "MNR1"
+      },
+      "native_timing": {
+        "parent_phases_overlap": true,
+        "per_run_minima_maxima_available": false,
+        "records": [
+          {
+            "calls": 25,
+            "inclusive": false,
+            "phase": "TX_FINISH_CLEANUP",
+            "phase_id": 0,
+            "total_us": 4445
+          },
+          {
+            "calls": 157,
+            "inclusive": false,
+            "phase": "RX_START_CALL",
+            "phase_id": 1,
+            "total_us": 113885
+          },
+          {
+            "calls": 25,
+            "inclusive": true,
+            "phase": "TX_DONE_TO_RX_RETURN",
+            "phase_id": 2,
+            "total_us": 25540
+          },
+          {
+            "calls": 0,
+            "inclusive": true,
+            "phase": "ISSUED_TO_STARTED",
+            "phase_id": 3,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUED_PUBLISH",
+            "phase_id": 4,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_STANDBY",
+            "phase_id": 5,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_REREAD",
+            "phase_id": 6,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_RX_DRAIN",
+            "phase_id": 7,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_CLEAR",
+            "phase_id": 8,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_COPY_PREPARE",
+            "phase_id": 9,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_TX_START_CALL",
+            "phase_id": 10,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "STARTED_PUBLISH",
+            "phase_id": 11,
+            "total_us": 0
+          }
+        ],
+        "same_boot_difference": true,
+        "schema": "MNP1"
+      }
+    },
+    "sender": {
+      "after_observation_sha256": "27b1f4756662a6426614fea37714855d910a4f098e96d128a3fa150b97670f14",
+      "attempts": 146,
+      "before_observation_sha256": "3464d5032ab758341c74351588fc00639a39351babd23dd7cd714123188e4cc1",
+      "host_phase_timings": {
+        "clock": "time.perf_counter_ns",
+        "inclusive": true,
+        "phases": {
+          "cipher_open": {
+            "count": 21,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 2535218,
+            "min_ns": 1281317,
+            "saturated": false,
+            "total_ns": 36879662
+          },
+          "cipher_seal": {
+            "count": 146,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 1734869,
+            "min_ns": 775557,
+            "saturated": false,
+            "total_ns": 147706215
+          },
+          "flow_accounting": {
+            "count": 687,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 371883,
+            "min_ns": 62126,
+            "saturated": false,
+            "total_ns": 78491440
+          },
+          "flow_dispatch": {
+            "count": 187,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 3792,
+            "min_ns": 1166,
+            "saturated": false,
+            "total_ns": 370720
+          },
+          "flow_pump": {
+            "count": 671,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 58350272,
+            "min_ns": 13417,
+            "saturated": false,
+            "total_ns": 3699707187
+          },
+          "flow_receive": {
+            "count": 670,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 16462293,
+            "min_ns": 4217002,
+            "saturated": false,
+            "total_ns": 3554068936
+          },
+          "flow_step": {
+            "count": 668,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 93601240,
+            "min_ns": 4619219,
+            "saturated": false,
+            "total_ns": 8915609407
+          },
+          "host_loop_sleep": {
+            "count": 0,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": null,
+            "min_ns": null,
+            "saturated": false,
+            "total_ns": 0
+          },
+          "journal_transaction": {
+            "count": 632,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 13626069,
+            "min_ns": 202129,
+            "saturated": false,
+            "total_ns": 426794007
+          },
+          "queue_admission_wait": {
+            "count": 145,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 5813035,
+            "min_ns": 1815079,
+            "saturated": false,
+            "total_ns": 398790542
+          },
+          "queue_call": {
+            "count": 145,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 28079614,
+            "min_ns": 16924595,
+            "saturated": false,
+            "total_ns": 2984556587
+          },
+          "queue_clock": {
+            "count": 21,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 2922560,
+            "min_ns": 1419278,
+            "saturated": false,
+            "total_ns": 42209403
+          },
+          "queue_pump": {
+            "count": 145,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 8780803,
+            "min_ns": 29167,
+            "saturated": false,
+            "total_ns": 106034369
+          },
+          "queue_reserve": {
+            "count": 145,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 3006852,
+            "min_ns": 320256,
+            "saturated": false,
+            "total_ns": 118848129
+          },
+          "queue_serial_write": {
+            "count": 145,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 10928098,
+            "min_ns": 6312670,
+            "saturated": false,
+            "total_ns": 1516186548
+          },
+          "queue_terminal_settle": {
+            "count": 145,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 13658737,
+            "min_ns": 336299,
+            "saturated": false,
+            "total_ns": 122620614
+          },
+          "release_commit": {
+            "count": 145,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 1587282,
+            "min_ns": 235088,
+            "saturated": false,
+            "total_ns": 79611454
+          },
+          "release_request": {
+            "count": 145,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 2874433,
+            "min_ns": 214380,
+            "saturated": false,
+            "total_ns": 82608097
+          },
+          "release_roundtrip": {
+            "count": 145,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 8460840,
+            "min_ns": 3040395,
+            "saturated": false,
+            "total_ns": 773494179
+          },
+          "serial_os_read": {
+            "count": 803,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 54252,
+            "min_ns": 2333,
+            "saturated": false,
+            "total_ns": 5360951
+          },
+          "serial_os_write": {
+            "count": 1212,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 84585,
+            "min_ns": 5542,
+            "saturated": false,
+            "total_ns": 13262056
+          },
+          "serial_pacing_sleep": {
+            "count": 871,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 2289922,
+            "min_ns": 2006416,
+            "saturated": false,
+            "total_ns": 1791913411
+          },
+          "serial_read": {
+            "count": 3405,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 48921372,
+            "min_ns": 6125,
+            "saturated": false,
+            "total_ns": 965583076
+          },
+          "serial_read_wait": {
+            "count": 3966,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 48905622,
+            "min_ns": 2333,
+            "saturated": false,
+            "total_ns": 3661011301
+          },
+          "serial_wait_writable": {
+            "count": 1212,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 1310194,
+            "min_ns": 2916,
+            "saturated": false,
+            "total_ns": 9711251
+          },
+          "serial_write": {
+            "count": 341,
+            "dropped": 0,
+            "invalid": 0,
+            "max_ns": 10861888,
+            "min_ns": 31501,
+            "saturated": false,
+            "total_ns": 1831281058
+          }
+        },
+        "schema": "meshticulum.host-phase-timing.v1"
+      },
+      "host_reserved_estimated_airtime_us": 5665185,
+      "memory_after": {
+        "internal_free_bytes": 340416,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335268,
+        "loop_stack_minimum_free_bytes": 4680,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "memory_before": {
+        "internal_free_bytes": 340516,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335368,
+        "loop_stack_minimum_free_bytes": 5398,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "native_receive_drop_delta": 2,
+      "native_reserved_estimated_airtime_us": 5017440,
+      "native_rx_reasons": {
+        "all_counters_exact": true,
+        "backpressure_counts_visits_not_packets": true,
+        "counters": {
+          "BACKPRESSURE_DEFER_VISITS": 0,
+          "INVALID_REPORTED_LENGTH": 0,
+          "IRQ_RESTART_BOTH": 0,
+          "IRQ_RESTART_CRC_ONLY": 0,
+          "IRQ_RESTART_HEADER_ONLY": 2,
+          "OUTPUT_OFFER_FAILED": 0,
+          "OUTPUT_RESERVE_LOW": 0,
+          "QUEUED_HEADER_STALL": 0,
+          "READ_BOTH": 0,
+          "READ_HEADER": 0,
+          "READ_INTEGRITY_UNATTRIBUTED": 0,
+          "READ_OTHER_ERROR": 0,
+          "READ_PAYLOAD_CRC": 0,
+          "READ_TIMEOUT": 0,
+          "RX_EXPORTED": 21,
+          "SYNC_TX_HEADER_PREEMPTED": 0,
+          "TIMEOUT_ONLY_RESTART": 0
+        },
+        "dropped_total": 2,
+        "missing_authenticated_packet_cause_known": false,
+        "radio_quality_qualified": false,
+        "rx_export_is_peer_authentication": false,
+        "same_boot_difference": true,
+        "schema": "MNR1"
+      },
+      "native_timing": {
+        "parent_phases_overlap": true,
+        "per_run_minima_maxima_available": false,
+        "records": [
+          {
+            "calls": 146,
+            "inclusive": false,
+            "phase": "TX_FINISH_CLEANUP",
+            "phase_id": 0,
+            "total_us": 26170
+          },
+          {
+            "calls": 168,
+            "inclusive": false,
+            "phase": "RX_START_CALL",
+            "phase_id": 1,
+            "total_us": 130054
+          },
+          {
+            "calls": 146,
+            "inclusive": true,
+            "phase": "TX_DONE_TO_RX_RETURN",
+            "phase_id": 2,
+            "total_us": 169928
+          },
+          {
+            "calls": 145,
+            "inclusive": true,
+            "phase": "ISSUED_TO_STARTED",
+            "phase_id": 3,
+            "total_us": 416522
+          },
+          {
+            "calls": 145,
+            "inclusive": false,
+            "phase": "ISSUED_PUBLISH",
+            "phase_id": 4,
+            "total_us": 20571
+          },
+          {
+            "calls": 145,
+            "inclusive": false,
+            "phase": "ISSUE_STANDBY",
+            "phase_id": 5,
+            "total_us": 19658
+          },
+          {
+            "calls": 145,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_REREAD",
+            "phase_id": 6,
+            "total_us": 10281
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_RX_DRAIN",
+            "phase_id": 7,
+            "total_us": 0
+          },
+          {
+            "calls": 145,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_CLEAR",
+            "phase_id": 8,
+            "total_us": 9919
+          },
+          {
+            "calls": 145,
+            "inclusive": false,
+            "phase": "ISSUE_COPY_PREPARE",
+            "phase_id": 9,
+            "total_us": 2082
+          },
+          {
+            "calls": 145,
+            "inclusive": false,
+            "phase": "ISSUE_TX_START_CALL",
+            "phase_id": 10,
+            "total_us": 320156
+          },
+          {
+            "calls": 145,
+            "inclusive": false,
+            "phase": "STARTED_PUBLISH",
+            "phase_id": 11,
+            "total_us": 25716
+          }
+        ],
+        "same_boot_difference": true,
+        "schema": "MNP1"
+      }
+    }
+  },
+  "fast_DATA_retries": 15,
+  "firmware": {
+    "bytes": 404496,
+    "identity": "mtb1-845b22b090",
+    "proof": "pinned source SHA-256 and ROM-verified programmed-span MD5; no full new-image SHA-256 readback",
+    "sha256": "d98391bb4341aecda6b3e3f469875a3c396326afd283f4dce401e02cfa3c9b0b",
+    "target": "mtbench_heltec_v4"
+  },
+  "firmware_upgrade_for_this_case": true,
+  "genuine_header_preserve_upgrade_debt_bridge_verified": true,
+  "global_historical_debt_complete": false,
+  "goal_requires_repeated_qualifying_runs": true,
+  "historical_unknown_actual_cost": null,
+  "host_profiling": true,
+  "independently_bound_qualifying_prior_runs": 0,
+  "inherited_SPI8_upgrade_history_verified": true,
+  "inherited_pre_SPI8_upgrade_native_debt": {
+    "receiver": {
+      "attempts": 20,
+      "dropped_receive": 20,
+      "reserved_estimated_airtime_us": 219200
+    },
+    "sender": {
+      "attempts": 135,
+      "dropped_receive": 3,
+      "reserved_estimated_airtime_us": 4636400
+    }
+  },
+  "limits": {
+    "eirp_dbm": null,
+    "energy_joules": null,
+    "field_range_qualified": false,
+    "matched_four_frame_comparison": false,
+    "measured_RF_airtime_us": null,
+    "native_parent_phases_overlap": true,
+    "native_timing_is_software_boundaries": true,
+    "receive_drop_cause_identified": false,
+    "repeated_capacity_qualified": false,
+    "runtime_memory_exhaustively_qualified": false,
+    "single_run": true,
+    "upstream_superiority_qualified": false
+  },
+  "logical_DATA_frames": 128,
+  "native_profiling": true,
+  "native_rx_reason_profiling": true,
+  "native_rx_reason_semantics": {
+    "IRQ_RESTART_HEADER_ONLY": "HEADER_ERR-only IRQ classifications; selective header preservation may keep continuous RX without an actual restart.",
+    "counters_are_authenticated_packet_loss_counts": false,
+    "dropped_total_is_software_accounting": true,
+    "firmware_header_preserve_enabled": true,
+    "header_category_proves_actual_RX_restart": false,
+    "missing_authenticated_packet_cause_known": false,
+    "schema": "MNR1",
+    "unchanged_schema_implies_identical_restart_behavior": false
+  },
+  "old_native_debt_retained": {
+    "receiver": {
+      "attempts": 73,
+      "dropped_receive": 153,
+      "reserved_estimated_airtime_us": 800080
+    },
+    "sender": {
+      "attempts": 310,
+      "dropped_receive": 10,
+      "reserved_estimated_airtime_us": 10658400
+    }
+  },
+  "original_scope_closed_and_expired": true,
+  "part_invocation_to_authenticated_receipt_us": 13708108,
+  "policy": {
+    "flow_window_frames": 32,
+    "handover": "irrevocably-charged-at-queue-acceptance",
+    "inter_packet_rx_us": 5000,
+    "max_depth": 8,
+    "max_hold_us": 2000000,
+    "reverse_listen_us": 100000,
+    "scalar_fill_pair": true,
+    "schema": "meshticulum.data-burst-policy.v6",
+    "selective_repair_fill": true,
+    "selective_terminal_retry": true,
+    "train_frames": 8
+  },
+  "protected_service_lifetimes_unchanged": true,
+  "publisher_and_whole_file_verified": true,
+  "radio": {
+    "bandwidth_hz": 500000,
+    "coding_rate": 5,
+    "frequency_hz": 921375000,
+    "preamble": 12,
+    "requested_chip_power_dbm": 0,
+    "requested_spi_hz": 8000000,
+    "spreading_factor": 5,
+    "sync_word": 66
+  },
+  "refunds": 0,
+  "repeated_goal_3000_achieved": false,
+  "reset_performed_for_this_case": true,
+  "response_bytes": 24565,
+  "result_sha256": "2cfc42c177b81bbcf61f80fc842ac8ed080c163cc003d1f86f311aa3cc325770",
+  "root_reconciliation_sha256": "c3e64cc87ccce2d94fe2c6cd4aebb440f5511668a66f63f420928261901a3f42",
+  "scalar_fill_pair_extra": 18,
+  "schema": "meshticulum.sanitized-sf5-header-preserve-profile-sample.v1",
+  "selective_repair_fill_timeout_holds": 0,
+  "selective_repair_fill_turns": 14,
+  "sender_startup_to_authenticated_receipt_us": 14138817,
+  "single_run_at_least_3000": false,
+  "source_commit": "7ac7daf02629b5b4cdf23d1cfaadc0152c0ce1dc",
+  "source_tree": "adbe1b0b6b8e172005711f133e7ebbd5387c1e85",
+  "timing_partition_us": {
+    "DATA_physical_outstanding_union": 7590718,
+    "invocation_to_first_DATA_submit": 268619,
+    "no_DATA_physical_outstanding": 5848771,
+    "process_startup": 430709
+  },
+  "unresolved_UNKNOWN": 0,
+  "useful_bytes": 23900,
+  "useful_bytes_per_second": 1690.381875654802,
+  "wheel_sha256": "0b2466dbb4a7004dd99f2608cba77b9a514292152815fc71747711b5f4909934"
+}

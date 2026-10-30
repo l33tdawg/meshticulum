@@ -33,7 +33,16 @@ an isolated SPI comparison. The separate
 then used v6 on the same SPI8 firmware and boots. It verified the file at
 1,222.394221 B/s in 19.551794 seconds, with 17 extra offers and 26 DATA retries.
 The observed rate rose 21.551357%, but loss and recovery patterns differed;
-this is not an isolated policy gain. Both throughput thresholds remain unmet.
+this is not an isolated policy gain. The subsequent
+[header-preservation sample](../benchmarks/2026-10-30-sf5-header-preserve-profile/README.md)
+kept that v6 host runtime and 8 MHz SPI setting, following a genuine firmware
+upgrade with earlier debt retained. It verified the same file in 14.138817
+seconds including startup, or 1,690.381876 B/s, with 17 DATA retries. The observed
+rate was 38.284511% higher than the prior sample, but firmware, boots and loss
+patterns differed; the result does not isolate a causal benefit. It remains
+below the earlier 2,026.493477 B/s sample and both throughput thresholds.
+The firmware's header-only diagnostic category can now include selective
+clearing without an RX restart; it is not an authenticated packet-drop count.
 
 The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
 

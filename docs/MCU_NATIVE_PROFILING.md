@@ -136,7 +136,7 @@ as successful memory qualification. A linked RAM-size report is not a runtime
 heap or stack margin. Qualification needs exact-build snapshots before and after
 the admitted worst-case work, including eight retained frames and cleanup.
 
-### RX-reason counters (source candidate)
+### RX-reason counters
 
 The separate, default-off [header-preservation experiment](MCU_RX_HEADER_PRESERVE.md)
 retains this wire schema. With that option enabled, the historical
@@ -146,10 +146,14 @@ existing read-error categories. Compare counters using the exact firmware
 identity; the category name alone does not establish a full RX restart.
 
 The single selector byte `0xfd` requests `MNR1`, under the same idle, disarmed,
-fully drained gate. This candidate has source controls only: the linked
-`mtb1-bc5858fa0b` build predates these counters and does not support this selector.
-Neither its measured memory margins nor its timing results qualify this change.
-The existing empty `MNP1` discovery and `MNS1` bodies remain unchanged.
+fully drained gate. The earlier `mtb1-bc5858fa0b` build predates these counters
+and does not support this selector. Subsequent
+[terminal-policy](../benchmarks/2026-10-30-sf5-terminal-retry-profile/README.md),
+[SPI8](../benchmarks/2026-10-30-sf5-spi8-profile/README.md) and
+[header-preservation](../benchmarks/2026-10-30-sf5-header-preserve-profile/README.md)
+samples retain exact-firmware observations. They do not identify RF loss causes
+or establish general reliability. The existing empty `MNP1` discovery and
+`MNS1` bodies remain unchanged.
 
 The fixed 80-byte reply contains ASCII `MNR1`, bytes `1,17,4,1` (version, count,
 counter width, boot-cumulative flag), a big-endian 32-bit saturation mask, then

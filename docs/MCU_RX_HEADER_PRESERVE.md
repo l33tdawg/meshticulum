@@ -2,8 +2,10 @@
 
 This source experiment avoids a full receive restart for one narrow LoRa IRQ
 snapshot. It is disabled by default. Both supported target images have built
-successfully; physical loss and throughput qualification remain open. This
-experiment does not establish the cause of earlier missing packets.
+successfully. One subsequent [physical sample](../benchmarks/2026-10-30-sf5-header-preserve-profile/README.md)
+verified 23,900 useful bytes at 1,690.381876 B/s including startup. Repeated
+capacity and receive-reliability qualification remain open; this observation
+does not establish the cause of earlier missing packets.
 
 The normal driver uses continuous receive (`SetRx(0xFFFFFF)`). The application
 currently restarts reception after a header-error snapshot without a valid
@@ -59,7 +61,10 @@ The MNR1 wire schema and counter indexes remain unchanged. Its historical
 `IRQ_RESTART_HEADER_ONLY` name now includes handling a header-only snapshot by
 selective clear when this option is enabled. A shadow-based export rejection
 uses the existing header-integrity category. These are software categories,
-not packet identities, RF causes or exact counts of acquisitions.
+not packet identities, RF causes or exact counts of acquisitions. In particular,
+`IRQ_RESTART_HEADER_ONLY` does not prove an actual RX restart or packet drop;
+its unchanged name and schema do not make actual restart counts comparable
+across firmware versions.
 
 ## Source controls
 
@@ -102,3 +107,22 @@ The record retains all eight application hashes and both targets' binary,
 ELF, map, bootloader and partition hashes. It records no flashing or RF
 qualification. Successful linking does not establish live heap/stack headroom,
 receive reliability, or any throughput improvement.
+
+## First physical observation
+
+The [30 October header-preservation sample](../benchmarks/2026-10-30-sf5-header-preserve-profile/README.md)
+used the Heltec image above on both endpoints, with exact SDK `7ac7daf`, the
+preceding v6 host policy and 8 MHz SPI. It completed in 14.138817 seconds from
+sender process startup through authenticated receipt, with publisher and
+whole-file verification. There were 17 DATA retries, compared with 26 in the
+preceding v6 sample. The observed rate rose 38.284511%, but the loss pattern
+and MCU boots differed; no isolated causal improvement is established.
+
+The receiver recorded 66 header-only classifications, two header read errors
+and one invalid reported length; the sender recorded two header-only
+classifications. These counters retain the software semantics above. They do
+not identify the cause of any missing authenticated packet. Both endpoints
+closed and drained, original scope clocks expired, and all prior paid debt
+remained retained. The result is below the earlier 2,026.493477 B/s sample and
+the above-2,800 B/s checkpoint and repeated 3,000 B/s goal. Published alpha.3
+assets are unchanged.
