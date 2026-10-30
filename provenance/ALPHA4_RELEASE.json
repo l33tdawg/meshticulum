@@ -1,0 +1,94 @@
+{
+  "schema": "meshticulum.alpha4-public-release.v1",
+  "release": "1.0.0-alpha.4",
+  "release_revision": "r2",
+  "tag": "v1.0.0-alpha.4-r2",
+  "url": "https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4-r2",
+  "published_at": "2026-10-30T12:32:46Z",
+  "immutable": true,
+  "prerelease": true,
+  "package_version": "1.0.0a4",
+  "source_commit": "5547f65e71d133cb6a3d59659b4e8da2a068d7b8",
+  "runtime_source_commit": "c8b82a527efca916415dc87eb4836991d55d7e80",
+  "measured_candidate_wheel_sha256": "f40ef1947bfc53208b711546e7a195e5932f6ac7d745a001b158c012f8f9c64c",
+  "release_wheel_sha256": "3f9d736557bd6c714e8b06edc53204fe351b80cd2b0c183018e8b968e6cc69d1",
+  "release_sdist_sha256": "286c4ac06f2d68c094a9d67123d478a5d1a1aaa2011d019d77da409002d01154",
+  "runtime_files_equal_between_measured_and_release_wheels": true,
+  "assets": {
+    "FIRMWARE_SOURCE_BUILD.md": {
+      "bytes": 11791,
+      "sha256": "67dac57f454a6800e494aad7afb30fdb2cd6e3d60e3fa4cbd0e1cfd0617400a4"
+    },
+    "LICENSE": {
+      "bytes": 10778,
+      "sha256": "ba61a1c596f3e771e379455f68124f793985196b84be0a6a41d2c489050facef"
+    },
+    "MCU_TRAIN12_BUILD.json": {
+      "bytes": 2239,
+      "sha256": "0bc8c4d6f8b8f34f468f7be3eedbda34f94db4a2e038effb2897acf335dec46e"
+    },
+    "NOTICE": {
+      "bytes": 974,
+      "sha256": "387c1c228cbaf7a40b6729ae692603402387ac7308810709524bbde44d86e26c"
+    },
+    "PUBLIC_ALPHA4_QUALIFICATION.json": {
+      "bytes": 2517,
+      "sha256": "1852de26de544e8b68f3b6010928c3f097818e75dfbe6ac238aa3392c1afbf53"
+    },
+    "RELEASE_MANIFEST.json": {
+      "bytes": 1756,
+      "sha256": "167c528022b177ed65ad7894798569554fab92c46bcbe89c225a27df4683f3be"
+    },
+    "RELEASE_NOTES.md": {
+      "bytes": 2127,
+      "sha256": "e3d265342f891c3491197ea075d36128c82096bf45ba48ea7285a6a43a2c8c32"
+    },
+    "RELEASE_VALIDATION.json": {
+      "bytes": 2752,
+      "sha256": "dba8c90b9d927b8bdb1042b769f071330178f452ea0d7a28b4340cfe6ed83d2a"
+    },
+    "SHA256SUMS": {
+      "bytes": 883,
+      "sha256": "3d2f1f4bd0965d980d8de76cc4641c9ff2d2512976a1fad87d546a5a972b09a9"
+    },
+    "meshticulum-1.0.0a4-py3-none-any.whl": {
+      "bytes": 311580,
+      "sha256": "3f9d736557bd6c714e8b06edc53204fe351b80cd2b0c183018e8b968e6cc69d1"
+    },
+    "meshticulum-1.0.0a4.tar.gz": {
+      "bytes": 1390439,
+      "sha256": "286c4ac06f2d68c094a9d67123d478a5d1a1aaa2011d019d77da409002d01154"
+    }
+  },
+  "verification": {
+    "anonymous_asset_downloads": 11,
+    "all_assets_match_sha256sums": true,
+    "github_release_attestation_verified": true,
+    "release_wheel_attestation_verified": true,
+    "release_sdist_attestation_verified": true,
+    "clean_git_exports": 2,
+    "wheels_byte_identical": true,
+    "normalized_sdists_byte_identical": true,
+    "wheel_rebuilt_from_normalized_sdist_matches": true,
+    "clean_install_verified": true,
+    "offline_signed_resource_demo": "Verified public chunk: 287 bytes"
+  },
+  "physical_qualification": {
+    "samples": 3,
+    "all_at_or_above_2800_Bps": true,
+    "all_at_or_above_3000_Bps": true,
+    "minimum_Bps": 3149.246480189988,
+    "median_Bps": 3188.1561732308,
+    "maximum_Bps": 3192.0812877523713,
+    "scope": "three finite near-bench B-to-A direct USB-SF5/BW500 files"
+  },
+  "global_historical_debt_complete": false,
+  "historical_unknown_actual_cost": null,
+  "refunds": 0,
+  "limitations": [
+    "Three finite near-bench samples do not establish a sustained-throughput distribution.",
+    "Timing ends at authenticated receipt before final physical drain and endpoint closure.",
+    "Field range, LoRa-profile behavior, energy/EIRP, wider hardware and upstream superiority remain unqualified.",
+    "Global historical debt remains incomplete and unknown historical actual costs remain null."
+  ]
+}
