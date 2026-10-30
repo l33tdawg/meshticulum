@@ -45,6 +45,9 @@ _POLICY32_ITEMS = tuple(POLICY32.items())
 POLICY_REPAIR_FILL = dict(POLICY32, schema='meshticulum.data-burst-policy.v4',
                          selective_repair_fill=True)
 _POLICY_REPAIR_FILL_ITEMS = tuple(POLICY_REPAIR_FILL.items())
+POLICY_TERMINAL_RETRY = dict(POLICY_REPAIR_FILL, schema='meshticulum.data-burst-policy.v5',
+                            selective_terminal_retry=True)
+_POLICY_TERMINAL_RETRY_ITEMS = tuple(POLICY_TERMINAL_RETRY.items())
 
 
 def validate_policy(value):
@@ -53,7 +56,7 @@ def validate_policy(value):
           and all(type(value[key]) is type(expected) and value[key] == expected
                   for key, expected in items)
           for items in (_POLICY_ITEMS, _POLICY8_ITEMS, _POLICY32_ITEMS,
-                        _POLICY_REPAIR_FILL_ITEMS)), 'invalid_data_burst_policy')
+                        _POLICY_REPAIR_FILL_ITEMS, _POLICY_TERMINAL_RETRY_ITEMS)), 'invalid_data_burst_policy')
     return dict(value)
 
 
@@ -86,6 +89,15 @@ def policy_for_repair_fill():
 
 def policy_repair_fill(policy):
     return validate_policy(policy).get('selective_repair_fill', False)
+
+
+def policy_for_terminal_retry():
+    """Explicit terminal recovery after local FINAL handover and peer receipt."""
+    return dict(_POLICY_TERMINAL_RETRY_ITEMS)
+
+
+def policy_terminal_retry(policy):
+    return validate_policy(policy).get('selective_terminal_retry', False)
 
 
 def capability_for_depth(depth=4):
