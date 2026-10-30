@@ -59,6 +59,20 @@ reset a timer, refund reservations, reserve a nonce or spend a physical attempt.
 
 ## Evidence and limits
 
+[The first hardware sample](../benchmarks/2026-10-30-sf5-repair-fill-profile/README.md)
+verified 23,900 useful bytes in 19.537686 seconds including sender startup:
+1,223.276902 useful B/s. It recorded nine repair-fill turns, 13 DATA retries
+and 28 ACK attempts. The earlier window32 sample used 10 retries and reached
+1,276.917174 B/s; differing DATA and ACK loss patterns prevent an isolated
+estimate of the policy's effect. The measured SDK was `79cbcd7`, including the
+partial-final reverse-turn guard, with unchanged firmware and budgets.
+
+Two late intervals without host-observed DATA outstanding totaled 6.611082
+seconds. These are source-consistent timeout waits; exact internal retry due
+times were not logged, and packet-loss causes remain unknown. Both endpoints
+closed, paid attempts reconciled, and the original scope expired. This sample
+does not establish repeated capacity or the 3,000 useful B/s goal.
+
 [The source comparison](../benchmarks/2026-10-30-sf5-repair-fill-source/README.md)
 uses identical signed 23,900-byte input, logical window 32 and physical depth
 eight. Its ten-DATA-loss case uses logical sequence/attempt loss counts from a
