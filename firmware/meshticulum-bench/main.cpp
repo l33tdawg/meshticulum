@@ -9,6 +9,18 @@
 #include <target.h>
 #include "protocol.hpp"
 #include "native_profile.hpp"
+#if defined(MTBENCH_RX_HEADER_PRESERVE) && !defined(MTBENCH_RX_HEADER_PRESERVE_CONFIGURED)
+#error "RX header preservation must come from the pinned recipe"
+#endif
+#ifndef MTBENCH_RX_HEADER_PRESERVE
+#define MTBENCH_RX_HEADER_PRESERVE 0
+#endif
+#if defined(MTBENCH_RX_HEADER_PRESERVE_CONFIGURED) && MTBENCH_RX_HEADER_PRESERVE_CONFIGURED != 1
+#error "invalid RX header recipe marker"
+#endif
+#if MTBENCH_RX_HEADER_PRESERVE != 0 && MTBENCH_RX_HEADER_PRESERVE != 1
+#error "MTBENCH_RX_HEADER_PRESERVE must be 0 or 1"
+#endif
 #if MTBENCH_NATIVE_PROFILE
 #include <esp_heap_caps.h>
 // Pinned ESP32-S3 FreeRTOS reports byte high-water, unlike vanilla word units.
@@ -103,6 +115,11 @@ static void contain(uint32_t flags,int16_t error) {
     idleRadio(); board.onAfterTransmit(); transmitting=false; armed=false; fenced=true;
     reportOutcome(UNKNOWN,nowUs()-startedUs,flags,error);
 }
+#if MTBENCH_RX_HEADER_PRESERVE
+// Retain integrity evidence when selectively clearing a coalesced header IRQ.
+// Only a checked successful full receive launch starts a new IRQ lifetime.
+static bool headerErrorShadow=false;
+#endif
 static void startReceive() {
     if(!armed || fenced) return;
     if(nowUs()>=deadlineUs) { armed=false; if(idleRadio()!=RADIOLIB_ERR_NONE) fenced=true; return; }
@@ -110,7 +127,12 @@ static void startReceive() {
     const int16_t receiveError=radio.startReceive();
     MT_PROFILE_END(rxStart,receiveError==RADIOLIB_ERR_NONE);
     if(receiveError!=RADIOLIB_ERR_NONE) { armed=false; fenced=true; idleRadio(); }
-    else burstReceiveStarted();
+    else {
+#if MTBENCH_RX_HEADER_PRESERVE
+        headerErrorShadow=false;
+#endif
+        burstReceiveStarted();
+    }
 }
 static bool drainCompletedReceive(bool rearm,bool alreadyStandby=false) {
     // RX continuous shares the FIFO with TX. Stop writes before reading the
@@ -123,7 +145,16 @@ static bool drainCompletedReceive(bool rearm,bool alreadyStandby=false) {
     const size_t length=radio.getPacketLength();
     Frame received=response(gfsk250Mode ? GFSK250_RECEIVE : (gfskMode ? GFSK_RECEIVE : RECEIVE),0);
     if(length>=1 && length<=255 && output.freeSlots()>2) {
-        const int16_t error=radio.readData(received.body+(gfskMode ? 2 : 4),length);
+        int16_t error=radio.readData(received.body+(gfskMode ? 2 : 4),length);
+#if MTBENCH_RX_HEADER_PRESERVE
+        // The driver's payload CRC/error result remains authoritative. A
+        // cleared header error must not make an unproven header acceptable.
+        if(!gfskMode && headerErrorShadow) {
+            flags|=RADIOLIB_SX126X_IRQ_HEADER_ERR;
+            if(error==RADIOLIB_ERR_NONE && !(flags & RADIOLIB_SX126X_IRQ_HEADER_VALID))
+                error=RADIOLIB_ERR_CRC_MISMATCH;
+        }
+#endif
         if(error==RADIOLIB_ERR_NONE) {
             put16(received.body,uint16_t(int16_t((gfskMode ? radio.getRSSI(true) : radio.getRSSI())*10)));
             if(!gfskMode) put16(received.body+2,uint16_t(int16_t(radio.getSNR()*10)));
@@ -405,6 +436,24 @@ static void serviceRadio() {
             // remains set. RX_DONE still passes through RadioLib's CRC check.
             if(flags & (RADIOLIB_SX126X_IRQ_CRC_ERR|RADIOLIB_SX126X_IRQ_HEADER_ERR)) droppedRx++;
             MT_RX_RESTART(flags);
+#if MTBENCH_RX_HEADER_PRESERVE
+            // LoRa uses checked continuous RX. Clear only the observed header
+            // error, preserving a new valid header/RX_DONE/CRC arriving since
+            // the read. Other snapshots retain the original restart path.
+            if(!gfskMode && !(flags & ~(RADIOLIB_SX126X_IRQ_HEADER_ERR
+                                       | RADIOLIB_SX126X_IRQ_PREAMBLE_DETECTED))) {
+                if(!armed || fenced) return;
+                if(nowUs()>=deadlineUs) {
+                    armed=false;if(idleRadio()!=RADIOLIB_ERR_NONE) fenced=true;
+                    return;
+                }
+                headerErrorShadow=true;
+                if(radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_HEADER_ERR)!=RADIOLIB_ERR_NONE) {
+                    armed=false;fenced=true;idleRadio();
+                }
+                return;
+            }
+#endif
             startReceive(); // checked standby/IRQ-clear/RX launch, same lease
         }
     }

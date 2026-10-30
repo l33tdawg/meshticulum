@@ -138,6 +138,13 @@ the admitted worst-case work, including eight retained frames and cleanup.
 
 ### RX-reason counters (source candidate)
 
+The separate, default-off [header-preservation experiment](MCU_RX_HEADER_PRESERVE.md)
+retains this wire schema. With that option enabled, the historical
+`IRQ_RESTART_HEADER_ONLY` name also covers selective header-error clearing, and
+retained software header-integrity evidence can reject export through the
+existing read-error categories. Compare counters using the exact firmware
+identity; the category name alone does not establish a full RX restart.
+
 The single selector byte `0xfd` requests `MNR1`, under the same idle, disarmed,
 fully drained gate. This candidate has source controls only: the linked
 `mtb1-bc5858fa0b` build predates these counters and does not support this selector.

@@ -25,7 +25,8 @@ def test_omitted_setting_keeps_exact_predecessor_header_options_and_application(
     expected['native_profile_config.hpp']=hashlib.sha256(old_header(enabled).encode()).hexdigest()
     assert app==expected
     assert identity=='mtb1-'+hashlib.sha256(json.dumps(expected,sort_keys=True).encode()).hexdigest()[:10]
-    if enabled:assert identity=='mtb1-e18a633806'
+    # Current application source participates in identity even with an omitted
+    # SPI option. Historical e18 build identities remain in provenance records.
 
 
 @pytest.mark.parametrize('enabled', [False, True])
@@ -171,7 +172,8 @@ def test_cli_forwards_only_explicit_spi_and_independent_profiler(recipe,monkeypa
     if hz is not None:args+=['--heltec-spi-hz',str(hz)]
     monkeypatch.setattr('sys.argv',args)
     recipe.main()
-    assert calls==[('archives','output',dict(native_profile=enabled,heltec_spi_hz=hz))]
+    assert calls==[('archives','output',dict(native_profile=enabled,heltec_spi_hz=hz,
+                                          rx_header_preserve=False))]
     assert json.loads(capsys.readouterr().out)=={'source_control':True}
 
 
