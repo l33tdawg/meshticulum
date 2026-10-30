@@ -3,10 +3,10 @@
 The active goal is at least 3,000 useful file bytes per second, including
 sender process startup through authenticated receipt, on comparable finite
 workloads with publisher and whole-file verification. Strictly above 2,800
-bytes/s remains the net-win checkpoint. Neither has been established by the current physical recovery trial. The
-[latest physical recovery case](../benchmarks/2026-10-30-sf5-recovery/README.md)
-uses the earlier exact candidate and must not acquire the qualification of
-subsequent source-only changes.
+bytes/s remains the net-win checkpoint. Neither has been established. The
+[first eight-frame hardware sample](../benchmarks/2026-10-30-sf5-eight-profile/README.md)
+verified 23,900 useful bytes in 29.821904 seconds including startup, or
+801.424349 useful B/s. It retained 14 DATA retries and all attempt debt.
 
 ## Existing piece and recovery behavior
 
@@ -89,8 +89,8 @@ physical reconciliation. Host `cipher_seal` and `cipher_open` timings include
 their durable nonce/replay transactions and authorization, alongside crypto;
 they do not claim to isolate CPU encryption time.
 
-An [explicit eight-frame scalar train](MCU_EIGHT_TRAIN.md) is now a source
-candidate. Keeping the
+An [explicit eight-frame scalar train](MCU_EIGHT_TRAIN.md) now has one finite
+verified-file sample. Keeping the
 same gap and reverse-turn durations would provide an ideal estimate of about
 3,645 useful bytes/s with that fixture, leaving some margin for the target.
 It binds a distinct policy and local capability, with consistent flow,
@@ -101,7 +101,8 @@ frame or atomic release vector is introduced. The 2-second hold and 5/100 ms
 receive floors remain unchanged, including when an expired queued suffix turns
 an earlier completion into the actual tail. Source controls cover ACK loss,
 every DATA position, underfilled trains, UNKNOWN, expiry and legacy four-frame
-behavior. Target build and physical performance qualification remain separate.
+behavior. Both targets built; the two Heltec units passed installation and
+idle diagnostic checks. Sustained physical performance remains unqualified.
 
 The [22-case scalar four/eight source comparison](../benchmarks/2026-10-30-sf5-eight-source/README.md)
 uses the same full signed part and fault boundaries. Its clean idealized native
@@ -109,12 +110,18 @@ schedule rises from 2,924.5 to 3,592.8 modeled useful B/s; with 40/10 ms injecte
 sender/receiver seal work, it reaches 2,873.7 B/s. Real process startup and CPU/
 fsync time are excluded, so these are not physical acceptance results.
 
+The first measured eight-frame run spent 20.952743 seconds without physical
+DATA outstanding. Native ISSUED→STARTED averaged about 4.038 ms per DATA frame;
+TX_DONE→RX-return averaged about 1.349 ms. These software-boundary measurements
+are inclusive where documented and cannot be added as disjoint costs. Three
+lost selective repairs fell back to roughly 4.7-second waits. A focused retry
+review is addressing that timeout behavior before the next performance trial.
+
 The next physical comparison must use equal useful workloads, exact installed
 source/firmware correspondence and original finite budgets. Retain failed runs
 and complete allocations. No modeled result renews old authority, resets native
 counters or qualifies a release artifact.
 
-The corrected combined host-pump and dormant batch-prototype source passed
-**3,291 tests, 37 skips and 49 subtests** locally. This includes the RX-rearm
-controls and separate independent edge controls. These source results supply no
-new hardware qualification.
+The eight-frame and native-profile candidate passed **3,453 tests, 37 skips
+and 49 subtests** locally, with green Python 3.11–3.13 and crypto-prototype CI.
+Source tests and the single hardware sample retain their separate scopes.

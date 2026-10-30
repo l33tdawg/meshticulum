@@ -3,8 +3,10 @@
 The SF5/BW500 source path can admit eight DATA frames in one finite train. It
 requires a new immutable policy on both endpoints and the exact MBQ8 capability
 from the selected firmware. Four-frame grants, empty capability queries and
-legacy synchronous mode keep their previous behavior. Physical acceptance and
-the target of at least 3000 useful-file bytes/s including startup remain pending.
+legacy synchronous mode keep their previous behavior. The first finite hardware
+sample verified a file at 801.424349 useful bytes/s including startup; the target
+of at least 3000 B/s remains open. See the
+[measured sample and limits](../benchmarks/2026-10-30-sf5-eight-profile/README.md).
 
 This uses the existing scalar handover: prepare one flow frame, seal a fresh
 ciphertext, reserve its durable attempt charge, write its descriptor, and wait
@@ -73,8 +75,11 @@ builds for both targets, with retained ELF and map hashes:
 | `mtbench_xiao_s3_wio` | 34,868 bytes | 397,744 bytes |
 
 These are build sizes, not live memory margins or an independent reproduction.
-Runtime internal-heap and loop-stack qualification remains pending, as do
-installation and RF acceptance of this build. The idle-only
+The build record predates installation. Both Heltec units subsequently passed
+app-only installation, read-only diagnostics and one finite verified-file run.
+After that run, internal free heap exceeded 340,000 bytes on each unit and
+loop-stack minimum-free values exceeded 4,600 bytes. Exhaustive worst-case memory
+and sustained-throughput qualification remain pending. The idle-only
 [memory snapshot](MCU_NATIVE_PROFILING.md#query-only-memory-snapshot) supports
 exact-build checks before and after bounded eight-frame work. Configured
 external RAM is not evidence of internal stack headroom.

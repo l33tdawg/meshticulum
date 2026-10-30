@@ -22,7 +22,9 @@ records identity `mtb1-bc5858fa0b`, one pinned preparation and successful Heltec
 and XIAO S3 WIO builds, including application, ELF and map hashes. It does not
 claim independent reproduction, installation, runtime memory margins or RF
 qualification. [Build sizes](MCU_EIGHT_TRAIN.md#verification-and-memory) are
-recorded separately from the pending live checks.
+separate from the later [same-boot hardware observations](../benchmarks/2026-10-30-sf5-eight-profile/README.md).
+That finite sample verified a file but missed the throughput goal; all native
+records were exact and reported no failures, invalid clocks or saturation.
 
 ## Recorded phases
 
