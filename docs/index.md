@@ -80,5 +80,9 @@ prove an actual RX restart or packet drop. All eight samples remain below the
 throughput goal.
 
 [Repeat selective repair](FLOW_R13_REPEAT_RETRY_REVIEW.md) records the accepted
-R13/v7 source revision and its fresh-proof requirements. It has no physical
-qualification result.
+R13/v7 source revision and its fresh-proof requirements. Its first
+[physical sample](../benchmarks/2026-10-30-sf5-repeat-retry-profile/README.md)
+verified 23,900 useful bytes at 1,577.815726 B/s including startup on the same
+firmware and MCU boots as the preceding sample. All 18 DATA retries were
+selective; differing loss prevents an isolated policy comparison. All nine
+samples remain below the throughput targets.
