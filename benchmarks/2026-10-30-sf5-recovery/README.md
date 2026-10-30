@@ -1,5 +1,58 @@
 # SF5 recovery: 30 October 2026
 
+The latest candidate exercised selective repair on real hardware: a retry was
+submitted **16.725 ms** after an authenticated SACK proved a DATA hole. The
+2,000-byte file completed in **2.554067 seconds**, including sender SDK process
+startup, for **783.064814 useful B/s (0.783065 decimal kB/s)**. This fixes one
+observed recovery delay; it does not establish the 2–3 kB/s target.
+
+## Selective-retry hardware trial
+
+The [sanitized record](SELECTIVE_HARDWARE.json) identifies exact source
+`5431846ee47a702a07994c1b3456c7da01776b20` and unpublished wheel SHA-256
+`d8ec8d20f59e783d9f7be4a69bb70a4d7b7ed7ccebe0b05ff1fce89a3ddd6438`.
+All 72 packaged runtime files matched that source and both isolated installs.
+The published alpha.3 release assets remain unchanged.
+
+The file traveled B → A at SF5/BW500/CR4:5, 921.375 MHz, 0 dBm chip setting,
+with the existing four-packet queue, 5 ms receive dwell, 100 ms reverse guard
+and USB pacing. Base 8/SACK `0xe0000000` proved receipts 9–11 around missing 8.
+The fresh selective retry arrived, followed by cumulative ACK base 12. All six
+ACKs arrived. One fast offer, one fast handover and one total retry reconcile.
+
+| Latest one-part trial | Value |
+| --- | ---: |
+| Useful / encoded response bytes | 2,000 / 2,662 |
+| DATA / receipt CONTROL / receiver ACK attempts | 15 / 1 / 6 |
+| Sender process launch → receipt | 2.554067 s |
+| Part invocation → receipt | 2.093694 s |
+| SACK proof → retry submission | 16.725 ms |
+| Receiver hole fill → cumulative ACK completion | 284.617 ms |
+
+The sender-clock partition is disjoint: 460.373 ms from child launch to part
+invocation, 291.992 ms to first DATA submission, 1,029.635 ms in the merged
+queued-DATA outstanding intervals, and 772.067 ms after first DATA with none
+outstanding. The latter includes ACK processing, host checks and scheduling;
+it is not entirely idle or removable time. A faster waveform cannot remove
+these fixed and control costs. This tiny workload is not a paired profile
+comparison with the earlier 100 kB SF7 file.
+
+Both children exited zero, retired their sessions and closed their owned
+hardware. All 22 RF_DONE attempts reconcile with durable and native increments;
+all 15 queued lifecycles have their six ordered stages, and pending is zero.
+Tracked service inventory and lifetimes stayed unchanged. Journals are unfenced,
+with no recovered UNKNOWN. All 48 inclusive phase aggregates are valid; those
+nested durations must not be summed with the disjoint partition.
+
+A's native attempts increased 433 → 439 and B's 1003 → 1019. The existing
+1,024-attempt boot cap was retained. Full role allocations, historical failures
+and debt remain reserved without refunds. This physical case establishes one
+selective repair and verified delivery. Comparable repeated SF5/SF7 workloads,
+partial-train ACK latency, larger files, loss causes and sustained capacity
+remain open. No inter-part handoff occurs in this one-part trial.
+
+## Earlier ACK-policy hardware trial
+
 A finite 3,000-byte B-to-A file completed in **7.609176 seconds**, or
 **394.260824 useful bytes/s (0.394261 decimal kB/s)**, from sender SDK child
 launch through its authenticated receipt. The receiver verified the publisher,
@@ -13,7 +66,7 @@ unpublished local wheel SHA-256
 `8ea6ac4c21316772275f8368144dfb19433c38f8c4bdd337569c6fdc227c9e20`.
 Its package metadata remains `1.0.0a3`; the published alpha.3 wheel is unchanged.
 The [sanitized hardware record](ACK_POLICY_HARDWARE.json) pins the original
-result, frozen supervisor adapter, SDK observer, runtime inventory and scope.
+result, frozen supervisor adapter, SDK observer and runtime inventory; it records the full scope allocations.
 
 ## What the new evidence establishes
 
@@ -60,7 +113,7 @@ still uses the same live authority, scheduler, fresh ciphertext and paid journal
 The optional repeat skips when durable or scheduler headroom is unavailable.
 It never renews the original deadline or refunds debt.
 
-The [seven paired source cases](SOURCE_COMPARISON.json) use the same current
+The [seven paired source cases](SOURCE_COMPARISON.json) use the same `8178688`
 source and receipt-confirmation opt-in at both endpoints. The before subclass
 disables only the new ACK recovery hook. These are deterministic modeled
 host/USB/RF intervals with explicit injected loss, not RF goodput measurements.
@@ -95,8 +148,7 @@ confirmation. Frozen flow source and retry floors were unchanged in this trial.
 
 The result does not establish 2–3 kB/s, a larger-file rate, range or production
 qualification. All previous failed trials, complete allocations and debt remain
-retained. The next selective-retry candidate requires its own reviewed source
-revision and finite physical scope.
+retained. The following selective-retry candidate has its own reviewed source revision and finite physical scope.
 
 
 ## Reviewed selective-retry source revision
@@ -106,7 +158,7 @@ ACK recovery policy enabled in both arms and disables only the new selective
 retry flag in the before arm. These are modeled intervals with injected losses.
 
 | Injected source loss | Timeout only | Selective enabled | Sender retries, both arms |
-| --- | ---: | ---: | ---: | ---: |
+| --- | ---: | ---: | ---: |
 | First DATA | 3.232999 s | 1.215520 s | 1 |
 | Middle DATA | 3.350366 s | 1.348300 s | 1 |
 | Two separated DATA holes | 5.606144 s | 1.714444 s | 2 |
@@ -117,7 +169,7 @@ transmissions and modeled times. The four-loss case uses only one early repair;
 its other losses still require the unchanged timeout fallback. The original
 ACK-only comparison above remains tied to candidate `8178688`. The current
 source helper explicitly disables selective recovery in both ACK-only arms.
-A separately scoped physical run is required to measure the new revision.
+The separately scoped physical trial above exercises one selective repair; it does not pair these modeled times with RF throughput.
 
 The final selective-retry source passed **3,126 tests, 37 skips and 49 subtests**,
 plus accepted-flow pins, repository/history boundaries, documentation, website
