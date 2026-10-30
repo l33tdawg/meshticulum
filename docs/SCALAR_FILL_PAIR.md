@@ -11,6 +11,21 @@ other's frames.
 This is a source candidate. No physical throughput gain or completion of the
 3,000 useful-file B/s target is established by these changes.
 
+The reviewed implementation is source commit
+`7ac7daf02629b5b4cdf23d1cfaadc0152c0ce1dc`, tree
+`adbe1b0b6b8e172005711f133e7ebbd5387c1e85`. Its unpublished
+`meshticulum-1.0.0a3-py3-none-any.whl` is 305,472 bytes, SHA-256
+`0b2466dbb4a7004dd99f2608cba77b9a514292152815fc71747711b5f4909934`.
+All 75 wheel runtime files, including 71 Python files, match that source and
+remain unchanged after integrating public main
+`9f7b6ea1f8fc4aaf7debe7dc9242e203e74aee03`. The local wheel-verification record
+has SHA-256 `3d0affd512ff901aea6de3d297519c1783dc7b8a75e8949fe22f034f9ffc4bbf`.
+These pins describe a host candidate, not a new release or firmware qualification.
+
+The latest retained [terminal-retry physical run](../benchmarks/2026-10-30-sf5-terminal-retry-profile/README.md)
+used v5 and measured 2,026.493477 useful file B/s including process startup.
+It did not exercise v6; the 3,000 B/s goal remains unmet.
+
 The retained terminal-retry run exposed six queue-empty transitions inside its
 host eight-frame groups. Three followed a selective repair; the next native
 admission arrived roughly 2 ms after the preceding RF_DONE. The existing native
