@@ -59,3 +59,8 @@ For current code, use [the source suite and CI workflow](../.github/workflows/te
 GitHub renders the Mermaid blocks in the Markdown. Every figure also links to an editable `.mmd` source and a rendered SVG for other viewers. Update the Markdown first, then regenerate with `python tools/render_diagrams.py` after installing Mermaid CLI (`mmdc`). Use `--puppeteer-config` when your local Chrome executable needs an explicit path. The rendering theme is in `docs/diagrams/config.json`.
 
 `python tools/check_docs.py` checks local links and source consistency. `python tools/verify_benchmark_report.py` checks the published measurement arithmetic; `python tools/render_benchmark_plot.py` rebuilds its figure with Matplotlib. All operate on source or published metadata and open no hardware.
+
+
+[Throughput pipeline work](THROUGHPUT_PIPELINE.md) records the existing verified
+piece behavior, bounded host wakeups, dormant MCU batch prototype and remaining
+3 kB/s qualification work.

@@ -255,3 +255,15 @@ separates ACK-only hardware observations, paired selective source controls and
 any separately scoped selective hardware trial. Reproduce the incremental source
 comparison with `tools/benchmarks/compare_sf5_selective_recovery.py`; both arms use
 the same ACK policy and differ only in the selective retry flag.
+
+
+## Readiness-driven host work
+
+The [throughput pipeline work](THROUGHPUT_PIPELINE.md) adds bounded serial
+readiness and useful immediate queue refill in the generic file example.
+Readiness waits use `serial_read_wait`; `host_loop_sleep` continues to count
+actual fallback sleeps. Fewer sleep aggregates do not by themselves prove a
+wall-time improvement. The wait is at most 5 ms and the original deadline;
+all ordinary step, authority, physical-release and cleanup checks remain.
+The current [MCU batch prototype](MCU_BATCH_PROTOTYPE.md) is source-only and is
+not consumed by the existing worker or installed firmware.
