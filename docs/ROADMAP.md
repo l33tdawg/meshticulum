@@ -10,8 +10,10 @@ builds passed and both Heltec installations have live memory observations.
 The [matched R11 sample](../benchmarks/2026-10-30-sf5-r11/README.md) delivered the
 same useful bytes at 1,053.284286 B/s in 22.690930 seconds. Loss differed, so the
 pair does not isolate the retry change. Recovery stalls remain; the 3 kB/s goal
-is open. Next source work separates a 32-frame logical receive window from the
-bounded eight-frame physical train.
+is open. The [first logical-window32 sample](../benchmarks/2026-10-30-sf5-window32-profile/README.md)
+then verified the same useful bytes at 1,276.917174 B/s in 18.716954 seconds,
+keeping the physical train at eight. Its loss pattern also differed. Further
+work targets per-repair control holds and completion/retry delays.
 
 The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
 

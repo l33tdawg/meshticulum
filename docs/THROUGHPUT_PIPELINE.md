@@ -9,7 +9,10 @@ verified 23,900 useful bytes in 29.821904 seconds including startup, or
 801.424349 useful B/s. It retained 14 DATA retries and all attempt debt. A
 [matched R11 sample](../benchmarks/2026-10-30-sf5-r11/README.md) completed the same
 useful bytes at 1,053.284286 B/s in 22.690930 seconds, with 10 DATA retries.
-The different loss patterns prevent an isolated causal gain estimate.
+The different loss patterns prevent an isolated causal gain estimate. A
+[subsequent logical-window32 sample](../benchmarks/2026-10-30-sf5-window32-profile/README.md)
+verified the same useful bytes at 1,276.917174 B/s in 18.716954 seconds, with
+the physical train still eight. This also misses the target.
 
 ## Existing piece and recovery behavior
 

@@ -29,7 +29,10 @@ authenticated receiver ACK still establishes actual credit. The existing
 The separate [logical-window32 source policy](LOGICAL_WINDOW32.md) keeps this
 physical eight-frame train but admits up to 32 host credit/reassembly positions.
 It requires an exact v3 plan on both endpoints; selecting depth eight alone
-continues to use the original eight-frame logical window.
+continues to use the original eight-frame logical window. Its
+[first physical sample](../benchmarks/2026-10-30-sf5-window32-profile/README.md)
+verified the same useful bytes at 1,276.917174 B/s including startup, below the
+target; it is separate from the source models.
 
 The [serial contract](MCU_BURST_PROTOCOL.md) specifies the distinct capability
 request and 49-byte OPEN8. A four-only peer cannot silently substitute its

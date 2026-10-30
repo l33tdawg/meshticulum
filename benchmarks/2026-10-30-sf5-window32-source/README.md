@@ -44,3 +44,7 @@ The [helper](../../tools/benchmarks/compare_sf5_window32.py) records exact sourc
 and fixture hashes and verifies that they remain stable during the experiment.
 It compares v2 and v3 on the same accepted R11 flow; it does not disable recovery
 or change timeout, radio-turn or operation-budget policy.
+
+A separate [physical sample](../2026-10-30-sf5-window32-profile/README.md)
+subsequently verified the same useful payload at 1,276.917174 B/s including
+startup. That observation does not change this source model's evidence scope.
