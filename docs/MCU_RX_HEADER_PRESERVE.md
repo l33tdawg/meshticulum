@@ -1,9 +1,9 @@
 # Optional continuous-RX header preservation
 
 This source experiment avoids a full receive restart for one narrow LoRa IRQ
-snapshot. It is disabled by default. It has no target build or physical loss or
-throughput qualification, and does not establish the cause of earlier missing
-packets.
+snapshot. It is disabled by default. Both supported target images have built
+successfully; physical loss and throughput qualification remain open. This
+experiment does not establish the cause of earlier missing packets.
 
 The normal driver uses continuous receive (`SetRx(0xFFFFFF)`). The application
 currently restarts reception after a header-error snapshot without a valid
@@ -79,3 +79,26 @@ PYTHONPATH=src python -m pytest -q tests/test_firmware_rx_header_preserve.py tes
 These tests do not model RF propagation, real demodulator behavior or electrical
 SPI faults. Hardware qualification requires a separately reviewed exact image,
 original finite authority and retained postflight evidence.
+
+## Target build evidence
+
+The [build record](../provenance/MCU_RX_HEADER_PRESERVE_FIRMWARE.json) binds one
+preparation of source commit `bda11e7798a25e6ed7abd9839cc50683e7816a14` to
+firmware identity `mtb1-845b22b090`. Native profiling and header preservation
+were enabled. The explicit SPI setting selects 8 MHz on Heltec; XIAO retains
+its 2 MHz setting. This is the opt-in build, not a change to recipe defaults.
+
+| Target | Firmware bytes | SHA-256 |
+| --- | ---: | --- |
+| Heltec V4 | 404,496 | `d98391bb4341aecda6b3e3f469875a3c396326afd283f4dce401e02cfa3c9b0b` |
+| XIAO ESP32-S3 + Wio SX1262 | 398,176 | `fe949908082e15f1cf5d31c35c2db979d236d1a6db0a3d582b3ecdedab5ccff7` |
+
+The source-manifest SHA-256 is
+`904e03e90f6b8a519eaffaef179ceb81fbeb278d1d5a71d02aeb9836e58f996d`;
+the build-manifest SHA-256 is
+`567a1059cd69821fc7dee9948a3797746d70a092984e4014310b4dc55cb95d9e`.
+Both builds returned success with the locked PlatformIO 6.1.19 toolchain.
+The record retains all eight application hashes and both targets' binary,
+ELF, map, bootloader and partition hashes. It records no flashing or RF
+qualification. Successful linking does not establish live heap/stack headroom,
+receive reliability, or any throughput improvement.
