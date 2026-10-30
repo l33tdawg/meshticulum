@@ -10,6 +10,7 @@ import pytest
 from meshticulum.bench.services import ServiceTransfer
 from meshticulum.ip.wire import IpError, IpLimits, READY_MODE
 from meshticulum.ip.worker import TcpWorker
+from tests import test_ip_transport
 from tests.test_ip_transport import pair
 from tests.test_ip_receive_fairness import payload, multi_window_payload, queue_ack
 
@@ -120,7 +121,19 @@ def test_ack_persist_interval_starts_after_actual_handover(tmp_path, monkeypatch
         assert workers[1].journal.snapshot()['lanes']['ACK'] == 2
 
 
-def test_credit_probe_handover_is_a_real_bounded_attempt_not_new_data(tmp_path, monkeypatch):
+@pytest.mark.parametrize('ack_delay_us', [50000, 300000])
+def test_credit_probe_handover_is_a_real_bounded_attempt_not_new_data(tmp_path, monkeypatch, ack_delay_us):
+    class ControlledClock(test_ip_transport.Clock):
+        def __init__(self):
+            super().__init__()
+            self.base = super().__call__()
+
+        def __call__(self):
+            return tuple(value + self.offset for value in self.base)
+
+    # Keep actual sockets, cipher and journal operations, but make the RTT
+    # witness independent of the runner's filesystem/scheduling latency.
+    monkeypatch.setattr(test_ip_transport, 'Clock', ControlledClock)
     data = multi_window_payload()
     with pair(tmp_path/'probe', data, 'MR1.response', IpLimits(max_plaintext=256)) as (flows, workers, stores, clock):
         a, b = flows
@@ -128,16 +141,32 @@ def test_credit_probe_handover_is_a_real_bounded_attempt_not_new_data(tmp_path, 
         queue_ack(b, credit=1, revision=1)
         a.step()
         assert a.flow.in_flight() == 1 and a.flow._next_seq == 1
+        clock.advance(ack_delay_us)
         queue_ack(b, credit=0, revision=2, ack_seq=1)
         a.step()
         assert not a.flow.in_flight() and a.flow.acked_frames() == 1
-        clock.advance(600000)
+        assert a.flow.rto == pytest.approx(3 * ack_delay_us / 1e6)
+        due = a.flow._probe_at
+        queued = a.flow.queued_bytes()
+        deadline = a.authority.application_deadline_us
         accepted = dispatch_clock(monkeypatch, workers[0], clock, 'DATA')
+        # The probe interval follows the sampled RTO. A fixed +600ms is too
+        # early for the 300ms-RTT control. Check both sides of the actual due
+        # instant, allowing one microsecond for float/clock conversion.
+        after_due_us = int(due * 1e6) + 1
+        clock.advance(after_due_us - 1000 - clock()[1])
+        assert clock()[1] / 1e6 < due
+        a.step()
+        assert not accepted and a.flow.zero_window_probes == 0
+        assert workers[0].journal.snapshot()['lanes']['DATA'] == 1
+        clock.advance(1000)
+        assert clock()[1] / 1e6 > due
         a.step()
         assert len(accepted) == 1 and a.flow.zero_window_probes == 1
         assert a.flow._probe_attempts == 1 and a.flow._probe_at > accepted[0]
         assert not a.flow._probe_outstanding and not a.flow.in_flight()
-        assert a.flow._next_seq == 1 and a.flow.queued_bytes() > 0
+        assert a.flow._next_seq == 1 and a.flow.queued_bytes() == queued > 0
+        assert a.authority.application_deadline_us == deadline
         assert a.flow.retransmits == 0 and a.counts['tx_DATA'] == 2
         a.step()
         assert a.flow.zero_window_probes == 1 and a.counts['tx_DATA'] == 2
