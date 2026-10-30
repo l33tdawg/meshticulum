@@ -7,7 +7,11 @@ Meshticulum is a public experimental transport and resource project with a publi
 The first [eight-frame SF5 profiling sample](../benchmarks/2026-10-30-sf5-eight-profile/README.md)
 verified 23,900 useful bytes at 801.424349 B/s including startup. Both target
 builds passed and both Heltec installations have live memory observations.
-Long recovery waits dominate this sample; the 3 kB/s goal remains open.
+The [matched R11 sample](../benchmarks/2026-10-30-sf5-r11/README.md) delivered the
+same useful bytes at 1,053.284286 B/s in 22.690930 seconds. Loss differed, so the
+pair does not isolate the retry change. Recovery stalls remain; the 3 kB/s goal
+is open. Next source work separates a 32-frame logical receive window from the
+bounded eight-frame physical train.
 
 The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
 

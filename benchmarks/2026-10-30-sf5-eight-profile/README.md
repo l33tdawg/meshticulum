@@ -40,7 +40,8 @@ or about 1.349 ms each. Parent and child phases overlap and must not be added.
 These costs are much smaller than the time without physical DATA outstanding.
 Three lost selective repairs fell back to roughly 4.7-second waits; source
 review traced their timeout doubling to the same retry-settlement path used by
-ordinary timeouts. A separately reviewed recovery change remains work in progress.
+ordinary timeouts. The reviewed [R11 sample](../2026-10-30-sf5-r11/README.md) subsequently completed
+the same useful bytes at 1,053.284286 B/s, with a different loss pattern.
 
 Both same-boot diagnostic snapshots passed the disarmed/drained gate. After
 the run, internal free heap was 340,352 bytes on the receiver and 340,496 on the
