@@ -85,7 +85,7 @@ R13/v7 source revision and its fresh-proof requirements. Its first
 verified 23,900 useful bytes at 1,577.815726 B/s including startup on the same
 firmware and MCU boots as the preceding sample. All 18 DATA retries were
 selective; differing loss prevents an isolated policy comparison. All nine
-samples remain below the throughput targets.
+earlier completed samples were below the throughput targets.
 
 The subsequent [32-symbol-preamble trial](../benchmarks/2026-10-30-sf5-preamble32-failure/README.md)
 failed during startup on the same SDK/v7 policy, firmware and MCU boots. The
@@ -95,6 +95,15 @@ so this trial has no goodput result. Both units were subsequently observed idle
 with empty queues and unchanged tracked services. The failed outcome and full reserved
 allocation remain retained. The IRQ category can include selective clearing
 without an RX restart; the underlying receive failure is unresolved.
+
+The latest [sync18/preamble32 sample](../benchmarks/2026-10-30-sf5-sync18-profile/README.md)
+then verified **23,900 useful bytes in 8.321713 seconds including startup:
+2,872.004838 B/s**, with zero DATA retries. This clears the above-2,800 B/s
+checkpoint once. It kept the SDK/v7 policy, firmware and both MCU boots and
+changed the explicit sync word to `0x12`; this does not prove the cause of the
+preceding failure. Repeated 3,000 B/s and comparisons against MeshCore or
+Reticulum remain unqualified. The v8/v9 source work below was not used in
+this physical run.
 
 [Terminal repair trains](TERMINAL_REPAIR_TRAIN.md) are now accepted in source as
 an explicit v8 policy. After original FINAL handover and authenticated peer
