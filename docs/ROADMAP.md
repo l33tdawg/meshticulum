@@ -14,6 +14,14 @@ is source-host evidence, separate from the [hardware record](RELEASE_READINESS.m
 Next work uses those phase measurements to investigate target-host costs while
 preserving durable reservations, receive/listening guards and retained debt.
 
+Post-alpha.3 source now has [reviewed SF5 selective recovery](../benchmarks/2026-10-30-sf5-recovery/README.md).
+A finite 2 kB hardware file exercised one repair 16.725 ms after selective ACK
+proof and completed in 2.554067 seconds including process startup (0.783065 kB/s).
+The next performance work targets partial-train ACK waits and host/setup costs,
+then repeats identical workloads on SF5 and SF7. Small-file goodput does not
+establish a profile comparison or the 2–3 kB/s target. Published release assets
+remain unchanged.
+
 The earlier measured SDK source, `da247a1`, has [passing source CI on Python 3.11, 3.12 and 3.13](https://github.com/l33tdawg/meshticulum/actions/runs/39028024473). The published documentation head passed the same source-control matrix with unchanged runtime and firmware. The hardware samples below supply separate physical evidence. Future release candidates need their own exact source checks and artifacts.
 
 On **24 October 2026**, a fresh fixed-order LoRa comparison at approximately

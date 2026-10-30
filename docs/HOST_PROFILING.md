@@ -169,3 +169,89 @@ uses A→B and order 4, 2, 0, 3, 1. Its waveform, direction, geometry and lifecy
 differ from the old B→A 100,000-byte run, so a future result would not isolate
 the handoff improvement or form a paired performance comparison. Faster-profile
 range, loss/recovery and sustained capacity remain separate measurements.
+
+## ACK progress and repeat diagnostics
+
+The current source also labels authenticated ACK handling in the existing flow
+snapshot. These bounded protocol-state observations add no timing collector,
+clock domain or callback. They are separate from the opt-in duration aggregates.
+
+An existing `rx` ACK event includes `ack_effect`, `acked_frames_delta` and the
+numeric `ack_seq`, `ack_sack`, `ack_credit` and `ack_revision`. Fixed lifetime
+counters use `rx_ACK_<effect>`:
+
+| Effect | Meaning after the frozen flow applies the authenticated ACK |
+| --- | --- |
+| `startup` | The first canonical peer receipt/credit snapshot was accepted |
+| `progress` | One or more previously outstanding frames were retired |
+| `fresh_credit` | A newer canonical revision was accepted without retiring another frame; this does not imply increased credit |
+| `unchanged` | An identical canonical revision/snapshot was accepted again without new retirement |
+| `ignored` | Authentication and inner framing passed, but the flow did not accept a new or repeated canonical receipt |
+
+Authentication refusals remain `rx_refused`, outside those ACK categories.
+An ignored ACK is not automatically a loss or a replay: stale, impossible,
+conflicting, wrong-flow and owner-refused receipts can have that effect.
+
+Existing `tx` ACK events include `ack_snapshot` (`startup`, `new` or `unchanged`)
+relative to the last physically completed ACK snapshot, the same numeric ACK
+fields, `ack_burst_received`, and `ack_wait_reason` (`startup`, `full_train`,
+`complete`, `quiet` or `persistence`). These describe the local send decision;
+`persistence` does not by itself distinguish every frozen-flow reason for an
+unchanged ACK. `tx_ACK_RF_DONE_<snapshot>` counters count only physically
+completed ACK transmissions. Neither those counters nor local `RF_DONE` proves
+that the peer received the ACK.
+
+`final_ACK_reannouncement_requested` and `final_ACK_reannouncement_satisfied`
+describe the bounded final-ACK repair path when enabled by the admitted queued
+SF5 session and existing receipt confirmation. They are not a new grant or a
+counter refund. Missing counters mean that event was not counted, not that a
+physical trace was complete.
+
+The source recovery policy applies only to a receiver with an admitted queued
+SF5 session and the existing receipt-confirmation option enabled. It preserves
+the first unchanged-ACK persistence opportunity at the existing 0.5-second
+interval, then waits 1 second and at most 2 seconds between further unchanged
+idle ACKs. New receive/credit work and an already queued canonical ACK bypass
+that idle gate. Startup, SF7, legacy/synchronous sessions and sessions without
+receipt confirmation retain their existing scheduling.
+
+After a physically successful final ACK, the eligible receiver schedules at
+most one reannouncement of the same canonical snapshot through the frozen
+flow's existing API if receipt confirmation has not arrived. Any second
+successful final ACK satisfies that opportunity, including one prompted by
+duplicate DATA; it does not schedule a third copy. Original authority,
+attempt/airtime limits, cipher counters, cleanup and the ACK grace remain in
+force. Neither change fabricates receipt or refunds an earlier attempt.
+
+In the paired source loss case, the old persistence schedule exhausted a
+20-ACK receiver cap before the final receipt; the enabled policy completed
+under that same cap with 12 ACK transmissions. This controlled result tests
+recovery headroom. It does not identify the cause of the earlier RF losses or
+establish faster physical goodput.
+
+Flow event history remains a 512-event tail; fixed counters cover the session.
+The private harness preserves full snapshots in ordinary endpoint results and
+a maximum 64-event ACK-only metadata tail in its bounded failure diagnostic.
+No packet body is added. Sender host, receiver host and MCU clocks still have
+independent origins. These fields can expose repeated ACKs, partial progress and
+host train accounting, but cannot establish a physical collision from timestamp
+overlap across unsynchronized endpoints. Controlled loss and complete native
+traces remain separate evidence.
+
+
+## Selective DATA recovery
+
+The [reviewed flow revision](../src/meshticulum/flow/README.md#revision-10-selective-retry-30-october-2026)
+adds a default-off explicit selective retry API. The queued SF5 receipt-confirmation
+adapter can offer one repair after three distinct later accepted SACK positions
+identify a hole. It first verifies local physical drain and original live authority;
+peer SACK is receipt evidence, never local drain proof. The same owner, cipher,
+journal, attempt ceilings and timeout fallback remain active. `fast_retry_offers`
+counts offers, including refused or deferred ones; `fast_retransmits` counts actual
+handovers. Neither implies peer delivery. A timeout consumes unused early evidence.
+
+The [dated recovery record](../benchmarks/2026-10-30-sf5-recovery/README.md)
+separates ACK-only hardware observations, paired selective source controls and
+any separately scoped selective hardware trial. Reproduce the incremental source
+comparison with `tools/benchmarks/compare_sf5_selective_recovery.py`; both arms use
+the same ACK policy and differ only in the selective retry flag.

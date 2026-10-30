@@ -158,7 +158,8 @@ class Air:
         self.frames.append(frame)
 
         def begin():
-            frame.listening_at_start = self.channels[1 - channel.index].armed
+            peer = self.channels[1 - channel.index]
+            frame.listening_at_start = peer.armed and not getattr(peer, 'transmitting', False)
             for previous in self.frames:
                 if (previous is not frame and previous.channel is not channel
                         and max(frame.start, previous.start) < min(frame.end, previous.end)):
@@ -167,7 +168,8 @@ class Air:
 
         def end():
             peer = self.channels[1 - channel.index]
-            if not frame.lost and frame.listening_at_start and peer.armed:
+            if (not frame.lost and frame.listening_at_start and peer.armed
+                    and not getattr(peer, 'transmitting', False)):
                 peer.offer(Frame(Message.RECEIVE, RADIO_BOOT, 0,
                                  struct.pack('!hh', -600, 100) + packet))
             finish(frame.end)
@@ -188,6 +190,9 @@ class RadioChannel:
         self.attempts = self.airtime = self.train_count = 0
         self.next_start_us = 0
         self.armed = self.fenced = False
+        self.transmitting = False
+        self.queued = []
+        self.dispatch_scheduled = False
         self.peak = 0
         self.writes = []
 
@@ -208,6 +213,47 @@ class RadioChannel:
                                1 if stage is Stage.RF_DONE else 0, 0)
         self.offer(Frame(Message.BURST_EVENT, RADIO_BOOT, request,
                          EVENT.pack(*self.events[request])))
+
+    def dispatch(self):
+        """Model native queue service, including an underfilled train's tail.
+
+        START_GUARD_US is admission/deadline headroom in native source, not
+        an actual pre-TX delay. RX priority here is idealized: a modeled
+        incoming packet holds dispatch until its end. This does not model
+        header-detection latency, IRQ/SPI service or firmware output pressure.
+        """
+        self.dispatch_scheduled = False
+        if not self.queued or self.transmitting:
+            return
+        now = self.now_us()
+        active_rx = [frame.end for frame in self.air.frames
+                     if frame.channel is not self and frame.start <= now < frame.end]
+        at = max([now, self.next_start_us, *active_rx])
+        if at > now:
+            self.dispatch_scheduled = True
+            self.timeline.schedule(at, self.dispatch)
+            return
+        request, packet = self.queued.pop(0)
+        self.event(request, Stage.ISSUED, now)
+        self.event(request, Stage.STARTED, now)
+        self.transmitting = True
+
+        def finish(at):
+            self.transmitting = False
+            self.event(request, Stage.RF_DONE, at)
+            self.train_count += 1
+            tail = self.train_count >= 4 or not self.queued
+            self.next_start_us = at + (REVERSE_LISTEN_US if tail else INTER_PACKET_RX_US)
+            if tail:
+                self.train_count = 0
+            self.schedule_dispatch()
+
+        self.air.transmit(self, packet, now, finish)
+
+    def schedule_dispatch(self):
+        if self.queued and not self.transmitting and not self.dispatch_scheduled:
+            self.dispatch_scheduled = True
+            self.timeline.schedule(self.now_us(), self.dispatch)
 
     def write(self, raw, deadline):
         assert self.monotonic() < deadline
@@ -250,12 +296,8 @@ class RadioChannel:
             self.events[frame.request] = (token, Stage.QUEUED, self.now_us(), digest,
                                           estimate, size, end, 0, 0, 0)
             self.peak = max(self.peak, len(self.events))
-            start = max(self.now_us() + START_GUARD_US, self.next_start_us)
-            self.timeline.schedule(start, lambda: self.event(frame.request, Stage.STARTED, start))
-            physical = self.air.transmit(self, packet, start,
-                lambda at: self.event(frame.request, Stage.RF_DONE, at))
-            self.train_count = (self.train_count + 1) % 4
-            self.next_start_us = physical.end + (INTER_PACKET_RX_US if self.train_count else REVERSE_LISTEN_US)
+            self.queued.append((frame.request, packet))
+            self.schedule_dispatch()
             reply(Message.BURST_EVENT, EVENT.pack(*self.events[frame.request]))
         elif frame.type is Message.BURST_ACK:
             token, request, stage, at, digest = ACK.unpack(frame.body)
@@ -270,7 +312,7 @@ class RadioChannel:
         elif frame.type is Message.BURST_STATUS:
             reply(Message.BURST_STATUS_REPLY, STATUS.pack(self.token, self.context, self.arm_request,
                 self.open_end, sum(v[1] not in (Stage.RF_DONE, Stage.NOT_SENT, Stage.UNKNOWN)
-                for v in self.events.values()), len(self.events), 0, self.fenced, 0,
+                for v in self.events.values()), len(self.events), self.transmitting, self.fenced, 0,
                 self.now_us(), self.next_start_us, self.attempts, self.airtime))
         elif frame.type is Message.BURST_QUERY:
             assert TOKEN.unpack(frame.body) == (self.token,)
@@ -287,9 +329,14 @@ class RadioChannel:
             estimate = estimated_airtime_us(PROFILE, len(frame.body))
             self.attempts += 1
             self.airtime += estimate
-            self.air.transmit(self, frame.body, self.now_us() + START_GUARD_US,
-                lambda at: reply(Message.TX_RESULT, struct.pack('!B32sQQIh', Outcome.RF_DONE,
-                    hashlib.sha256(frame.body).digest(), estimate, estimate, 1, 0)))
+            # Legacy synchronous ACK/control starts immediately; its 100ms
+            # deadline headroom is not a listen delay. It can preempt RX.
+            self.transmitting = True
+            def finish(at):
+                self.transmitting = False
+                reply(Message.TX_RESULT, struct.pack('!B32sQQIh', Outcome.RF_DONE,
+                    hashlib.sha256(frame.body).digest(), estimate, estimate, 1, 0))
+            self.air.transmit(self, frame.body, self.now_us(), finish)
         else:
             raise AssertionError(frame.type)
 
@@ -301,7 +348,8 @@ class RadioChannel:
         return raw
 
 
-def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False):
+def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
+             receipt_confirmation=False, host_work_us=(0, 0)):
     timeline = Timeline()
     air = Air(timeline, drop_data=drop_data, drop_final_ack=drop_final_ack)
     air.channels = [RadioChannel(timeline, air, i) for i in range(2)]
@@ -339,10 +387,14 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False)
             cipher = SessionCipher(authority.grant, authority.local_peer, store)
             original_seal = cipher.seal
             def observe_seal(payload, kind, *, authorize):
+                # Explicit source-cost injection, not measured storage/CPU time.
+                if host_work_us[index]:
+                    timeline.sleep(index, host_work_us[index])
                 packet = original_seal(payload, kind, authorize=authorize)
                 # Observation before/after sealing never opens incoming ciphertext
                 # or changes the real replay/credit state.
-                air.sealed[packet] = parse_frame(payload)
+                air.sealed[packet] = (dict(control=True) if kind is FrameKind.CONTROL
+                                      else parse_frame(payload))
                 return packet
             cipher.seal = observe_seal
             ledger = Ledger(BudgetPolicy(180_000_000, 60_000_000, 120_000_000, 1_000_000,
@@ -352,6 +404,10 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False)
                 ledger=ledger, scheduler_epoch=authority.scheduler_epoch, broker_epoch=authority.broker_epoch,
                 sends=index == 0, clock=timeline.clock)
             opened.append(endpoint.close)
+            if receipt_confirmation:
+                endpoint.enable_receipt_confirmation(bytes.fromhex('ab' * 32),
+                    receiver_ready=None if index == 0 else lambda: (
+                        endpoint.flow.complete and bytes(endpoint.received) == PAYLOAD))
             if index == 0:
                 endpoint.send(PAYLOAD)
             received_at = None
@@ -359,6 +415,8 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False)
                 complete = endpoint.step()
                 if complete:
                     if index == 0:
+                        if receipt_confirmation:
+                            endpoint.confirm_receipt()
                         timeline.stop_flows = True
                         break
                     received_at = received_at or timeline.now
@@ -425,6 +483,47 @@ def test_air_model_waits_for_rf_end_and_marks_half_duplex_overlap():
     assert data.end - data.start == estimated_airtime_us(PROFILE, 255)
 
 
+def test_sync_ack_model_starts_without_an_invented_100ms_listen_delay():
+    timeline, air = Timeline(), None
+    air = Air(timeline)
+    air.channels = [RadioChannel(timeline, air, i) for i in range(2)]
+    timeline.sleep = lambda *args, **kwargs: None
+    channel = air.channels[1]
+    packet = b'a' * 70
+    air.sealed[packet] = dict(ack_seq=0)
+    channel.write(Frame(Message.TRANSMIT, RADIO_BOOT, 1, packet).encode(),
+                  channel.monotonic() + 1)
+    assert air.frames[0].start == timeline.now
+    assert channel.transmitting
+
+
+@pytest.mark.parametrize('queued_tail', [False, True])
+def test_queue_model_uses_actual_occupancy_for_reverse_listen(queued_tail):
+    timeline = Timeline()
+    air = Air(timeline)
+    air.channels = [RadioChannel(timeline, air, i) for i in range(2)]
+    channel = air.channels[0]
+    packet = b'd' * 255
+    air.sealed[packet] = dict(seq=0)
+    estimate = estimated_airtime_us(PROFILE, len(packet))
+    for request in range(1, 3 if queued_tail else 2):
+        channel.events[request] = (1, Stage.QUEUED, timeline.now,
+            hashlib.sha256(packet).digest(), estimate, len(packet),
+            timeline.now + 2_000_000, 0, 0, 0)
+        channel.queued.append((request, packet))
+    channel.dispatch()
+    assert air.frames[0].start == timeline.now
+    # Service only through the first terminal event. A host cannot assume a
+    # four-packet train when its own refill left the native queue empty.
+    first_end = air.frames[0].end
+    while timeline.events and timeline.events[0][0] <= first_end:
+        timeline.now, _, callback = heapq.heappop(timeline.events)
+        callback()
+    assert channel.next_start_us == first_end + (
+        INTER_PACKET_RX_US if queued_tail else REVERSE_LISTEN_US)
+    assert channel.train_count == (1 if queued_tail else 0)
+
+
 def test_nine_data_queued_sf5_on_independent_half_duplex_hosts(tmp_path):
     results, air = exercise(tmp_path)
     assert_complete(results, air)
@@ -435,6 +534,20 @@ def test_nine_data_queued_sf5_on_independent_half_duplex_hosts(tmp_path):
     assert len(data) == 9
     for number, (first, second) in enumerate(zip(data, data[1:]), 1):
         assert second.start >= first.end + (REVERSE_LISTEN_US if number % 4 == 0 else INTER_PACKET_RX_US)
+
+
+@pytest.mark.parametrize('host_work_us', [(40_000, 20_000), (120_000, 40_000)])
+def test_host_refill_slower_than_phy_keeps_underfilled_tail_listening(tmp_path, host_work_us):
+    # These are injected source costs, not target-host measurements. In both
+    # cases sender refill exceeds a full SF5 packet's modeled on-air interval.
+    results, air = exercise(tmp_path, host_work_us=host_work_us)
+    assert_complete(results, air)
+    assert results[0]['snapshot']['retransmits'] == 0
+    assert not any(frame.collision for frame in air.frames)
+    data = [frame for frame in air.frames if 'seq' in frame.inner]
+    assert len(data) == 9
+    assert any(second.start - first.end >= REVERSE_LISTEN_US
+               for first, second in zip(data[:3], data[1:4]))
 
 
 def test_final_ack_loss_recovers_from_fresh_ciphertext_retry_after_receiver_complete(tmp_path):
@@ -490,7 +603,7 @@ def test_receiver_cap_can_expire_before_final_receipt_and_original_allowance_rec
     assert_complete(recovered, recovered_air)
     assert recovered[0]['snapshot']['attempt_journal']['attempts'] == 13
     assert recovered[0]['snapshot']['retransmits'] == 4
-    assert recovered[1]['snapshot']['attempt_journal']['attempts'] == 22
+    assert recovered[1]['snapshot']['attempt_journal']['attempts'] == 23
     final = [frame for frame in recovered_air.frames if frame.inner.get('ack_seq') == 9]
     assert len(final) == 1 and not final[0].lost
     assert not any(frame.collision for frame in recovered_air.frames)

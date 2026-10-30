@@ -1,0 +1,980 @@
+{
+  "candidate": {
+    "batch_entry_sha256": "1ee45815cc82dc0542e88426c1eb05a05c68fe1c59f31176690a31ea31edf616",
+    "frozen_flow_sha256": "9a8d4bb3bea2f69581d80ecd31fda7692c2435fe1363be53564d5281485cb857",
+    "observer_sha256": "85aec01de10baa332f7cd8e4357bdc4f633bb661900b44a0876b5850eb0f4337",
+    "source_commit": "81786885b2dab2e55507fcbeda8f2f3a67c402b7",
+    "wheel_sha256": "8ea6ac4c21316772275f8368144dfb19433c38f8c4bdd337569c6fdc227c9e20"
+  },
+  "canonical_ACK_evidence": {
+    "clocks": "Each endpoint own part-invocation origin; never subtract sender and receiver clocks",
+    "holes": [
+      {
+        "canonical_base": 5,
+        "canonical_revision_proving_three_higher": 4,
+        "canonical_sack_hex": "0xe0000000",
+        "missing_logical_sequence": 5,
+        "original_DATA_attempt_ordinal": 6,
+        "physical_queue_settled_before_three_higher_receipt": true,
+        "receiver_ack_wait_reason": "quiet",
+        "receiver_hole_fill_after_invocation_us": 3444246,
+        "receiver_hole_fill_to_ACK_RF_DONE_us": 289851,
+        "receiver_new_cumulative_ack_after_invocation_us": 3734097,
+        "receiver_new_cumulative_ack_seq": 9,
+        "retry_DATA_attempt_ordinal": 10,
+        "sender_original_submit_to_retry_submit_us": 2606478,
+        "sender_proof_after_invocation_us": 1645343,
+        "sender_retry_submit_after_invocation_us": 3396025,
+        "sender_three_higher_receipt_to_retry_submit_us": 1750682,
+        "three_higher_received_sequences": [
+          6,
+          7,
+          8
+        ]
+      },
+      {
+        "canonical_base": 13,
+        "canonical_revision_proving_three_higher": 7,
+        "canonical_sack_hex": "0xe0000000",
+        "missing_logical_sequence": 13,
+        "original_DATA_attempt_ordinal": 15,
+        "physical_queue_settled_before_three_higher_receipt": true,
+        "receiver_ack_wait_reason": "quiet",
+        "receiver_hole_fill_after_invocation_us": 6634182,
+        "receiver_hole_fill_to_ACK_RF_DONE_us": 286978,
+        "receiver_new_cumulative_ack_after_invocation_us": 6921160,
+        "receiver_new_cumulative_ack_seq": 17,
+        "retry_DATA_attempt_ordinal": 19,
+        "sender_original_submit_to_retry_submit_us": 2462179,
+        "sender_proof_after_invocation_us": 4657188,
+        "sender_retry_submit_after_invocation_us": 6586124,
+        "sender_three_higher_receipt_to_retry_submit_us": 1928936,
+        "three_higher_received_sequences": [
+          14,
+          15,
+          16
+        ]
+      }
+    ],
+    "receiver_transmissions": [
+      {
+        "ack_burst_received": 0,
+        "ack_seq": 0,
+        "ack_snapshot": "startup",
+        "ack_wait_reason": "startup",
+        "at_after_part_invocation_us": 363150,
+        "credit": 4,
+        "revision": 1,
+        "sack_hex": "0x00000000"
+      },
+      {
+        "ack_burst_received": 4,
+        "ack_seq": 4,
+        "ack_snapshot": "new",
+        "ack_wait_reason": "full_train",
+        "at_after_part_invocation_us": 717071,
+        "credit": 4,
+        "revision": 2,
+        "sack_hex": "0x00000000"
+      },
+      {
+        "ack_burst_received": 3,
+        "ack_seq": 5,
+        "ack_snapshot": "new",
+        "ack_wait_reason": "quiet",
+        "at_after_part_invocation_us": 1242048,
+        "credit": 2,
+        "revision": 3,
+        "sack_hex": "0xc0000000"
+      },
+      {
+        "ack_burst_received": 1,
+        "ack_seq": 5,
+        "ack_snapshot": "new",
+        "ack_wait_reason": "quiet",
+        "at_after_part_invocation_us": 1613033,
+        "credit": 1,
+        "revision": 4,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_burst_received": 0,
+        "ack_seq": 5,
+        "ack_snapshot": "unchanged",
+        "ack_wait_reason": "persistence",
+        "at_after_part_invocation_us": 2118093,
+        "credit": 1,
+        "revision": 4,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_burst_received": 0,
+        "ack_seq": 5,
+        "ack_snapshot": "unchanged",
+        "ack_wait_reason": "persistence",
+        "at_after_part_invocation_us": 3162372,
+        "credit": 1,
+        "revision": 4,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_burst_received": 1,
+        "ack_seq": 9,
+        "ack_snapshot": "new",
+        "ack_wait_reason": "quiet",
+        "at_after_part_invocation_us": 3734097,
+        "credit": 4,
+        "revision": 5,
+        "sack_hex": "0x00000000"
+      },
+      {
+        "ack_burst_received": 4,
+        "ack_seq": 13,
+        "ack_snapshot": "new",
+        "ack_wait_reason": "full_train",
+        "at_after_part_invocation_us": 4086170,
+        "credit": 4,
+        "revision": 6,
+        "sack_hex": "0x00000000"
+      },
+      {
+        "ack_burst_received": 3,
+        "ack_seq": 13,
+        "ack_snapshot": "new",
+        "ack_wait_reason": "quiet",
+        "at_after_part_invocation_us": 4625167,
+        "credit": 1,
+        "revision": 7,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_burst_received": 0,
+        "ack_seq": 13,
+        "ack_snapshot": "unchanged",
+        "ack_wait_reason": "persistence",
+        "at_after_part_invocation_us": 5132114,
+        "credit": 1,
+        "revision": 7,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_burst_received": 0,
+        "ack_seq": 13,
+        "ack_snapshot": "unchanged",
+        "ack_wait_reason": "persistence",
+        "at_after_part_invocation_us": 6175494,
+        "credit": 1,
+        "revision": 7,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_burst_received": 1,
+        "ack_seq": 17,
+        "ack_snapshot": "new",
+        "ack_wait_reason": "quiet",
+        "at_after_part_invocation_us": 6921160,
+        "credit": 4,
+        "revision": 8,
+        "sack_hex": "0x00000000"
+      },
+      {
+        "ack_burst_received": 2,
+        "ack_seq": 19,
+        "ack_snapshot": "new",
+        "ack_wait_reason": "complete",
+        "at_after_part_invocation_us": 7185229,
+        "credit": 4,
+        "revision": 9,
+        "sack_hex": "0x00000000"
+      }
+    ],
+    "sender_receipts": [
+      {
+        "ack_effect": "startup",
+        "ack_seq": 0,
+        "acked_frames_delta": 0,
+        "at_after_part_invocation_us": 387707,
+        "credit": 4,
+        "revision": 1,
+        "sack_hex": "0x00000000"
+      },
+      {
+        "ack_effect": "progress",
+        "ack_seq": 4,
+        "acked_frames_delta": 4,
+        "at_after_part_invocation_us": 741592,
+        "credit": 4,
+        "revision": 2,
+        "sack_hex": "0x00000000"
+      },
+      {
+        "ack_effect": "progress",
+        "ack_seq": 5,
+        "acked_frames_delta": 3,
+        "at_after_part_invocation_us": 1267204,
+        "credit": 2,
+        "revision": 3,
+        "sack_hex": "0xc0000000"
+      },
+      {
+        "ack_effect": "progress",
+        "ack_seq": 5,
+        "acked_frames_delta": 1,
+        "at_after_part_invocation_us": 1645343,
+        "credit": 1,
+        "revision": 4,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_effect": "unchanged",
+        "ack_seq": 5,
+        "acked_frames_delta": 0,
+        "at_after_part_invocation_us": 2148680,
+        "credit": 1,
+        "revision": 4,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_effect": "unchanged",
+        "ack_seq": 5,
+        "acked_frames_delta": 0,
+        "at_after_part_invocation_us": 3189442,
+        "credit": 1,
+        "revision": 4,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_effect": "progress",
+        "ack_seq": 9,
+        "acked_frames_delta": 1,
+        "at_after_part_invocation_us": 3758210,
+        "credit": 4,
+        "revision": 5,
+        "sack_hex": "0x00000000"
+      },
+      {
+        "ack_effect": "progress",
+        "ack_seq": 13,
+        "acked_frames_delta": 4,
+        "at_after_part_invocation_us": 4113107,
+        "credit": 4,
+        "revision": 6,
+        "sack_hex": "0x00000000"
+      },
+      {
+        "ack_effect": "progress",
+        "ack_seq": 13,
+        "acked_frames_delta": 3,
+        "at_after_part_invocation_us": 4657188,
+        "credit": 1,
+        "revision": 7,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_effect": "unchanged",
+        "ack_seq": 13,
+        "acked_frames_delta": 0,
+        "at_after_part_invocation_us": 5155962,
+        "credit": 1,
+        "revision": 7,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_effect": "unchanged",
+        "ack_seq": 13,
+        "acked_frames_delta": 0,
+        "at_after_part_invocation_us": 6198065,
+        "credit": 1,
+        "revision": 7,
+        "sack_hex": "0xe0000000"
+      },
+      {
+        "ack_effect": "progress",
+        "ack_seq": 17,
+        "acked_frames_delta": 1,
+        "at_after_part_invocation_us": 6955018,
+        "credit": 4,
+        "revision": 8,
+        "sack_hex": "0x00000000"
+      },
+      {
+        "ack_effect": "progress",
+        "ack_seq": 19,
+        "acked_frames_delta": 2,
+        "at_after_part_invocation_us": 7212301,
+        "credit": 4,
+        "revision": 9,
+        "sack_hex": "0x00000000"
+      }
+    ]
+  },
+  "case": {
+    "direction": "unit-b to unit-a",
+    "encoded_response_bytes": 3662,
+    "host_profiling": true,
+    "part_count": 1,
+    "part_order": [
+      0
+    ],
+    "profile": {
+      "bandwidth_hz": 500000,
+      "chip_power_dbm": 0,
+      "coding_rate": 5,
+      "frequency_hz": 921375000,
+      "lease_ms": 60000,
+      "max_boot_attempts": 1024,
+      "max_boot_estimated_airtime_us": 300000000,
+      "preamble": 12,
+      "spreading_factor": 5,
+      "sync_word": 66
+    },
+    "queued_DATA": true,
+    "receipt_confirmation": true,
+    "useful_bytes": 3000,
+    "useful_sha256": "483ee4583bb923f4e3554d82b3e1b3f3af58a93e133e26002e950a2b2073763b"
+  },
+  "delivery": {
+    "ACK_transmissions": 13,
+    "ACK_transmissions_absent_from_sender_log": 0,
+    "DATA_attempts_absent_from_receiver_log": 2,
+    "DATA_attempts_observed_at_receiver": 19,
+    "absent_DATA_attempt_ordinals": [
+      6,
+      15
+    ],
+    "authenticated_ACK_receives": 13,
+    "final_ACK_reannouncement_requested": 0,
+    "final_ACK_reannouncement_satisfied": 0,
+    "logical_DATA_frames": 19,
+    "queued_DATA_attempts": 21,
+    "receipt_CONTROL_authenticated_receives": 1,
+    "receipt_CONTROL_transmissions": 1,
+    "receiver_ACK_completion_counts": {
+      "tx_ACK_RF_DONE_new": 8,
+      "tx_ACK_RF_DONE_startup": 1,
+      "tx_ACK_RF_DONE_unchanged": 4
+    },
+    "receiver_whole_file_verified": true,
+    "retransmissions": 2,
+    "sender_ACK_effect_counts": {
+      "rx_ACK": 13,
+      "rx_ACK_progress": 8,
+      "rx_ACK_startup": 1,
+      "rx_ACK_unchanged": 4
+    }
+  },
+  "endpoints": {
+    "unit-a": {
+      "child_returncode": 0,
+      "child_terminal": true,
+      "durable_journal": {
+        "attempts": 13,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 169741
+      },
+      "forced_cleanup": false,
+      "full_scope_allocation_retained": {
+        "attempts": 64,
+        "estimated_airtime_us": 1000000
+      },
+      "global_quiescence_proven": false,
+      "native_attempt_delta": 13,
+      "native_attempts_after": 433,
+      "native_attempts_before": 420,
+      "native_boot_identity_unchanged": true,
+      "native_reserved_estimated_airtime_delta_us": 142480,
+      "receive_drop_delta": 6,
+      "role": "receiver",
+      "runtime_files_verified": 72,
+      "runtime_inventory_sha256": "1ad890dd5e4971491f7bcde9f559c9002238823c9dbef0d7f5cbe43ba6df2c70",
+      "session_retired_before_batch_completed": true,
+      "tracked_service_count": 20,
+      "tracked_service_inventory_unchanged": true,
+      "tracked_service_lifetimes_unchanged": true
+    },
+    "unit-b": {
+      "child_returncode": 0,
+      "child_terminal": true,
+      "durable_journal": {
+        "attempts": 22,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 834945
+      },
+      "forced_cleanup": false,
+      "full_scope_allocation_retained": {
+        "attempts": 43,
+        "estimated_airtime_us": 2000000
+      },
+      "global_quiescence_proven": false,
+      "native_attempt_delta": 22,
+      "native_attempts_after": 1003,
+      "native_attempts_before": 981,
+      "native_boot_identity_unchanged": true,
+      "native_reserved_estimated_airtime_delta_us": 739040,
+      "receive_drop_delta": 0,
+      "role": "sender",
+      "runtime_files_verified": 72,
+      "runtime_inventory_sha256": "1ad890dd5e4971491f7bcde9f559c9002238823c9dbef0d7f5cbe43ba6df2c70",
+      "session_retired_before_batch_completed": true,
+      "tracked_service_count": 18,
+      "tracked_service_inventory_unchanged": true,
+      "tracked_service_lifetimes_unchanged": true
+    }
+  },
+  "host_phase_timings": {
+    "unit-a": {
+      "clock": "time.perf_counter_ns",
+      "inclusive": true,
+      "phases": {
+        "flow_accounting": {
+          "count": 631,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 260464,
+          "min_ns": 73502,
+          "saturated": false,
+          "total_ns": 65358829
+        },
+        "flow_dispatch": {
+          "count": 164,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 3791,
+          "min_ns": 875,
+          "saturated": false,
+          "total_ns": 245001
+        },
+        "flow_pump": {
+          "count": 164,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 37792299,
+          "min_ns": 9625,
+          "saturated": false,
+          "total_ns": 444827704
+        },
+        "flow_receive": {
+          "count": 650,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 7730196,
+          "min_ns": 1999124,
+          "saturated": false,
+          "total_ns": 1513712668
+        },
+        "flow_step": {
+          "count": 630,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 41476123,
+          "min_ns": 2271837,
+          "saturated": false,
+          "total_ns": 2210853131
+        },
+        "host_loop_sleep": {
+          "count": 629,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 5190020,
+          "min_ns": 5033101,
+          "saturated": false,
+          "total_ns": 3182651401
+        },
+        "journal_transaction": {
+          "count": 31,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 4398130,
+          "min_ns": 605512,
+          "saturated": false,
+          "total_ns": 31899345
+        },
+        "queue_admission_wait": {
+          "count": 0,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": null,
+          "min_ns": null,
+          "saturated": false,
+          "total_ns": 0
+        },
+        "queue_call": {
+          "count": 0,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": null,
+          "min_ns": null,
+          "saturated": false,
+          "total_ns": 0
+        },
+        "queue_clock": {
+          "count": 0,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": null,
+          "min_ns": null,
+          "saturated": false,
+          "total_ns": 0
+        },
+        "queue_pump": {
+          "count": 0,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": null,
+          "min_ns": null,
+          "saturated": false,
+          "total_ns": 0
+        },
+        "queue_reserve": {
+          "count": 0,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": null,
+          "min_ns": null,
+          "saturated": false,
+          "total_ns": 0
+        },
+        "queue_serial_write": {
+          "count": 0,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": null,
+          "min_ns": null,
+          "saturated": false,
+          "total_ns": 0
+        },
+        "queue_terminal_settle": {
+          "count": 0,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": null,
+          "min_ns": null,
+          "saturated": false,
+          "total_ns": 0
+        },
+        "release_commit": {
+          "count": 0,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": null,
+          "min_ns": null,
+          "saturated": false,
+          "total_ns": 0
+        },
+        "release_request": {
+          "count": 0,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": null,
+          "min_ns": null,
+          "saturated": false,
+          "total_ns": 0
+        },
+        "release_roundtrip": {
+          "count": 0,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": null,
+          "min_ns": null,
+          "saturated": false,
+          "total_ns": 0
+        },
+        "serial_os_read": {
+          "count": 53,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 31793,
+          "min_ns": 2625,
+          "saturated": false,
+          "total_ns": 463178
+        },
+        "serial_os_write": {
+          "count": 31,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 218754,
+          "min_ns": 9041,
+          "saturated": false,
+          "total_ns": 838846
+        },
+        "serial_pacing_sleep": {
+          "count": 14,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 2061249,
+          "min_ns": 2057166,
+          "saturated": false,
+          "total_ns": 28828912
+        },
+        "serial_read": {
+          "count": 682,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 12904176,
+          "min_ns": 12834,
+          "saturated": false,
+          "total_ns": 252197567
+        },
+        "serial_read_wait": {
+          "count": 682,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 12887258,
+          "min_ns": 3500,
+          "saturated": false,
+          "total_ns": 243732920
+        },
+        "serial_wait_writable": {
+          "count": 31,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 45209,
+          "min_ns": 4083,
+          "saturated": false,
+          "total_ns": 427008
+        },
+        "serial_write": {
+          "count": 17,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 2178794,
+          "min_ns": 59793,
+          "saturated": false,
+          "total_ns": 30799742
+        }
+      },
+      "schema": "meshticulum.host-phase-timing.v1"
+    },
+    "unit-b": {
+      "clock": "time.perf_counter_ns",
+      "inclusive": true,
+      "phases": {
+        "flow_accounting": {
+          "count": 461,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 273883,
+          "min_ns": 62710,
+          "saturated": false,
+          "total_ns": 57232031
+        },
+        "flow_dispatch": {
+          "count": 381,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 4376,
+          "min_ns": 1166,
+          "saturated": false,
+          "total_ns": 670266
+        },
+        "flow_pump": {
+          "count": 460,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 34991282,
+          "min_ns": 12833,
+          "saturated": false,
+          "total_ns": 621414578
+        },
+        "flow_receive": {
+          "count": 467,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 15461943,
+          "min_ns": 4195442,
+          "saturated": false,
+          "total_ns": 2332369803
+        },
+        "flow_step": {
+          "count": 460,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 42482935,
+          "min_ns": 4576369,
+          "saturated": false,
+          "total_ns": 3302326338
+        },
+        "host_loop_sleep": {
+          "count": 459,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 5128216,
+          "min_ns": 5020881,
+          "saturated": false,
+          "total_ns": 2322889219
+        },
+        "journal_transaction": {
+          "count": 110,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 4062730,
+          "min_ns": 428761,
+          "saturated": false,
+          "total_ns": 82285383
+        },
+        "queue_admission_wait": {
+          "count": 21,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 6410708,
+          "min_ns": 1858548,
+          "saturated": false,
+          "total_ns": 69837018
+        },
+        "queue_call": {
+          "count": 21,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 26124095,
+          "min_ns": 18089636,
+          "saturated": false,
+          "total_ns": 441618415
+        },
+        "queue_clock": {
+          "count": 8,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 3368546,
+          "min_ns": 1676544,
+          "saturated": false,
+          "total_ns": 19559383
+        },
+        "queue_pump": {
+          "count": 21,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 285258,
+          "min_ns": 33543,
+          "saturated": false,
+          "total_ns": 1379915
+        },
+        "queue_reserve": {
+          "count": 21,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 1696669,
+          "min_ns": 606683,
+          "saturated": false,
+          "total_ns": 20591615
+        },
+        "queue_serial_write": {
+          "count": 21,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 10533232,
+          "min_ns": 10439604,
+          "saturated": false,
+          "total_ns": 219924998
+        },
+        "queue_terminal_settle": {
+          "count": 21,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 1827923,
+          "min_ns": 587723,
+          "saturated": false,
+          "total_ns": 17507744
+        },
+        "release_commit": {
+          "count": 21,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 1749754,
+          "min_ns": 461720,
+          "saturated": false,
+          "total_ns": 13406223
+        },
+        "release_request": {
+          "count": 21,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 1596333,
+          "min_ns": 456471,
+          "saturated": false,
+          "total_ns": 12552201
+        },
+        "release_roundtrip": {
+          "count": 21,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 7801411,
+          "min_ns": 3117414,
+          "saturated": false,
+          "total_ns": 93820516
+        },
+        "serial_os_read": {
+          "count": 150,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 11083,
+          "min_ns": 2916,
+          "saturated": false,
+          "total_ns": 1023487
+        },
+        "serial_os_write": {
+          "count": 196,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 28001,
+          "min_ns": 6125,
+          "saturated": false,
+          "total_ns": 2232470
+        },
+        "serial_pacing_sleep": {
+          "count": 129,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 2121055,
+          "min_ns": 2039095,
+          "saturated": false,
+          "total_ns": 265287628
+        },
+        "serial_read": {
+          "count": 1982,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 48437174,
+          "min_ns": 6125,
+          "saturated": false,
+          "total_ns": 239483240
+        },
+        "serial_read_wait": {
+          "count": 1982,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 48425507,
+          "min_ns": 2333,
+          "saturated": false,
+          "total_ns": 218860393
+        },
+        "serial_wait_writable": {
+          "count": 196,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 1310492,
+          "min_ns": 3208,
+          "saturated": false,
+          "total_ns": 2513936
+        },
+        "serial_write": {
+          "count": 67,
+          "dropped": 0,
+          "invalid": 0,
+          "max_ns": 10499689,
+          "min_ns": 28000,
+          "saturated": false,
+          "total_ns": 272764993
+        }
+      },
+      "schema": "meshticulum.host-phase-timing.v1"
+    }
+  },
+  "input_result_sha256": "5b2d352fd923bc3994ec3d85e992d7250dbf8063af972a4707e4d1083d03e81c",
+  "next_source_work": {
+    "causality_limit": "Measured targets, not promised savings or further RF authorization.",
+    "proposed": "Explicitly reviewed opt-in early retry after three distinct higher canonical SACK receipts for a live hole and physical settlement.",
+    "receiver_hole_fill_to_ACK_total_us": 576829,
+    "required_invariants": [
+      "Original authority and retry ceiling",
+      "Same logical frame with fresh encrypted counter",
+      "Normal scheduler, owner and durable charges",
+      "At most one early repair per logical flight",
+      "No repeated-ACK evidence inflation or fabricated receipt/credit",
+      "Existing timeout fallback and conservative RTO retained",
+      "Frozen revision and pins updated only after independent review"
+    ],
+    "sender_wait_after_three_higher_receipts_total_us": 3679618
+  },
+  "physical_queue": {
+    "complete_ordered_lifecycles": 21,
+    "pending": 0,
+    "request_count": 21,
+    "retained_event_count": 126,
+    "stages_per_request": [
+      "submit",
+      "QUEUED",
+      "ISSUED",
+      "STARTED",
+      "RF_DONE",
+      "release"
+    ],
+    "trace_complete_for_this_case": true,
+    "trace_tail_limit": 512,
+    "worker_pending": 0
+  },
+  "qualification_limits": [
+    "One 3000-byte one-part SF5 B-to-A trial; no paired speedup claim against earlier 5000-byte five-part run.",
+    "All ACKs were observed; final-ACK repetition was not exercised by physical loss.",
+    "Missing DATA observations and native receive drops do not identify the RF loss mechanism.",
+    "Host outstanding envelopes and gaps are not RF airtime, CPU idle or guaranteed removable delay.",
+    "Inclusive phase aggregates overlap and cannot be added into the disjoint wall-time partition.",
+    "Native and durable debt stay separate and charged; full-scope allowances are not refunded.",
+    "No inter-part handoff, new range or global quiescence qualification."
+  ],
+  "review": "PASS_WITH_REMAINING_DATA_HOLE_RECOVERY_DELAY",
+  "schema": "meshticulum.sf5-recovery-physical-review.v1",
+  "timing": {
+    "controller_duration_basis": "same controller epoch clock; includes preflight/launch/cleanup; not RF airtime",
+    "controller_scope_issue_to_both_endpoint_RPC_closed_us": 12274703,
+    "decimal_kB_per_second": 0.3942608240366631,
+    "disjoint_partition_us": {
+      "child_launch_to_part_invocation_us": 396880,
+      "no_queued_DATA_outstanding_us": 5336593,
+      "part_invocation_to_first_DATA_submit_us": 395876,
+      "queued_DATA_outstanding_union_us": 1479827
+    },
+    "first_DATA_submit_to_authenticated_receipt_us": 6816420,
+    "initial_process_startup_included": true,
+    "inter_part_handoffs": 0,
+    "no_queued_DATA_outstanding_intervals": [
+      {
+        "duration_us": 50560,
+        "end_after_invocation_us": 749093,
+        "start_after_invocation_us": 698533
+      },
+      {
+        "duration_us": 295172,
+        "end_after_invocation_us": 1274692,
+        "start_after_invocation_us": 979520
+      },
+      {
+        "duration_us": 2052345,
+        "end_after_invocation_us": 3396025,
+        "start_after_invocation_us": 1343680
+      },
+      {
+        "duration_us": 301159,
+        "end_after_invocation_us": 3766826,
+        "start_after_invocation_us": 3465667
+      },
+      {
+        "duration_us": 48015,
+        "end_after_invocation_us": 4123945,
+        "start_after_invocation_us": 4075930
+      },
+      {
+        "duration_us": 2237647,
+        "end_after_invocation_us": 6586124,
+        "start_after_invocation_us": 4348477
+      },
+      {
+        "duration_us": 309985,
+        "end_after_invocation_us": 6962605,
+        "start_after_invocation_us": 6652620
+      },
+      {
+        "duration_us": 41710,
+        "end_after_invocation_us": 7212296,
+        "start_after_invocation_us": 7170586
+      }
+    ],
+    "sender_authenticated_receipt_to_endpoint_drained_us": 6878,
+    "sender_authenticated_receipt_to_session_retired_us": 105429,
+    "sender_child_launch_to_authenticated_receipt_us": 7609176,
+    "sender_clock_basis": "same sender host monotonic microseconds",
+    "sender_part_invocation_to_authenticated_receipt_us": 7212296,
+    "useful_bytes_per_second": 394.2608240366631
+  }
+}

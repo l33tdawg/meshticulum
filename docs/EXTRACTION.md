@@ -20,9 +20,9 @@ Lantern also owns the Python [firmware/runtime build and deployment tools](https
 
 [`provenance/UPSTREAM_SOURCE.json`](../provenance/UPSTREAM_SOURCE.json) records the original parent repository/HEAD, dirty snapshot status, source paths/hashes and initial extraction destinations. It describes that initial snapshot. Entries for adapters subsequently moved to Lantern are historical provenance, not a statement that those files remain in the current Meshticulum tree. Later boundary and validation records must identify the exact reviewed commits in both repositories.
 
-The accepted flow and flow port remain unmodified, with these source pins:
+The accepted flow includes the independently reviewed 30 October selective-retry revision described in its [revision record](../src/meshticulum/flow/README.md#revision-10-selective-retry-30-october-2026). The port remains unchanged. Current source pins:
 
-- `flow.py`: `9a8d4bb3bea2f69581d80ecd31fda7692c2435fe1363be53564d5281485cb857`
+- `flow.py`: `0a2464816e53c239018a4c33af43e927007512018bedb2d558e99f0fad5ac7b8`
 - `flow_port.py`: `57596421d916f0c49d61599653b5ab75154d64e5bc806ba1444fa5905ad025ca`
 
 The frozen port retains its relative `meshticulum_contracts` and `meshticulum_scheduler` imports. Small bridge packages alias their child modules to canonical packages and preserve the actual class objects used by scheduler/lease checks. `bench.flow_runtime` imports canonical `meshticulum.flow`; it does not load a duplicate flow implementation from Lantern.

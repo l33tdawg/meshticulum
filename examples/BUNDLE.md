@@ -274,3 +274,11 @@ all five parts in order 4, 2, 0, 3, 1. Its four receipt-to-next-entry gaps total
 lossy result supplies no larger-file or sustained-goodput guarantee. See
 [handoff timing and capacity limits](../docs/HOST_PROFILING.md#bundle-handoff)
 and the separately retained [source cold plan](../benchmarks/2026-10-30-bundle-handoff/COLD_PLAN.md).
+
+
+The later [SF5 recovery trial](../benchmarks/2026-10-30-sf5-recovery/README.md)
+uses one 2 kB part to isolate recovery. It verifies a selective retry 16.725 ms
+after three higher SACK positions identify a hole, with 2.554067 seconds from
+sender process launch to receipt. It is separate from the five-part handoff
+measurement and does not establish sustained throughput or a paired radio-profile
+speedup. Reviewed source and unpublished candidate wheels retain exact identities.
