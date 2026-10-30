@@ -6,6 +6,7 @@ retains upstream source/licenses and applies one hash-checked framework patch.
 Build accepts only the two reviewed targets and never invokes upload or erase.
 """
 import argparse
+import configparser
 import hashlib
 import json
 import os
@@ -102,16 +103,56 @@ def tree(directory):
             and path.name not in ('.piopm', 'appstate.json') and path.suffix not in ('.pyc', '.pyo')}
 
 
-def native_profile_config(native_profile):
+def build_options(native_profile, heltec_spi_hz=None, *, rx_header_preserve=False):
     require(type(native_profile) is bool, 'invalid_native_profile_option')
-    return ('#pragma once\n#ifdef MTBENCH_NATIVE_PROFILE\n'
+    require(heltec_spi_hz is None or type(heltec_spi_hz) is int
+            and heltec_spi_hz in (2000000, 8000000), 'invalid_heltec_spi_option')
+    require(type(rx_header_preserve) is bool, 'invalid_rx_header_preserve_option')
+    options = dict(native_profile=native_profile)
+    if heltec_spi_hz is not None:
+        options['heltec_spi_hz'] = heltec_spi_hz
+    if rx_header_preserve:
+        options['rx_header_preserve'] = True
+    return options
+
+
+def native_profile_config(native_profile, *, heltec_spi_hz=None, rx_header_preserve=False):
+    build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve)
+    original = ('#pragma once\n#ifdef MTBENCH_NATIVE_PROFILE\n'
             '#error "native profiling is pinned by the prepared application"\n#endif\n'
             f'#define MTBENCH_NATIVE_PROFILE {int(native_profile)}\n')
+    if heltec_spi_hz is not None:
+        original += ('#ifdef MTBENCH_HELTEC_SPI_HZ\n'
+        '#error "Heltec SPI clock is pinned by the prepared application"\n#endif\n'
+        '#ifdef RADIOLIB_DEFAULT_SPI_SETTINGS\n'
+        '#error "RadioLib SPI settings must come from the pinned recipe"\n#endif\n'
+        '#if defined(HELTEC_LORA_V4) && defined(SEEED_XIAO_S3)\n'
+        '#error "contradictory SPI experiment targets"\n'
+        '#elif defined(HELTEC_LORA_V4)\n'
+        '#if !defined(MESHTICULUM_BOARD_ID) || MESHTICULUM_BOARD_ID != 1\n'
+        '#error "Heltec SPI experiment requires board ID 1"\n#endif\n'
+        '#elif defined(SEEED_XIAO_S3)\n'
+        '#if !defined(MESHTICULUM_BOARD_ID) || MESHTICULUM_BOARD_ID != 2\n'
+        '#error "XIAO baseline requires board ID 2"\n#endif\n'
+        '#else\n#error "unreviewed SPI experiment target"\n#endif\n'
+        f'#define MTBENCH_HELTEC_SPI_HZ {heltec_spi_hz}\n'
+        '#if defined(HELTEC_LORA_V4)\n'
+        '#define RADIOLIB_DEFAULT_SPI_SETTINGS \\\n'
+        '    SPISettings(MTBENCH_HELTEC_SPI_HZ, MSBFIRST, SPI_MODE0)\n#endif\n')
+    if rx_header_preserve:
+        original += ('#ifdef MTBENCH_RX_HEADER_PRESERVE\n'
+            '#error "RX header preservation is pinned by the prepared application"\n#endif\n'
+            '#ifdef MTBENCH_RX_HEADER_PRESERVE_CONFIGURED\n'
+            '#error "RX header configuration must come from the pinned recipe"\n#endif\n'
+            '#define MTBENCH_RX_HEADER_PRESERVE_CONFIGURED 1\n'
+            '#define MTBENCH_RX_HEADER_PRESERVE 1\n')
+    return original
 
 
-def prepare_application(app, *, native_profile=False):
+def prepare_application(app, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False):
     """Copy exact generic app inputs and bind the build option into its identity."""
-    require(type(native_profile) is bool, 'invalid_native_profile_option')
+    header = native_profile_config(native_profile, heltec_spi_hz=heltec_spi_hz,
+                                   rx_header_preserve=rx_header_preserve)
     app = Path(app)
     app.mkdir()
     for name in ('main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
@@ -120,14 +161,14 @@ def prepare_application(app, *, native_profile=False):
         shutil.copy2(HERE / name, app / name)
     # Forced inclusion makes an external -D override an error, not a different
     # binary silently using the same application identity.
-    (app / 'native_profile_config.hpp').write_text(native_profile_config(native_profile))
+    (app / 'native_profile_config.hpp').write_text(header)
     application = tree(app)
     identity = 'mtb1-' + hashlib.sha256(json.dumps(application, sort_keys=True).encode()).hexdigest()[:10]
     return application, identity
 
 
-def prepare(archive_directory, output, *, native_profile=False):
-    require(type(native_profile) is bool, 'invalid_native_profile_option')
+def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False):
+    options = build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve)
     record = lock()
     require(platform.system() == 'Darwin' and platform.machine() == 'arm64', 'recipe_requires_darwin_arm64')
     archives = {row['id']: check_archive(archive_directory, row) for row in record['inputs']}
@@ -174,7 +215,9 @@ def prepare(archive_directory, output, *, native_profile=False):
             version=row['version'], spec=spec), sort_keys=True) + '\n')
     project = locations['meshcore']
     app = project / 'examples/meshticulum_bench'
-    application, identity = prepare_application(app, native_profile=native_profile)
+    application, identity = prepare_application(app, native_profile=native_profile,
+                                                heltec_spi_hz=heltec_spi_hz,
+                                                rx_header_preserve=rx_header_preserve)
     config = ['[platformio]', 'core_dir = ' + str(core), '']
     for target, (parent, board, power) in TARGETS.items():
         config += [f'[env:{target}]', f'extends = {parent}', 'platform = symlink://' + str(locations['platform']),
@@ -194,7 +237,7 @@ def prepare(archive_directory, output, *, native_profile=False):
     (project / 'platformio.local.ini').write_text('\n'.join(config))
     manifest = dict(schema='meshticulum.raw-firmware-prepared.v1', identity=identity,
         lock_sha256=sha(HERE / 'inputs.lock.json'), recipe_sha256=sha(Path(__file__)),
-        application=application, build_options=dict(native_profile=native_profile),
+        application=application, build_options=options,
         input_archives=record['inputs'], source=tree(output),
         build_scope='Source preparation; no compile, installation, RF or device authority.',
         source_notices_complete=False)
@@ -203,6 +246,9 @@ def prepare(archive_directory, output, *, native_profile=False):
 
 
 def build(output, python, targets):
+    require(type(targets) in (list, tuple) and bool(targets)
+            and all(type(target) is str and target in TARGETS for target in targets),
+            'unreviewed_firmware_target')
     output = Path(output).resolve()
     manifest = json.loads((output / 'SOURCE.json').read_bytes())
     require(manifest['schema'] == 'meshticulum.raw-firmware-prepared.v1'
@@ -215,16 +261,37 @@ def build(output, python, targets):
               if not name.startswith('evidence/')}
     require(actual == manifest['source'], 'prepared_firmware_source_drift')
     options = manifest.get('build_options')
-    require(type(options) is dict and set(options) == {'native_profile'}
-            and type(options['native_profile']) is bool, 'firmware_build_options_mismatch')
+    require(type(options) is dict
+            and 'native_profile' in options
+            and set(options) <= {'native_profile', 'heltec_spi_hz', 'rx_header_preserve'}
+            and type(options['native_profile']) is bool
+            and ('heltec_spi_hz' not in options or type(options['heltec_spi_hz']) is int
+                 and options['heltec_spi_hz'] in (2000000, 8000000))
+            and ('rx_header_preserve' not in options
+                 or type(options['rx_header_preserve']) is bool and options['rx_header_preserve'] is True),
+            'firmware_build_options_mismatch')
     app = output / 'project/examples/meshticulum_bench'
     application = tree(app)
     require(application == manifest.get('application')
             and (app / 'native_profile_config.hpp').read_text()
-                == native_profile_config(options['native_profile'])
+                == native_profile_config(options['native_profile'],
+                                         heltec_spi_hz=options.get('heltec_spi_hz'),
+                                         rx_header_preserve=options.get('rx_header_preserve', False))
             and manifest.get('identity') == 'mtb1-' + hashlib.sha256(
                 json.dumps(application, sort_keys=True).encode()).hexdigest()[:10],
             'firmware_application_identity_mismatch')
+    if 'heltec_spi_hz' in options or 'rx_header_preserve' in options:
+        config = configparser.ConfigParser(interpolation=None)
+        try:
+            config.read(output / 'project/platformio.local.ini')
+            expected_include = '-include ' + str(app / 'native_profile_config.hpp')
+            forced = all(config.has_section('env:' + target)
+                and [line.strip() for line in config.get('env:' + target, 'build_flags').splitlines()]
+                    .count(expected_include) == 1 for target in TARGETS)
+        except configparser.Error:
+            forced = False
+        require(forced, 'firmware_rx_header_forced_include_missing'
+                if 'rx_header_preserve' in options else 'firmware_spi_forced_include_missing')
     version = subprocess.check_output([str(python), '-I', '-c',
         'import importlib.metadata; print(importlib.metadata.version("platformio"))'], text=True).strip()
     require(version == lock()['platformio_version'], 'wrong_platformio_version')
@@ -263,6 +330,10 @@ def main():
     prep.add_argument('--output-dir', required=True, type=Path)
     prep.add_argument('--native-profile', action='store_true',
                       help='enable bounded boot-cumulative native timing diagnostics')
+    prep.add_argument('--heltec-spi-hz', type=int, choices=(2000000, 8000000),
+                      help='explicit Heltec-only SPI experiment; omission keeps the locked 2 MHz default')
+    prep.add_argument('--rx-header-preserve', action='store_true',
+                      help='opt in to conservative continuous-LoRa header IRQ preservation')
     run = commands.add_parser('build')
     run.add_argument('--output-dir', required=True, type=Path)
     run.add_argument('--pio-python', required=True, type=Path)
@@ -271,7 +342,9 @@ def main():
     if args.action == 'fetch':
         result = fetch(args.archive_dir)
     elif args.action == 'prepare':
-        result = prepare(args.archive_dir, args.output_dir, native_profile=args.native_profile)
+        result = prepare(args.archive_dir, args.output_dir, native_profile=args.native_profile,
+                         heltec_spi_hz=args.heltec_spi_hz,
+                         rx_header_preserve=args.rx_header_preserve)
     else:
         result = build(args.output_dir, args.pio_python, args.target or list(TARGETS))
     print(json.dumps(result, sort_keys=True))

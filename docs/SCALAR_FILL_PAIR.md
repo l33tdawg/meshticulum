@@ -8,8 +8,30 @@ original contract. V1–v5 policies retain their existing behavior and serialize
 policy fields; peers admitting different policies cannot authenticate each
 other's frames.
 
-This is a source candidate. No physical throughput gain or completion of the
-3,000 useful-file B/s target is established by these changes.
+One finite [physical sample](../benchmarks/2026-10-30-sf5-scalar-fill-pair-profile/README.md)
+completed at 1,222.394221 useful file B/s including startup. It establishes
+neither an isolated gain from v6 nor completion of the 3,000 B/s target.
+
+The reviewed implementation is source commit
+`7ac7daf02629b5b4cdf23d1cfaadc0152c0ce1dc`, tree
+`adbe1b0b6b8e172005711f133e7ebbd5387c1e85`. Its unpublished
+`meshticulum-1.0.0a3-py3-none-any.whl` is 305,472 bytes, SHA-256
+`0b2466dbb4a7004dd99f2608cba77b9a514292152815fc71747711b5f4909934`.
+All 75 wheel runtime files, including 71 Python files, match that source and
+remain unchanged after integrating public main
+`9f7b6ea1f8fc4aaf7debe7dc9242e203e74aee03`. The local wheel-verification record
+has SHA-256 `3d0affd512ff901aea6de3d297519c1783dc7b8a75e8949fe22f034f9ffc4bbf`.
+These pins describe a host candidate, not a new release or firmware qualification.
+
+The earlier [terminal-retry physical run](../benchmarks/2026-10-30-sf5-terminal-retry-profile/README.md)
+used v5 at 2 MHz SPI and measured 2,026.493477 useful file B/s including startup.
+The subsequent [v5 SPI8 sample](../benchmarks/2026-10-30-sf5-spi8-profile/README.md)
+measured 1,005.660692 B/s. The v6 sample retained that SPI8 firmware and both
+MCU boots, and measured 1,222.394221 B/s in 19.551794 seconds. Both SPI8 samples
+had 26 DATA retries, with different loss and recovery patterns; their observed
+21.551357% rate change is not an isolated policy effect. V6 recorded 17 extra
+offers, 10 repair-fill turns and two timeout holds. No firmware upgrade, reset
+or debt refund occurred between the SPI8 samples; the 3,000 B/s goal remains open.
 
 The retained terminal-retry run exposed six queue-empty transitions inside its
 host eight-frame groups. Three followed a selective repair; the next native

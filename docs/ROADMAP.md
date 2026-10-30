@@ -17,7 +17,23 @@ then verified the same bytes at 1,223.276902 B/s in 19.537686 seconds including
 startup, with 13 DATA retries versus the prior 10. The differing loss patterns
 prevent an isolated estimate of either policy's effect. Two late intervals
 without host-observed DATA outstanding totaled 6.611082 seconds. Further work
-targets tail recovery and active-pipeline costs; the 3 kB/s goal remains open.
+targets tail recovery and active-pipeline costs. The subsequent
+[terminal-policy/native-RX diagnostic sample](../benchmarks/2026-10-30-sf5-terminal-retry-profile/README.md)
+verified the same file in 11.793771 seconds including startup, or
+2,026.493477 B/s, with six selective retries. The enabled terminal threshold
+was not exercised; different loss and diagnostic firmware prevent an isolated
+policy comparison. Queue underfill and receive handling remain active leads;
+the 3 kB/s goal remains open. The subsequent
+[8 MHz SPI sample](../benchmarks/2026-10-30-sf5-spi8-profile/README.md) retained
+the same host code and v5 policy, and verified the file at 1,005.660692 B/s
+in 23.765471 seconds including startup. DATA retries rose to 26. Native
+transmit setup was faster, while file goodput fell; uncontrolled loss prevents
+an isolated SPI comparison. The separate
+[scalar-fill pair sample](../benchmarks/2026-10-30-sf5-scalar-fill-pair-profile/README.md)
+then used v6 on the same SPI8 firmware and boots. It verified the file at
+1,222.394221 B/s in 19.551794 seconds, with 17 extra offers and 26 DATA retries.
+The observed rate rose 21.551357%, but loss and recovery patterns differed;
+this is not an isolated policy gain. Both throughput thresholds remain unmet.
 
 The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
 
