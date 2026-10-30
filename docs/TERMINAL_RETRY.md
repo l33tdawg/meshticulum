@@ -68,3 +68,13 @@ missing FINAL and lost ACKs. These are source tests, not a replay of a measured
 radio channel. They cannot explain physical packet losses, prove a speedup
 or establish the 3,000 useful file bytes/s goal. See
 [repair-fill](SELECTIVE_REPAIR_FILL.md) for the unchanged bulk policy.
+
+## Physical policy sample
+
+The [first v5/native-RX diagnostic sample](../benchmarks/2026-10-30-sf5-terminal-retry-profile/README.md)
+verified 23,900 useful bytes in 11.793771 seconds including sender process
+startup (2,026.493477 B/s). All six repairs still had fresh outbound DATA,
+used the existing bulk threshold and formed full repair-fill groups. The
+terminal-only threshold was enabled but not exercised. Different losses and
+diagnostic firmware prevent a causal comparison with the earlier sample;
+physical qualification of the lower terminal threshold remains open.
