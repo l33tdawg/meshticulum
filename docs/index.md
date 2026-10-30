@@ -86,3 +86,18 @@ verified 23,900 useful bytes at 1,577.815726 B/s including startup on the same
 firmware and MCU boots as the preceding sample. All 18 DATA retries were
 selective; differing loss prevents an isolated policy comparison. All nine
 samples remain below the throughput targets.
+
+The subsequent [32-symbol-preamble trial](../benchmarks/2026-10-30-sf5-preamble32-failure/README.md)
+failed during startup on the same SDK/v7 policy, firmware and MCU boots. The
+receiver spent 16 startup ACK attempts; the sender sent no DATA and its native
+header-only IRQ category rose by 16, with no exported packets. No file completed,
+so this trial has no goodput result. Both units were subsequently observed idle
+with empty queues and unchanged tracked services. The failed outcome and full reserved
+allocation remain retained. The IRQ category can include selective clearing
+without an RX restart; the underlying receive failure is unresolved.
+
+[Terminal repair trains](TERMINAL_REPAIR_TRAIN.md) are now accepted in source as
+an explicit v8 policy. After original FINAL handover and authenticated peer
+receipt, they group distinct, already proven missing frames into trains of at
+most eight packets. The original per-frame accounting and listening floors
+remain. Source controls passed, but v8 has no physical qualification result.

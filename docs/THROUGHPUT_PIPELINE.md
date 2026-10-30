@@ -206,6 +206,25 @@ all waiting time to a timer or RF cause.
 A source model or a faster isolated number cannot qualify the 3,000 useful B/s
 goal.
 
+The subsequent [32-symbol-preamble trial](../benchmarks/2026-10-30-sf5-preamble32-failure/README.md)
+failed during startup on the same SDK/v7 policy, firmware and MCU boots. The
+receiver spent 16 startup ACK attempts; the sender sent no DATA and its native
+header-only IRQ category rose by 16, with no exported packets. No file completed,
+so this trial has no goodput result. Both units were subsequently observed idle
+with empty queues and unchanged tracked services. The failed outcome and full reserved
+allocation remain retained. The IRQ category can include selective clearing
+without an RX restart; the underlying receive failure is unresolved.
+
+[Terminal repair trains](TERMINAL_REPAIR_TRAIN.md) are now accepted in source as
+an explicit v8 policy. After original FINAL handover and authenticated peer
+receipt, they group distinct, already proven missing frames into trains of at
+most eight packets. The original per-frame accounting and listening floors
+remain. Source controls passed, but v8 has no physical qualification result.
+Its matched source model reduces a six-terminal-hole scenario from 8.666835 to
+7.300535 seconds with the same six retries. It excludes real process startup,
+CPU and fsync time and does not replay all measured losses. It cannot establish
+a physical throughput gain or the 3 kB/s target.
+
 Further physical comparisons must use equal useful workloads, exact installed
 source/firmware correspondence and original finite budgets. Retain failed runs
 and complete allocations. No modeled result renews old authority, resets native
