@@ -33,8 +33,13 @@ causal attribution of its higher rate to v6. The subsequent
 kept v6 and 8 MHz SPI after a genuine firmware upgrade. It verified the same
 file in 14.138817 seconds including startup, or 1,690.381876 B/s, with 17 DATA
 retries. Its observed 38.284511% increase over the preceding sample does not
-isolate the firmware effect: boots and loss patterns also differed. All eight
-samples miss the target; the earlier 2,026.493477 B/s sample remains the best.
+isolate the firmware effect: boots and loss patterns also differed. The
+subsequent [R13/v7 repeat-repair sample](../benchmarks/2026-10-30-sf5-repeat-retry-profile/README.md)
+kept the same firmware and MCU boots, and verified the file in 15.147523
+seconds including startup, or 1,577.815726 B/s. All 18 DATA retries were
+selective. Loss and recovery patterns differed; its 6.659214% lower observed
+rate does not isolate the policy effect. All nine samples miss the target;
+the earlier 2,026.493477 B/s sample remains the best.
 
 ## Existing piece and recovery behavior
 
@@ -191,7 +196,13 @@ Further work examines recovery, queue refill, receive handling and release/host
 costs while preserving canonical ACK evidence, paid attempts and original finite
 deadlines. The [accepted R13 source revision](FLOW_R13_REPEAT_RETRY_REVIEW.md)
 permits another selective opportunity only after an accepted retry handover and
-fresh proof for that attempt; the eight physical samples above do not test it.
+fresh proof for that attempt. Its first physical sample recorded 18 accepted
+retry epochs, but that count alone does not prove that a flight used another
+selective opportunity after a lost repair. The same-sender disjoint partition
+was 0.415024 seconds of startup, 0.897566 seconds to first DATA submit,
+7.832367 seconds inside DATA envelopes and 6.002566 seconds without DATA
+outstanding. These intervals identify where time elapsed, without assigning
+all waiting time to a timer or RF cause.
 A source model or a faster isolated number cannot qualify the 3,000 useful B/s
 goal.
 

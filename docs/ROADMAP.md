@@ -44,6 +44,14 @@ below the earlier 2,026.493477 B/s sample and both throughput thresholds.
 The firmware's header-only diagnostic category can now include selective
 clearing without an RX restart; it is not an authenticated packet-drop count.
 
+The subsequent [R13/v7 repeat-repair sample](../benchmarks/2026-10-30-sf5-repeat-retry-profile/README.md)
+kept that firmware and both MCU boots. It verified the same file in 15.147523
+seconds including startup, or 1,577.815726 B/s, with 18 selective DATA retries
+and no ordinary retries. The observed rate fell 6.659214%; differing loss and
+recovery patterns prevent an isolated policy comparison. All nine samples
+remain below both throughput thresholds. Further work examines recovery turns
+and receive reliability.
+
 The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
 
 Alpha.3 removes repeated full-history scans from journal accounting and adds

@@ -1,8 +1,11 @@
 # R13 repeat selective repair — accepted source review
 
 The owner explicitly accepted this source revision after root and independent
-review. It is pinned in the frozen verifier and has not been installed or
-qualified over RF. All v1–v6 defaults retain the accepted R12 behavior.
+review. It is pinned in the frozen verifier. A subsequent
+[physical sample](../benchmarks/2026-10-30-sf5-repeat-retry-profile/README.md)
+verified a file at 1,577.815726 useful B/s including startup, below the
+throughput targets. Repeated capacity qualification remains open. All v1–v6
+defaults retain the accepted R12 behavior.
 
 The accepted flow SHA-256 is
 `963c2a3b4fdd8292d8a473da67dd7eaeee735f27ab4bd77f18702583cd2e1a9e`;
@@ -14,8 +17,8 @@ runtime hashes and review receipts. The owner acceptance receipt SHA-256 is
 
 The motivating retained v6 run lost five selective repairs. For each affected
 hole, later canonical SACKs retired at least three distinct higher positions
-after the lost repair's carrier acceptance. The current one-offer-per-flight
-rule cannot use that new proof. This observation does not identify the RF loss
+after the lost repair's carrier acceptance. The preceding one-offer-per-flight
+rule could not use that new proof. This observation does not identify the RF loss
 cause or predict a physical throughput gain.
 
 ## Explicit admission
@@ -134,5 +137,21 @@ timing or identify a receive-loss cause.
 Modeled elapsed time includes discovery, ARM, receipt confirmation and cleanup
 but excludes real process startup, CPU and fsync time. It cannot establish the
 repeated physical goal of at least 3,000 useful file bytes per second including
-process startup. Source acceptance does not authorize a physical trial or
-establish the throughput goal.
+process startup. Source acceptance alone establishes neither a physical result
+nor the throughput goal.
+
+## First physical observation
+
+The separately authorized physical sample used exact SDK `7102952`, the v7
+policy and the same header-preservation firmware and MCU boots as its v6
+predecessor. It verified 23,900 useful bytes in 15.147523 seconds including
+startup, with 18 selective DATA retries and zero ordinary retries. Eighteen
+accepted retry epochs were recorded; that count alone does not demonstrate
+that any flight used another selective opportunity after a lost repair.
+
+The observed rate was 6.659214% below the preceding 1,690.381876 B/s sample.
+Loss and recovery patterns differed, so the pair does not isolate the policy
+effect. Both endpoints closed and drained with all prior paid debt retained.
+The [physical record](../benchmarks/2026-10-30-sf5-repeat-retry-profile/README.md)
+preserves the exact result and timing boundary. The repeated 3,000 B/s goal
+and above-2,800 B/s checkpoint remain unmet.
