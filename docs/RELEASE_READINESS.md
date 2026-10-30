@@ -6,7 +6,9 @@ Python package **`1.0.0a3`** is the alpha.3 SDK update. The
 [`v1.0.0-alpha.3` release assets](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3)
 carry the final source identity, wheel and normalized source archive, validation
 record, manifest and `SHA256SUMS`. Earlier release tags and checksummed assets
-remain unchanged.
+remain unchanged. The [alpha.3 publication record](../provenance/ALPHA3_RELEASE.json)
+binds the published source, all eleven verified public downloads and unchanged
+earlier tags.
 
 The update replaces repeated full-history journal scans with durable aggregate
 accounting, adds opt-in host phase timings, and prevents a serial write after a
