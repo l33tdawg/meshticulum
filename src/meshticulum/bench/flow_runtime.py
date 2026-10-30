@@ -77,6 +77,12 @@ class BenchFlow:
         self._receipt_dispatching = self._receipt_requested = self._receipt_attempted = False
         self.receipt_confirmed = False
         self.receipt_confirmation_outcome = None
+        self._last_ack_snapshot = None
+        self._ack_persistence_streak = 0
+        self._ack_persistence_due_us = 0
+        self._final_ack_repeat_due_us = None
+        self._final_ack_repeat_requested = False
+        self._final_ack_repeat_satisfied = False
         self.events = deque(maxlen=512)
         self.counts = Counter()
         self.dispatch_budget_failure = None
@@ -86,6 +92,8 @@ class BenchFlow:
         self.next_send_us = 0
         self.receive_gap_us = math.ceil(radio_airtime_us(authority.profile,
             flow.ACK_BYTES + 47) * 1.10) + 60000
+        self._ack_reservation_us = math.ceil(radio_airtime_us(authority.profile,
+            flow.ACK_BYTES + 47) * 1.10) + 1000
         limits = contract.limits
         self.maximum_bytes = min(limits.max_queued_bytes, limits.max_unconsumed_bytes)
         require(self.maximum_bytes <= object_limit(authority.plan.get('service',{})), 'bench_transfer_too_large')
@@ -97,6 +105,7 @@ class BenchFlow:
         require(window >= 1, 'bench_window_too_small')
         self.burst_frames = window if radio_is_fast(authority.profile) else 1
         fast_sf5 = radio_is_sf5(authority.profile)
+        self._sf5_ack_recovery_eligible = not sends and policy is not None and fast_sf5
         self.burst_quiet_us = math.ceil(profile.forward_seconds * 1000000) + 60000
         if self.burst_frames > 1:
             # USB/driver completion can span more than one PHY packet. Keep
@@ -221,6 +230,18 @@ class BenchFlow:
             kind = FrameKind.ACK if parsed['kind'] == self.ack_kind else FrameKind.DATA
             require((frame.request.role is FrameRole.CONTROL) == (kind is FrameKind.ACK),
                     'inner_lane_mismatch')
+        ack_diagnostics = {}
+        if kind is FrameKind.ACK:
+            snapshot = (parsed['ack_seq'], parsed['sack'], parsed['credit'], parsed['grant_revision'])
+            ack_snapshot = ('startup' if self._last_ack_snapshot is None and not parsed['ack_seq']
+                            and not parsed['sack'] else 'unchanged'
+                            if snapshot == self._last_ack_snapshot else 'new')
+            ack_diagnostics = dict(ack_snapshot=ack_snapshot,
+                ack_seq=parsed['ack_seq'], ack_sack=parsed['sack'], ack_credit=parsed['credit'],
+                ack_revision=parsed['grant_revision'], ack_burst_received=self.burst_received,
+                ack_wait_reason=('startup' if self.flow.startup_pending else 'complete'
+                    if self.flow.complete else 'full_train' if self.burst_received >= self.burst_frames
+                    else 'quiet' if self.burst_received else 'persistence'))
         domain = logical_id = plaintext_digest = None
         if self.data_burst and kind is FrameKind.DATA:
             require(self.worker.data_burst_policy == self.authority.data_burst_policy,
@@ -299,7 +320,8 @@ class BenchFlow:
             'driver_elapsed_us': driver.driver_elapsed_us if driver is not None else None,
             'driver_elapsed_clock_basis': basis,
             'driver_irq_flags': driver.irq_flags if driver is not None else None,
-            'driver_error': driver.driver_error if driver is not None else None})
+            'driver_error': driver.driver_error if driver is not None else None,
+            **ack_diagnostics})
         self.last_activity_us = self.clock()[1]
         if kind is FrameKind.CONTROL:
             self.receipt_confirmation_outcome = result.outcome
@@ -316,6 +338,26 @@ class BenchFlow:
                              else self.last_activity_us + self.receive_gap_us)
         if result.outcome == 'RF_DONE':
             if kind is FrameKind.ACK:
+                self.counts['tx_ACK_RF_DONE_' + ack_snapshot] += 1
+                self._last_ack_snapshot = snapshot
+                # Only idle persistence backs off. New receive/credit work or
+                # a queued canonical ACK still follows the frozen flow's path.
+                if ack_snapshot != 'unchanged' or self.flow._ack_dirty or self.flow._ack_pending is not None:
+                    self._ack_persistence_streak = 0
+                else:
+                    self._ack_persistence_streak = min(2, self._ack_persistence_streak + 1)
+                self._ack_persistence_due_us = worker_finished_us + math.ceil(
+                    self.flow.limits.persist_interval_s * (1 << self._ack_persistence_streak) * 1000000)
+                if (self._sf5_ack_recovery_eligible and self.receipt_confirmation_enabled
+                        and self.flow.complete and parsed['ack_seq'] == self.flow._expected
+                        and parsed['sack'] == 0):
+                    if self._final_ack_repeat_due_us is not None:
+                        self._final_ack_repeat_due_us = None
+                        self._final_ack_repeat_satisfied = True
+                        self.counts['final_ACK_reannouncement_satisfied'] += 1
+                    elif not self._final_ack_repeat_satisfied and not self._final_ack_repeat_requested:
+                        self._final_ack_repeat_due_us = worker_finished_us + math.ceil(
+                            self.flow.limits.persist_interval_s * 1000000)
                 self.burst_received = 0
                 self.burst_started_us = 0
                 self.ack_due_us = 0
@@ -459,6 +501,52 @@ class BenchFlow:
                 'invalid_bench_object')
         self.flow.send(data)
 
+    def _service_ack_recovery(self, now_us):
+        """Opt-in SF5 receiver scheduling; never mutates frozen receipt/retry state.
+
+        Preserve the first persistence opportunity, then leave longer receive
+        slots between unchanged ACKs. Fresh receive work bypasses this gate.
+        After successful final ACK handover, request one bounded reannouncement
+        of the same canonical snapshot through the frozen public API. This can
+        repair a lost final ACK without asking the sender to retransmit DATA.
+        """
+        if (not self._sf5_ack_recovery_eligible or not self.receipt_confirmation_enabled
+                or self.closed or self.flow.failure or self.worker.fenced or self.receipt_confirmed):
+            return False
+        if self.flow._ack_dirty or self.flow._ack_pending is not None or self.flow.startup_pending:
+            return False
+        if self.flow.complete:
+            if (self._final_ack_repeat_due_us is not None
+                    and now_us >= self._final_ack_repeat_due_us
+                    and not self._final_ack_repeat_requested and not self._final_ack_repeat_satisfied
+                    and not self.receipt_confirmed and self._receipt_ready() is True
+                    and self.authority.application_live()):
+                # grant_startup() marks the current canonical snapshot dirty;
+                # it does not fabricate credit, a revision, a nonce, or a TX.
+                # The normal scheduler, cipher, worker and journal still decide
+                # and account the handover under the original finite authority.
+                self._final_ack_repeat_requested = True
+                state = self.journal.snapshot()
+                budget = self.ledger.snapshot(now_us)
+                if (state['attempts'] >= self.journal.max_attempts
+                        or state['reserved_estimated_airtime_us'] + self._ack_reservation_us
+                        > self.journal.max_airtime_us
+                        or budget['own_remaining_us'] < self.owner.cost.own_tx_us
+                        or budget['shared_remaining_us'] < self.owner.cost.shared_medium_us
+                        or not budget['sample_fresh'] or budget['fenced']
+                        or now_us < budget['recovery_until_us']
+                        or budget['pending_reservations'] >= self.ledger.policy.max_reservations
+                        or len(self.owner.retained) >= 1023):
+                    self._final_ack_repeat_due_us = None
+                    self.counts['final_ACK_reannouncement_budget_unavailable'] += 1
+                    return False
+                self.counts['final_ACK_reannouncement_requested'] += 1
+                self.flow.grant_startup()
+            return False
+        # A zero streak is the first persistence opportunity: let the frozen
+        # flow use its exact existing interval, including its clock origin.
+        return self._ack_persistence_streak > 0 and now_us < self._ack_persistence_due_us
+
     @timed(Phase.FLOW_STEP)
     def step(self):
         require(self.dispatch_budget_failure is None, 'bench_own_airtime_budget_exhausted')
@@ -527,10 +615,22 @@ class BenchFlow:
                     and self.flow.acked_frames() > acknowledged_before):
                 self.next_send_us = min(self.next_send_us, self.last_activity_us)
                 self.burst_sent = 0
+            ack_diagnostics = {}
+            if verified.kind is FrameKind.ACK:
+                delta = self.flow.acked_frames() - acknowledged_before
+                effect = ('startup' if previous_receipt[0] is None and self.flow._peer_grant_rev is not None
+                    else 'progress' if delta else 'fresh_credit'
+                    if self.flow._peer_grant_rev != previous_receipt[0] else 'unchanged'
+                    if self.flow.repeat_grants > previous_receipt[1] else 'ignored')
+                self.counts['rx_ACK_' + effect] += 1
+                ack_diagnostics = dict(ack_effect=effect, acked_frames_delta=delta,
+                    ack_seq=parsed['ack_seq'], ack_sack=parsed['sack'], ack_credit=parsed['credit'],
+                    ack_revision=parsed['grant_revision'])
             self.events.append({'event': 'rx', 'mono_us': self.last_activity_us,
                 'outer_counter': verified.counter, 'outer_kind': verified.kind.name,
                 'packet_sha256': hashlib.sha256(raw.packet).hexdigest(),
-                'bytes': len(raw.packet), 'rssi_dbm': raw.rssi_dbm, 'snr_db': raw.snr_db})
+                'bytes': len(raw.packet), 'rssi_dbm': raw.rssi_dbm, 'snr_db': raw.snr_db,
+                **ack_diagnostics})
             # Reach the guarded DATA pump when a genuine receipt permits work.
             # Repeated ACKs stay queued instead of consuming the peer's bounded
             # startup/control window while each native receive is checked.
@@ -547,7 +647,12 @@ class BenchFlow:
             data = self.flow.consume(len(self.flow.delivered))
             require(len(self.received) + len(data) <= self.maximum_bytes, 'bench_receive_limit')
             self.received.extend(data)
-        self.link.now = self.clock()[1] / 1000000
+        step_mono_us = self.clock()[1]
+        self.link.now = step_mono_us / 1000000
+        if self._service_ack_recovery(step_mono_us):
+            self.owner.settle_sending()
+            self._check_flow()
+            return self._completion_ready()
         # Coalesce the ACK before asking the frozen flow to encode it. Merely
         # pausing an already queued ACK would preserve a stale receipt snapshot
         # and cause another ACK in the next DATA slot. A short/lost burst is
@@ -618,6 +723,10 @@ class BenchFlow:
                              'sender_control_hold_us': self.sender_control_hold_us,
                              'ack_delay_seconds': self.flow.limits.ack_delay_s,
                              'persist_interval_seconds': self.flow.limits.persist_interval_s,
+                             'sf5_ack_recovery': (self._sf5_ack_recovery_eligible
+                                                  and self.receipt_confirmation_enabled),
+                             'unchanged_ack_persistence_max_multiplier': 4,
+                             'final_ack_reannouncement_limit': 1,
                              'control_rate_us_per_second': self.scheduler.policy.control_rate_us_per_second},
             'attempt_journal': self.journal.snapshot(), 'events': list(self.events),
             'scheduler': self.scheduler.snapshot()}
