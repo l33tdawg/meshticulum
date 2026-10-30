@@ -28,7 +28,7 @@ from ..meshticulum_scheduler.flow_attempt import (AttemptBinding, CommitRequest,
                                                   FlowDispatchLease, Reservation, profile_cost)
 from ..meshticulum_scheduler.scheduler import FrameRole
 from .carrier import Delivery
-from .flow import (ACK_BYTES, DEFERRED, KIND_ACK, admitted_payload_bound, data_frame_fits,
+from .flow import (ACK_BYTES, DEFERRED, KIND_ACK, CarrierHandover, admitted_payload_bound, data_frame_fits,
                    frames_from_byte_grant, parse_frame)
 
 DATA_KIND = "data"
@@ -608,6 +608,7 @@ class FlowPortLink:
         self.handed_over = 0
         self._in_send = False
         self._held: _Held | None = None
+        self._repeat_handover: tuple[_Held, CarrierHandover] | None = None
         self._drivers: dict[str, object] = {}
         # A host may enqueue now and dispatch later; the frozen scheduler keeps
         # those two operations separate for exactly that reason. True here means
@@ -696,6 +697,14 @@ class FlowPortLink:
         finally:
             self._in_send = False
         if handed_over:
+            if self._repeat_driver(sender) is not None and queued.role is FrameRole.DATA:
+                record = self._repeat_handover
+                # Only the exact held object may carry this invocation's
+                # outcome. A foreign dispatch cannot lend its confirmation.
+                if record is None or record[0] is not queued:
+                    return CarrierHandover(False, float('nan'))
+                self._repeat_handover = None
+                return record[1]
             return True
         if self._held is queued:
             # The scheduler gave this dispatch to a different flow, so this
@@ -769,6 +778,21 @@ class FlowPortLink:
             # The exact bytes this frame queued, never the newest payload the
             # flow happened to offer in the meantime.
             self.sent.append(held.payload)
+            if self._repeat_driver(held.sender) is not None and held.role is FrameRole.DATA:
+                interruption = None
+                try:
+                    sampled = self.monotonic_us()
+                    at = (sampled / 1_000_000 if type(sampled) is int
+                          and 0 <= sampled <= MAX_TIME_US else float('nan'))
+                except BaseException as error:
+                    # Accounting must survive a clock fault. Ordinary faults
+                    # fence the opt-in flow; cancellation is propagated only
+                    # after that flow has recorded the charged handover.
+                    at = float('nan')
+                    if not isinstance(error, Exception):
+                        interruption = error
+                self._repeat_handover = (held, CarrierHandover(
+                    outcome is CommitOutcome.ACCEPTED, at, interruption))
             self._handover(held)
             return True
         self.refused += 1
@@ -833,7 +857,22 @@ class FlowPortLink:
             return
         if held.sequence is None:
             return
+        if self._repeat_driver(held.sender) is not None:
+            record = self._repeat_handover
+            disposition = (record[1] if record is not None and record[0] is held
+                           else CarrierHandover(False, float('nan')))
+            self._repeat_handover = None
+            driver.handover(held.sequence, at=self.now, accepted=disposition.accepted,
+                            proof_at=disposition.at)
+            if disposition.interruption is not None:
+                raise disposition.interruption
+            return
         driver.handover(held.sequence, at=self.now)
+
+    def _repeat_driver(self, sender):
+        driver = self._drivers.get(sender)
+        return (driver if getattr(getattr(driver, 'limits', None),
+                                  'selective_repeat_retry', False) is True else None)
 
     # -- flow-facing accounting -------------------------------------------------
 

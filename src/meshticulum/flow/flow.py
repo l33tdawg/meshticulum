@@ -177,6 +177,24 @@ DEFERRED = _Deferred()
 
 
 @dataclass(frozen=True)
+class CarrierHandover:
+    """Opt-in host disposition for an already charged DATA carrier invocation.
+
+    Truthy even for uncertainty: an UNKNOWN invocation still spends an attempt.
+    ``at`` is the local host observation after settlement, not RF completion or
+    peer receipt. Only repeat-retry admission consumes this extended record.
+    """
+
+    accepted: bool
+    at: float
+    interruption: BaseException | None = field(default=None, repr=False, compare=False)
+
+    def __post_init__(self):
+        if type(self.accepted) is not bool or type(self.at) not in (int, float):
+            raise FlowError("invalid carrier handover record")
+
+
+@dataclass(frozen=True)
 class FlowLimits:
     frame_payload_bytes: int = 64
     window_frames: int = 16
@@ -206,6 +224,9 @@ class FlowLimits:
     # Separately admitted and explicitly requested terminal recovery. Bulk
     # recovery still needs three later SACKs, even when this option is enabled.
     selective_terminal_retry: bool = False
+    # A confirmed retry handover starts a fresh, bounded selective-proof epoch.
+    # Old peers/defaults retain one early opportunity per logical flight.
+    selective_repeat_retry: bool = False
 
     def __post_init__(self):
         if type(self.selective_fast_retry) is not bool:
@@ -214,6 +235,10 @@ class FlowLimits:
             raise FlowError("invalid limit: selective_terminal_retry must be a bool")
         if self.selective_terminal_retry and not self.selective_fast_retry:
             raise FlowError("terminal retry requires selective fast retry")
+        if type(self.selective_repeat_retry) is not bool:
+            raise FlowError("invalid limit: selective_repeat_retry must be a bool")
+        if self.selective_repeat_retry and not self.selective_fast_retry:
+            raise FlowError("repeat retry requires selective fast retry")
         for name, value in (
             ("frame_payload_bytes", self.frame_payload_bytes), ("window_frames", self.window_frames),
             ("initial_credit_frames", self.initial_credit_frames),
@@ -517,6 +542,7 @@ class _Pending:
     selective_evidence: set[int] = field(default_factory=set)
     selective_evidence_at: float = 0.0
     fast_retry_offered: bool = False
+    proof_epoch_at: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -695,6 +721,8 @@ class ReliableFlow:
         self.fast_retry_offers = 0
         self.fast_retransmits = 0
         self._selective_retry_clock: float | None = None
+        self._repeat_receipt_clock: float | None = None
+        self.repeat_retry_epochs = 0
         self.refused_sends = 0
         self.impossible_acks = 0
         self.stale_acks = 0
@@ -823,9 +851,11 @@ class ReliableFlow:
 
         Default off; pump() never invokes this API. True means one offer was
         made, including refusal or DEFERRED, not a physical transmission or a
-        peer receipt. One opportunity is consumed per logical flight before
-        offering, so repetition, refusal, cancellation or a queued handover
-        cannot turn the same evidence into repeated early retries. Attempts,
+        peer receipt. By default one opportunity is consumed per logical flight
+        before offering. The separately admitted repeat option opens a fresh
+        epoch only on a confirmed retry handover; it discards all earlier proof.
+        Repetition, refusal, cancellation or a deferred offer cannot turn the
+        same evidence into repeated early retries. Attempts,
         retry timing and retransmission counts change only at the normal handover.
         Selective repair preserves the flight's current RTO; only a timeout
         retry increases its backoff. Both reanchor after queued carrier work.
@@ -1308,7 +1338,19 @@ class ReliableFlow:
             if not outcome:
                 self.refused_sends += 1
                 return
+            disposition = outcome if self.limits.selective_repeat_retry and type(outcome) is CarrierHandover else None
+            proof_at = disposition.at if disposition is not None else now
             self._consume_handover(seq, payload, now)
+            if self.limits.selective_repeat_retry and (
+                    not self._repeat_time_valid(proof_at, not_before=now)
+                    or disposition is not None and disposition.accepted is not True):
+                self._fail_session("uncertain_carrier_handover")
+                if disposition is not None and disposition.interruption is not None:
+                    raise disposition.interruption
+                return
+            if self.limits.selective_repeat_retry:
+                self._in_flight[seq].proof_epoch_at = proof_at
+                self._repeat_receipt_clock = proof_at
             sent += 1
 
     def _consume_handover(self, seq: int, payload: bytes, now: float) -> None:
@@ -1324,7 +1366,8 @@ class ReliableFlow:
         if original_last:
             self._original_final_handed_over = True
 
-    def handover(self, seq: int, *, at: float) -> bool:
+    def handover(self, seq: int, *, at: float, accepted: bool = True,
+                 proof_at: float | None = None) -> bool:
         """Record that a frame this endpoint had queued was actually handed over.
 
         A host link reports this when a frame it accepted as ``DEFERRED`` is
@@ -1336,6 +1379,10 @@ class ReliableFlow:
         count ahead of the flow's and lets the next pump start a further attempt
         against a clock that never restarted.
         """
+        if type(accepted) is not bool:
+            raise FlowError("handover acceptance must be a bool")
+        if proof_at is None:
+            proof_at = at
         # A retry or a probe repeats an emission that was already spent, so both
         # are settled before anything asks whether this sequence was consumed:
         # the retry of a frame this flow sent synchronously reuses its sequence
@@ -1357,7 +1404,7 @@ class ReliableFlow:
             if pending is not None and (pending.payload != retry.payload
                                         or pending.original_last != retry.original_last):
                 pending = None
-            self._settle_retry(pending, at, fast=retry.fast)
+            self._settle_retry(pending, at, fast=retry.fast, accepted=accepted, proof_at=proof_at)
             return True
         # A terminal direction cannot admit new DATA or a new probe. An exact
         # deferred retry above is already owed a handover record, however: its
@@ -1373,6 +1420,8 @@ class ReliableFlow:
             # probe is only ever queued with nothing else in flight.
             self._probe_outstanding = False
             self._settle_probe(at)
+            if self.limits.selective_repeat_retry and (not accepted or not self._repeat_time_valid(proof_at, not_before=at)):
+                self._fail_session("uncertain_carrier_handover")
             return True
         if seq in self._handed_over:
             # Already spent. The synchronous path consumed this frame's byte and
@@ -1382,6 +1431,11 @@ class ReliableFlow:
         if self._outbound and seq == self._next_seq:
             payload = bytes(self._outbound[:self.limits.frame_payload_bytes])
             self._consume_handover(seq, payload, at)
+            if self.limits.selective_repeat_retry and (not accepted or not self._repeat_time_valid(proof_at, not_before=at)):
+                self._fail_session("uncertain_carrier_handover")
+            elif self.limits.selective_repeat_retry:
+                self._in_flight[seq].proof_epoch_at = proof_at
+                self._repeat_receipt_clock = proof_at
             return True
         return False
 
@@ -1398,6 +1452,8 @@ class ReliableFlow:
             # refused. No attempt/clock is spent until the normal handover.
             pending.fast_retry_offered = True
             self._offer_retry(pending, now)
+            if self.limits.selective_repeat_retry and self.send_state is not FlowState.OPEN:
+                return
 
     def _offer_retry(self, pending: _Pending, now: float, *, fast: bool = False) -> None:
         frame = build_data_frame(flow_id=self.flow_id, generation=self.generation,
@@ -1428,9 +1484,24 @@ class ReliableFlow:
         if not outcome:
             self.refused_sends += 1
             return
-        self._settle_retry(pending, now, fast=fast)
+        disposition = outcome if self.limits.selective_repeat_retry and type(outcome) is CarrierHandover else None
+        self._settle_retry(pending, now, fast=fast,
+                           accepted=disposition.accepted if disposition is not None else True,
+                           proof_at=disposition.at if disposition is not None else now)
+        if disposition is not None and disposition.interruption is not None:
+            raise disposition.interruption
 
-    def _settle_retry(self, pending: _Pending | None, at: float, *, fast: bool = False) -> None:
+    def _repeat_time_valid(self, at: float, *, not_before: float = 0.0) -> bool:
+        try:
+            return (type(at) in (int, float) and math.isfinite(at) and at >= 0
+                    and type(not_before) in (int, float) and math.isfinite(not_before)
+                    and at >= not_before
+                    and (self._repeat_receipt_clock is None or at >= self._repeat_receipt_clock))
+        except OverflowError:
+            return False
+
+    def _settle_retry(self, pending: _Pending | None, at: float, *, fast: bool = False,
+                      accepted: bool = True, proof_at: float | None = None) -> None:
         """Spend exactly one retry attempt on a frame that has really been handed over.
 
         One emission consumes one retry attempt, one new retry clock and one
@@ -1445,6 +1516,11 @@ class ReliableFlow:
         really left, so it is still counted; there is simply no pending flight
         left for it to advance.
         """
+        if proof_at is None:
+            proof_at = at
+        repeat_valid = (not self.limits.selective_repeat_retry or
+                        accepted is True and self._repeat_time_valid(proof_at, not_before=at)
+                        and (pending is None or proof_at >= max(pending.handed_over_at, pending.proof_epoch_at)))
         if pending is not None:
             pending.attempts += 1
             pending.sent_at = at + self._airtime_delay()
@@ -1456,6 +1532,16 @@ class ReliableFlow:
                 pending.rto = min(self.limits.max_rto_s,
                                   max(self.limits.min_rto_s, pending.rto * 2))
             pending.handed_over_at = at
+            if (self.limits.selective_repeat_retry and repeat_valid
+                    and self.send_state is FlowState.OPEN and not self._fenced and self.failure is None):
+                # An offer/refusal/DEFERRED never reaches this accepted epoch.
+                # Discard also the receipts observed while a retry was held.
+                pending.selective_evidence.clear()
+                pending.selective_evidence_at = proof_at
+                pending.proof_epoch_at = proof_at
+                pending.fast_retry_offered = False
+                self._repeat_receipt_clock = proof_at
+                self.repeat_retry_epochs += 1
         self.retransmits += 1
         if fast:
             self.fast_retransmits += 1
@@ -1463,6 +1549,8 @@ class ReliableFlow:
         # waiting for one. A probe is only ever queued with nothing in flight,
         # which is why a retry and a probe can never both be outstanding.
         self._probe_outstanding = False
+        if self.limits.selective_repeat_retry and not repeat_valid:
+            self._fail_session("uncertain_carrier_handover")
 
     def _settle_probe(self, at: float) -> None:
         """Spend exactly one bounded silence attempt on a handover credit probe.
@@ -1660,6 +1748,11 @@ class ReliableFlow:
         self.zero_window_probes += 1
         self._probe_attempts += 1
         self._probe_at = now + self._probe_interval()
+        if (self.limits.selective_repeat_retry and type(outcome) is CarrierHandover
+                and (outcome.accepted is not True or not self._repeat_time_valid(outcome.at, not_before=now))):
+            self._fail_session("uncertain_carrier_handover")
+            if outcome.interruption is not None:
+                raise outcome.interruption
 
     def _ack_admissible(self, frame: dict) -> bool:
         """An ACK may only account for sequence numbers this endpoint actually sent."""
@@ -1750,7 +1843,13 @@ class ReliableFlow:
             # distinct later SACK positions actually retired from live flights;
             # cumulative guesses, unsent positions and repeated ACKs add none.
             # At most three positions per remaining hole are retained.
+            repeat_time_valid = not self.limits.selective_repeat_retry or self._repeat_time_valid(now)
+            if self.limits.selective_repeat_retry and repeat_time_valid:
+                self._repeat_receipt_clock = now
             for hole in self._in_flight.values():
+                if self.limits.selective_repeat_retry and (not repeat_time_valid
+                        or now < hole.proof_epoch_at or hole.seq in self._deferred_retries):
+                    continue
                 for retired in newly:
                     offset = (retired.seq - acked) % self.seq_modulus
                     if (len(hole.selective_evidence) < 3 and 0 < offset <= SACK_BITS

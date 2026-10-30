@@ -14,6 +14,39 @@ bytes this one replaces are held in
 revision 8 bytes this one repairs are held in
 `work/rook-meshticulum-r8e-review-20261006/candidate/`.
 
+## Revision 13: fresh proof after accepted retry, 30 October 2026
+
+The owner explicitly accepted the reviewed flow SHA-256
+`963c2a3b4fdd8292d8a473da67dd7eaeee735f27ab4bd77f18702583cd2e1a9e`
+and port SHA-256
+`ea29289b960ca895f54ccb46669b476a50bae79ab9a6b4060342da8c5cfacf07`.
+These are the current verifier pins. Earlier revision hashes remain historical.
+
+The default-off `FlowLimits.selective_repeat_retry` requires selective fast
+retry. A confirmed accepted retry handover opens one new proof epoch and
+discards prior evidence, including receipts observed while deferred. Only new,
+canonical, owner-accepted retirements of distinct higher SACK positions can
+qualify the next offer. Proof timestamps must be finite and nonregressing,
+and cannot precede the current handover. The three-position bound and the
+existing explicitly requested terminal threshold remain unchanged.
+
+The opt-in port records the exact held request's accepted or uncertain
+disposition and samples a fresh settlement clock. This proof clock does not
+change the original timer anchor, R11 backoff, queued allowance or RTO floor.
+UNKNOWN and clock faults remain charged and fence output; cancellation is
+propagated after accounting. Refused, deferred or known-unsent work cannot
+open a new epoch. Default v1–v6 calls retain their previous behavior.
+
+The explicit bench v7 policy retains v6's window32/train8, per-frame admission,
+physical drain, listening guards, finite authority and irreversible debt. No
+firmware or wire change is part of this revision. The author full suite passed
+3,779 tests with 37 skips and 49 passing subtests; root passed 87 focused tests,
+and `profile_design` passed 394, including 39 independent private controls.
+Thirty model arms completed with known debt, closed radios and no modeled
+collisions. This is accepted source, not RF qualification or a throughput claim.
+See the [R13 review](../../../docs/FLOW_R13_REPEAT_RETRY_REVIEW.md) and
+[revision record](../../../provenance/FLOW_REPEAT_RETRY_REVIEW.json).
+
 ## Revision 12: terminal selective retry, 30 October 2026
 
 The owner explicitly accepted this source revision after independent root and
@@ -21,7 +54,7 @@ The owner explicitly accepted this source revision after independent root and
 `7031ac5c9a02f9d183c4be1997cfd6a0cdb9132b6a907d0ba20cb61c8e2af6b7`.
 The unchanged `flow_port.py` retains SHA-256
 `57596421d916f0c49d61599653b5ab75154d64e5bc806ba1444fa5905ad025ca`.
-These are the current verifier pins. All earlier hashes below remain historical.
+These were the R12 verifier pins. All earlier hashes below remain historical.
 
 The separately admitted `FlowLimits.selective_terminal_retry` defaults to false
 and requires selective fast retry. Only an explicit `terminal=True` call can

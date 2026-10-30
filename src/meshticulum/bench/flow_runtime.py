@@ -27,7 +27,7 @@ from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .public_block import object_limit
-from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair
+from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair, policy_repeat_retry
 
 
 def _flow_modules():
@@ -71,6 +71,7 @@ class BenchFlow:
         self._selective_repair_fill = (self.data_burst and policy_repair_fill(policy))
         self._selective_terminal_retry = (self.data_burst and policy_terminal_retry(policy))
         self._scalar_fill_pair = self.data_burst and policy_scalar_fill_pair(policy)
+        self._selective_repeat_retry = self.data_burst and policy_repeat_retry(policy)
         self._scalar_fill_extra = False
         self._repair_fill_active = False
         self._physical_data, self._pending_data_domains = {}, {}
@@ -210,7 +211,8 @@ class BenchFlow:
                 # seconds instead of losing a valid transfer to host startup.
                 max_persist_acks=16,
                 selective_fast_retry=self.data_burst and fast_sf5,
-                selective_terminal_retry=self._selective_terminal_retry),
+                selective_terminal_retry=self._selective_terminal_retry,
+                selective_repeat_retry=self._selective_repeat_retry),
             flow_id=flow_key.flow_id, generation=1, sends=sends, receive=not sends,
             startup=None)
         self.sender_control_hold_us = (max(self.burst_quiet_us,
@@ -885,6 +887,9 @@ class BenchFlow:
             'scheduler': self.scheduler.snapshot()}
         if self._scalar_fill_pair:
             value['timing_policy']['scalar_fill_pair'] = True
+        if self._selective_repeat_retry:
+            value['timing_policy']['selective_repeat_retry'] = True
+            value['repeat_retry_epochs'] = self.flow.repeat_retry_epochs
         if self.dispatch_budget_failure is not None:
             value['dispatch_budget_failure'] = self.dispatch_budget_failure
         if self.data_burst:

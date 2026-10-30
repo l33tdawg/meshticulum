@@ -1,0 +1,67 @@
+{
+  "accepted_source_sha256": {
+    "src/meshticulum/bench/burst_protocol.py": "cc2f8363d49967fdd8f19206664665ce88743e4d9b239f41d95033a471f49501",
+    "src/meshticulum/bench/flow_runtime.py": "bdc4671fa1da5a20efb8bbe65d51ac598fdc0887fcb06b4bd2aec82d041ae6a5",
+    "src/meshticulum/flow/flow.py": "963c2a3b4fdd8292d8a473da67dd7eaeee735f27ab4bd77f18702583cd2e1a9e",
+    "src/meshticulum/flow/flow_port.py": "ea29289b960ca895f54ccb46669b476a50bae79ab9a6b4060342da8c5cfacf07"
+  },
+  "author": "journal_review",
+  "author_validation": {
+    "focused_tests_passed": 87,
+    "full_suite_passed": 3779,
+    "full_suite_skipped": 37,
+    "full_suite_subtests_passed": 49,
+    "handoff_receipt_sha256": "7ada84aa3e44775a9daa03a41827b7056d3afae3578a8c088cf5a84883cdcf01",
+    "paired_source_model_all_complete": true,
+    "paired_source_model_arms": 30,
+    "paired_source_model_collisions": 0,
+    "paired_source_model_sha256": "f69f7606396bf8041862c8737b11f40a8b76ebd2cac8e54e7b43f8c9c1fae8de"
+  },
+  "date": "2026-10-30",
+  "hardware_qualification": false,
+  "independent_reviews": [
+    {
+      "exact_source_approved": true,
+      "focused_tests_passed": 87,
+      "receipt_sha256": "c13bd72adff5c8fcae9be0308a421ac31278936473f4ab8417d173b6a397babd",
+      "reviewer": "root"
+    },
+    {
+      "additional_private_controls": 39,
+      "exact_source_approved": true,
+      "focused_tests_passed": 394,
+      "receipt_sha256": "abcaa4d050918ff41506a94e3287326799e51aa9e94326eff58b629f6b732de8",
+      "reviewer": "profile_design"
+    }
+  ],
+  "limitations": [
+    "No physical experiment is authorized by this record.",
+    "The source model excludes real process startup, CPU and fsync and cannot establish repeated physical3000B/s.",
+    "Injected loss counts are not a replay of RF timing or an explanation of receive loss.",
+    "Missing FINAL or no newly retired higher receipt supplies no new early-repair proof."
+  ],
+  "new_boundaries": [
+    "Only confirmed ACCEPTED retry settlement reopens one early opportunity for a fresh proof epoch.",
+    "Discard all earlier and deferred-held proof; late/regressing receipt timestamps cannot supply new evidence.",
+    "Exact-held port disposition uses a fresh post-invocation host proof clock, never a scheduler fallback or RF/receipt claim.",
+    "UNKNOWN and proof-clock faults stay charged and fenced; cancellation propagates after accounting."
+  ],
+  "owner_acceptance_sha256": "90aa8daf9435ff39a83da3abfb209625ddf019f0b8e2ab160829de1c83f4b598",
+  "preserved": [
+    "Default v1-v6 canonical policies, Boolean port outcomes, deferred callback shape and previous one-offer behavior.",
+    "At most three distinct higher SACK proof positions per flight, only newly retired canonical owner-accepted receipts.",
+    "Ordinary timeout priority, original timer anchors, queued allowance, R11 selective RTO preservation and ordinary timeout backoff.",
+    "Original attempt ceilings, nonce uniqueness, finite authority and irreversible debt.",
+    "Physical release and drained STATUS before selective offers, per-frame acceptance and existing native listening guards.",
+    "Historical source/firmware provenance, current v6 physical campaign and accepted evidence."
+  ],
+  "previous_source_sha256": {
+    "src/meshticulum/flow/flow.py": "7031ac5c9a02f9d183c4be1997cfd6a0cdb9132b6a907d0ba20cb61c8e2af6b7",
+    "src/meshticulum/flow/flow_port.py": "57596421d916f0c49d61599653b5ab75154d64e5bc806ba1444fa5905ad025ca"
+  },
+  "revision": 13,
+  "schema": "meshticulum.flow-revision-review.v1",
+  "scope": "Default-off repeat selective repair using fresh canonical proof after exact accepted retry handover; explicit v7 bench admission.",
+  "status": "explicitly-accepted-source-revision",
+  "throughput_claim": false
+}
