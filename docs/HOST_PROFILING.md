@@ -98,10 +98,14 @@ overlapping phase aggregates. The part startup-to-receipt intervals sum to
 SSH, process creation, environment verification or device acquisition.
 
 The current source checkout's [batch API](../examples/BUNDLE.md#keep-one-device-owner-across-approved-parts)
-retains one OS device owner while renewing authority and retiring the complete
-session for every part. The next target is **less than one second total across
-four handoffs**, with every individual handoff also below one second. This is
-an unmeasured target, not an alpha.3 result. Removing just the recorded 15.114
+retains one OS device owner while creating fresh authority and retiring the complete
+session for every part. A subsequent [5 kB SF5 run](../benchmarks/2026-10-30-bundle-handoff/README.md)
+verified all five out-of-order parts. Its four receipt-to-next-entry gaps totalled
+**995.923 ms**, only 4.077 ms below the one-second target. Each stronger
+receipt-to-next-DATA gap was below one second, but those gaps totalled
+**2.377247 seconds**. These are single-run observations, not a repeatable bound
+or an alpha.3 release measurement. Eight DATA retries stretched useful goodput
+to **0.133906 kB/s**; 2–3 kB/s remains unproven. Removing just the recorded 15.114
 seconds would put that old file near 1.19 useful kB/s; it would not establish
 sustained capacity.
 
@@ -112,7 +116,9 @@ first file start through final authenticated receipt and verified publication,
 plus original scope issue through both endpoints closed. Do not shift setup
 outside the interval to meet the target. Cross-host/controller times remain
 separate clock domains. The [five-part cold plan](../benchmarks/2026-10-30-bundle-handoff/COLD_PLAN.md)
-specifies a small source geometry and budget; it supplies no physical result.
+specifies source geometry and budget; it supplies no physical result. The
+measurement record preserves the failed 50 kB attempt and partial 5 kB attempt,
+including exhausted ACK budgets, alongside the successful 5 kB run.
 
 ## Qualified SF7 capacity model
 

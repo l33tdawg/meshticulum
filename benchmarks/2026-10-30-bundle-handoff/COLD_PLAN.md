@@ -6,6 +6,11 @@ operation or budget renewal follows from this document. A separate finite
 execution must pin its final source/artifacts, reconcile fresh counters and
 original debt, coordinate device ownership and retain bounded cleanup.
 
+The later [execution record](README.md) retains this 50 kB plan's failed trial,
+a partial 5 kB trial, and a successful 5 kB trial with the original 64-ACK
+receiver allowance. This source calculation is preserved rather than replaced
+by the smaller successful workload.
+
 ## Source and comparison pins
 
 The calculation uses the unchanged waveform/flow constants at SDK source

@@ -1,0 +1,452 @@
+{
+  "allocation": {
+    "all_reserved_allowances_retained": true,
+    "automatic_retry": false,
+    "full_scope_reserved": {
+      "unit-a": {
+        "attempts": 320,
+        "estimated_airtime_us": 5000000
+      },
+      "unit-b": {
+        "attempts": 100,
+        "estimated_airtime_us": 5000000
+      }
+    },
+    "historical_debt_or_fences_changed": false,
+    "original_scope_seconds": 180,
+    "previous_failed_scopes_superseded": false,
+    "refunds": {
+      "unit-a": {
+        "attempts": 0,
+        "estimated_airtime_us": 0
+      },
+      "unit-b": {
+        "attempts": 0,
+        "estimated_airtime_us": 0
+      }
+    }
+  },
+  "cleanup": {
+    "both_postflight_status_gates_passed": true,
+    "final_hardware_context_closed_before_success": true,
+    "forced_cleanup": false,
+    "global_quiescence_proven": false,
+    "returncodes": [
+      0,
+      0
+    ],
+    "supervised_sdk_children_terminal": 2,
+    "tracked_services_unchanged_both": true
+  },
+  "complete": true,
+  "delivery": {
+    "authenticated_sender_receipts": 5,
+    "completed_parts": 5,
+    "local_input_bytes_and_hash_match": true,
+    "publisher_verified": true,
+    "receiver_receipt_confirmations": 5,
+    "whole_file_sha256": "a712713c8c65bd6fdadc4a0a6b95375fa78c6de780e125ae951ef9878f6ad572",
+    "whole_file_verified": true
+  },
+  "endpoints": {
+    "unit-a": {
+      "child": {
+        "forced_cleanup": false,
+        "returncode": 0,
+        "terminal": true
+      },
+      "flow": {
+        "duplicates": 0,
+        "retransmits": 0
+      },
+      "native": {
+        "after": {
+          "attempts": 420,
+          "dropped_receive": 39,
+          "reserved_estimated_airtime_us": 11739520
+        },
+        "before": {
+          "attempts": 359,
+          "dropped_receive": 17,
+          "reserved_estimated_airtime_us": 11070960
+        },
+        "boot_identity_unchanged": true,
+        "delta": {
+          "attempts": 61,
+          "dropped_receive": 22,
+          "reserved_estimated_airtime_us": 668560
+        },
+        "driver_estimate_sum_matches_delta": true,
+        "postflight_gate_requires": [
+          "disarmed",
+          "not_transmitting",
+          "not_fenced"
+        ],
+        "postflight_status_gate_passed": true
+      },
+      "paid_journals": {
+        "attempts": 61,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "report_complete": true,
+        "reserved_estimated_airtime_us": 796477
+      },
+      "profiling": {
+        "dropped_samples": 0,
+        "invalid_samples": 0,
+        "part_phase_aggregates": 120,
+        "saturated_phases": 0
+      },
+      "role": "receiver",
+      "runtime": {
+        "editable": false,
+        "runtime_inventory_sha256": "c1341224ebb838cf83d7a74289c4362a1abc42e00f59411a71eaa97f376ca72d",
+        "system_site_packages": false,
+        "verified_files": 72,
+        "wheel_sha256": "cab6694a2004916af169b929b55bc7e3acd5c0971f8af1210428ffbabf346f1d"
+      },
+      "tracked_host_state": {
+        "host_boot_unchanged": true,
+        "service_lifetimes_unchanged": true,
+        "service_states_unchanged": true,
+        "services": 20
+      }
+    },
+    "unit-b": {
+      "child": {
+        "forced_cleanup": false,
+        "returncode": 0,
+        "terminal": true
+      },
+      "flow": {
+        "duplicates": 0,
+        "retransmits": 8
+      },
+      "native": {
+        "after": {
+          "attempts": 981,
+          "dropped_receive": 34,
+          "reserved_estimated_airtime_us": 88876384
+        },
+        "before": {
+          "attempts": 923,
+          "dropped_receive": 22,
+          "reserved_estimated_airtime_us": 87044864
+        },
+        "boot_identity_unchanged": true,
+        "delta": {
+          "attempts": 58,
+          "dropped_receive": 12,
+          "reserved_estimated_airtime_us": 1831520
+        },
+        "driver_estimate_sum_matches_delta": true,
+        "postflight_gate_requires": [
+          "disarmed",
+          "not_transmitting",
+          "not_fenced"
+        ],
+        "postflight_status_gate_passed": true
+      },
+      "paid_journals": {
+        "attempts": 58,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "report_complete": true,
+        "reserved_estimated_airtime_us": 2072684
+      },
+      "profiling": {
+        "dropped_samples": 0,
+        "invalid_samples": 0,
+        "part_phase_aggregates": 120,
+        "saturated_phases": 0
+      },
+      "role": "sender",
+      "runtime": {
+        "editable": false,
+        "runtime_inventory_sha256": "c1341224ebb838cf83d7a74289c4362a1abc42e00f59411a71eaa97f376ca72d",
+        "system_site_packages": false,
+        "verified_files": 72,
+        "wheel_sha256": "cab6694a2004916af169b929b55bc7e3acd5c0971f8af1210428ffbabf346f1d"
+      },
+      "tracked_host_state": {
+        "host_boot_unchanged": true,
+        "service_lifetimes_unchanged": true,
+        "service_states_unchanged": true,
+        "services": 18
+      }
+    }
+  },
+  "evidence": {
+    "artifact_sha256": {
+      "PREPARED.json": "3b866441896b131c9fa14845604cc87473c00ddda08c0305c6b978ed0c255d47",
+      "RESULT.json": "8c611c0f06ecfe3cfd3d9fa49d199293347d2c732a249f672c26f0126c5241cb",
+      "SCOPE.json": "57054bb69b2afa836881ebcf5e83e963bc46973500cc30e9bc9e4d2a1c3583b2",
+      "file-unit-a-RESULT.json": "65ca022beb632426b032fa33ab3bfd3c4e15670385f5a7b32ff80d6b8d69c1a4",
+      "file-unit-b-RESULT.json": "54ac764bbaa085504e8f38855e18add4fbc4adf8f7a7e8c88b429ceb281fc8f9",
+      "part-0-RESULT.json": "35cc1c616b631498ddb86574088f126ce220a938649ed2bb12f885ccd2e9c5da",
+      "part-1-RESULT.json": "8f4679aa241e8ae618e1568aac697cd0cdcefd7cd3f94bcb59fc79c99a0c3f21",
+      "part-2-RESULT.json": "9d090a7feef138c2656173b81056f4939e9ab64a56c33928b1c01bc0f6147daf",
+      "part-3-RESULT.json": "425907a5c9d679a8d9e2122593a22ac2919b22f8b90e6ac40544da49c1551f96",
+      "part-4-RESULT.json": "ceb600da0f2e87559f7dd332f38e071dfbbf1687e1f40c001837a68c4991850c"
+    },
+    "original_result_preserved": true,
+    "original_result_sha256": "8c611c0f06ecfe3cfd3d9fa49d199293347d2c732a249f672c26f0126c5241cb"
+  },
+  "limits": [
+    "One 5,000-byte SF5 B-to-A run with five 1,000-byte parts and host profiling enabled.",
+    "The aggregate receipt-to-next-invocation interval is below one second by only 4,077 microseconds; this is an observation, not a future bound.",
+    "Receipt-to-next-DATA intervals each fall below one second, but their 2,377,247-microsecond aggregate does not.",
+    "Eight sender retransmits and native receive-drop deltas A+22/B+12 occurred; this is not a loss-free result.",
+    "Receive-drop counters are device diagnostics and are not an application packet-loss rate.",
+    "The useful-goodput denominator ends at the final authenticated part receipt; final whole-file verification and endpoint closure are separately checked.",
+    "Controller closure timing uses one controller wall clock; clocks from different hosts are not subtracted.",
+    "Waveform, workload, direction or lifecycle differ from earlier qualification. No paired speed comparison, 100k speed claim, sustained-throughput claim or range claim is made.",
+    "Earlier failed trials and their full allocations remain separate retained evidence. This result neither erases them nor authorizes additional RF work."
+  ],
+  "outcome": "completed_with_retransmissions_and_receive_drops",
+  "parts": [
+    {
+      "complete": true,
+      "part": 4,
+      "receiver_authenticated_receipt_confirmation": true,
+      "receiver_paid_journal": {
+        "attempts": 7,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 91399
+      },
+      "receiver_part_verified": true,
+      "sender_authenticated_receipt_to_drained_endpoint_us": 8673,
+      "sender_invocation_to_authenticated_receipt_us": 2402298,
+      "sender_paid_journal": {
+        "attempts": 10,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 356194
+      },
+      "sender_physical_pending": 0,
+      "sender_queued_data": 9,
+      "sender_retransmits": 0,
+      "sender_worker_pending": 0,
+      "useful_bytes": 1000,
+      "whole_file_verified": false
+    },
+    {
+      "complete": true,
+      "part": 2,
+      "receiver_authenticated_receipt_confirmation": true,
+      "receiver_paid_journal": {
+        "attempts": 6,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 78342
+      },
+      "receiver_part_verified": true,
+      "sender_authenticated_receipt_to_drained_endpoint_us": 7694,
+      "sender_invocation_to_authenticated_receipt_us": 3986181,
+      "sender_paid_journal": {
+        "attempts": 11,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 385091
+      },
+      "sender_physical_pending": 0,
+      "sender_queued_data": 10,
+      "sender_retransmits": 1,
+      "sender_worker_pending": 0,
+      "useful_bytes": 1000,
+      "whole_file_verified": false
+    },
+    {
+      "complete": true,
+      "part": 0,
+      "receiver_authenticated_receipt_confirmation": true,
+      "receiver_paid_journal": {
+        "attempts": 9,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 117513
+      },
+      "receiver_part_verified": true,
+      "sender_authenticated_receipt_to_drained_endpoint_us": 27655,
+      "sender_invocation_to_authenticated_receipt_us": 3785423,
+      "sender_paid_journal": {
+        "attempts": 12,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 423491
+      },
+      "sender_physical_pending": 0,
+      "sender_queued_data": 11,
+      "sender_retransmits": 2,
+      "sender_worker_pending": 0,
+      "useful_bytes": 1000,
+      "whole_file_verified": false
+    },
+    {
+      "complete": true,
+      "part": 3,
+      "receiver_authenticated_receipt_confirmation": true,
+      "receiver_paid_journal": {
+        "attempts": 17,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 221969
+      },
+      "receiver_part_verified": true,
+      "sender_authenticated_receipt_to_drained_endpoint_us": 7478,
+      "sender_invocation_to_authenticated_receipt_us": 8099614,
+      "sender_paid_journal": {
+        "attempts": 12,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 434402
+      },
+      "sender_physical_pending": 0,
+      "sender_queued_data": 11,
+      "sender_retransmits": 2,
+      "sender_worker_pending": 0,
+      "useful_bytes": 1000,
+      "whole_file_verified": false
+    },
+    {
+      "complete": true,
+      "part": 1,
+      "receiver_authenticated_receipt_confirmation": true,
+      "receiver_paid_journal": {
+        "attempts": 22,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 287254
+      },
+      "receiver_part_verified": true,
+      "sender_authenticated_receipt_to_drained_endpoint_us": 7430,
+      "sender_invocation_to_authenticated_receipt_us": 17641481,
+      "sender_paid_journal": {
+        "attempts": 13,
+        "fenced": false,
+        "recovered_unknown": 0,
+        "reserved_estimated_airtime_us": 473506
+      },
+      "sender_physical_pending": 0,
+      "sender_queued_data": 12,
+      "sender_retransmits": 3,
+      "sender_worker_pending": 0,
+      "useful_bytes": 1000,
+      "whole_file_verified": true
+    }
+  ],
+  "queue_evidence": {
+    "all_five_sender_pending_and_worker_pending_zero": true,
+    "all_queued_data_attempts_covered": true,
+    "complete_ordered_request_lifecycles": 53,
+    "retained_events": 318,
+    "sender_physical_requests": 53
+  },
+  "radio_profile": {
+    "bandwidth_hz": 500000,
+    "chip_power_dbm": 0,
+    "coding_rate": 5,
+    "frequency_hz": 921375000,
+    "lease_ms": 60000,
+    "max_boot_attempts": 1024,
+    "max_boot_estimated_airtime_us": 300000000,
+    "preamble": 12,
+    "spreading_factor": 5,
+    "sync_word": 66
+  },
+  "record_date": "2026-10-30",
+  "sanitized": true,
+  "schema": "meshticulum.bundle-handoff-final-summary.v1",
+  "source": {
+    "all_frozen_controller_and_payload_pins_verified": true,
+    "commit": "541a3796454291b1d8cb573b5e5e60dd4fc4d1ac",
+    "firmware": "mtb1-6cfde1fdd4",
+    "later_diagnostic_adapter_used": false,
+    "sdk_batch_adapter_sha256": "70436b7d3e5cddd9cfddae3a7358a21d5a5f05360c81cb9888e70e49d60f8c45",
+    "wheel_sha256": "cab6694a2004916af169b929b55bc7e3acd5c0971f8af1210428ffbabf346f1d"
+  },
+  "timing": {
+    "clock_basis": "same sender host monotonic clock",
+    "controller_scope_to_joined_result": {
+      "clock_basis": "controller wall clock: scope issuance to result assembly after both endpoint RPCs joined",
+      "cross_host_timestamps_subtracted": false,
+      "elapsed_us": 39937573,
+      "includes_management_setup_postflight_and_cleanup": true,
+      "monotonic_finish_available": false
+    },
+    "gaps": [
+      {
+        "from_part": 4,
+        "receipt_to_next_invocation_us": 176867,
+        "receipt_to_next_queued_data_submit_us": 380730,
+        "to_part": 2
+      },
+      {
+        "from_part": 2,
+        "receipt_to_next_invocation_us": 206971,
+        "receipt_to_next_queued_data_submit_us": 514156,
+        "to_part": 0
+      },
+      {
+        "from_part": 0,
+        "receipt_to_next_invocation_us": 308283,
+        "receipt_to_next_queued_data_submit_us": 522236,
+        "to_part": 3
+      },
+      {
+        "from_part": 3,
+        "receipt_to_next_invocation_us": 303802,
+        "receipt_to_next_queued_data_submit_us": 960125,
+        "to_part": 1
+      }
+    ],
+    "receipt_to_next_invocation": {
+      "aggregate_below_one_second": true,
+      "aggregate_margin_below_one_second_us": 4077,
+      "each_below_one_second": true,
+      "max_us": 308283,
+      "sum_us": 995923
+    },
+    "receipt_to_next_queued_data_submit": {
+      "aggregate_below_one_second": false,
+      "each_below_one_second": true,
+      "max_margin_below_one_second_us": 39875,
+      "max_us": 960125,
+      "sum_us": 2377247
+    },
+    "whole_file": {
+      "child_launch_to_first_part_invocation_us": 428737,
+      "child_launch_to_python_process_start_us": 30713,
+      "denominator": "sender SDK child launch to final authenticated part receipt; includes initial process startup and all handoffs, excludes final cleanup",
+      "elapsed_us": 37339657,
+      "exact_partition_verified": true,
+      "part_invocation_to_receipt_sum_us": 35914997,
+      "useful_bytes": 5000,
+      "useful_bytes_per_second": 133.90588992287744,
+      "useful_decimal_kilobytes_per_second": 0.13390588992287744
+    }
+  },
+  "workload": {
+    "completed_order": [
+      4,
+      2,
+      0,
+      3,
+      1
+    ],
+    "host_profile_enabled": true,
+    "mode": "queued",
+    "part_useful_bytes": 1000,
+    "planned_order": [
+      4,
+      2,
+      0,
+      3,
+      1
+    ],
+    "receiver": "unit-a",
+    "sender": "unit-b",
+    "useful_bytes": 5000
+  }
+}

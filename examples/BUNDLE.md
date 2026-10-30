@@ -268,7 +268,9 @@ finishes only when the reverified missing tuple is empty, then checks the whole
 signed length and SHA-256 before publication. The bounds remain 42 parts and
 1,000,000 useful bytes.
 
-The next measurement target is less than one second of aggregate handoff across
-four part transitions, with each transition also below one second. This remains
-unmeasured. See [handoff timing and capacity limits](../docs/HOST_PROFILING.md#bundle-handoff)
-and the [source-only five-part cold plan](../benchmarks/2026-10-30-bundle-handoff/COLD_PLAN.md).
+One [5 kB SF5 execution](../benchmarks/2026-10-30-bundle-handoff/README.md) verified
+all five parts in order 4, 2, 0, 3, 1. Its four receipt-to-next-entry gaps totalled
+995.923 ms; the stronger next-DATA gaps totalled 2.377247 seconds. This small,
+lossy result supplies no larger-file or sustained-goodput guarantee. See
+[handoff timing and capacity limits](../docs/HOST_PROFILING.md#bundle-handoff)
+and the separately retained [source cold plan](../benchmarks/2026-10-30-bundle-handoff/COLD_PLAN.md).
