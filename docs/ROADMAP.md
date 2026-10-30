@@ -1,8 +1,17 @@
 # Roadmap
 
-Meshticulum is a public experimental transport and resource project with a published source-build alpha. The active SF5/BW500 goal is repeated reliable completion at **3 kB/s (24 kbit/s)** of useful encrypted file bytes, measured from sender process startup through authenticated receipt with publisher and whole-file verification. The latest sample reached **2.872 kB/s**, clearing the **above-2.8 kB/s (22.4 kbit/s)** checkpoint once. Repeated 3 kB/s remains open. The longer-term **4 to 5 kB/s (32 to 40 kbit/s)** goal follows that qualification. There are no promised release dates.
+Meshticulum is a public experimental transport and resource project with a published source-build alpha. Alpha 4 met the SF5/BW500 target for three repeated files: **3,149.246–3,192.081 useful B/s** from sender process startup through authenticated receipt, with publisher and whole-file verification. The **2.8 kB/s required** and **3.0 kB/s stretch** checkpoints are now met for that finite workload. Sustained larger-file performance, field range and broader qualification remain open; the optional **4 to 5 kB/s (32 to 40 kbit/s)** goal follows this qualification. There are no promised release dates.
 
 ## Current status
+
+The final [Alpha 4 repeat qualification](../benchmarks/2026-10-30-sf5-alpha4-repeat-profile/README.md)
+completed three exact-wheel SF5 files at **3,188.156, 3,192.081 and 3,149.246
+B/s** including sender startup. Each transferred 23,900 useful bytes, accepted
+12 authenticated ACKs, verified the whole file, closed both endpoint children
+without forced cleanup and used one DATA retransmission. The run11
+13-retransmission diagnostic remains retained separately in the bench
+workspace. These are finite near-bench samples, not a sustained completion
+distribution.
 
 The latest [sync18/preamble32 sample](../benchmarks/2026-10-30-sf5-sync18-profile/README.md)
 verified **23,900 useful bytes in 8.321713 seconds including sender process
@@ -80,7 +89,7 @@ receipt, they group distinct, already proven missing frames into trains of at
 most eight packets. The original per-frame accounting and listening floors
 remain. Source controls passed, but v8 has no physical qualification result.
 
-The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
+The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.4` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
 
 Alpha.3 removes repeated full-history scans from journal accounting and adds
 [opt-in host phase timings](HOST_PROFILING.md) for queue, serial, journal and

@@ -6,7 +6,17 @@
 
 A [SAGE Foundation](https://sage-foundation.net/) project, created and maintained by [Dhillon Andrew Kannabhiran (@l33tdawg)](https://github.com/l33tdawg). Part of the broader [SAGE project](https://github.com/l33tdawg/sage/).
 
-**Experimental `1.0.0-alpha.3`.** The [GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3) provides the `1.0.0a3` SDK wheel, normalized source archive, firmware source-build guide, notices and validation records. See [release status](docs/RELEASE_READINESS.md) for the exact artifacts and hardware evidence. The alpha scope is reliable verified delivery, a deployable SDK and firmware build path, and useful encrypted goodput above **1 kB/s (8 kbit/s)** including sender startup on the declared tested path. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current work and roadmap](docs/ROADMAP.md).
+**Experimental `1.0.0-alpha.4`.** The [GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4) provides the `1.0.0a4` SDK wheel, normalized source archive, firmware source-build guide, notices and validation records. See [release status](docs/RELEASE_READINESS.md) for the exact artifacts and hardware evidence. The alpha scope is reliable verified delivery, a deployable SDK and firmware build path, and useful encrypted goodput above **3 kB/s (24 kbit/s)** including sender startup on the declared tested path. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Current work and roadmap](docs/ROADMAP.md).
+
+Alpha.4 repairs a saturated train12 recovery stall. A fully occupied logical
+window with no physical DATA outstanding can now use one fresh authenticated
+later SACK through the existing bounded selective-repair train. The path still
+requires live authority, exact physical drain, a saturated peer window and no
+due ordinary retry timer; ordinary flows retain their three-SACK threshold.
+Three exact-wheel near-bench SF5 files completed at **3,149.246–3,192.081 B/s**
+including sender startup, each with one DATA retransmission and full publisher,
+part and whole-file verification. The [repeat record](benchmarks/2026-10-30-sf5-alpha4-repeat-profile/README.md)
+keeps the timing boundary, endpoint closures and finite-sample limits explicit.
 
 Alpha.3 keeps journal accounting reads independent of retained-history length,
 adds opt-in [host phase timings](docs/HOST_PROFILING.md), and rechecks the serial
@@ -107,6 +117,15 @@ The uninterrupted public SDK samples completed **two fresh 100,000-byte files at
 
 The same public signed-bundle path also completed fresh **250 kB, 500 kB and 1 MB files at 2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s) including sender startup**. All receivers verified every signed part and the complete file. Scope issue through both endpoints closed took **121.214, 228.292 and 450.903 seconds** (**2.063, 2.190 and 2.218 kB/s; 16.500, 17.521 and 17.742 kbit/s**). These 11-, 21- and 42-part runs used source `1f85608`; [the measurement report](docs/RADIO_SDK_MEASUREMENTS.md#larger-public-files) records retries, receive drops and exact windows.
 
+Alpha.4 then completed three fresh **23,900-byte B-to-A SF5/BW500 files at
+3,149.246, 3,188.156 and 3,192.081 B/s (25.194, 25.505 and 25.537 kbit/s)
+including sender startup**. All three exact-wheel runs used the repaired
+train12 policy, accepted 12 authenticated sender ACKs, verified the complete
+file and had one DATA retransmission with zero duplicate flow events. The
+[repeat qualification](benchmarks/2026-10-30-sf5-alpha4-repeat-profile/README.md)
+retains the exact timing boundary and limits this claim to three finite
+near-bench samples.
+
 All three final samples clear the owner's **2.0 kB/s whole-file floor**. An
 earlier fresh 1 MB run reached 1.750 kB/s while the sender host's production LLM
 engine occupied its pinned CPU4; that result remains in the record. The
@@ -156,7 +175,7 @@ receipt by **27.456 ms**. The MCU driver time stayed about 4.99 s in both
 modes, consistent with overlapped host/MCU work on the same radio profile. [The acceleration guide](docs/MCU_ACCELERATION.md)
 explains the bounded policy and remaining repetition, loss and recovery work.
 
-Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/s median (9.6 kbit/s)**, and two later 16,356-byte public responses reached **1.037 and 1.071 kB/s** through reliable-flow ACK with zero DATA retries or duplicates. [Performance](docs/PERFORMANCE.md) retains those historical conditions and scoped upstream comparisons. The immediate target is sustained useful encrypted delivery above **1 kB/s (8 kbit/s) including startup**, with reliable completion and deployable code. **4 to 5 kB/s (32 to 40 kbit/s) is an optional later stretch**, not an alpha release gate. The new GFSK samples and earlier LoRa results retain their own source pins and measurement boundaries.
+Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/s median (9.6 kbit/s)**, and two later 16,356-byte public responses reached **1.037 and 1.071 kB/s** through reliable-flow ACK with zero DATA retries or duplicates. [Performance](docs/PERFORMANCE.md) retains those historical conditions and scoped upstream comparisons. Alpha 4 met the repeated near-bench SF5 target above **3 kB/s (24 kbit/s) including startup** for three finite files with reliable completion. Sustained larger-file delivery remains open; **4 to 5 kB/s (32 to 40 kbit/s) is an optional later stretch**, not an alpha release gate. Every GFSK, SF5 and earlier LoRa result retains its own source pins and measurement boundaries.
 
 [Performance](docs/PERFORMANCE.md) explains the available evidence, units, measurement boundaries and the scope of comparisons with published upstream figures.
 
@@ -167,7 +186,7 @@ Earlier LoRa results remain separate: a 30-sample bench recorded about **1.2 kB/
 | Reliable transport | MT05 flow composed with session authentication, bounded credit and queues, ACK/retry behavior, durable replay and attempt journals | Current hardware timing, completed radio transfers and settled worker debt |
 | Radio adapters | Reusable exclusive serial-radio and Linux SX1262 workers; finite public service composition | Coordinated Lantern device runs with bounded disarm and rollback |
 | MCU DATA queue | Opt-in bounded ciphertext queue; one same-firmware LoRa pair improved startup-inclusive goodput by 16.48%, with every physical result settled | Repeated and reversed-order comparisons, loss/disconnect recovery, wider hardware and energy measurements |
-| Public resources | Two fresh 100 kB files reached 1.95 to 2.03 kB/s (15.6 to 16.2 kbit/s); fresh 250 kB, 500 kB and 1 MB files reached 2.111, 2.216 and 2.230 kB/s (16.9, 17.7 and 17.8 kbit/s), all with independent whole-file verification | Wider completion distribution, recovery, mixed-path coverage, field range and qualification |
+| Public resources | Three Alpha 4 SF5 files reached 3,149–3,192 B/s with independent whole-file verification; two earlier 100 kB files reached 1.95–2.03 kB/s and 250 kB, 500 kB and 1 MB files reached 2.111–2.230 kB/s | Sustained larger-file distribution, recovery, mixed-path coverage, field range and wider qualification |
 | HTTP gateway | Three plain-HTTP browser runs through a second unit's internet access rendered in 17.77–17.99 s with a 30 s timeout; gateway completion 16.81–17.08 s; both radio directions verified | Repeated-request latency and broader hardware; no HTTPS `CONNECT`, TUN or transparent routing |
 | Private messages | Offline encrypted envelopes and compact binary carrier | Lantern's real native ownership, protected backend, consent and recovery behavior |
 | Standalone packaging | Published source-build alpha, canonical Python package and standalone source suite | Separately qualified Lantern deployment and future releases |

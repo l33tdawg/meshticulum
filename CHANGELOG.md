@@ -1,5 +1,49 @@
 # Release notes
 
+## 1.0.0-alpha.4 (`1.0.0a4`) — 2026-10-30
+
+This update repairs a saturated train12 recovery stall. When a logical DATA
+window is fully occupied but the physical DATA queue has drained, a fresh,
+authenticated later SACK can now trigger the existing bounded selective-repair
+train. The path requires live authority, a saturated peer window, exact drained
+native inventory and no due ordinary retry timer. Ordinary flows retain their
+three-later-SACK threshold, and every repair still uses the existing owner,
+cipher, durable journal, native queue, scheduler and original-deadline path.
+No byte, sequence, credit, timer or debt state is manufactured or refunded.
+
+The paired source model reduced elapsed time by **1.269100 seconds / 15.35%**
+across seven injected holes and **1.079100 seconds / 12.98%** across nine holes,
+with identical attempt counts. These are source-model timings, not physical
+throughput.
+
+### Alpha.4 hardware evidence
+
+Three independent physical B-to-A USB-SF5 files used the exact Alpha 4 wheel
+SHA-256
+`f40ef1947bfc53208b711546e7a195e5932f6ac7d745a001b158c012f8f9c64c`,
+firmware `mtb1-e2eaa9f94c`, a 32-symbol preamble, sync word 18, 921.375 MHz,
+500 kHz bandwidth and the repaired explicit train12 policy. Each transferred
+the same 23,900-byte signed fixture and achieved:
+
+| Sender startup to authenticated receipt | Useful goodput | DATA retransmissions |
+| ---: | ---: | ---: |
+| 7.496496 s | 3,188.156 B/s | 1 |
+| 7.487278 s | 3,192.081 B/s | 1 |
+| 7.589117 s | 3,149.246 B/s | 1 |
+
+All three clear the **2.8 kB/s required checkpoint** and the **3.0 kB/s stretch
+target**. Every receiver reconstructed the complete file, every endpoint child
+exited zero without forced cleanup, and each expired-scope post-run probe
+matched the final native counters with no new RF, reset or grant command. The
+[repeat qualification](benchmarks/2026-10-30-sf5-alpha4-repeat-profile/README.md)
+retains timing boundaries, native deltas, evidence hashes and limitations. The
+run11 13-retransmission diagnostic remains retained separately.
+
+The result is three finite near-bench samples. It does not establish sustained
+throughput, field range, LoRa-profile behavior, another installation, global
+quiescence or overall superiority. The frozen flow/port ownership, bounded
+deadlines, replay decisions and charged attempt debt remain unchanged.
+
 ## 1.0.0-alpha.3 (`1.0.0a3`) — 2026-10-30
 
 This update reduces repeated host accounting work and adds optional phase

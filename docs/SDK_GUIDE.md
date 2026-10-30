@@ -6,18 +6,18 @@ The [public radio examples](../examples/README.md) have two fresh five-part 100 
 
 ## Install the alpha or checkout
 
-Use Python **3.11 or later**. Package version **`1.0.0a3`** is distributed through the [`v1.0.0-alpha.3` GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). Download the wheel from that release page and install the local file, or use the source-checkout commands below. [Release status](RELEASE_READINESS.md) distinguishes the artifact checks from hardware measurements.
+Use Python **3.11 or later**. Package version **`1.0.0a4`** is distributed through the [`v1.0.0-alpha.4` GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4). Download the wheel from that release page and install the local file, or use the source-checkout commands below. [Release status](RELEASE_READINESS.md) distinguishes the artifact checks from hardware measurements.
 
 Verify the downloaded wheel against the release's `SHA256SUMS` before installation. The accompanying manifest records the source commit and each asset hash. The release also includes the normalized source archive, firmware source-build guide and validation records. Prebuilt firmware is not included.
 
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install ./meshticulum-1.0.0a3-py3-none-any.whl
+python -m pip install ./meshticulum-1.0.0a4-py3-none-any.whl
 ```
 
 ```sh
-git clone --branch v1.0.0-alpha.3 https://github.com/l33tdawg/meshticulum.git
+git clone --branch v1.0.0-alpha.4 https://github.com/l33tdawg/meshticulum.git
 cd meshticulum
 python3 -m venv .venv
 source .venv/bin/activate
@@ -31,7 +31,7 @@ python -I -c "from importlib.metadata import version; import meshticulum; print(
 meshticulum-seed --help
 ```
 
-Expect `1.0.0a3` and a path inside your virtual environment. Alpha.3 contains 72
+Expect `1.0.0a4` and a path inside your virtual environment. Alpha.4 contains 75
 runtime files, including the optional host timing collector. Its artifact
 validation and exact hardware scope are recorded in [release status](RELEASE_READINESS.md).
 To measure an already admitted radio operation, see [host phase timings](HOST_PROFILING.md);

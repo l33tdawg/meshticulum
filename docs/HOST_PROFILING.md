@@ -1,6 +1,6 @@
 # Host phase timings
 
-Available in Python package `1.0.0a3` and the alpha.3 checkout examples.
+Available in Python package `1.0.0a4` and the alpha.4 checkout examples.
 The [release record](RELEASE_READINESS.md) identifies the tested artifacts;
 the [journal profile](../benchmarks/2026-10-30-host-journal/README.md) covers
 separate local measurements on synthetic retained history.

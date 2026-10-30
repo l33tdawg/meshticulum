@@ -1,5 +1,40 @@
 # Performance and measurement
 
+The latest Alpha 4 repeat measured **3,149.246–3,192.081 useful B/s including
+sender startup** for three exact-wheel SF5/BW500 files. Each used the repaired
+train12 policy and had one DATA retransmission. This is a finite near-bench
+repeat, not a sustained-capacity distribution.
+
+## SF5 Alpha 4 repeat: 30 October 2026
+
+Three fresh B-to-A USB-SF5 files transferred the same 23,900-byte signed
+fixture using wheel
+`f40ef1947bfc53208b711546e7a195e5932f6ac7d745a001b158c012f8f9c64c`
+and firmware `mtb1-e2eaa9f94c`. All three used 921.375 MHz, 500 kHz, SF5,
+CR4/5, sync word 18, a 32-symbol preamble and the explicit train12 policy.
+
+| Sample | Sender startup to authenticated receipt | Useful goodput | DATA attempts / retransmissions |
+| --- | ---: | ---: | ---: |
+| 13 | 7.496496 s | **3,188.156 B/s / 3.1882 kB/s** | 129 / 1 |
+| 14 | 7.487278 s | **3,192.081 B/s / 3.1921 kB/s** | 129 / 1 |
+| 15 | 7.589117 s | **3,149.246 B/s / 3.1492 kB/s** | 129 / 1 |
+
+All three clear the **2.8 kB/s required checkpoint** and **3.0 kB/s stretch
+target**. Every receiver verified the exact whole file; both endpoint children
+exited zero without forced cleanup in every sample. Each expired-scope
+read-only observation matched the final native counters, retained exact native
+profiles and issued no RF, reset or grant command. The
+[repeat record](../benchmarks/2026-10-30-sf5-alpha4-repeat-profile/README.md)
+retains evidence hashes and limitations.
+
+The timed interval includes sender public SDK process startup and ends when the
+final authenticated ACK is applied. It excludes final physical drain, endpoint
+closure and reader verification. The three finite samples do not establish a
+sustained completion distribution, field range, LoRa-profile behavior or an
+upstream ranking.
+
+## Earlier MCU queue comparison
+
 The 24 October LoRa comparison measured **1,084.8 useful B/s including sender
 startup with the opt-in MCU DATA queue**, versus **931.3 B/s** synchronously on
 the same firmware/profile. The result below is one fixed-order pair; the

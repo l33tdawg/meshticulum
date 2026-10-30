@@ -1,22 +1,24 @@
 # Project preview
 
-Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project created and maintained by [Dhillon Andrew Kannabhiran](https://github.com/l33tdawg). The source and project website introduce the design, invite review and share measured results while development continues. The latest SDK update is the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3).
+Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project created and maintained by [Dhillon Andrew Kannabhiran](https://github.com/l33tdawg). The source and project website introduce the design, invite review and share measured results while development continues. The latest SDK update is the [experimental `1.0.0-alpha.4` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4).
 
 ## Scope of the announcement
 
-The repository contains reusable protocol, crypto, reliable flow, radio/IP drivers and verified public-resource code. It includes architecture diagrams, comparisons with published upstream figures, source tests and benchmark metadata. The original preview used `0.1.0`; the current package uses `1.0.0a3`. The release includes the SDK wheel, normalized source archive and firmware source-build materials. Its exact source, artifacts and hardware scope are recorded in [release status](RELEASE_READINESS.md). Optional prebuilt firmware is not included.
+The repository contains reusable protocol, crypto, reliable flow, radio/IP drivers and verified public-resource code. It includes architecture diagrams, comparisons with published upstream figures, source tests and benchmark metadata. The original preview used `0.1.0`; the current package uses `1.0.0a4`. The release includes the SDK wheel, normalized source archive and firmware source-build materials. Its exact source, artifacts and hardware scope are recorded in [release status](RELEASE_READINESS.md). Optional prebuilt firmware is not included.
 
-Alpha.3 reduces repeated journal-accounting work as retained history grows,
-adds opt-in host phase timings and rechecks serial deadlines after writable
-readiness. [Local journal measurements](../benchmarks/2026-10-30-host-journal/README.md)
-and [phase timing documentation](HOST_PROFILING.md) explain these changes without
-turning host timings into a radio speed claim.
+Alpha.4 adds bounded stalled-window selective repair for an explicit train12
+flow that has physically drained while its logical window remains occupied.
+Three fresh exact-wheel SF5 files then completed at **3,149–3,192 B/s** including
+sender startup, each with one DATA retransmission and independent whole-file
+verification. [The repeat qualification](../benchmarks/2026-10-30-sf5-alpha4-repeat-profile/README.md)
+keeps the finite-sample boundary explicit.
 
 [SAGE](https://github.com/l33tdawg/sage/) supplies the broader agent-memory project. [SAGE Lantern](https://github.com/l33tdawg/sage-lantern) owns product UI, protected SAGE adapters, native device/profile policy, provisioning, pilot control and deployment. Lantern consumes Meshticulum. Those product implementations and private deployment materials belong in Lantern's separate repository.
 
 ## Claims supported today
 
 - Meshticulum has its own experimental protocol, combining practical radio-mesh priorities with authenticated networking and verified resources across LoRa and IP. Existing MeshCore/Reticulum wire interoperability is not implemented.
+- Three Alpha 4 near-bench B-to-A SF5/BW500 files transferred the same 23,900-byte signed object at **3,149.246, 3,188.156 and 3,192.081 B/s including sender startup**. Every file verified end to end, every endpoint child closed without forced cleanup, and each sample used one DATA retransmission with zero duplicate flow events. The [repeat record](../benchmarks/2026-10-30-sf5-alpha4-repeat-profile/README.md) limits this to the exact wheel, firmware, profile and three finite samples.
 - On 17 October, the public SDK delivered **two fresh 100,000-byte files at 2.03 and 1.95 kB/s (16.24 and 15.59 kbit/s) including sender startup**, each across five signed parts on a direct GFSK250 link about one metre long. Full scope-to-closure rates were **1.86 and 1.76 kB/s (14.85 and 14.05 kbit/s)**. All ten receiver confirmations were accepted, with zero and one DATA retransmissions respectively and zero new receiver drops. A separate fresh 23,900-byte file reached **2.53 kB/s (20.28 kbit/s)** through authenticated receipt. [The measurement report](RADIO_SDK_MEASUREMENTS.md) gives the source, timing boundaries and limits; sustained capacity and field range remain unqualified.
 - On 18 October, fresh **250,000-, 500,000- and 1,000,000-byte files completed at 2.111, 2.216 and 2.230 kB/s (16.889, 17.725 and 17.838 kbit/s) including sender startup** on the same near-bench path. All three clear 2.0 kB/s; the first 1 MB sample measured 1.750 kB/s while the sender host's production LLM engine held a CPU core near 95%, and the repeat pinned the sender away from that core. The remaining measured cost is 42 process starts and coordination gaps. Three consecutive HTTP gateway requests then rendered in `links` in **17.77–17.99 seconds** with a normal 30-second timeout, with gateway completion at **16.81–17.08 seconds**. [The larger-file record](RADIO_SDK_MEASUREMENTS.md#larger-public-files) and [HTTP gateway record](HTTP_GATEWAY.md) keep the exact boundaries.
 - On 22 October, one installed-wheel A/B run across roughly **20 metres in separate rooms** delivered a five-part **100,000-byte signed file at 1.776 kB/s including sender startup**, with authenticated receipts, exact whole-file verification, RSSI of **-57.5 to -56.5 dBm** and zero receive-drop deltas on both Heltec V4 MCUs. Distance is operator-reported. This is one cross-room GFSK250 sample, not field range, sustained capacity or LoRa-profile evidence. [The A/B record](RADIO_SDK_MEASUREMENTS.md#ab-cross-room-transfer-22-october-2026) retains the timing, failed precursor and firmware rollback details.
@@ -29,6 +31,6 @@ turning host timings into a radio speed claim.
 
 ## What follows
 
-The [roadmap](ROADMAP.md) separates current evidence, published alpha scope and later research. The source-build alpha records useful encrypted delivery above **1 kB/s (8 kbit/s) including sender startup** on its declared near-bench path, reliable finite completion and a deployable SDK/firmware build path. The 1 MB whole-file result clears 2.0 kB/s and the HTTP gateway now meets a normal 30-second browser timeout. Native private admission, repeated-request latency and field qualification remain open; 4 to 5 kB/s (32 to 40 kbit/s) is an optional later stretch. [Release readiness](RELEASE_READINESS.md) retains the artifact and remaining qualification requirements.
+The [roadmap](ROADMAP.md) separates current evidence, published alpha scope and later research. The source-build Alpha 4 records three repeated finite files above **3 kB/s (24 kbit/s) including sender startup** on its declared near-bench path, with reliable completion and a deployable SDK/firmware build path. Sustained larger-file throughput, native private admission and field qualification remain open; 4 to 5 kB/s (32 to 40 kbit/s) is an optional later stretch. [Release readiness](RELEASE_READINESS.md) retains the artifact and remaining qualification requirements.
 
 The public repository and website retain their reviewed source/package boundary and attribution. Earlier Lantern-containing extraction commits remain as [development history](REPOSITORY_HISTORY.md), while the current package stays separate. The exact release tree, selected package contents, history and notices were reviewed for the published prerelease; broader qualification remains visible in the roadmap. The [website source](../website/index.html) and [logo](../website/assets/meshticulum-logo.svg) live in this repository.
