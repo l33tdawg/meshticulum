@@ -803,10 +803,13 @@ class ReliableFlow:
         peer receipt. One opportunity is consumed per logical flight before
         offering, so repetition, refusal, cancellation or a queued handover
         cannot turn the same evidence into repeated early retries. Attempts,
-        backoff and retransmission counts change only at the normal handover.
+        retry timing and retransmission counts change only at the normal handover.
+        Selective repair preserves the flight's current RTO; only a timeout
+        retry increases its backoff. Both reanchor after queued carrier work.
         An ordinary timeout offer consumes any unused early opportunity too;
         this API never turns evidence from before that retry into another one.
-        Timeout recovery is unchanged if this offer is lost or never sent.
+        Ordinary timeout recovery remains the fallback if this offer is lost
+        or never sent.
         """
         try:
             valid_time = type(now) in (int, float) and math.isfinite(now) and now >= 0
@@ -1419,8 +1422,13 @@ class ReliableFlow:
         if pending is not None:
             pending.attempts += 1
             pending.sent_at = at + self._airtime_delay()
-            pending.rto = min(self.limits.max_rto_s,
-                              max(self.limits.min_rto_s, pending.rto * 2))
+            # An early repair follows positive selective receipt evidence, not
+            # an expired timer. Keep its existing recovery interval: a lost
+            # repair still falls back after that interval plus queued work.
+            # Ordinary timeout handovers retain the original bounded doubling.
+            if not fast:
+                pending.rto = min(self.limits.max_rto_s,
+                                  max(self.limits.min_rto_s, pending.rto * 2))
             pending.handed_over_at = at
         self.retransmits += 1
         if fast:
