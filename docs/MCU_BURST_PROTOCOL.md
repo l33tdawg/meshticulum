@@ -40,6 +40,11 @@ eight-frame train with fresh DATA under canonical credit. It changes no serial
 record, native guard, retry timer or operation budget; source evidence is
 separate from physical qualification.
 
+The explicit [v9 twelve-frame train](MCU_TWELVE_TRAIN.md) retains the v8
+terminal-repair prerequisites, eight physical slots and logical window 32, but
+sets `train_frames: 12`. It uses the new exact capability and OPEN selector
+below; no earlier policy silently acquires the longer train.
+
 The record participates in the original shared route/grant digest. It permits
 only locally classified DATA ciphertext. Queue acceptance is an irrevocably
 charged in-flight carrier handover: accepted ciphertext may start before its
@@ -80,6 +85,8 @@ they do not authenticate a remote peer.
   An explicit one-byte request `08` selects the distinct `MBQ8`, depth 8 tuple;
   all remaining fields are unchanged. Empty requests still return MBQ1/depth4.
   MBQ8 is scalar acceptance, unrelated to the dormant MBQ2 atomic-job prototype.
+  The explicit two-byte selector `08 0c` returns the 25-byte `!4sBBBHIIII`
+  record `MBT1`, depth 8, train 12, then the same flags/packet/hold/guard fields.
 - CLOCK: empty request; reply `!QQQ` = current MCU monotonic microseconds,
   original successful ARM mutation request, immutable ARM end. Read-only;
   returns zero ARM/end when unarmed. It never extends a lease or mutation mark.
@@ -91,6 +98,8 @@ they do not authenticate a remote peer.
   Firmware admits that shape only for SF5/BW500. Exact replay binds the shape
   and selected depth; reopening the same context cannot change depth or extend
   the original deadline.
+  MBT1 uses `08 0c` followed by the same 48 bytes, echoes all 50 and also binds
+  train length. It remains SF5/BW500-only and cannot change an existing context.
 - DATA: header request is the prepaid physical attempt ID. Body
   `!QQQBH32s` followed by exact ciphertext = OPEN token, shared burst deadline,
   independent estimate, local DATA kind 1, size, SHA-256. Body is 60–314 bytes.
@@ -152,7 +161,7 @@ current setup, not a guarantee of future oscillator behavior.
 Do not issue while RX_DONE evidence is pending or output is blocked. Drain RX
 again at standby before touching the TX FIFO. Retain at least 5 ms receive dwell
 between DATA operations, and let a detected valid header finish or time out
-before the next claim. After the selected four or eight admissions, or an empty queue at RF completion,
+before the next claim. After the selected four, eight or twelve admissions, or an empty queue at RF completion,
 retain at least 100 ms reverse listen. The existing host
 coalesces ACKs for that finite admitted train; do not move ACK snapshots into the
 queue. Neither receive dwell nor reverse listen extends the original authority.

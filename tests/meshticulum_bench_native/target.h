@@ -52,7 +52,8 @@ struct FakeRadio {
     int16_t SPIreadStream(uint16_t,uint8_t* data,size_t) {
         data[0]=flags>>8; data[1]=flags;fake_time+=irq_advance_us; return irq_error;
     }
-    uint64_t getTimeOnAir(size_t) { return 100000; }
+    uint64_t airtime_us=100000;
+    uint64_t getTimeOnAir(size_t) { return airtime_us; }
     size_t getPacketLength() { return received.size(); }
     int16_t readData(uint8_t* p,size_t n) {
         const auto irq=flags;

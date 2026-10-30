@@ -97,6 +97,7 @@ def test_model_train_bound_keeps_checked_receive_floor_and_underfill(train_depth
             timeline.now + 2_000_000, 0, 0, 0)
         channel.queued.append((request, packet))
     channel.train_count = train_depth - 1
+    channel.burst_deadline = timeline.now + 2_000_000
     channel.dispatch()
     first_end = air.frames[0].end
     while timeline.events and timeline.events[0][0] <= first_end:

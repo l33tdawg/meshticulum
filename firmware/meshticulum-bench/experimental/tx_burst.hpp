@@ -39,6 +39,8 @@ struct Admission {
     std::uint32_t max_attempts=0;
     std::uint64_t max_airtime_us=0;
     std::uint8_t depth=TX_BURST_DEPTH;
+    // Zero preserves legacy depth==train admission. Storage never exceeds8.
+    std::uint8_t train_frames=0;
 };
 enum class PacketKind : std::uint8_t { Data=1, Ack=2, Control=3 };
 struct Packet {
@@ -145,6 +147,8 @@ public:
         if(!boot.initialized) { boot.paid_floor=boot.counters; boot.initialized=true; }
         valid_=nonzero(admission.binding.boot,16) && nonzero(admission.binding.context_sha256,32)
             && (admission.depth==TX_BURST_DEPTH || admission.depth==TX_BURST_MAX_DEPTH)
+            && (!admission.train_frames || admission.train_frames==admission.depth
+                || (admission.depth==TX_BURST_MAX_DEPTH && admission.train_frames==12))
             && std::memcmp(admission.binding.boot,boot.boot,16)==0
             && admission.lease_deadline_us>0 && admission.max_attempts>0 && admission.max_attempts<=100000
             && admission.max_airtime_us>0 && admission.max_airtime_us<=300000000
@@ -179,7 +183,7 @@ public:
         if(packet.deadline_us<=now || packet.deadline_us>admission_.lease_deadline_us
             || packet.deadline_us-now>MAX_AUTONOMOUS_HOLD_US) return Code::Expired;
         if(burst_deadline_ && packet.deadline_us!=burst_deadline_) return Code::Conflict;
-        if(admitted_==admission_.depth) return Code::Full;
+        if(admitted_>=(admission_.train_frames ? admission_.train_frames : admission_.depth)) return Code::Full;
         std::uint64_t needed=packet.estimated_airtime_us+START_GUARD_US;
         if(needed<packet.estimated_airtime_us) return Code::Invalid;
         for(const auto& slot:slots_) if(slot.state==State::Queued || slot.state==State::Issued || slot.state==State::Started) {

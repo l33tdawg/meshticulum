@@ -11,7 +11,7 @@ alignas(burst_native::TxBurstQueue) static uint8_t burstStorage[sizeof(burst_nat
 static burst_native::TxBurstQueue* burstQueue=nullptr;
 static burst_native::Binding burstBinding;
 static uint64_t burstToken=0, burstOpenDeadline=0, burstArmRequest=0, burstNextStartUs=0;
-static uint8_t burstOpenBody[49]={}, burstOpenSize=0, burstTrainCount=0, burstDepth=4;
+static uint8_t burstOpenBody[50]={}, burstOpenSize=0, burstTrainCount=0, burstDepth=4, burstTrainFrames=4;
 static bool burstBoardPrepared=false;
 static uint64_t burstHeaderSeenUs=0;
 static uint64_t burstRxDelayUs=0;
@@ -76,7 +76,7 @@ static void burstCloseEmpty() {
     burstPromoteEmptyTail();
     burstQueue->~TxBurstQueue();burstQueue=nullptr;burstToken=burstOpenDeadline=burstArmRequest=0;
     burstBinding=burst_native::Binding{};memset(burstOpenBody,0,sizeof(burstOpenBody));
-    burstOpenSize=0;burstDepth=4;
+    burstOpenSize=0;burstDepth=4;burstTrainFrames=4;
     for(auto& sent:burstOffered) sent=BurstOffered{};
 }
 static bool burstMutation(const Frame& frame) {
@@ -130,7 +130,7 @@ static bool burstOutcome(uint8_t outcome,uint64_t elapsed,uint32_t flags,int16_t
     }
     if(outcome==RF_DONE) {
         burstActiveRequest=0;burstTrainCount++;
-        const bool tail=burstTrainCount>=burstDepth || !burstQueue->queued();
+        const bool tail=burstTrainCount>=burstTrainFrames || !burstQueue->queued();
         burstRxDelayUs=tail ? BURST_REVERSE_US : BURST_RX_US;
         if(tail) burstTrainCount=0;
     }
@@ -142,6 +142,12 @@ static bool burstCommand(const Frame& frame) {
     // DATA's queue check runs before this exit guard so accepted IDs are not
     // mistakenly stale; exact retained replays still precede stale refusal.
     BurstMutationFloor floor{frame.request,frame.type==BURST_OPEN || frame.type==BURST_DATA || frame.type==BURST_ACK || frame.type==BURST_CANCEL};
+    if(frame.type==BURST_CAPABILITIES && frame.size==2 && frame.body[0]==8 && frame.body[1]==12) {
+        Frame reply=response(BURST_CAPABILITIES_REPLY,frame.request);reply.size=25;
+        memcpy(reply.body,"MBT1",4);reply.body[4]=8;reply.body[5]=12;reply.body[6]=7;put16(reply.body+7,255);
+        put32(reply.body+9,2000000);put32(reply.body+13,100000);put32(reply.body+17,BURST_RX_US);put32(reply.body+21,BURST_REVERSE_US);
+        output.offer(reply);return true;
+    }
     if(frame.type==BURST_CAPABILITIES && (frame.size==0 || (frame.size==1 && frame.body[0]==8))) {
         const bool eight=frame.size==1;
         Frame reply=response(BURST_CAPABILITIES_REPLY,frame.request);reply.size=24;
@@ -165,9 +171,11 @@ static bool burstCommand(const Frame& frame) {
         put64(reply.body+61,nowUs());put64(reply.body+69,burstNextStartUs);put32(reply.body+77,attempted);put64(reply.body+81,reservedUs);
         output.offer(reply);return true;
     }
-    if(frame.type==BURST_OPEN && (frame.size==48 || (frame.size==49 && frame.body[0]==8))) {
-        const uint8_t depth=frame.size==49 ? 8 : 4;
-        const uint8_t* body=frame.body+(depth==8 ? 1 : 0);
+    if(frame.type==BURST_OPEN && (frame.size==48 || (frame.size==49 && frame.body[0]==8)
+        || (frame.size==50 && frame.body[0]==8 && frame.body[1]==12))) {
+        const uint8_t depth=frame.size>=49 ? 8 : 4;
+        const uint8_t train=frame.size==50 ? 12 : depth;
+        const uint8_t* body=frame.body+(frame.size-48);
         if(burstToken && frame.request==burstToken) {
             if(frame.size!=burstOpenSize || memcmp(frame.body,burstOpenBody,frame.size)) refuse(frame,ATTEMPT_CONFLICT);
             else { auto reply=response(BURST_OPEN_REPLY,frame.request);reply.size=burstOpenSize;memcpy(reply.body,burstOpenBody,burstOpenSize);output.offer(reply); }
@@ -182,11 +190,11 @@ static bool burstCommand(const Frame& frame) {
             refuse(frame,BAD_PROFILE);return true;
         }
         if(burstQueue && !memcmp(body,burstBinding.context_sha256,32) && burstArmRequest==armMutationRequest
-            && (u64(body+40)>burstOpenDeadline || depth!=burstDepth)) { refuse(frame,BAD_PROFILE);return true; }
+            && (u64(body+40)>burstOpenDeadline || depth!=burstDepth || train!=burstTrainFrames)) { refuse(frame,BAD_PROFILE);return true; }
         burstCloseEmpty();memcpy(burstBinding.boot,boot,16);memcpy(burstBinding.context_sha256,body,32);
         burst_native::Admission admission;admission.binding=burstBinding;admission.lease_deadline_us=u64(body+40);
         admission.max_attempts=capCount;admission.max_airtime_us=capUs;
-        admission.depth=depth;burstDepth=depth;
+        admission.depth=depth;admission.train_frames=train;burstDepth=depth;burstTrainFrames=train;
         burstQueue=new(burstStorage) burst_native::TxBurstQueue(admission,burstBoot);
         burstToken=frame.request;burstArmRequest=armMutationRequest;burstOpenDeadline=admission.lease_deadline_us;
         burstOpenSize=frame.size;memcpy(burstOpenBody,frame.body,burstOpenSize);

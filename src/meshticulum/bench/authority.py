@@ -28,7 +28,7 @@ from ..scheduler.scheduler import DispatchGrant, LeaseScope
 from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
 from .burst_protocol import (CLOCK_MARGIN_US, INTER_PACKET_RX_US, MAX_CLOCK_RTT_US,
-                             REVERSE_LISTEN_US, validate_policy, policy_depth,
+                             REVERSE_LISTEN_US, validate_policy, policy_depth, policy_train_frames,
                              policy_flow_window)
 from .tx_burst import MAX_AUTONOMOUS_HOLD_US, MAX_DEPTH, START_GUARD_US
 from .admission import RadioAdmission,GfskAdmission,Gfsk250Admission
@@ -190,7 +190,7 @@ class RunAuthority:
             if 'data_burst' in p:
                 depth = policy_depth(p['data_burst'])
                 require(depth == 4 or radio_is_sf5(self.profile), 'burst_eight_requires_sf5')
-                train = depth * (radio_airtime_us(self.profile, 255)
+                train = policy_train_frames(p['data_burst']) * (radio_airtime_us(self.profile, 255)
                                     + START_GUARD_US + INTER_PACKET_RX_US)
                 require(train + REVERSE_LISTEN_US + MAX_CLOCK_RTT_US
                         <= MAX_AUTONOMOUS_HOLD_US - CLOCK_MARGIN_US

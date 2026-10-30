@@ -22,6 +22,9 @@ CAPABILITY = CAPABILITY_STRUCT.pack(b'MBQ1', MAX_DEPTH, 7, 255,
     MAX_AUTONOMOUS_HOLD_US, START_GUARD_US, INTER_PACKET_RX_US, REVERSE_LISTEN_US)
 CAPABILITY8 = CAPABILITY_STRUCT.pack(b'MBQ8', 8, 7, 255,
     MAX_AUTONOMOUS_HOLD_US, START_GUARD_US, INTER_PACKET_RX_US, REVERSE_LISTEN_US)
+CAPABILITY_TRAIN_STRUCT = struct.Struct('!4sBBBHIIII')
+CAPABILITY12 = CAPABILITY_TRAIN_STRUCT.pack(b'MBT1', 8, 12, 7, 255,
+    MAX_AUTONOMOUS_HOLD_US, START_GUARD_US, INTER_PACKET_RX_US, REVERSE_LISTEN_US)
 CLOCK = struct.Struct('!QQQ')
 OPEN = struct.Struct('!32sQQ')
 DATA = struct.Struct('!QQQBH32s')
@@ -57,6 +60,9 @@ _POLICY_REPEAT_RETRY_ITEMS = tuple(POLICY_REPEAT_RETRY.items())
 POLICY_REPAIR_TRAIN = dict(POLICY_REPEAT_RETRY, schema='meshticulum.data-burst-policy.v8',
                            selective_repair_train=True)
 _POLICY_REPAIR_TRAIN_ITEMS = tuple(POLICY_REPAIR_TRAIN.items())
+POLICY_TRAIN12 = dict(POLICY_REPAIR_TRAIN, schema='meshticulum.data-burst-policy.v9',
+                      train_frames=12)
+_POLICY_TRAIN12_ITEMS = tuple(POLICY_TRAIN12.items())
 
 
 def validate_policy(value):
@@ -67,7 +73,7 @@ def validate_policy(value):
           for items in (_POLICY_ITEMS, _POLICY8_ITEMS, _POLICY32_ITEMS,
                         _POLICY_REPAIR_FILL_ITEMS, _POLICY_TERMINAL_RETRY_ITEMS,
                         _POLICY_SCALAR_FILL_PAIR_ITEMS, _POLICY_REPEAT_RETRY_ITEMS,
-                        _POLICY_REPAIR_TRAIN_ITEMS)), 'invalid_data_burst_policy')
+                        _POLICY_REPAIR_TRAIN_ITEMS, _POLICY_TRAIN12_ITEMS)), 'invalid_data_burst_policy')
     return dict(value)
 
 
@@ -79,6 +85,16 @@ def policy_for_depth(depth=4):
 
 def policy_depth(policy):
     return validate_policy(policy)['max_depth']
+
+
+def policy_train_frames(policy):
+    value = validate_policy(policy)
+    return value.get('train_frames', value['max_depth'])
+
+
+def policy_for_train12():
+    """Explicit twelve-frame train; retained native storage remains eight slots."""
+    return dict(_POLICY_TRAIN12_ITEMS)
 
 
 def policy_for_flow_window(flow_window_frames):
@@ -138,13 +154,25 @@ def policy_repair_train(policy):
     return validate_policy(policy).get('selective_repair_train', False)
 
 
-def capability_for_depth(depth=4):
+def _train_shape(depth, train_frames):
     policy_for_depth(depth)
+    train_frames = depth if train_frames is None else train_frames
+    _need(type(train_frames) is int and (depth, train_frames) in ((4, 4), (8, 8), (8, 12)),
+          'invalid_data_burst_train')
+    return train_frames
+
+
+def capability_for_depth(depth=4, *, train_frames=None):
+    train_frames = _train_shape(depth, train_frames)
+    if train_frames == 12:
+        return CAPABILITY12
     return CAPABILITY if depth == 4 else CAPABILITY8
 
 
-def capability_request_body(depth=4):
-    policy_for_depth(depth)
+def capability_request_body(depth=4, *, train_frames=None):
+    train_frames = _train_shape(depth, train_frames)
+    if train_frames == 12:
+        return b'\x08\x0c'
     return b'' if depth == 4 else b'\x08'
 
 
@@ -156,9 +184,10 @@ def _reply(frame, kind, boot, request, size):
           and len(frame.body) == size, 'unbound_burst_reply')
 
 
-def check_capability(frame, *, boot, request, depth=4):
-    _reply(frame, Message.BURST_CAPABILITIES_REPLY, boot, request, len(CAPABILITY))
-    _need(frame.body == capability_for_depth(depth), 'unsupported_burst_capability')
+def check_capability(frame, *, boot, request, depth=4, train_frames=None):
+    expected = capability_for_depth(depth, train_frames=train_frames)
+    _reply(frame, Message.BURST_CAPABILITIES_REPLY, boot, request, len(expected))
+    _need(frame.body == expected, 'unsupported_burst_capability')
 
 
 @dataclass(frozen=True, slots=True)
@@ -212,27 +241,28 @@ class OpenBinding:
     arm_request: int
     deadline_us: int
     depth: int = 4
+    train_frames: int | None = None
 
     def __post_init__(self):
-        policy_for_depth(self.depth)
+        _train_shape(self.depth, self.train_frames)
         for value in (self.token, self.arm_request, self.deadline_us):
             _integer(value, 1, UINT64_MAX, 'invalid_burst_open')
         _bytes(self.context_sha256, 32, 'invalid_burst_context')
         _need(any(self.context_sha256), 'empty_burst_context')
 
     @classmethod
-    def from_frame(cls, frame, *, boot, request, expected_body=None, depth=4):
-        policy_for_depth(depth)
-        _reply(frame, Message.BURST_OPEN_REPLY, boot, request, OPEN.size + (depth == 8))
+    def from_frame(cls, frame, *, boot, request, expected_body=None, depth=4, train_frames=None):
+        prefix = capability_request_body(depth, train_frames=train_frames)
+        _reply(frame, Message.BURST_OPEN_REPLY, boot, request, OPEN.size + len(prefix))
         _need(expected_body is None or frame.body == expected_body, 'burst_open_changed')
-        _need(depth == 4 or frame.body[:1] == b'\x08', 'burst_open_changed')
-        return cls(frame.request, *OPEN.unpack(frame.body[(depth == 8):]), depth)
+        _need(frame.body[:len(prefix)] == prefix, 'burst_open_changed')
+        return cls(frame.request, *OPEN.unpack(frame.body[len(prefix):]), depth, train_frames)
 
 
-def open_frame(boot, token, context_sha256, arm_request, deadline_us, *, depth=4):
-    value = OpenBinding(token, context_sha256, arm_request, deadline_us, depth)
+def open_frame(boot, token, context_sha256, arm_request, deadline_us, *, depth=4, train_frames=None):
+    value = OpenBinding(token, context_sha256, arm_request, deadline_us, depth, train_frames)
     return Frame(Message.BURST_OPEN, boot, token,
-                 capability_request_body(depth)
+                 capability_request_body(depth, train_frames=train_frames)
                  + OPEN.pack(value.context_sha256, value.arm_request, value.deadline_us))
 
 

@@ -27,7 +27,7 @@ from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .public_block import object_limit
-from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair, policy_repeat_retry, policy_repair_train
+from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair, policy_repeat_retry, policy_repair_train, policy_train_frames
 
 
 def _flow_modules():
@@ -113,6 +113,7 @@ class BenchFlow:
         # the reviewed encoding uses fifteen bytes, leaving 193 useful bytes.
         selected_depth = policy_depth(policy) if policy is not None else 4
         selected_window = policy_flow_window(policy) if policy is not None else 4
+        selected_train = policy_train_frames(policy) if policy is not None else selected_depth
         require(selected_depth == 4 or radio_is_sf5(authority.profile),
                 'burst_eight_requires_sf5')
         if selected_window != selected_depth:
@@ -126,8 +127,8 @@ class BenchFlow:
                      limits.max_reassembly_frames)
         require(window >= 1, 'bench_window_too_small')
         # Logical credit/reordering may span several physical trains. ACK
-        # coalescing and each reverse turn retain the admitted native depth.
-        self.burst_frames = min(selected_depth, window) if radio_is_fast(authority.profile) else 1
+        # coalescing and each reverse turn use the separately admitted train.
+        self.burst_frames = min(selected_train, window) if radio_is_fast(authority.profile) else 1
         fast_sf5 = radio_is_sf5(authority.profile)
         self._sf5_ack_recovery_eligible = not sends and policy is not None and fast_sf5
         self.burst_quiet_us = math.ceil(profile.forward_seconds * 1000000) + 60000
@@ -142,11 +143,10 @@ class BenchFlow:
         self.burst_max_hold_us = math.ceil(getattr(authority, 'source_initial_rto_seconds',
                                                   profile.initial_rto_seconds) * 1000000)
         if fast_sf5:
-            # A bounded four-frame train can exceed the old 500ms hold under
-            # native host work. Never let its total-time cap preempt a train
-            # whose individual gaps remain inside the quiet window. A full
-            # train still earns its ACK immediately in step().
-            self.burst_max_hold_us = self.burst_frames * self.burst_quiet_us
+            # Scale the legacy coalescing hold only up to the original native
+            # two-second bound. Quiet or total-hold expiry can end a sparse or
+            # slow train; a full train earns its ACK immediately in step().
+            self.burst_max_hold_us = min(self.burst_frames * self.burst_quiet_us, 2_000_000)
         self.burst_sent = 0
         self.burst_received = 0
         self.burst_started_us = 0
@@ -632,10 +632,10 @@ class BenchFlow:
             self.counts['repair_train_turn'] += 1
             return
         # Only an explicitly admitted v4 policy can carry fresh DATA after a
-        # repair. The QUEUED repair already counts toward this same eight-frame
+        # repair. The QUEUED repair already counts toward this same admitted
         # train; do not reset that count or erase an existing reverse hold.
         # The normal flow/owner still admit each following DATA independently.
-        if (self._selective_repair_fill and self.burst_frames == 8
+        if (self._selective_repair_fill and self.burst_frames in (8, 12)
                 and 0 < self.burst_sent < self.burst_frames and self.next_send_us == 0
                 and self.flow.queued_bytes() > 0 and self.flow._peer_grant_rev is not None
                 and self.flow.in_flight() < min(self.flow.limits.window_frames, self.flow._peer_credit)
