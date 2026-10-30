@@ -1,5 +1,91 @@
 # Meshticulum alpha release status
 
+## 1.0.0-alpha.3 — 2026-10-30
+
+Python package **`1.0.0a3`** is the alpha.3 SDK update. The
+[`v1.0.0-alpha.3` release assets](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3)
+carry the final source identity, wheel and normalized source archive, validation
+record, manifest and `SHA256SUMS`. Earlier release tags and checksummed assets
+remain unchanged.
+
+The update replaces repeated full-history journal scans with durable aggregate
+accounting, adds opt-in host phase timings, and prevents a serial write after a
+late writable-readiness result has crossed its original deadline. Aggregate
+updates share the reservation's FULL commit; history, charged debt and recovery
+fences are retained. Startup still rebuilds the aggregate from history.
+
+The [local journal profile](../benchmarks/2026-10-30-host-journal/README.md)
+shows constant SQLite instruction counts across the measured history sizes.
+Its wall timings are one fixed-order macOS comparison with synthetic history.
+They do not measure target-device storage or radio goodput. The
+[profiling guide](HOST_PROFILING.md) documents the 24 bounded host phases,
+their overlap and diagnostic failure behavior. No firmware image, frozen flow,
+USB pacing gap or MCU reverse-listening policy changes in this update.
+
+### Alpha.3 hardware evidence
+
+The isolated C-host installation passed with candidate wheel SHA-256
+`ed3f8d23d4aa37cffa3764214f1d9f6a793e09bfabcd6c5bd0b05b858c263520`.
+All 72 runtime files and pinned dependencies were checked in a normal,
+noneditable virtual environment. The offline signed-resource demo and synthetic
+WAL/FULL journal recovery and timing controls passed. All 20 tracked service
+states and lifetimes were unchanged, all children joined, and no radio was
+opened or production runtime activated. This qualifies the bounded host check;
+it does not establish a C radio result.
+
+A/B completed five fresh B→A USB LoRa files using the same candidate, from
+source `7b38c1f585786d764a952a2a67cbfcf56af0ad80`, with all 72 installed runtime
+files checked. Both endpoints used firmware `mtb1-6cfde1fdd4` and SF7/BW500 kHz,
+CR4/5 at 921.375 MHz. **Host profiling was enabled on both endpoints for every
+part**, so its overhead is included in every rate below.
+
+| Case | Mode | Useful bytes | Sender startup → final receipt (s) | Profiled useful kB/s | Scope → both closed (s) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| 1 | Queued | 8,164 | 7.729350 | 1.0562 | 15.166408 |
+| 2 | Synchronous | 8,164 | 8.656340 | 0.9431 | 15.937535 |
+| 3 | Synchronous | 8,164 | 9.046716 | 0.9024 | 15.664650 |
+| 4 | Queued | 8,164 | 7.883593 | 1.0356 | 14.692559 |
+| 5 | Queued | 100,000 | 98.903315 | 1.0111 | 106.907634 |
+
+The four 8,164-byte cases form two pairs in queued/synchronous then
+synchronous/queued order. Their paired queued rate differences were **+11.99%**
+and **+14.75%**. They compare modes within this candidate, not alpha.3 against
+alpha.2. The **100,000-byte** file completed in **five signed parts**; its
+**98.903315-second** sender-startup interval includes management and setup gaps
+between parts. Rates use decimal kB/s and end at the final authenticated peer
+receipt. Scope-to-closure uses the separate controller wall clock and includes
+setup, retirement and both final endpoint RPCs joining.
+
+All five whole files and nine part receipts verified. All 18 endpoint children
+completed with exit status zero and no forced cleanup. No DATA retransmissions,
+receive-drop increases, new UNKNOWN outcomes or new journal fences were
+recorded. Queued sender completion after physical drain followed its receipt
+by **6.929–8.595 ms**; that interval is outside the receipt rate. The
+[qualification record](../benchmarks/2026-10-30-alpha3-qualification/README.md)
+retains the phase reports, queue evidence and cumulative accounting, including
+older failures and unknown actual RF costs. The 24 host phase intervals overlap
+and cannot be summed into transfer duration.
+
+Current distance was **not reconfirmed**. These two short pairs and one larger
+file do not establish sustained capacity, field range, loss/restart recovery or
+broader hardware qualification. The earlier 24 October distance and alpha.2
+records retain their own artifacts and scope.
+
+### Alpha.3 artifact validation
+
+The release manifest and validation record bind the final selected source,
+wheel and normalized source archive. Artifact checks cover two independent
+clean-export builds, byte-identical wheels and normalized archives, a wheel
+rebuilt from the normalized archive, and a clean noneditable install with all
+72 runtime files checked. The installed public-resource CLI and offline
+signed-resource example are included in that validation.
+
+The RF measurements above belong to the exact `ed3f8d…` candidate wheel.
+Final release artifacts have their own hashes and runtime-correspondence proof;
+they are not described as having been executed over RF merely because their
+runtime files match. README metadata and archive timestamps can change wheel
+bytes while leaving runtime code unchanged.
+
 ## Published 1.0.0-alpha.2 — 2026-10-24
 
 **Published as an experimental GitHub prerelease.** Python package version

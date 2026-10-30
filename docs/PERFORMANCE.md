@@ -1,9 +1,25 @@
 # Performance and measurement
 
-The latest LoRa comparison measured **1,084.8 useful B/s including sender
+The 24 October LoRa comparison measured **1,084.8 useful B/s including sender
 startup with the opt-in MCU DATA queue**, versus **931.3 B/s** synchronously on
 the same firmware/profile. The result below is one fixed-order pair; the
 historical GFSK and LoRa samples keep their own conditions and boundaries.
+
+## Host accounting and profiling: 30 October 2026
+
+Alpha.3 replaces repeated journal scans with durable aggregate accounting and
+adds [bounded host phase timings](HOST_PROFILING.md). In one fixed-order local
+comparison at 10,000 synthetic retained attempts, the accounting snapshot median
+changed from **166.250 to 3.334 microseconds**; queued reservation changed from
+**251.041 to 87.959 microseconds**. Small-history reservation medians increased.
+Both runs used the same macOS arm64 host, Python 3.14.8, SQLite 3.53.4 and FULL/WAL
+settings. [Raw profiles and limits](../benchmarks/2026-10-30-host-journal/README.md)
+retain all three history sizes and exclude startup reconstruction from timings.
+
+These measurements concern local journal work, not RF throughput or a target
+device. [Alpha.3 hardware evidence](RELEASE_READINESS.md#alpha3-hardware-evidence)
+is recorded separately. The retained 24 October queue trace is also summarized
+without adding overlapping host/MCU intervals into an end-to-end cost.
 
 ## Host-backed MCU queue: 24 October 2026
 
@@ -41,7 +57,7 @@ keys, ACK authentication, credit and retries; queue mode remained explicit opt-i
 Measured source `f06ebeb3e687da4688657311830e95326a0107d2` and wheel
 `7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0`
 are pinned in the [sanitized comparison](../benchmarks/2026-10-24-mcu-queue-lora/results.json).
-They are separate from a future `1.0.0a2` artifact. The record preserves the
+They are separate from the later alpha.2 and alpha.3 artifacts. The record preserves the
 failed rollout/restoration and the underbudget failed baseline that preceded
 the fresh successful pair. [The measurement report](RADIO_SDK_MEASUREMENTS.md#host-backed-mcu-queue-comparison-24-october-2026)
 keeps those accounting boundaries. Reversed-order repetition, loss/disconnect,

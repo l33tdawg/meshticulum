@@ -4,7 +4,15 @@ Meshticulum is a public experimental transport and resource project with a publi
 
 ## Current status
 
-The [public repository](https://github.com/l33tdawg/meshticulum), [project website](https://l33tdawg.github.io/meshticulum/) and [experimental `1.0.0-alpha.2` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.2) are live. The release is published from source [`62007e2`](https://github.com/l33tdawg/meshticulum/commit/62007e219ff7de1db6e0caf1db3066a8b56fb568) and provides the tested SDK wheel, normalized source archive and firmware source-build materials. You can [install from source](../README.md#install-and-explore) or review the release assets.
+The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
+
+Alpha.3 removes repeated full-history scans from journal accounting and adds
+[opt-in host phase timings](HOST_PROFILING.md) for queue, serial, journal and
+flow-loop work. Serial writes recheck their original deadline after writable
+readiness. The [local scaling profile](../benchmarks/2026-10-30-host-journal/README.md)
+is source-host evidence, separate from the [hardware record](RELEASE_READINESS.md#alpha3-hardware-evidence).
+Next work uses those phase measurements to investigate target-host costs while
+preserving durable reservations, receive/listening guards and retained debt.
 
 The earlier measured SDK source, `da247a1`, has [passing source CI on Python 3.11, 3.12 and 3.13](https://github.com/l33tdawg/meshticulum/actions/runs/39028024473). The published documentation head passed the same source-control matrix with unchanged runtime and firmware. The hardware samples below supply separate physical evidence. Future release candidates need their own exact source checks and artifacts.
 
@@ -90,7 +98,7 @@ The selected SDK/firmware-source alpha passed the [release-readiness checklist](
 2. **A deployable SDK and firmware path.** Qualify the documented public SDK examples on real hardware, including installation, finite grants, lifecycle, disarm and rollback. Preserve exact source/firmware correspondence and supported-device limits. The public SDK now has two fresh 100 kB measurements and a clean installed-wheel 100 kB verified-piece continuation check. The source-build artifacts are published; those finite checks do not qualify every installation, supported mode or recovery path.
 3. **Mixed-carrier and native integration.** Retain real radio/IP, loss, verified-piece resume and measured-return coverage against the exact consuming application dependency. Preserve peer, boot, expiry, replay and accounting bindings. Kernel acceptance, RF completion, peer receipt and application acceptance need their own evidence.
 4. **Private admission and security.** Complete the inherited native owner, consent, revocation, encrypted-backend, capture and uncertain-write recovery checks in Lantern. Keep durable replay and the experimental forward-session/PFS qualification gates, including key purpose, lifecycle, compromise behavior and native erasure. Classical default transport and static recipient envelopes do not acquire deployed forward secrecy from source tests. See [forward-session status](FORWARD_SECRECY.md) and [security properties and gaps](COMPARISON.md#security-properties-and-gaps).
-5. **Reviewed release artifacts.** Bind standalone and paired integration results to the exact candidate, reproduce and inspect the wheel/source distribution, and retain installation checks. The `v1.0.0-alpha.2` source-build tag and assets are published; the original alpha.1 assets remain unchanged. Future distributions and paired integrations still need their own firmware source/deployed-image, notices, corresponding-source/relinking and redistribution review.
+5. **Reviewed release artifacts.** Bind standalone and paired integration results to the exact candidate, reproduce and inspect the wheel/source distribution, and retain installation checks. Alpha.3 has its own [release record](RELEASE_READINESS.md); earlier alpha tags and assets remain unchanged. Future distributions and paired integrations still need their own firmware source/deployed-image, notices, corresponding-source/relinking and redistribution review.
 
 Compare performance and security with published MeshCore and Reticulum evidence only at stated, comparable boundaries. Keep hardware, profile, payload, encryption, topology and missing measurements visible. Meeting the alpha floor alone does not establish overall superiority; separate upstream benchmark campaigns are not required.
 

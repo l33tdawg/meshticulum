@@ -1,5 +1,10 @@
 # Public SDK radio measurements: 17–24 October 2026
 
+This page retains the dated radio campaigns below. The
+[alpha.3 hardware evidence](RELEASE_READINESS.md#alpha3-hardware-evidence)
+and [host phase profiling guide](HOST_PROFILING.md) cover the later SDK update;
+historical samples remain bound to their original artifacts.
+
 The latest [host-backed MCU queue comparison](#host-backed-mcu-queue-comparison-24-october-2026)
 verified two fresh 8,164-byte files over an approximately 20 m LoRa link.
 Startup-inclusive goodput rose from **931.3 to 1,084.8 B/s (+16.48%)** in one
@@ -326,8 +331,8 @@ EIRP were not measured.
 
 The tested SDK source was `f06ebeb3e687da4688657311830e95326a0107d2`, with wheel
 SHA-256 `7998a705ab6a5641ecb9191f08e9b63ba7a676612dcfa7455e291e6177149ad0`.
-This measured wheel identifies as `1.0.0a1`. Any future `1.0.0a2` build has a
-separate artifact identity and requires its own checks.
+This measured wheel identifies as `1.0.0a1`. The later alpha.2 and alpha.3 builds
+have separate artifact identities and [release checks](RELEASE_READINESS.md).
 
 The rollout history remains part of the record. The first deployment attempt
 timed out and both units were verified restored to the prior image. A later
