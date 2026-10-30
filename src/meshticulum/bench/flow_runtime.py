@@ -27,7 +27,7 @@ from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .public_block import object_limit
-from .burst_protocol import policy_depth, policy_flow_window
+from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill
 
 
 def _flow_modules():
@@ -68,6 +68,8 @@ class BenchFlow:
         self.sends = sends
         policy = getattr(authority, 'data_burst_policy', None)
         self.data_burst = sends and policy is not None
+        self._selective_repair_fill = (self.data_burst and policy_repair_fill(policy))
+        self._repair_fill_active = False
         self._physical_data, self._pending_data_domains = {}, {}
         if self.data_burst:
             from .burst_worker import BurstSerialWorker
@@ -306,7 +308,14 @@ class BenchFlow:
                 self.next_send_us = (worker_finished_us + self.worker.pending_airtime_us
                                      + self.sender_control_hold_us)
                 self.burst_sent = 0
+                self._repair_fill_active = False
                 self.owner.settle_sending()
+            elif parsed['last'] and self._repair_fill_active:
+                # A partial final train still owes its reverse turn. Another
+                # flight can become due inside this accepted handover, after
+                # the pre-pump expiry check, so clearing the flag alone would
+                # allow that retry to join a fresh-DATA-only fill.
+                self._hold_repair_reverse_turn()
             return CommitOutcome.ACCEPTED
         if self.data_burst and kind is FrameKind.DATA and result.outcome == 'UNKNOWN':
             # Physical proof may already be buffered even though queue handover
@@ -564,8 +573,25 @@ class BenchFlow:
         return self._ack_persistence_streak > 0 and now_us < self._ack_persistence_due_us
 
     def _hold_fast_retry_turn(self):
+        # Only an explicitly admitted v4 policy can carry fresh DATA after a
+        # repair. The QUEUED repair already counts toward this same eight-frame
+        # train; do not reset that count or erase an existing reverse hold.
+        # The normal flow/owner still admit each following DATA independently.
+        if (self._selective_repair_fill and self.burst_frames == 8
+                and 0 < self.burst_sent < self.burst_frames and self.next_send_us == 0
+                and self.flow.queued_bytes() > 0 and self.flow._peer_grant_rev is not None
+                and self.flow.in_flight() < min(self.flow.limits.window_frames, self.flow._peer_credit)
+                and self.worker.has_capacity and not self.worker.fenced
+                and self.authority.application_live()):
+            self.counts['selective_repair_fill_turn'] += 1
+            self._repair_fill_active = True
+            return
         # One selective repair owns the reverse-control opportunity; do not
         # fill more DATA from the same pump after its accepted handover.
+        self._hold_repair_reverse_turn()
+
+    def _hold_repair_reverse_turn(self):
+        self._repair_fill_active = False
         self.next_send_us = self.clock()[1] + self.worker.pending_airtime_us + self.sender_control_hold_us
         self.burst_sent = 0
         self.owner.settle_sending()
@@ -639,6 +665,7 @@ class BenchFlow:
                     and self.flow.acked_frames() > acknowledged_before):
                 self.next_send_us = min(self.next_send_us, self.last_activity_us)
                 self.burst_sent = 0
+                self._repair_fill_active = False
             ack_diagnostics = {}
             if verified.kind is FrameKind.ACK:
                 delta = self.flow.acked_frames() - acknowledged_before
@@ -685,6 +712,14 @@ class BenchFlow:
             self.owner.settle_sending()
             self._check_flow()
             return self._completion_ready()
+        if (self._repair_fill_active and any(
+                self.link.now - pending.sent_at >= pending.rto
+                for pending in self.flow._in_flight.values())):
+            # Read the accepted R11 deadline without changing it. An ordinary
+            # retry ends this fresh-DATA-only fill before dispatch/prepare can
+            # reserve another handle; the original reverse turn then applies.
+            self.counts['selective_repair_fill_timeout_hold'] += 1
+            self._hold_repair_reverse_turn()
         if (self.clock()[1] < self.next_send_us
                 or self.data_burst and not self.worker.has_capacity):
             self.owner.settle_sending()
@@ -700,6 +735,7 @@ class BenchFlow:
             if self.clock()[1] < self.next_send_us:
                 self.owner.settle_sending()
             elif (self.data_burst and self.receipt_confirmation_enabled
+                    and not self._repair_fill_active
                     and self.flow.selective_retry_ready()
                     and not self._physical_data and not self.worker.pending_physical):
                 # Peer SACK is logical evidence, never local physical drain.
@@ -767,6 +803,7 @@ class BenchFlow:
             'startup_pending': self.flow.startup_pending, 'rto_seconds': self.flow.rto,
             'timing_policy': {'receive_gap_us': self.receive_gap_us,
                              'flow_window_frames': self.flow.limits.window_frames,
+                             'selective_repair_fill': self._selective_repair_fill,
                              'burst_frames': self.burst_frames, 'burst_quiet_us': self.burst_quiet_us,
                              'burst_max_hold_us': self.burst_max_hold_us,
                              'sender_control_hold_us': self.sender_control_hold_us,

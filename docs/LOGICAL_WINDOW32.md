@@ -5,6 +5,10 @@ missing frame while keeping the MCU queue and each radio train at eight frames.
 It changes host credit and reassembly bounds. It does not enlarge native memory,
 change the serial protocol or qualify the 3,000 useful file bytes/s target.
 
+The separate [v4 repair-fill policy](SELECTIVE_REPAIR_FILL.md) can carry fresh
+DATA after one selective repair within the same eight-frame ceiling. Selecting
+v3 alone retains its original dedicated reverse turn after each early repair.
+
 ## Exact admission
 
 Construct the original shared plan with

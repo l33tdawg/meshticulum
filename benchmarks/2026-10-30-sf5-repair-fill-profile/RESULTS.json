@@ -1,0 +1,340 @@
+{
+  "ACK_attempts": 28,
+  "ACK_received": 26,
+  "CONTROL_attempts": 1,
+  "DATA_attempts": 141,
+  "DATA_retries": 13,
+  "all_bursts_drained": true,
+  "all_serial_channels_closed": true,
+  "checkpoint_above_2800_achieved": false,
+  "comparison": {
+    "fresh_pack_signature_sessions_and_grants": true,
+    "identical_useful_payload": true,
+    "isolated_causal_gain_established": false,
+    "loss_patterns_differ": true,
+    "observed_rate_change_percent": -4.200763590939061,
+    "previous_result_sha256": "b112780c69cbf13faf2175687315a66152337a9cb56fca9a16b82cc7462bbd4e",
+    "previous_useful_bytes_per_second": 1276.9171735956609,
+    "same_firmware": true,
+    "same_logical_window": true,
+    "same_physical_train_bound_and_guards": true,
+    "same_radio": true,
+    "selective_repair_fill_changed_from": false,
+    "selective_repair_fill_changed_to": true
+  },
+  "date": "2026-10-30",
+  "endpoints": {
+    "receiver": {
+      "after_observation_sha256": "944c87c71137087202e1a32f4b3214c2f0d0235862432385153baca1ebcca60b",
+      "attempts": 28,
+      "before_observation_sha256": "ab22e049077326e351999387c752fd2ba24ba0d24fdaa7e3a7756591e2dc4fa4",
+      "host_reserved_estimated_airtime_us": 365596,
+      "memory_after": {
+        "internal_free_bytes": 340352,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335204,
+        "loop_stack_minimum_free_bytes": 4616,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "memory_before": {
+        "internal_free_bytes": 340352,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335204,
+        "loop_stack_minimum_free_bytes": 4616,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "native_receive_drop_delta": 32,
+      "native_reserved_estimated_airtime_us": 306880,
+      "native_timing": {
+        "parent_phases_overlap": true,
+        "per_run_minima_maxima_available": false,
+        "records": [
+          {
+            "calls": 28,
+            "inclusive": false,
+            "phase": "TX_FINISH_CLEANUP",
+            "phase_id": 0,
+            "total_us": 5133
+          },
+          {
+            "calls": 190,
+            "inclusive": false,
+            "phase": "RX_START_CALL",
+            "phase_id": 1,
+            "total_us": 168239
+          },
+          {
+            "calls": 28,
+            "inclusive": true,
+            "phase": "TX_DONE_TO_RX_RETURN",
+            "phase_id": 2,
+            "total_us": 33739
+          },
+          {
+            "calls": 0,
+            "inclusive": true,
+            "phase": "ISSUED_TO_STARTED",
+            "phase_id": 3,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUED_PUBLISH",
+            "phase_id": 4,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_STANDBY",
+            "phase_id": 5,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_REREAD",
+            "phase_id": 6,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_RX_DRAIN",
+            "phase_id": 7,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_CLEAR",
+            "phase_id": 8,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_COPY_PREPARE",
+            "phase_id": 9,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_TX_START_CALL",
+            "phase_id": 10,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "STARTED_PUBLISH",
+            "phase_id": 11,
+            "total_us": 0
+          }
+        ],
+        "same_boot_difference": true,
+        "schema": "MNP1"
+      }
+    },
+    "sender": {
+      "after_observation_sha256": "087c6864681467df7a69a93eb687faf73e0c5da42c1a1a52a44c14bd65373c94",
+      "attempts": 142,
+      "before_observation_sha256": "5a10af7a76105edac47c1e63c6dbd748f19a1ded35627f47fd1b02685b6e047b",
+      "host_reserved_estimated_airtime_us": 5508769,
+      "memory_after": {
+        "internal_free_bytes": 340496,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335348,
+        "loop_stack_minimum_free_bytes": 4600,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "memory_before": {
+        "internal_free_bytes": 340496,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335348,
+        "loop_stack_minimum_free_bytes": 4600,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "native_receive_drop_delta": 0,
+      "native_reserved_estimated_airtime_us": 4878880,
+      "native_timing": {
+        "parent_phases_overlap": true,
+        "per_run_minima_maxima_available": false,
+        "records": [
+          {
+            "calls": 142,
+            "inclusive": false,
+            "phase": "TX_FINISH_CLEANUP",
+            "phase_id": 0,
+            "total_us": 28533
+          },
+          {
+            "calls": 169,
+            "inclusive": false,
+            "phase": "RX_START_CALL",
+            "phase_id": 1,
+            "total_us": 160183
+          },
+          {
+            "calls": 142,
+            "inclusive": true,
+            "phase": "TX_DONE_TO_RX_RETURN",
+            "phase_id": 2,
+            "total_us": 194273
+          },
+          {
+            "calls": 141,
+            "inclusive": true,
+            "phase": "ISSUED_TO_STARTED",
+            "phase_id": 3,
+            "total_us": 574809
+          },
+          {
+            "calls": 141,
+            "inclusive": false,
+            "phase": "ISSUED_PUBLISH",
+            "phase_id": 4,
+            "total_us": 21465
+          },
+          {
+            "calls": 141,
+            "inclusive": false,
+            "phase": "ISSUE_STANDBY",
+            "phase_id": 5,
+            "total_us": 20801
+          },
+          {
+            "calls": 141,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_REREAD",
+            "phase_id": 6,
+            "total_us": 11945
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_RX_DRAIN",
+            "phase_id": 7,
+            "total_us": 0
+          },
+          {
+            "calls": 141,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_CLEAR",
+            "phase_id": 8,
+            "total_us": 11597
+          },
+          {
+            "calls": 141,
+            "inclusive": false,
+            "phase": "ISSUE_COPY_PREPARE",
+            "phase_id": 9,
+            "total_us": 2478
+          },
+          {
+            "calls": 141,
+            "inclusive": false,
+            "phase": "ISSUE_TX_START_CALL",
+            "phase_id": 10,
+            "total_us": 473164
+          },
+          {
+            "calls": 141,
+            "inclusive": false,
+            "phase": "STARTED_PUBLISH",
+            "phase_id": 11,
+            "total_us": 26198
+          }
+        ],
+        "same_boot_difference": true,
+        "schema": "MNP1"
+      }
+    }
+  },
+  "fast_DATA_retries": 9,
+  "firmware": {
+    "bytes": 404096,
+    "identity": "mtb1-bc5858fa0b",
+    "proof": "pinned source SHA-256 and ROM-verified programmed-span MD5; no full new-image SHA-256 readback",
+    "sha256": "7bf8a3f2403203635beb5fb45d49205b9bec685f9179ac4b54b0fc2f764e2cc6",
+    "target": "mtbench_heltec_v4"
+  },
+  "global_historical_debt_complete": false,
+  "goal_3000_achieved": false,
+  "historical_unknown_actual_cost": null,
+  "host_profiling": true,
+  "limits": {
+    "eirp_dbm": null,
+    "energy_joules": null,
+    "field_range_qualified": false,
+    "matched_four_frame_comparison": false,
+    "measured_RF_airtime_us": null,
+    "native_parent_phases_overlap": true,
+    "native_timing_is_software_boundaries": true,
+    "receive_drop_cause_identified": false,
+    "repeated_capacity_qualified": false,
+    "runtime_memory_exhaustively_qualified": false,
+    "single_run": true,
+    "upstream_superiority_qualified": false
+  },
+  "logical_DATA_frames": 128,
+  "native_profiling": true,
+  "original_scope_closed_and_expired": true,
+  "part_invocation_to_authenticated_receipt_us": 19125997,
+  "policy": {
+    "flow_window_frames": 32,
+    "handover": "irrevocably-charged-at-queue-acceptance",
+    "inter_packet_rx_us": 5000,
+    "max_depth": 8,
+    "max_hold_us": 2000000,
+    "reverse_listen_us": 100000,
+    "schema": "meshticulum.data-burst-policy.v4",
+    "selective_repair_fill": true,
+    "train_frames": 8
+  },
+  "protected_service_lifetimes_unchanged": true,
+  "publisher_and_whole_file_verified": true,
+  "radio": {
+    "bandwidth_hz": 500000,
+    "coding_rate": 5,
+    "frequency_hz": 921375000,
+    "preamble": 12,
+    "requested_chip_power_dbm": 0,
+    "requested_spi_hz": 2000000,
+    "spreading_factor": 5,
+    "sync_word": 66
+  },
+  "refunds": 0,
+  "response_bytes": 24565,
+  "result_sha256": "d4b5928140cc1c96fb2f5899e2204d6e011a95f21e6ff00d0c5d565af0cd397a",
+  "root_reconciliation_sha256": "fa1860fda978c3f64c14a5898cdd33cc66b80598c31c7bd28e969c869cf11e3c",
+  "schema": "meshticulum.sanitized-sf5-repair-fill-profile-sample.v1",
+  "selective_repair_fill_turns": 9,
+  "sender_startup_to_authenticated_receipt_us": 19537686,
+  "source_commit": "79cbcd7e3b6c892fc2c3372d5aa474fe58419d02",
+  "source_tree": "7834951fae60749e14b0921953a347015c9d3699",
+  "timing_partition_us": {
+    "DATA_physical_outstanding_union": 8156096,
+    "invocation_to_first_DATA_submit": 589907,
+    "no_DATA_physical_outstanding": 10379994,
+    "process_startup": 411689
+  },
+  "unresolved_UNKNOWN": 0,
+  "useful_bytes": 23900,
+  "useful_bytes_per_second": 1223.2769018808062,
+  "wheel_sha256": "7c043840a72f1912f5caf8f1d869c3086fe3d0a8cacc5974ec5dae8123e274e7"
+}

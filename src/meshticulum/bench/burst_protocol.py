@@ -42,6 +42,9 @@ _POLICY8_ITEMS = tuple(POLICY8.items())
 POLICY32 = dict(POLICY8, schema='meshticulum.data-burst-policy.v3',
                 flow_window_frames=32)
 _POLICY32_ITEMS = tuple(POLICY32.items())
+POLICY_REPAIR_FILL = dict(POLICY32, schema='meshticulum.data-burst-policy.v4',
+                         selective_repair_fill=True)
+_POLICY_REPAIR_FILL_ITEMS = tuple(POLICY_REPAIR_FILL.items())
 
 
 def validate_policy(value):
@@ -49,7 +52,8 @@ def validate_policy(value):
           set(value) == {key for key, _ in items}
           and all(type(value[key]) is type(expected) and value[key] == expected
                   for key, expected in items)
-          for items in (_POLICY_ITEMS, _POLICY8_ITEMS, _POLICY32_ITEMS)), 'invalid_data_burst_policy')
+          for items in (_POLICY_ITEMS, _POLICY8_ITEMS, _POLICY32_ITEMS,
+                        _POLICY_REPAIR_FILL_ITEMS)), 'invalid_data_burst_policy')
     return dict(value)
 
 
@@ -73,6 +77,15 @@ def policy_for_flow_window(flow_window_frames):
 def policy_flow_window(policy):
     value = validate_policy(policy)
     return value.get('flow_window_frames', value['max_depth'])
+
+
+def policy_for_repair_fill():
+    """Explicit logical-32/eight-train policy allowing fresh DATA after one repair."""
+    return dict(_POLICY_REPAIR_FILL_ITEMS)
+
+
+def policy_repair_fill(policy):
+    return validate_policy(policy).get('selective_repair_fill', False)
 
 
 def capability_for_depth(depth=4):

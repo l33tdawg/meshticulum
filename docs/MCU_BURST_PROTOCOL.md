@@ -33,6 +33,13 @@ every serial format below. Only host credit/reassembly becomes 32; no new
 opcode, firmware capability or RF allowance is implied. This policy has source
 evidence only.
 
+The explicit [v4 repair-fill policy](SELECTIVE_REPAIR_FILL.md) adds
+`selective_repair_fill: true` to the v3 bounds and uses schema
+`meshticulum.data-burst-policy.v4`. One selective repair may share its existing
+eight-frame train with fresh DATA under canonical credit. It changes no serial
+record, native guard, retry timer or operation budget; source evidence is
+separate from physical qualification.
+
 The record participates in the original shared route/grant digest. It permits
 only locally classified DATA ciphertext. Queue acceptance is an irrevocably
 charged in-flight carrier handover: accepted ciphertext may start before its
