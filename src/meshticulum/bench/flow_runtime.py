@@ -27,7 +27,7 @@ from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .public_block import object_limit
-from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair, policy_repeat_retry
+from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair, policy_repeat_retry, policy_repair_train
 
 
 def _flow_modules():
@@ -72,6 +72,10 @@ class BenchFlow:
         self._selective_terminal_retry = (self.data_burst and policy_terminal_retry(policy))
         self._scalar_fill_pair = self.data_burst and policy_scalar_fill_pair(policy)
         self._selective_repeat_retry = self.data_burst and policy_repeat_retry(policy)
+        self._selective_repair_train = self.data_burst and policy_repair_train(policy)
+        self._repair_train_active = self._repair_train_offer = False
+        self._repair_train_domains = set()
+        self._last_queued_domain = None
         self._scalar_fill_extra = False
         self._repair_fill_active = False
         self._physical_data, self._pending_data_domains = {}, {}
@@ -261,6 +265,10 @@ class BenchFlow:
             self.counts['scalar_fill_nonfresh_refused'] += 1
             self.owner.settle_sending()
             return CommitOutcome.REFUSED_CARRIER
+        if self._repair_train_offer and kind is not FrameKind.DATA:
+            self.counts['repair_train_noneligible_refused'] += 1
+            self._hold_repair_reverse_turn()
+            return CommitOutcome.REFUSED_CARRIER
         ack_diagnostics = {}
         if kind is FrameKind.ACK:
             snapshot = (parsed['ack_seq'], parsed['sack'], parsed['credit'], parsed['grant_revision'])
@@ -285,6 +293,20 @@ class BenchFlow:
                 self.counts['pending_DATA_refused'] += 1
                 self.owner.settle_sending()
                 return CommitOutcome.REFUSED_CARRIER
+            if self._repair_train_offer:
+                # The explicit extra offer must remain a distinct existing
+                # flight. Check again at the carrier boundary, before sealing
+                # or reserving a physical attempt; preparation may take time.
+                now_us = self.clock()[1]
+                require(type(now_us) is int and now_us / 1000000 >= self.link.now,
+                        'repair_train_clock_regressed')
+                if (not self._repair_train_active or domain in self._repair_train_domains
+                        or parsed['seq'] not in self.flow._in_flight
+                        or any(now_us / 1000000 - p.sent_at >= p.rto
+                               for p in self.flow._in_flight.values())):
+                    self.counts['repair_train_noneligible_refused'] += 1
+                    self._hold_repair_reverse_turn()
+                    return CommitOutcome.REFUSED_CARRIER
             logical_id = hashlib.sha256(b'meshticulum.pending-data.v1\0'
                 + self.cipher.grant.digest + struct.pack('!QQQ', *domain[1:])
                 + plaintext_digest).digest()
@@ -304,6 +326,11 @@ class BenchFlow:
             require(self.data_burst and kind is FrameKind.DATA and result.driver is None,
                     'invalid_queue_acceptance')
             self._pending_data_domains[domain] = (plaintext_digest, result.request)
+            if self._selective_repair_train:
+                self._last_queued_domain = domain
+                if self._repair_train_offer:
+                    self._repair_train_domains.add(domain)
+                    self.counts['repair_train_extra'] += 1
             self._physical_data[result.request] = dict(domain=domain,
                 packet_sha256=hashlib.sha256(packet).hexdigest(), bytes=len(packet),
                 queue_submit_mono_us=worker_started_us, queue_accept_mono_us=worker_finished_us,
@@ -323,6 +350,8 @@ class BenchFlow:
                                      + self.sender_control_hold_us)
                 self.burst_sent = 0
                 self._repair_fill_active = False
+                self._repair_train_active = False
+                self._repair_train_domains.clear()
                 self.owner.settle_sending()
             elif parsed['last'] and self._repair_fill_active:
                 # A partial final train still owes its reverse turn. Another
@@ -587,6 +616,21 @@ class BenchFlow:
         return self._ack_persistence_streak > 0 and now_us < self._ack_persistence_due_us
 
     def _hold_fast_retry_turn(self):
+        # Only the explicit v8 terminal policy may group distinct proven
+        # holes. The first repair reached this point through the ordinary
+        # exact physical drain/STATUS gate. No fresh DATA remains, and the
+        # accepted flow itself proves local and peer receipt of original FINAL.
+        if (self._selective_repair_train and not self._repair_train_active
+                and self.flow.queued_bytes() == 0
+                and self.flow._original_final_handed_over
+                and self.flow._peer_original_final_received
+                and self._last_queued_domain is not None
+                and 0 < self.burst_sent < self.burst_frames and self.next_send_us == 0
+                and self.flow.selective_retry_ready(terminal=True)):
+            self._repair_train_active = True
+            self._repair_train_domains = {self._last_queued_domain}
+            self.counts['repair_train_turn'] += 1
+            return
         # Only an explicitly admitted v4 policy can carry fresh DATA after a
         # repair. The QUEUED repair already counts toward this same eight-frame
         # train; do not reset that count or erase an existing reverse hold.
@@ -606,9 +650,49 @@ class BenchFlow:
 
     def _hold_repair_reverse_turn(self):
         self._repair_fill_active = False
+        self._repair_train_active = False
+        self._repair_train_domains.clear()
         self.next_send_us = self.clock()[1] + self.worker.pending_airtime_us + self.sender_control_hold_us
         self.burst_sent = 0
         self.owner.settle_sending()
+
+    def _step_repair_train(self):
+        """One extra proven, distinct terminal hole per normal host step.
+
+        Native receive floors and the original turn deadline still apply.
+        Physical terminals are collected normally between offers, while the
+        bounded domain set prevents a released attempt from rejoining this
+        train. No frozen evidence, credit, retry clock or attempt is mutated.
+        """
+        self.update_counter()
+        now_us = self.clock()[1]
+        require(type(now_us) is int and now_us / 1000000 >= self.link.now,
+                'repair_train_clock_regressed')
+        self.link.now = now_us / 1000000
+        if (self.owner.no_send or self.link._held is not None
+                or self.worker.fenced or not self.authority.application_live()
+                or self.worker.has_buffered_activity or not self.worker.has_capacity
+                or set(self.worker.pending_physical) != set(self._physical_data)
+                or not 0 < self.burst_sent < self.burst_frames
+                or len(self._repair_train_domains) >= self.burst_frames
+                or now_us < self.next_send_us or self.flow.queued_bytes() != 0
+                or not self.flow._original_final_handed_over
+                or not self.flow._peer_original_final_received
+                or any(self.link.now - p.sent_at >= p.rto for p in self.flow._in_flight.values())
+                or not self.flow.selective_retry_ready(terminal=True)):
+            self._hold_repair_reverse_turn()
+            return
+        fast_before = self.flow.fast_retransmits
+        self._repair_train_offer = True
+        try:
+            offered = self.flow.retry_selective_gap(self.link.now, terminal=True)
+        finally:
+            self._repair_train_offer = False
+        if (not offered or self.flow.fast_retransmits != fast_before + 1
+                or not self.flow.selective_retry_ready(terminal=True)):
+            # REFUSED and DEFERRED retain normal owner/flow state. They never
+            # authorize another offer or bypass the existing reverse hold.
+            self._hold_repair_reverse_turn()
 
     def _pump_scalar_fill_pair(self, queued_before, fresh_before, fast_before):
         """At most one extra fresh scalar offer after one accepted handover.
@@ -674,6 +758,11 @@ class BenchFlow:
                 item = self.worker.receive(timeout=0)
             if item is None:
                 break
+            if self._repair_train_active:
+                # Even unauthenticated ingress ends an active repair train.
+                # A later progress ACK may release this hold normally, but a
+                # new train must again pass the exact physical drain gate.
+                self._hold_repair_reverse_turn()
             at, raw = item
             try:
                 with phase(self.host_timing, Phase.CIPHER_OPEN):
@@ -731,6 +820,8 @@ class BenchFlow:
                 self.next_send_us = min(self.next_send_us, self.last_activity_us)
                 self.burst_sent = 0
                 self._repair_fill_active = False
+                self._repair_train_active = False
+                self._repair_train_domains.clear()
             ack_diagnostics = {}
             if verified.kind is FrameKind.ACK:
                 delta = self.flow.acked_frames() - acknowledged_before
@@ -775,6 +866,10 @@ class BenchFlow:
         # answered after one maximum packet plus bounded host-turnaround time.
         if (not self.sends and self.burst_received and self.clock()[1] < self.ack_due_us):
             self.owner.settle_sending()
+            self._check_flow()
+            return self._completion_ready()
+        if self._repair_train_active:
+            self._step_repair_train()
             self._check_flow()
             return self._completion_ready()
         if (self._repair_fill_active and any(
@@ -890,6 +985,8 @@ class BenchFlow:
         if self._selective_repeat_retry:
             value['timing_policy']['selective_repeat_retry'] = True
             value['repeat_retry_epochs'] = self.flow.repeat_retry_epochs
+        if self._selective_repair_train:
+            value['timing_policy']['selective_repair_train'] = True
         if self.dispatch_budget_failure is not None:
             value['dispatch_budget_failure'] = self.dispatch_budget_failure
         if self.data_burst:
