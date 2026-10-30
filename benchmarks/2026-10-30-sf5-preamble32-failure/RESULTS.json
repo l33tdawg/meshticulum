@@ -1,0 +1,229 @@
+{
+  "DATA_frames_planned": 128,
+  "authenticated_file_receipt": false,
+  "checkpoint_above_2800_achieved": false,
+  "comparison": {
+    "current_preamble_symbols": 32,
+    "isolated_causal_gain_proven": false,
+    "no_throughput_comparison_available": true,
+    "previous_preamble_symbols": 12,
+    "previous_results_sha256": "cee3cdba85a049e075d0bbee7b414490dbec327f49dc7002d8670078359f1361",
+    "private_harness_changed": true,
+    "same_RF_waveform": false,
+    "same_SDK_and_firmware": true,
+    "same_useful_input": true
+  },
+  "complete": false,
+  "data_burst_policy": {
+    "flow_window_frames": 32,
+    "handover": "irrevocably-charged-at-queue-acceptance",
+    "inter_packet_rx_us": 5000,
+    "max_depth": 8,
+    "max_hold_us": 2000000,
+    "reverse_listen_us": 100000,
+    "scalar_fill_pair": true,
+    "schema": "meshticulum.data-burst-policy.v7",
+    "selective_repair_fill": true,
+    "selective_repeat_retry": true,
+    "selective_terminal_retry": true,
+    "train_frames": 8
+  },
+  "date": "2026-10-30",
+  "encoded_response_bytes_planned": 24565,
+  "endpoints": {
+    "receiver": {
+      "child_terminal": true,
+      "containment_required": false,
+      "dropped_receive_delta": 0,
+      "fenced": false,
+      "forced_cleanup": false,
+      "native_rx_reason_delta": {
+        "BACKPRESSURE_DEFER_VISITS": 0,
+        "INVALID_REPORTED_LENGTH": 0,
+        "IRQ_RESTART_BOTH": 0,
+        "IRQ_RESTART_CRC_ONLY": 0,
+        "IRQ_RESTART_HEADER_ONLY": 0,
+        "OUTPUT_OFFER_FAILED": 0,
+        "OUTPUT_RESERVE_LOW": 0,
+        "QUEUED_HEADER_STALL": 0,
+        "READ_BOTH": 0,
+        "READ_HEADER": 0,
+        "READ_INTEGRITY_UNATTRIBUTED": 0,
+        "READ_OTHER_ERROR": 0,
+        "READ_PAYLOAD_CRC": 0,
+        "READ_TIMEOUT": 0,
+        "RX_EXPORTED": 0,
+        "SYNC_TX_HEADER_PREEMPTED": 0,
+        "TIMEOUT_ONLY_RESTART": 0
+      },
+      "original_full_reserved_allowance": {
+        "attempts": 64,
+        "estimated_airtime_us": 3000000
+      },
+      "original_paid_totals": {
+        "fenced": false,
+        "journal_report_complete": false,
+        "known_attempts": 0,
+        "known_reserved_estimated_airtime_us": 0,
+        "recovered_unknown": 0,
+        "total_attempts": null,
+        "total_reserved_estimated_airtime_us": null,
+        "unreported_parts": [
+          0
+        ]
+      },
+      "owned_channels_closed": true,
+      "protected_facts_unchanged": true,
+      "queue_closed": true,
+      "queue_pending": 0,
+      "queue_retained": 0,
+      "radio_armed": false,
+      "recovered_paid_diagnostics": {
+        "attempts": 16,
+        "evidence": "recovered diagnostic journal agrees with same-boot native delta; original totals unchanged",
+        "fenced": false,
+        "host_phase_counts": {
+          "cipher_open": 0,
+          "cipher_seal": 16,
+          "flow_step": 681
+        },
+        "host_reserved_estimated_airtime_us": 231440,
+        "native_reserved_estimated_airtime_us": 195840,
+        "recovered_unknown": 0
+      },
+      "transmitting": false
+    },
+    "sender": {
+      "child_terminal": true,
+      "containment_required": false,
+      "dropped_receive_delta": 16,
+      "fenced": false,
+      "forced_cleanup": true,
+      "native_rx_reason_delta": {
+        "BACKPRESSURE_DEFER_VISITS": 0,
+        "INVALID_REPORTED_LENGTH": 0,
+        "IRQ_RESTART_BOTH": 0,
+        "IRQ_RESTART_CRC_ONLY": 0,
+        "IRQ_RESTART_HEADER_ONLY": 16,
+        "OUTPUT_OFFER_FAILED": 0,
+        "OUTPUT_RESERVE_LOW": 0,
+        "QUEUED_HEADER_STALL": 0,
+        "READ_BOTH": 0,
+        "READ_HEADER": 0,
+        "READ_INTEGRITY_UNATTRIBUTED": 0,
+        "READ_OTHER_ERROR": 0,
+        "READ_PAYLOAD_CRC": 0,
+        "READ_TIMEOUT": 0,
+        "RX_EXPORTED": 0,
+        "SYNC_TX_HEADER_PREEMPTED": 0,
+        "TIMEOUT_ONLY_RESTART": 0
+      },
+      "original_full_reserved_allowance": {
+        "attempts": 160,
+        "estimated_airtime_us": 8000000
+      },
+      "original_paid_totals": {
+        "fenced": false,
+        "journal_report_complete": false,
+        "known_attempts": 0,
+        "known_reserved_estimated_airtime_us": 0,
+        "recovered_unknown": 0,
+        "total_attempts": null,
+        "total_reserved_estimated_airtime_us": null,
+        "unreported_parts": [
+          0
+        ]
+      },
+      "owned_channels_closed": true,
+      "protected_facts_unchanged": true,
+      "queue_closed": true,
+      "queue_pending": 0,
+      "queue_retained": 0,
+      "radio_armed": false,
+      "recovered_paid_diagnostics": {
+        "attempts": 0,
+        "evidence": "recovered diagnostic journal agrees with same-boot native delta; original totals unchanged",
+        "fenced": false,
+        "host_phase_counts": {
+          "cipher_open": 0,
+          "cipher_seal": 0,
+          "flow_step": 621
+        },
+        "host_reserved_estimated_airtime_us": 0,
+        "native_reserved_estimated_airtime_us": 0,
+        "recovered_unknown": 0
+      },
+      "transmitting": false
+    }
+  },
+  "failure": {
+    "cause_known": false,
+    "header_only_counter_proves_radio_restart": false,
+    "original_sender_endpoint_reply_missing": true,
+    "per_ACK_to_IRQ_correspondence_proven": false,
+    "receiver_code": "reliable_flow_startup_grant_unanswered",
+    "receiver_startup_ACK_attempts": 16,
+    "recovered_sender_ready_event_present": true,
+    "sender_child_error_type": "SystemExit",
+    "sender_cipher_open_calls": 0,
+    "sender_header_only_IRQ_classifications": 16,
+    "sender_native_RX_exports": 0,
+    "sender_native_TX_attempts": 0,
+    "sender_supervisor_code": "management_stdin_closed"
+  },
+  "limits": [
+    "No authenticated file receipt; no throughput sample.",
+    "The header-only IRQ counter classifies a native observation; it does not identify the RF cause or prove a restart.",
+    "Recovered journals and current native counters do not rewrite incomplete original result totals.",
+    "Read-only observations establish the checked channel and queue state, not global host quiescence.",
+    "Distance was not remeasured; no range or radio-quality qualification."
+  ],
+  "outcome": "failed_before_authenticated_DATA_transfer",
+  "profile_host": true,
+  "radio": {
+    "bandwidth_hz": 500000,
+    "chip_power_dbm": 0,
+    "coding_rate": 5,
+    "frequency_hz": 921375000,
+    "preamble_symbols": 32,
+    "radio_spi_hz": 8000000,
+    "spreading_factor": 5,
+    "sync_word": 66
+  },
+  "reconciliation": {
+    "automatic_retry": false,
+    "direct_historical_references_verified": 482,
+    "full_reserved_allowances_retained": true,
+    "global_historical_debt_complete": false,
+    "global_quiescence_proven": false,
+    "historical_evidence_unchanged": true,
+    "new_rf_authorized": false,
+    "original_result_sha256": "a3115606674da2ab865fce8dd6f7eb427b170e59219bd152a1f1535f7d206946",
+    "original_result_totals_remain_null": true,
+    "original_scope_expired_on_both_clocks": true,
+    "recovered_costs_kept_separate": true,
+    "refunds": 0,
+    "sha256": "898cea68340b158cf821a5dcd13adf381bbbadbac09397e8b51bf79f36e144c3",
+    "unknown_actual_cost": null
+  },
+  "repeated_goal_3000_achieved": false,
+  "schema": "meshticulum.preamble32-failure-public.v1",
+  "single_run_at_least_3000": false,
+  "source": {
+    "exporter_sha256": "45a7ec588fa6991a1fcf7321cd918c667a6adc27bf2f3533b22239989632a37f",
+    "firmware": {
+      "bytes": 404496,
+      "identity": "mtb1-845b22b090",
+      "proof": "pinned source SHA-256 and ROM-verified programmed-span MD5; no full new-image SHA-256 readback",
+      "sha256": "d98391bb4341aecda6b3e3f469875a3c396326afd283f4dce401e02cfa3c9b0b",
+      "target": "mtbench_heltec_v4"
+    },
+    "private_harness_commit": "47e2647be535fc3990c2a996f2a06fc7b73fd71e",
+    "sdk_commit": "7102952b847ec4cf4a534289bae3e22f6e03a93b",
+    "wheel_sha256": "c37038449b49ef09da99e8ae8ca56b3bf2fe166c372a39ac94ddab9148e79093"
+  },
+  "startup_to_authenticated_receipt_us": null,
+  "useful_B_per_second": null,
+  "useful_file_bytes_requested": 23900,
+  "whole_file_verified": false
+}

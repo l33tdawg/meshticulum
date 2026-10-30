@@ -52,6 +52,21 @@ recovery patterns prevent an isolated policy comparison. All nine samples
 remain below both throughput thresholds. Further work examines recovery turns
 and receive reliability.
 
+The subsequent [32-symbol-preamble trial](../benchmarks/2026-10-30-sf5-preamble32-failure/README.md)
+failed during startup on the same SDK/v7 policy, firmware and MCU boots. The
+receiver spent 16 startup ACK attempts; the sender sent no DATA and its native
+header-only IRQ category rose by 16, with no exported packets. No file completed,
+so this trial has no goodput result. Both units were subsequently observed idle
+with empty queues and unchanged tracked services. The failed outcome and full reserved
+allocation remain retained. The IRQ category can include selective clearing
+without an RX restart; the underlying receive failure is unresolved.
+
+[Terminal repair trains](TERMINAL_REPAIR_TRAIN.md) are now accepted in source as
+an explicit v8 policy. After original FINAL handover and authenticated peer
+receipt, they group distinct, already proven missing frames into trains of at
+most eight packets. The original per-frame accounting and listening floors
+remain. Source controls passed, but v8 has no physical qualification result.
+
 The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
 
 Alpha.3 removes repeated full-history scans from journal accounting and adds
