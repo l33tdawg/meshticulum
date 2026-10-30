@@ -89,7 +89,7 @@ receipt, they group distinct, already proven missing frames into trains of at
 most eight packets. The original per-frame accounting and listening floors
 remain. Source controls passed, but v8 has no physical qualification result.
 
-The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.4` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
+The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.4` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4-r2). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
 
 Alpha.3 removes repeated full-history scans from journal accounting and adds
 [opt-in host phase timings](HOST_PROFILING.md) for queue, serial, journal and

@@ -1,6 +1,6 @@
 # Meshticulum documentation
 
-Meshticulum brings bounded radio transfers, authenticated service boundaries and verified resources into a system intended to span LoRa and IP. This guide starts with the design, then follows the source and the evidence needed to qualify it. [Experimental alpha.4](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4) repairs saturated train12 recovery stalls and adds three repeated physical SF5 samples above 3 kB/s; start with the [SDK installation guide](SDK_GUIDE.md#install-the-alpha-or-checkout).
+Meshticulum brings bounded radio transfers, authenticated service boundaries and verified resources into a system intended to span LoRa and IP. This guide starts with the design, then follows the source and the evidence needed to qualify it. [Experimental alpha.4](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4-r2) repairs saturated train12 recovery stalls and adds three repeated physical SF5 samples above 3 kB/s; start with the [SDK installation guide](SDK_GUIDE.md#install-the-alpha-or-checkout).
 
 ## Understand the project
 

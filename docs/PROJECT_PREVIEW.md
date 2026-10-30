@@ -1,6 +1,6 @@
 # Project preview
 
-Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project created and maintained by [Dhillon Andrew Kannabhiran](https://github.com/l33tdawg). The source and project website introduce the design, invite review and share measured results while development continues. The latest SDK update is the [experimental `1.0.0-alpha.4` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4).
+Meshticulum is a [SAGE Foundation](https://sage-foundation.net/) project created and maintained by [Dhillon Andrew Kannabhiran](https://github.com/l33tdawg). The source and project website introduce the design, invite review and share measured results while development continues. The latest SDK update is the [experimental `1.0.0-alpha.4` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4-r2).
 
 ## Scope of the announcement
 

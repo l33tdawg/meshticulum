@@ -3,7 +3,7 @@
 ## 1.0.0-alpha.4 — 2026-10-30
 
 Python package **`1.0.0a4`** is the Alpha 4 SDK update. The
-[`v1.0.0-alpha.4` release assets](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4)
+[`v1.0.0-alpha.4-r2` release assets](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4-r2)
 carry the final source identity, wheel and normalized source archive, validation
 record, manifest and checksums. Earlier release tags and assets remain
 unchanged.
