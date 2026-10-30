@@ -3,7 +3,15 @@
 The active goal is at least 3,000 useful file bytes per second, including
 sender process startup through authenticated receipt, on comparable finite
 workloads with publisher and whole-file verification. Strictly above 2,800
-bytes/s remains the net-win checkpoint. Neither has been established. The
+bytes/s is the net-win checkpoint. The latest
+[sync18/preamble32 sample](../benchmarks/2026-10-30-sf5-sync18-profile/README.md)
+cleared that checkpoint once: **23,900 verified useful bytes in 8.321713
+seconds including startup, or 2,872.004838 B/s**, with zero DATA retries.
+Repeated 3,000 B/s remains unqualified. This run still used eight-frame v7
+trains; the newer v8/v9 source and local firmware builds have no physical
+result. Its immediate predecessor failed, so there is no preceding goodput
+value or percentage gain to report. The sync-word change does not prove the
+cause of that failure. Earlier completed samples follow. The
 [first eight-frame hardware sample](../benchmarks/2026-10-30-sf5-eight-profile/README.md)
 verified 23,900 useful bytes in 29.821904 seconds including startup, or
 801.424349 useful B/s. It retained 14 DATA retries and all attempt debt. A
@@ -38,8 +46,8 @@ subsequent [R13/v7 repeat-repair sample](../benchmarks/2026-10-30-sf5-repeat-ret
 kept the same firmware and MCU boots, and verified the file in 15.147523
 seconds including startup, or 1,577.815726 B/s. All 18 DATA retries were
 selective. Loss and recovery patterns differed; its 6.659214% lower observed
-rate does not isolate the policy effect. All nine samples miss the target;
-the earlier 2,026.493477 B/s sample remains the best.
+rate does not isolate the policy effect. Those nine earlier completed samples
+missed both throughput thresholds.
 
 ## Existing piece and recovery behavior
 

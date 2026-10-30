@@ -1,8 +1,21 @@
 # Roadmap
 
-Meshticulum is a public experimental transport and resource project with a published source-build alpha. The active SF5/BW500 goal is repeated reliable completion at **3 kB/s (24 kbit/s)** of useful encrypted file bytes, measured from sender process startup through authenticated receipt with publisher and whole-file verification. **Above 2.8 kB/s (22.4 kbit/s)** remains the net-win checkpoint. Neither is established by the latest physical trial. The longer-term **4 to 5 kB/s (32 to 40 kbit/s)** goal follows that qualification. There are no promised release dates.
+Meshticulum is a public experimental transport and resource project with a published source-build alpha. The active SF5/BW500 goal is repeated reliable completion at **3 kB/s (24 kbit/s)** of useful encrypted file bytes, measured from sender process startup through authenticated receipt with publisher and whole-file verification. The latest sample reached **2.872 kB/s**, clearing the **above-2.8 kB/s (22.4 kbit/s)** checkpoint once. Repeated 3 kB/s remains open. The longer-term **4 to 5 kB/s (32 to 40 kbit/s)** goal follows that qualification. There are no promised release dates.
 
 ## Current status
+
+The latest [sync18/preamble32 sample](../benchmarks/2026-10-30-sf5-sync18-profile/README.md)
+verified **23,900 useful bytes in 8.321713 seconds including sender process
+startup: 2,872.004838 B/s**, with zero DATA retries. This is the first sample
+above the 2,800 B/s checkpoint in this campaign. It kept the SDK/v7 policy,
+firmware and both MCU boots from the failed preamble32 trial and changed the
+explicit radio sync word from `0x42` to `0x12`. That successful run does not
+prove the cause of the preceding receive failure. Both endpoints completed and
+closed, queues drained, and postflight clocks showed unarmed radios after the
+original deadlines. One completed run establishes neither repeated capacity
+nor superiority over MeshCore or Reticulum. The source and local builds for
+[twelve-frame trains](MCU_TWELVE_TRAIN.md) are ready for separate installation
+and hardware testing; this measured run still used eight-frame v7 trains.
 
 The first [eight-frame SF5 profiling sample](../benchmarks/2026-10-30-sf5-eight-profile/README.md)
 verified 23,900 useful bytes at 801.424349 B/s including startup. Both target
@@ -48,8 +61,8 @@ The subsequent [R13/v7 repeat-repair sample](../benchmarks/2026-10-30-sf5-repeat
 kept that firmware and both MCU boots. It verified the same file in 15.147523
 seconds including startup, or 1,577.815726 B/s, with 18 selective DATA retries
 and no ordinary retries. The observed rate fell 6.659214%; differing loss and
-recovery patterns prevent an isolated policy comparison. All nine samples
-remain below both throughput thresholds. Further work examines recovery turns
+recovery patterns prevent an isolated policy comparison. Those nine earlier
+completed samples fell below both throughput thresholds. Further work examines recovery turns
 and receive reliability.
 
 The subsequent [32-symbol-preamble trial](../benchmarks/2026-10-30-sf5-preamble32-failure/README.md)
