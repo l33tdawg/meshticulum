@@ -62,5 +62,5 @@ GitHub renders the Mermaid blocks in the Markdown. Every figure also links to an
 
 
 [Throughput pipeline work](THROUGHPUT_PIPELINE.md) records the existing verified
-piece behavior, bounded host wakeups, dormant MCU batch prototype and remaining
-3 kB/s qualification work.
+piece behavior, bounded host wakeups, dormant MCU batch prototype, above
+2.8 kB/s acceptance target and 3 kB/s stretch qualification work.

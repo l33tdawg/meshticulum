@@ -59,13 +59,22 @@ consume it. It demonstrates bounded validation/accounting behavior in source.
 Production integration needs the reviewed multi-emission owner contract and
 atomic durable reservation described in that document.
 
-Current queue depth and train length remain four. At SF5/BW500, a full-frame
+Current queue depth and train length remain four. At SF5/BW500/CR4/5 with a
+12-symbol preamble, a full-frame
 steady-cycle estimate is four 193-byte transport payloads divided by four
 34,640 us airtimes, three 5 ms receive gaps and one 100 ms reverse turn: about
 3,044.6 transport bytes/s. In one actual signed-envelope fixture, a full 23,900
 useful-byte part occupies 24,565 transport bytes. Applying that useful fraction
 gives about 2,962.2 useful bytes/s before host work, initial startup or losses.
 These are optimistic calculations, not measured capacity guarantees.
+
+The [offline native timing analysis](../benchmarks/2026-10-30-sf5-recovery/README.md#offline-native-timing-analysis)
+identifies another cost in the retained trials. In 18 transitions where the next
+packet was already queued, local RF_DONE to next STARTED averaged 10.630 ms:
+6.780 ms before ISSUED, then 3.850 ms in checked transmit setup. The pre-issue
+bucket includes RX rearm and the full listening floor; neither bucket is proven
+wholly removable. Bounded native phase profiling should isolate that setup cost
+alongside the separate host-refill work.
 
 An eight-frame train is a separate proposed protocol experiment. Keeping the
 same gap and reverse-turn durations would provide an ideal estimate of about

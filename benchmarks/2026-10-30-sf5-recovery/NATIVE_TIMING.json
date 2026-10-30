@@ -1,0 +1,283 @@
+{
+  "acceptance_target": {
+    "established_by_this_analysis": false,
+    "includes_startup": true,
+    "strictly_greater_than_useful_Bps": 2800
+  },
+  "clock_basis": "Only within-packet or adjacent-packet timestamps from the same MCU clock are subtracted. No host-to-MCU or cross-host timing subtraction.",
+  "comparison_scope": "Separate 2000-byte selective-retry and 3000-byte ACK-recovery trials on different SDK candidates; not a paired speed comparison.",
+  "conditional_geometry": {
+    "assumed_tail_us": 100000,
+    "conditional_useful_Bps_at_that_recorded_span_plus_minimum_tail": 2747.3514497085066,
+    "estimated_full_frame_airtime_us": 34640,
+    "frames_per_train": 4,
+    "ideal_interpacket_floor_us": 5000,
+    "ideal_steady_useful_Bps": 2962.222591052446,
+    "limitations": "The useful/transport ratio comes from separate full-part source geometry. Applying it to one recorded four-packet native segment plus only the minimum tail excludes startup, other host work, loss and recovery. The ideal 2962.22 B/s additionally assumes estimated airtime and exactly 5 ms internal gaps. The conditional 2747.35 B/s is not a full-part physical result, target achievement or immutable platform ceiling.",
+    "neither_value_is_measured_file_goodput": true,
+    "recorded_four_full_packet_started_to_final_rf_done_us": 173391,
+    "transport_bytes_per_full_part": 24565,
+    "transport_payload_bytes_per_frame": 193,
+    "useful_bytes_per_full_part": 23900
+  },
+  "evidence_kind": "Offline analysis of retained physical sender-MCU traces; no new hardware or RF action.",
+  "new_radio_actions": 0,
+  "next_step": "Bounded native profiling within claim-to-start setup and RX rearm, then source controls for demonstrably redundant work above unchanged 5 ms/100 ms guards. Compare prefill and streaming separately with identical host cadence and whole useful-file/startup boundaries.",
+  "pooled_descriptive_statistics": {
+    "issued_to_started_all": {
+      "count": 36,
+      "max_us": 4247,
+      "mean_us": 3783.8611111111113,
+      "median_us": 3714.0,
+      "min_us": 3403,
+      "p95_us": 4239
+    },
+    "packet_count": 36,
+    "prefilled_next_issued_to_started": {
+      "count": 18,
+      "max_us": 4247,
+      "mean_us": 3850.1111111111113,
+      "median_us": 3789.5,
+      "min_us": 3618,
+      "p95_us": 4247
+    },
+    "prefilled_rf_done_to_next_issued": {
+      "count": 18,
+      "max_us": 7625,
+      "mean_us": 6780.055555555556,
+      "median_us": 6773.0,
+      "min_us": 6202,
+      "p95_us": 7625
+    },
+    "prefilled_rf_done_to_next_started": {
+      "count": 18,
+      "max_us": 11274,
+      "mean_us": 10630.166666666666,
+      "median_us": 10721.0,
+      "min_us": 9853,
+      "p95_us": 11274
+    },
+    "prefilled_started_to_started": {
+      "count": 18,
+      "max_us": 46482,
+      "mean_us": 45815.61111111111,
+      "median_us": 45904.0,
+      "min_us": 45022,
+      "p95_us": 46482
+    },
+    "prefilled_transition_count": 18,
+    "started_to_rf_done_full_size": {
+      "count": 34,
+      "max_us": 35446,
+      "mean_us": 35188.705882352944,
+      "median_us": 35182.0,
+      "min_us": 35150,
+      "p95_us": 35212
+    }
+  },
+  "schema": "meshticulum.native-timing-public-summary.v1",
+  "selection": "Prefilled adjacent transitions require the next retained QUEUED timestamp strictly before the previous RF_DONE, complete ordered stages for both packets, zero driver errors, and confirmed release. All other adjacent transitions are excluded from prefilled statistics.",
+  "source_attribution": {
+    "issued_to_started": "This measured bucket encloses checked standby, IRQ reread/possible receive drain, clear IRQ, packet copy, board preparation and driver.startTransmit. The trace does not attribute the whole bucket to one call or prove it removable.",
+    "prefilled_gap": "The selected approximately 10\u201311 ms gaps are not absence of the next packet at the previous RF_DONE; that packet is already QUEUED.",
+    "rf_done_to_next_issued": "Includes RX restart, the complete listen floor beginning only after RX restart succeeds, service-loop/IRQ/output gates and possible receive-priority delays. The trace does not separately time these components.",
+    "underfill": "Other transitions include true empty-tail conditions, normal application turns and recovery. Do not label every long gap accidental or removable."
+  },
+  "statistics_method": "p95 is nearest rank ceil(0.95*n). Means of the two adjacent per-pair components add to the corresponding full-gap mean; interval families otherwise overlap and must not be summed.",
+  "timestamp_boundary": "QUEUED/ISSUED/STARTED/RF_DONE are software stage timestamps. STARTED follows successful driver.startTransmit; RF_DONE follows local completion handling. Neither is an independently captured RF edge or authenticated peer receipt.",
+  "trials": [
+    {
+      "complete_data_lifecycles": 15,
+      "distributions": {
+        "issued_to_started_all": {
+          "count": 15,
+          "max_us": 4161,
+          "mean_us": 3763,
+          "median_us": 3725,
+          "min_us": 3403,
+          "p95_us": 4161
+        },
+        "prefilled_next_issued_to_started": {
+          "count": 8,
+          "max_us": 3933,
+          "mean_us": 3788.25,
+          "median_us": 3782.0,
+          "min_us": 3641,
+          "p95_us": 3933
+        },
+        "prefilled_preissue_excess_above_5000us": {
+          "count": 8,
+          "max_us": 2625,
+          "mean_us": 1948.125,
+          "median_us": 1884.5,
+          "min_us": 1238,
+          "p95_us": 2625
+        },
+        "prefilled_rf_done_to_next_issued": {
+          "count": 8,
+          "max_us": 7625,
+          "mean_us": 6948.125,
+          "median_us": 6884.5,
+          "min_us": 6238,
+          "p95_us": 7625
+        },
+        "prefilled_rf_done_to_next_started": {
+          "count": 8,
+          "max_us": 11274,
+          "mean_us": 10736.375,
+          "median_us": 10724.0,
+          "min_us": 10019,
+          "p95_us": 11274
+        },
+        "prefilled_started_to_started": {
+          "count": 8,
+          "max_us": 46482,
+          "mean_us": 45921,
+          "median_us": 45904.0,
+          "min_us": 45184,
+          "p95_us": 46482
+        },
+        "started_to_rf_done_all": {
+          "count": 15,
+          "max_us": 35446,
+          "mean_us": 34857.86666666667,
+          "median_us": 35180,
+          "min_us": 30066,
+          "p95_us": 35446
+        },
+        "started_to_rf_done_full_size": {
+          "count": 14,
+          "max_us": 35446,
+          "mean_us": 35200.142857142855,
+          "median_us": 35181.0,
+          "min_us": 35165,
+          "p95_us": 35446
+        }
+      },
+      "encoded_response_bytes": 2662,
+      "excluded_nonprefilled_transition_count": 6,
+      "firmware_source_files": [
+        {
+          "identical_between_both_candidate_exports": true,
+          "repository_path": "firmware/meshticulum-bench/main.cpp",
+          "sha256": "bae4a3e39cbd32cf26e5012259ebe4247baaca040f0bc1e3902108eeb0215319"
+        },
+        {
+          "identical_between_both_candidate_exports": true,
+          "repository_path": "firmware/meshticulum-bench/burst_adapter.hpp",
+          "sha256": "05e3be4e8c059862d8fef8e41faa3ee052665e2f8dc57fb91c65f9e4ceb19e67"
+        },
+        {
+          "identical_between_both_candidate_exports": true,
+          "repository_path": "firmware/meshticulum-bench/experimental/tx_burst.hpp",
+          "sha256": "828ce0d17950dcc36a1539ef25608fa1bac2f35aaf42a1fc4cb00c68af3b433a"
+        }
+      ],
+      "pending_physical": 0,
+      "prefilled_transition_count": 8,
+      "retained_event_count": 90,
+      "retained_sender_result_sha256": "8268b277ac5f5f07f418504e79a10f14f1b6ca5e8f0fada0325f236182cebadf",
+      "sdk_source_commit": "5431846ee47a702a07994c1b3456c7da01776b20",
+      "useful_file_bytes": 2000,
+      "wheel_sha256": "d8ec8d20f59e783d9f7be4a69bb70a4d7b7ed7ccebe0b05ff1fce89a3ddd6438",
+      "worker_pending": 0
+    },
+    {
+      "complete_data_lifecycles": 21,
+      "distributions": {
+        "issued_to_started_all": {
+          "count": 21,
+          "max_us": 4247,
+          "mean_us": 3798.7619047619046,
+          "median_us": 3713,
+          "min_us": 3618,
+          "p95_us": 4239
+        },
+        "prefilled_next_issued_to_started": {
+          "count": 10,
+          "max_us": 4247,
+          "mean_us": 3899.6,
+          "median_us": 3855.5,
+          "min_us": 3618,
+          "p95_us": 4247
+        },
+        "prefilled_preissue_excess_above_5000us": {
+          "count": 10,
+          "max_us": 2425,
+          "mean_us": 1645.6,
+          "median_us": 1618.5,
+          "min_us": 1202,
+          "p95_us": 2425
+        },
+        "prefilled_rf_done_to_next_issued": {
+          "count": 10,
+          "max_us": 7425,
+          "mean_us": 6645.6,
+          "median_us": 6618.5,
+          "min_us": 6202,
+          "p95_us": 7425
+        },
+        "prefilled_rf_done_to_next_started": {
+          "count": 10,
+          "max_us": 11177,
+          "mean_us": 10545.2,
+          "median_us": 10672.5,
+          "min_us": 9853,
+          "p95_us": 11177
+        },
+        "prefilled_started_to_started": {
+          "count": 10,
+          "max_us": 46365,
+          "mean_us": 45731.3,
+          "median_us": 45870.0,
+          "min_us": 45022,
+          "p95_us": 46365
+        },
+        "started_to_rf_done_all": {
+          "count": 21,
+          "max_us": 35212,
+          "mean_us": 35148.57142857143,
+          "median_us": 35185,
+          "min_us": 34506,
+          "p95_us": 35205
+        },
+        "started_to_rf_done_full_size": {
+          "count": 20,
+          "max_us": 35212,
+          "mean_us": 35180.7,
+          "median_us": 35185.0,
+          "min_us": 35150,
+          "p95_us": 35205
+        }
+      },
+      "encoded_response_bytes": 3662,
+      "excluded_nonprefilled_transition_count": 10,
+      "firmware_source_files": [
+        {
+          "identical_between_both_candidate_exports": true,
+          "repository_path": "firmware/meshticulum-bench/main.cpp",
+          "sha256": "bae4a3e39cbd32cf26e5012259ebe4247baaca040f0bc1e3902108eeb0215319"
+        },
+        {
+          "identical_between_both_candidate_exports": true,
+          "repository_path": "firmware/meshticulum-bench/burst_adapter.hpp",
+          "sha256": "05e3be4e8c059862d8fef8e41faa3ee052665e2f8dc57fb91c65f9e4ceb19e67"
+        },
+        {
+          "identical_between_both_candidate_exports": true,
+          "repository_path": "firmware/meshticulum-bench/experimental/tx_burst.hpp",
+          "sha256": "828ce0d17950dcc36a1539ef25608fa1bac2f35aaf42a1fc4cb00c68af3b433a"
+        }
+      ],
+      "pending_physical": 0,
+      "prefilled_transition_count": 10,
+      "retained_event_count": 126,
+      "retained_sender_result_sha256": "e1da6127860d2895335b3808a4915ece30fa81b38ef78f4d2bcb186abbe58a7f",
+      "sdk_source_commit": "81786885b2dab2e55507fcbeda8f2f3a67c402b7",
+      "useful_file_bytes": 3000,
+      "wheel_sha256": "8ea6ac4c21316772275f8368144dfb19433c38f8c4bdd337569c6fdc227c9e20",
+      "worker_pending": 0
+    }
+  ],
+  "units": "microseconds"
+}

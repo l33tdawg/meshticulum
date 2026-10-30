@@ -1,6 +1,6 @@
 # Roadmap
 
-Meshticulum is a public experimental transport and resource project with a published source-build alpha. The next work focuses on repeated reliable completion and sustained useful encrypted delivery **above 1 kB/s (8 kbit/s)**, including sender startup. The optional **4 to 5 kB/s (32 to 40 kbit/s)** stretch belongs after that reliability work. There are no promised release dates.
+Meshticulum is a public experimental transport and resource project with a published source-build alpha. The next LoRa performance target is repeated reliable completion **above 2.8 kB/s (22.4 kbit/s)** of useful encrypted file bytes, including sender startup, with **3 kB/s (24 kbit/s)** as the immediate stretch. Neither is established by the latest physical trial. The longer-term **4 to 5 kB/s (32 to 40 kbit/s)** goal follows that qualification. There are no promised release dates.
 
 ## Current status
 
@@ -21,6 +21,14 @@ The next performance work targets partial-train ACK waits and host/setup costs,
 then repeats identical workloads on SF5 and SF7. Small-file goodput does not
 establish a profile comparison or the 2–3 kB/s target. Published release assets
 remain unchanged.
+
+The [throughput pipeline work](THROUGHPUT_PIPELINE.md) adds bounded host
+readiness wakeups and a dormant, finite MCU batch prototype. The prototype
+validates a complete ciphertext vector before committing its native charge;
+production flow-owner, journal, serial and firmware integration remains open.
+The four-frame ideal of about 2.96 useful kB/s excludes host work, startup and
+losses. It is a calculation, not a physical result or evidence that the new
+target has been met.
 
 The earlier measured SDK source, `da247a1`, has [passing source CI on Python 3.11, 3.12 and 3.13](https://github.com/l33tdawg/meshticulum/actions/runs/39028024473). The published documentation head passed the same source-control matrix with unchanged runtime and firmware. The hardware samples below supply separate physical evidence. Future release candidates need their own exact source checks and artifacts.
 
