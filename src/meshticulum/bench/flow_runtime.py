@@ -27,7 +27,7 @@ from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .public_block import object_limit
-from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry
+from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair
 
 
 def _flow_modules():
@@ -70,6 +70,8 @@ class BenchFlow:
         self.data_burst = sends and policy is not None
         self._selective_repair_fill = (self.data_burst and policy_repair_fill(policy))
         self._selective_terminal_retry = (self.data_burst and policy_terminal_retry(policy))
+        self._scalar_fill_pair = self.data_burst and policy_scalar_fill_pair(policy)
+        self._scalar_fill_extra = False
         self._repair_fill_active = False
         self._physical_data, self._pending_data_domains = {}, {}
         if self.data_burst:
@@ -249,6 +251,14 @@ class BenchFlow:
             kind = FrameKind.ACK if parsed['kind'] == self.ack_kind else FrameKind.DATA
             require((frame.request.role is FrameRole.CONTROL) == (kind is FrameKind.ACK),
                     'inner_lane_mismatch')
+        if self._scalar_fill_extra and (kind is not FrameKind.DATA
+                or parsed['seq'] != self.flow._next_seq):
+            # Defensive carrier boundary: the extra opportunity is fresh DATA
+            # only. Any prepared framework reservation stays charged normally;
+            # no extra cipher nonce or physical attempt is created here.
+            self.counts['scalar_fill_nonfresh_refused'] += 1
+            self.owner.settle_sending()
+            return CommitOutcome.REFUSED_CARRIER
         ack_diagnostics = {}
         if kind is FrameKind.ACK:
             snapshot = (parsed['ack_seq'], parsed['sack'], parsed['credit'], parsed['grant_revision'])
@@ -598,8 +608,59 @@ class BenchFlow:
         self.burst_sent = 0
         self.owner.settle_sending()
 
+    def _pump_scalar_fill_pair(self, queued_before, fresh_before, fast_before):
+        """At most one extra fresh scalar offer after one accepted handover.
+
+        These hints grant no authority. Every actual offer still passes through
+        the held owner, current leases, cipher and durable worker admission.
+        Unreleased terminals count as occupied; buffered ingress gets the next
+        ordinary step instead of being delayed behind another scalar write.
+        """
+        if not self._scalar_fill_pair or self.counts['tx_QUEUED'] != queued_before + 1:
+            return
+        fast = self.flow.fast_retransmits - fast_before
+        if not ((fast == 0 and self.flow._next_seq == fresh_before + 1)
+                or (fast == 1 and self.flow._next_seq == fresh_before and self._repair_fill_active)):
+            return
+        dispatch = self.link.last_result
+        if (dispatch is None or dispatch.outcome is not CommitOutcome.ACCEPTED or not dispatch.invoked
+                or self.owner.no_send or self.worker.fenced or self.flow.complete
+                or self.link._held is not None or self.worker.has_buffered_activity
+                or not self.worker.has_capacity or not 0 < self.burst_sent < self.burst_frames
+                or len(self.worker.pending_physical) > 1
+                or set(self.worker.pending_physical) != set(self._physical_data)
+                or self.flow.queued_bytes() <= 0 or self.flow._peer_grant_rev is None
+                or self.flow.in_flight() >= min(self.flow.limits.window_frames, self.flow._peer_credit)
+                or not self.authority.application_live()):
+            return
+        self.update_counter()
+        # Sample after live checks and after the first scalar handover. Never
+        # reuse the earlier pump instant for expiry, pacing or retry admission.
+        now_us = self.clock()[1]
+        require(type(now_us) is int and now_us / 1000000 >= self.link.now,
+                'scalar_fill_clock_regressed')
+        if now_us < self.next_send_us:
+            return
+        self.link.now = now_us / 1000000
+        if any(self.link.now - pending.sent_at >= pending.rto
+               for pending in self.flow._in_flight.values()):
+            if self._repair_fill_active:
+                self.counts['selective_repair_fill_timeout_hold'] += 1
+                self._hold_repair_reverse_turn()
+            return
+        self._scalar_fill_extra = True
+        try:
+            with phase(self.host_timing, Phase.FLOW_PUMP):
+                self.flow.pump(self.link.now, max_frames=1, drain=False)
+        finally:
+            self._scalar_fill_extra = False
+        if self.counts['tx_QUEUED'] == queued_before + 2:
+            self.counts['scalar_fill_pair_extra'] += 1
+
     @timed(Phase.FLOW_STEP)
     def step(self):
+        queued_before, fresh_before, fast_before_step = ((self.counts['tx_QUEUED'],
+            self.flow._next_seq, self.flow.fast_retransmits) if self._scalar_fill_pair else (None, None, None))
         require(self.dispatch_budget_failure is None, 'bench_own_airtime_budget_exhausted')
         require(not self.closed and self.authority.live(), 'bench_authority_not_live')
         self._poll_physical()
@@ -732,6 +793,7 @@ class BenchFlow:
                 self.link.dispatch_queued()
             if self.data_burst and self.flow.fast_retransmits > fast_before:
                 self._hold_fast_retry_turn()
+                self._pump_scalar_fill_pair(queued_before, fresh_before, fast_before_step)
                 self._check_flow()
                 return self._completion_ready()
             if self.clock()[1] < self.next_send_us:
@@ -752,10 +814,12 @@ class BenchFlow:
                 if self.flow.retry_selective_gap(self.link.now, terminal=self._selective_terminal_retry):
                     if self.flow.fast_retransmits > fast_before:
                         self._hold_fast_retry_turn()
+                        self._pump_scalar_fill_pair(queued_before, fresh_before, fast_before_step)
                     self._check_flow()
                     return self._completion_ready()
         with phase(self.host_timing, Phase.FLOW_PUMP):
             self.flow.pump(self.link.now, max_frames=1, drain=False)
+        self._pump_scalar_fill_pair(queued_before, fresh_before, fast_before_step)
         # Keep the reviewed adapter's diagnostic history bounded too; no
         # application data is exported from it in the run receipt.
         del self.link.sent[:-64]
@@ -819,6 +883,8 @@ class BenchFlow:
                              'control_rate_us_per_second': self.scheduler.policy.control_rate_us_per_second},
             'attempt_journal': self.journal.snapshot(), 'events': list(self.events),
             'scheduler': self.scheduler.snapshot()}
+        if self._scalar_fill_pair:
+            value['timing_policy']['scalar_fill_pair'] = True
         if self.dispatch_budget_failure is not None:
             value['dispatch_budget_failure'] = self.dispatch_budget_failure
         if self.data_burst:

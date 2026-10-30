@@ -62,5 +62,12 @@ GitHub renders the Mermaid blocks in the Markdown. Every figure also links to an
 
 
 [Throughput pipeline work](THROUGHPUT_PIPELINE.md) records the existing verified
-piece behavior, bounded host wakeups, dormant MCU batch prototype, above
-2.8 kB/s acceptance target and 3 kB/s stretch qualification work.
+piece behavior, bounded host wakeups and dormant MCU batch prototype. The
+active goal is at least 3,000 useful file bytes/s including startup, with an
+above-2,800 B/s checkpoint. The [SPI8 sample](../benchmarks/2026-10-30-sf5-spi8-profile/README.md)
+records faster native setup alongside lower file goodput under different losses.
+
+[Bounded scalar fill pair](SCALAR_FILL_PAIR.md) describes the explicit v6 policy
+and its source controls. The [separate physical sample](../benchmarks/2026-10-30-sf5-scalar-fill-pair-profile/README.md)
+verified the same file at 1,222.394221 B/s on unchanged SPI8 firmware and boots;
+differing loss patterns prevent an isolated policy comparison.
