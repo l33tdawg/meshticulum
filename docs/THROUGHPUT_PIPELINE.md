@@ -12,7 +12,11 @@ useful bytes at 1,053.284286 B/s in 22.690930 seconds, with 10 DATA retries.
 The different loss patterns prevent an isolated causal gain estimate. A
 [subsequent logical-window32 sample](../benchmarks/2026-10-30-sf5-window32-profile/README.md)
 verified the same useful bytes at 1,276.917174 B/s in 18.716954 seconds, with
-the physical train still eight. This also misses the target.
+the physical train still eight. The [selective-repair fill sample](../benchmarks/2026-10-30-sf5-repair-fill-profile/README.md)
+completed in 19.537686 seconds including startup, or 1,223.276902 useful B/s,
+with 13 DATA retries and nine repair-fill turns. Its loss pattern differed from
+the earlier samples; this is not an isolated causal performance comparison.
+All four samples miss the target.
 
 ## Existing piece and recovery behavior
 
@@ -126,6 +130,21 @@ its existing RTO while actual timeout retries retain backoff. Its two independen
 reviews passed. Its matched hardware sample spent 14.125908 seconds without
 physical DATA outstanding; native setup still averaged about 4.060 ms. The
 remaining recovery stalls require further work.
+
+The subsequent window32 sample reduced the interval without host-observed DATA
+outstanding to 9.707643 seconds. The repair-fill sample recorded 10.379994 seconds
+on that boundary, including two late gaps of 2.244117 and 4.366965 seconds
+(6.611082 seconds total). Its nine selective repairs each shared a group with
+seven new DATA frames, but remaining tail holes still waited for recovery.
+The late waits are consistent with the source timeout policy; the trace did
+not log the exact internal retry due times. Receive-drop counts do not identify
+the cause of a missing packet. Host terminal delivery follows the worker's
+normal release flush, so these envelope measurements are not RF airtime.
+
+Next source work examines terminal recovery and release/host costs while keeping
+canonical ACK evidence, one selective offer per flight, paid attempts and
+original finite deadlines. A source model or a faster isolated number cannot
+qualify the 3,000 useful B/s goal.
 
 Further physical comparisons must use equal useful workloads, exact installed
 source/firmware correspondence and original finite budgets. Retain failed runs
