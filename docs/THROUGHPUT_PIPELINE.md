@@ -115,7 +115,9 @@ DATA outstanding. Native ISSUED→STARTED averaged about 4.038 ms per DATA frame
 TX_DONE→RX-return averaged about 1.349 ms. These software-boundary measurements
 are inclusive where documented and cannot be added as disjoint costs. Three
 lost selective repairs fell back to roughly 4.7-second waits. A focused retry
-review is addressing that timeout behavior before the next performance trial.
+review produced [flow revision 11](FLOW_R11_REVIEW.md): selective repair keeps
+its existing RTO while actual timeout retries retain backoff. Its two independent
+reviews passed; physical performance of that revision remains pending.
 
 The next physical comparison must use equal useful workloads, exact installed
 source/firmware correspondence and original finite budgets. Retain failed runs
@@ -125,3 +127,5 @@ counters or qualifies a release artifact.
 The eight-frame and native-profile candidate passed **3,453 tests, 37 skips
 and 49 subtests** locally, with green Python 3.11–3.13 and crypto-prototype CI.
 Source tests and the single hardware sample retain their separate scopes.
+The subsequent reviewed retry revision passed 3,462 tests, 37 skips and 49
+subtests; its independent controls distinguish the previous backoff behavior.
