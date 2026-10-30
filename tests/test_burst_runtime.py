@@ -13,7 +13,7 @@ import pytest
 from meshticulum.bench.admission import RadioAdmission
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import RunAuthority
-from meshticulum.bench.burst_protocol import ACK, POLICY, policy_for_depth
+from meshticulum.bench.burst_protocol import ACK, POLICY, policy_for_depth, policy_for_flow_window
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.serial_protocol import Decoder, Frame, Message
@@ -85,7 +85,7 @@ class RadioChannel(Channel):
 @pytest.fixture
 def composition(tmp_path):
     opened = []
-    def make(data=b'x' * 100, *, burst=True, train_depth=4):
+    def make(data=b'x' * 100, *, burst=True, train_depth=4, flow_window=None):
         clock = Clock()
         directory = tmp_path / str(len(opened))
         directory.mkdir(mode=0o700)
@@ -104,7 +104,8 @@ def composition(tmp_path):
             path = directory / unit
             plan = provision(path, unit, data, clock, profile)
             if burst:
-                plan['data_burst'] = policy_for_depth(train_depth)
+                plan['data_burst'] = (policy_for_depth(train_depth) if flow_window is None
+                                      else policy_for_flow_window(flow_window))
                 (path / 'grant.json').write_text(json.dumps(plan))
         for index, unit in enumerate(('unit-a', 'unit-b')):
             path = directory / unit

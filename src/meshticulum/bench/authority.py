@@ -28,7 +28,8 @@ from ..scheduler.scheduler import DispatchGrant, LeaseScope
 from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
 from .burst_protocol import (CLOCK_MARGIN_US, INTER_PACKET_RX_US, MAX_CLOCK_RTT_US,
-                             REVERSE_LISTEN_US, validate_policy, policy_depth)
+                             REVERSE_LISTEN_US, validate_policy, policy_depth,
+                             policy_flow_window)
 from .tx_burst import MAX_AUTONOMOUS_HOLD_US, MAX_DEPTH, START_GUARD_US
 from .admission import RadioAdmission,GfskAdmission,Gfsk250Admission
 from .gfsk_profile import GfskProfile,radio_airtime_us,radio_is_fast,radio_is_sf5
@@ -306,8 +307,8 @@ class RunAuthority:
                                     self.deadline_us / 1000000,
                                     self.grant.expires_epoch_us / 1000000)
         maximum = object_limit(self.plan.get('service',{}))
-        depth = policy_depth(self.plan['data_burst']) if 'data_burst' in self.plan else 4
-        limits = CapabilityLimits(208, 208 * depth, maximum, 0, depth, maximum, 4, 1, 1,
+        window = policy_flow_window(self.plan['data_burst']) if 'data_burst' in self.plan else 4
+        limits = CapabilityLimits(208, 208 * window, maximum, 0, window, maximum, 4, 1, 1,
                                   256 if self.public32 and self.service_format == 'MR1.response' else 128, 32)
         private = self.service_kind is ServiceKind.MESSAGE
         feature = Feature.PROTECTED_MESSAGE_V2 if private else Feature.OBJECT_RESUME

@@ -27,7 +27,7 @@ from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .public_block import object_limit
-from .burst_protocol import policy_depth
+from .burst_protocol import policy_depth, policy_flow_window
 
 
 def _flow_modules():
@@ -102,12 +102,22 @@ class BenchFlow:
         # overhead from the actual MT3 wire encoder, not older adapter prose:
         # the reviewed encoding uses fifteen bytes, leaving 193 useful bytes.
         selected_depth = policy_depth(policy) if policy is not None else 4
+        selected_window = policy_flow_window(policy) if policy is not None else 4
         require(selected_depth == 4 or radio_is_sf5(authority.profile),
                 'burst_eight_requires_sf5')
-        window = min(selected_depth, limits.window_bytes // limits.max_payload_bytes,
+        if selected_window != selected_depth:
+            # The wider logical window is an exact original admission, never
+            # an inferred upgrade or a silent clamp of a smaller contract.
+            require(contract is authority.contract and limits.max_payload_bytes == 208
+                    and limits.window_bytes == 208 * selected_window
+                    and limits.max_reassembly_frames == selected_window,
+                    'burst_flow_window_contract_mismatch')
+        window = min(selected_window, limits.window_bytes // limits.max_payload_bytes,
                      limits.max_reassembly_frames)
         require(window >= 1, 'bench_window_too_small')
-        self.burst_frames = window if radio_is_fast(authority.profile) else 1
+        # Logical credit/reordering may span several physical trains. ACK
+        # coalescing and each reverse turn retain the admitted native depth.
+        self.burst_frames = min(selected_depth, window) if radio_is_fast(authority.profile) else 1
         fast_sf5 = radio_is_sf5(authority.profile)
         self._sf5_ack_recovery_eligible = not sends and policy is not None and fast_sf5
         self.burst_quiet_us = math.ceil(profile.forward_seconds * 1000000) + 60000
@@ -756,6 +766,7 @@ class BenchFlow:
             'acked_frames': self.flow.acked_frames(), 'duplicates': self.flow.duplicates,
             'startup_pending': self.flow.startup_pending, 'rto_seconds': self.flow.rto,
             'timing_policy': {'receive_gap_us': self.receive_gap_us,
+                             'flow_window_frames': self.flow.limits.window_frames,
                              'burst_frames': self.burst_frames, 'burst_quiet_us': self.burst_quiet_us,
                              'burst_max_hold_us': self.burst_max_hold_us,
                              'sender_control_hold_us': self.sender_control_hold_us,

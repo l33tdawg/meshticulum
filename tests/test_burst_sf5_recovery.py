@@ -22,7 +22,7 @@ from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.burst_protocol import (
     ACK, CAPABILITY, CANCEL, CLOCK, DATA, EVENT, OPEN, POLICY, STATUS, TOKEN,
-    INTER_PACKET_RX_US, REVERSE_LISTEN_US, CAPABILITY8, policy_for_depth,
+    INTER_PACKET_RX_US, REVERSE_LISTEN_US, CAPABILITY8, policy_for_depth, policy_for_flow_window,
 )
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.flow_runtime import BenchFlow
@@ -372,7 +372,8 @@ class RadioChannel:
 
 def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
              receipt_confirmation=False, host_work_us=(0, 0), host_pump=False,
-             train_depth=4, sender_cap=20, drop_ack_seqs=None, payload=PAYLOAD):
+             train_depth=4, sender_cap=20, drop_ack_seqs=None, payload=PAYLOAD,
+             flow_window=None, service=None, operation_limits=None, observe=None):
     timeline = Timeline()
     air = Air(timeline, drop_data=drop_data, drop_final_ack=drop_final_ack,
               drop_ack_seqs=drop_ack_seqs, payload=payload)
@@ -381,7 +382,12 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
     tmp_path.mkdir(mode=0o700, parents=True, exist_ok=True)
     for unit in ('unit-a', 'unit-b'):
         plan = provision(tmp_path / unit, unit, payload, timeline.clock, PROFILE)
-        plan['data_burst'] = policy_for_depth(train_depth)
+        plan['data_burst'] = (policy_for_depth(train_depth) if flow_window is None
+                              else policy_for_flow_window(flow_window))
+        if service is not None:
+            plan.update(schema='meshticulum.service-run.v1', service=dict(service))
+        if operation_limits is not None:
+            plan['operation_limits'] = operation_limits
         (tmp_path / unit / 'grant.json').write_text(json.dumps(plan))
 
     def host(index):
@@ -398,7 +404,9 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
             identity = worker.discover(expected_board_id=1, expected_version=VERSION)
             journal = AttemptJournal(path / 'attempts.db', create=True,
                 binding=journal_binding(authority.grant.digest, identity, PROFILE),
-                max_attempts=sender_cap if index == 0 else receiver_cap, max_airtime_us=60_000_000,
+                max_attempts=sender_cap if index == 0 else receiver_cap,
+                max_airtime_us=(60_000_000 if operation_limits is None
+                               else authority.operation_limits.estimated_airtime_us),
                 request_clock=lambda: timeline.clock()[0])
             opened.append(journal.close)
             worker.arm(journal=journal, profile=PROFILE, context_digest=authority.grant.digest,
@@ -440,6 +448,8 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
                 if timeline.stop_flows:
                     return True
                 complete = endpoint.step()
+                if observe is not None:
+                    observe(index, endpoint, timeline.now)
                 if complete:
                     if index == 0:
                         if receipt_confirmation:
