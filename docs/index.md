@@ -72,6 +72,13 @@ and its source controls. The [separate physical sample](../benchmarks/2026-10-30
 verified the same file at 1,222.394221 B/s on unchanged SPI8 firmware and boots;
 differing loss patterns prevent an isolated policy comparison.
 
+The [header-preservation physical sample](../benchmarks/2026-10-30-sf5-header-preserve-profile/README.md)
+then verified the same file at 1,690.381876 B/s with the same v6 host runtime and
+8 MHz SPI, after a genuine firmware upgrade. Different loss and boots prevent
+an isolated causal comparison. Its diagnostic header-only category does not
+prove an actual RX restart or packet drop. All eight samples remain below the
+throughput goal.
+
 [Repeat selective repair](FLOW_R13_REPEAT_RETRY_REVIEW.md) records the accepted
 R13/v7 source revision and its fresh-proof requirements. It has no physical
 qualification result.
