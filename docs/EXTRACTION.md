@@ -22,7 +22,7 @@ Lantern also owns the Python [firmware/runtime build and deployment tools](https
 
 The accepted flow and port include the independently reviewed 30 October repeat selective-retry revision described in its [revision record](../src/meshticulum/flow/README.md#revision-13-fresh-proof-after-accepted-retry-30-october-2026). The default-off option admits fresh proof after a confirmed retry handover and preserves the existing v1–v6 behavior. Current source pins:
 
-- `flow.py`: `963c2a3b4fdd8292d8a473da67dd7eaeee735f27ab4bd77f18702583cd2e1a9e`
+- `flow.py`: `12dc626a9e1e5cc2120d2e59f1b857164cd74c4f59c89dec64c1637fe22b1e65`
 - `flow_port.py`: `ea29289b960ca895f54ccb46669b476a50bae79ab9a6b4060342da8c5cfacf07`
 
 The frozen port retains its relative `meshticulum_contracts` and `meshticulum_scheduler` imports. Small bridge packages alias their child modules to canonical packages and preserve the actual class objects used by scheduler/lease checks. `bench.flow_runtime` imports canonical `meshticulum.flow`; it does not load a duplicate flow implementation from Lantern.
