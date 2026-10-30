@@ -27,7 +27,7 @@ from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .public_block import object_limit
-from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill
+from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry
 
 
 def _flow_modules():
@@ -69,6 +69,7 @@ class BenchFlow:
         policy = getattr(authority, 'data_burst_policy', None)
         self.data_burst = sends and policy is not None
         self._selective_repair_fill = (self.data_burst and policy_repair_fill(policy))
+        self._selective_terminal_retry = (self.data_burst and policy_terminal_retry(policy))
         self._repair_fill_active = False
         self._physical_data, self._pending_data_domains = {}, {}
         if self.data_burst:
@@ -206,7 +207,8 @@ class BenchFlow:
                 # to reach first DATA. Keep startup failure bounded at eight
                 # seconds instead of losing a valid transfer to host startup.
                 max_persist_acks=16,
-                selective_fast_retry=self.data_burst and fast_sf5),
+                selective_fast_retry=self.data_burst and fast_sf5,
+                selective_terminal_retry=self._selective_terminal_retry),
             flow_id=flow_key.flow_id, generation=1, sends=sends, receive=not sends,
             startup=None)
         self.sender_control_hold_us = (max(self.burst_quiet_us,
@@ -736,7 +738,7 @@ class BenchFlow:
                 self.owner.settle_sending()
             elif (self.data_burst and self.receipt_confirmation_enabled
                     and not self._repair_fill_active
-                    and self.flow.selective_retry_ready()
+                    and self.flow.selective_retry_ready(terminal=self._selective_terminal_retry)
                     and not self._physical_data and not self.worker.pending_physical):
                 # Peer SACK is logical evidence, never local physical drain.
                 # Verify release/STATUS before offering one early retransmit;
@@ -747,7 +749,7 @@ class BenchFlow:
                 now_us = self.clock()[1]
                 self.link.now = now_us / 1000000
                 fast_before = self.flow.fast_retransmits
-                if self.flow.retry_selective_gap(self.link.now):
+                if self.flow.retry_selective_gap(self.link.now, terminal=self._selective_terminal_retry):
                     if self.flow.fast_retransmits > fast_before:
                         self._hold_fast_retry_turn()
                     self._check_flow()
@@ -804,6 +806,7 @@ class BenchFlow:
             'timing_policy': {'receive_gap_us': self.receive_gap_us,
                              'flow_window_frames': self.flow.limits.window_frames,
                              'selective_repair_fill': self._selective_repair_fill,
+                             'selective_terminal_retry': self._selective_terminal_retry,
                              'burst_frames': self.burst_frames, 'burst_quiet_us': self.burst_quiet_us,
                              'burst_max_hold_us': self.burst_max_hold_us,
                              'sender_control_hold_us': self.sender_control_hold_us,

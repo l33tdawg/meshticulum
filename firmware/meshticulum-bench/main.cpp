@@ -128,9 +128,10 @@ static bool drainCompletedReceive(bool rearm,bool alreadyStandby=false) {
             put16(received.body,uint16_t(int16_t((gfskMode ? radio.getRSSI(true) : radio.getRSSI())*10)));
             if(!gfskMode) put16(received.body+2,uint16_t(int16_t(radio.getSNR()*10)));
             received.size=length+(gfskMode ? 2 : 4);
-            if(!output.offer(received)) droppedRx++;
-        } else droppedRx++;
-    } else droppedRx++;
+            if(!output.offer(received)) { droppedRx++;MT_RX_COUNT(OutputOfferFailed); }
+            else { MT_RX_COUNT(RxExported); }
+        } else { droppedRx++;MT_RX_READ_FAILURE(error,flags); }
+    } else { droppedRx++;MT_RX_LENGTH_OR_RESERVE(length); }
     if(rearm) startReceive();
     return armed && !fenced;
 }
@@ -192,7 +193,8 @@ static void command(const Frame& frame) {
 #if MTBENCH_NATIVE_PROFILE
     if(frame.type==NATIVE_PROFILE) {
         const bool memory=frame.size==1 && frame.body[0]==0xfe;
-        if(frame.size>1 || (frame.size==1 && !memory && frame.body[0]>=mtbench::profiling::PHASES)) {
+        const bool rxReasons=frame.size==1 && frame.body[0]==0xfd;
+        if(frame.size>1 || (frame.size==1 && !memory && !rxReasons && frame.body[0]>=mtbench::profiling::PHASES)) {
             refuse(frame,BAD_COMMAND);return;
         }
         // Read-only boot snapshot: never poll, disarm, release, reset or pay.
@@ -203,7 +205,8 @@ static void command(const Frame& frame) {
             refuse(frame,mtbench::BUSY);return;
         }
         auto reply=response(NATIVE_PROFILE_REPLY,frame.request);
-        if(memory) {
+        if(rxReasons) reply.size=nativeProfile.rx.encode(reply.body);
+        else if(memory) {
             if(radioServiceTask==nullptr) { refuse(frame,mtbench::BUSY);return; }
             // Query-only heap walk/stack scan, after all RF work is closed.
             // The region minima need not have occurred simultaneously.
@@ -318,7 +321,7 @@ static void command(const Frame& frame) {
         if(error==RADIOLIB_ERR_NONE && (flags & RADIOLIB_SX126X_IRQ_RX_DONE)
             && !drainCompletedReceive(false,true)) { contain(flags,-1); return; }
         if(error==RADIOLIB_ERR_NONE && (flags & (gfskMode ? RADIOLIB_SX126X_IRQ_SYNC_WORD_VALID : RADIOLIB_SX126X_IRQ_HEADER_VALID))
-            && !(flags & RADIOLIB_SX126X_IRQ_RX_DONE)) droppedRx++;
+            && !(flags & RADIOLIB_SX126X_IRQ_RX_DONE)) { droppedRx++;MT_RX_COUNT(SyncTxHeaderPreempted); }
     }
     if(error==RADIOLIB_ERR_NONE) error=radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
     if(error!=RADIOLIB_ERR_NONE) { contain(0,error); return; }
@@ -386,6 +389,7 @@ static void serviceRadio() {
         }
         if(flags & RADIOLIB_SX126X_IRQ_RX_DONE) {
             if(burstQueue && output.freeSlots()<=2) {
+                MT_RX_COUNT(BackpressureDeferVisits);
                 // Preserve the completed shared FIFO while USB is blocked;
                 // continuous RX must not overwrite evidence awaiting space.
                 if(radio.standby()!=RADIOLIB_ERR_NONE) { armed=false;fenced=true;idleRadio(); }
@@ -400,6 +404,7 @@ static void serviceRadio() {
             // interrupt a new valid header merely because an older error
             // remains set. RX_DONE still passes through RadioLib's CRC check.
             if(flags & (RADIOLIB_SX126X_IRQ_CRC_ERR|RADIOLIB_SX126X_IRQ_HEADER_ERR)) droppedRx++;
+            MT_RX_RESTART(flags);
             startReceive(); // checked standby/IRQ-clear/RX launch, same lease
         }
     }

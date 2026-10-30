@@ -43,6 +43,67 @@ def memory_query(*, boot, request):
     return Frame(Message.NATIVE_PROFILE, boot, request, b'\xfe')
 
 
+class NativeRxReason(IntEnum):
+    READ_PAYLOAD_CRC = 0
+    READ_HEADER = 1
+    READ_BOTH = 2
+    READ_INTEGRITY_UNATTRIBUTED = 3
+    READ_TIMEOUT = 4
+    READ_OTHER_ERROR = 5
+    INVALID_REPORTED_LENGTH = 6
+    OUTPUT_RESERVE_LOW = 7
+    OUTPUT_OFFER_FAILED = 8
+    SYNC_TX_HEADER_PREEMPTED = 9
+    IRQ_RESTART_CRC_ONLY = 10
+    IRQ_RESTART_HEADER_ONLY = 11
+    IRQ_RESTART_BOTH = 12
+    QUEUED_HEADER_STALL = 13
+    RX_EXPORTED = 14
+    TIMEOUT_ONLY_RESTART = 15
+    BACKPRESSURE_DEFER_VISITS = 16
+
+
+def rx_reasons_query(*, boot, request):
+    require(type(request) is int and request > 0, 'invalid_native_profile_request')
+    return Frame(Message.NATIVE_PROFILE, boot, request, b'\xfd')
+
+
+@dataclass(frozen=True, slots=True)
+class NativeRxReasons:
+    """Boot-cumulative software observations; not authenticated packet loss.
+
+    The first fourteen counters partition the firmware's existing drop sites.
+    Backpressure counts loop visits, not packets. Saturation makes totals lower
+    bounds; no subtraction across MCU boots or saturated observations is valid.
+    """
+    counts: tuple[int, ...]
+    saturated_mask: int
+
+    @classmethod
+    def from_frame(cls, frame, *, boot, request):
+        require(type(frame) is Frame and frame.type is Message.NATIVE_PROFILE_REPLY
+                and type(boot) is bytes and len(boot) == 16 and frame.boot == boot
+                and type(request) is int and request > 0 and frame.request == request,
+                'wrong_native_rx_reasons_reply')
+        require(len(frame.body) == 80 and frame.body[:8] == b'MNR1\x01\x11\x04\x01',
+                'invalid_native_rx_reasons_schema')
+        mask, *counts = struct.unpack('!18I', frame.body[8:])
+        require(mask >> len(NativeRxReason) == 0
+                and all(not (mask & (1 << index)) or count == 2**32 - 1
+                        for index, count in enumerate(counts)),
+                'invalid_native_rx_reasons_saturation')
+        return cls(tuple(counts), mask)
+
+    @property
+    def exact(self):
+        return self.saturated_mask == 0
+
+    @property
+    def dropped_total(self):
+        """Sum of drop-site counters; a lower bound if any such counter saturated."""
+        return sum(self.counts[:14])
+
+
 @dataclass(frozen=True, slots=True)
 class NativeMemorySnapshot:
     internal_free_bytes: int

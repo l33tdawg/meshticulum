@@ -292,7 +292,7 @@ static void burstService(bool dispatch) {
         // hardware timeout. Wait a maximum-size admitted frame plus guard,
         // then restart checked RX; an actual RX_DONE always takes priority.
         if(nowUs()-burstHeaderSeenUs>radio.getTimeOnAir(255)+100000) {
-            droppedRx++;burstHeaderSeenUs=0;startReceive();
+            droppedRx++;MT_RX_COUNT(QueuedHeaderStall);burstHeaderSeenUs=0;startReceive();
         }
         return;
     }

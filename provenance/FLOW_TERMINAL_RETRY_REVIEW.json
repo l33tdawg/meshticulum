@@ -1,0 +1,44 @@
+{
+  "schema": "meshticulum.flow-revision-review.v1",
+  "revision": 12,
+  "date": "2026-10-30",
+  "status": "explicitly-accepted-source-revision",
+  "scope": "Default-off terminal-only selective retry after genuine FINAL handover and canonical peer FINAL receipt",
+  "previous_flow_sha256": "e3aedfa63f844dd237b13f8a592d691de65eafeca8ed802e889d2bfe4659eae4",
+  "accepted_source_sha256": {
+    "src/meshticulum/flow/flow.py": "7031ac5c9a02f9d183c4be1997cfd6a0cdb9132b6a907d0ba20cb61c8e2af6b7",
+    "src/meshticulum/flow/flow_port.py": "57596421d916f0c49d61599653b5ab75154d64e5bc806ba1444fa5905ad025ca",
+    "src/meshticulum/bench/flow_runtime.py": "90298d38767078169e60c58d33729f3f002b5991d6b62b244c3a61f7f82084e4",
+    "src/meshticulum/bench/burst_protocol.py": "7ddd589c7730b6d81589333815506992b8746dec8e363aab3c8d62fceea4d030"
+  },
+  "author": "profile_design",
+  "independent_reviews": [
+    {"reviewer": "root", "exact_source_approved": true, "focused_tests_passed": 170},
+    {"reviewer": "meshticulum_checkpoint", "exact_source_approved": true, "focused_tests_passed": 125}
+  ],
+  "author_validation": {
+    "focused_tests_passed": 233,
+    "full_suite_passed": 3639,
+    "full_suite_skipped": 37,
+    "full_suite_subtests_passed": 49,
+    "paired_source_model_arms": 18,
+    "paired_source_model_all_complete": true,
+    "paired_source_model_collisions": 0
+  },
+  "preserved": [
+    "Default no-argument selective API and bulk threshold of three distinct later receipts",
+    "One early offer per logical flight, consumed before refusal or defer and by ordinary timeout offers",
+    "Canonical receipt/owner acceptance and exact peer incarnation",
+    "R11 selective RTO preservation and ordinary timeout backoff",
+    "Original deadlines, retry/attempt ceilings, nonce uniqueness and irreversible attempt/airtime debt",
+    "Existing released/drained physical checks and receiver/native pacing",
+    "Frozen flow_port bytes and all historical source/firmware provenance"
+  ],
+  "hardware_qualification": false,
+  "throughput_claim": false,
+  "limitations": [
+    "No physical experiment is authorized by this record.",
+    "Source loss predicates are not a replay of radio timing or a cause attribution.",
+    "Missing FINAL or zero later evidence does not qualify for the lower threshold."
+  ]
+}

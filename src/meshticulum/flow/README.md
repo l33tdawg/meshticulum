@@ -14,6 +14,37 @@ bytes this one replaces are held in
 revision 8 bytes this one repairs are held in
 `work/rook-meshticulum-r8e-review-20261006/candidate/`.
 
+## Revision 12: terminal selective retry, 30 October 2026
+
+The owner explicitly accepted this source revision after independent root and
+`meshticulum_checkpoint` reviews of `flow.py` SHA-256
+`7031ac5c9a02f9d183c4be1997cfd6a0cdb9132b6a907d0ba20cb61c8e2af6b7`.
+The unchanged `flow_port.py` retains SHA-256
+`57596421d916f0c49d61599653b5ab75154d64e5bc806ba1444fa5905ad025ca`.
+These are the current verifier pins. All earlier hashes below remain historical.
+
+The separately admitted `FlowLimits.selective_terminal_retry` defaults to false
+and requires selective fast retry. Only an explicit `terminal=True` call can
+use one later SACK receipt, and only after actual original FINAL handover,
+empty outbound DATA and canonical owner-accepted peer receipt of that FINAL.
+No-argument calls and bulk recovery still require three distinct later receipts.
+Missing FINAL or no later evidence retains the prior recovery path.
+
+The one-offer marker, ordinary-timeout consumption, R11 timer/backoff behavior,
+attempt ceiling, deferred settlement, original LAST flag, credit and debt are
+unchanged. The admitted v5 bench adapter retains live-authority and exact
+physical-release/drained-STATUS checks before the offer. No wire, port, native
+firmware, pacing or receive-turn change is part of this flow revision.
+
+The author passed 233 focused tests and the full 3,639-test suite with 37 skips
+and 49 passing subtests. The root reviewer independently passed 170 focused
+tests; `meshticulum_checkpoint` independently passed 125. The 18-arm source
+comparison preserves clean and missing-FINAL behavior and completes its tail
+loss controls without modeled collisions. None of these results is RF
+qualification or a measured throughput claim. See the
+[terminal policy](../../../docs/TERMINAL_RETRY.md) and
+[acceptance record](../../../provenance/FLOW_TERMINAL_RETRY_REVIEW.json).
+
 ## Revision 11: selective repair backoff, 30 October 2026
 
 The owner explicitly accepted this source revision after two independent
@@ -21,7 +52,7 @@ reviews of `flow.py` SHA-256
 `e3aedfa63f844dd237b13f8a592d691de65eafeca8ed802e889d2bfe4659eae4`.
 The unchanged `flow_port.py` retains SHA-256
 `57596421d916f0c49d61599653b5ab75154d64e5bc806ba1444fa5905ad025ca`.
-These are the current accepted verifier pins. The prior R10 bytes and its
+These were the accepted R11 verifier pins. The prior R10 bytes and its
 physical evidence remain separate historical records.
 
 R11 distinguishes an evidence-triggered selective repair from an expired
