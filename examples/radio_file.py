@@ -15,6 +15,7 @@ import re
 import secrets
 import stat
 import struct
+import threading
 import time
 
 from meshticulum.bench.admission import Gfsk250Admission, RadioAdmission
@@ -441,19 +442,134 @@ def transfer_chunk(args):
             authority, worker, journal, cipher, descriptor, cache, clock=clock))
 
 
-def run_object(args, raw, admission, version, payload, window, factory):
+class FileHardware:
+    """Keep OS ownership for one file; every part still uses a fresh grant.
+
+    This holds no worker, ARM, cipher or journal across parts. A failed part or
+    failed cleanup permanently prevents another loan from this owner.
+    """
+    _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
+    _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
+               'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
+               'file_issued_epoch_us', 'file_expires_epoch_us')
+
+    @classmethod
+    def _binding(cls, args):
+        return tuple(None if getattr(args, key, None) is None else
+                     str(Path(getattr(args, key)).absolute()) for key in cls._paths) + tuple(
+                         getattr(args, key, None) for key in cls._values)
+
+    def __init__(self, args):
+        require(args.interface in ('usb', 'hat'), 'example_unknown_interface')
+        self.binding = self._binding(args)
+        self.pid, self.thread, self.boot = os.getpid(), threading.get_ident(), host_boot()
+        self.closed = self.active = self.poisoned = False
+        self.window_raw = None
+        self.options = (args.interface, args.device, getattr(args, 'usb_serial', None))
+        self.transport = self.owner = None
+
+    def _open(self):
+        interface, device, serial = self.options
+        self.transport = (LinuxHAT() if interface == 'hat' else
+                          ExclusiveSerial(device, usb_serial=serial))
+        try:
+            self.owner = HeldHardware(self.transport,
+                by_id=device if interface == 'usb' else None, usb_serial=serial)
+        except BaseException as error:
+            self.closed = True
+            try:
+                self.transport.close()
+            except BaseException as cleanup:
+                raise BaseExceptionGroup('File owner setup and cleanup failed', [error, cleanup]) from None
+            raise
+
+    def _check_context(self):
+        # A changed boot prevents another loan, but must not prevent this
+        # process/thread from closing its descriptors after a failed check.
+        require((self.pid, self.thread) == (os.getpid(), threading.get_ident()),
+                'example_file_hardware_binding_changed')
+
+    def borrow(self, args, window, timing):
+        self._check_context()
+        require(not self.closed and not self.poisoned and not self.active,
+                'example_file_hardware_not_available')
+        require(self.boot == host_boot() and self.binding == self._binding(args),
+                'example_file_hardware_binding_changed')
+        window.check()
+        require(type(window.raw) is bytes, 'example_original_file_window_changed')
+        if self.transport is None:
+            self._open()
+        require(self.owner.current(),
+                'example_file_hardware_owner_changed')
+        if self.window_raw is None:
+            self.window_raw = window.raw
+        require(self.window_raw == window.raw, 'example_original_file_window_changed')
+        self.transport.host_timing = timing
+        self.active = True
+        return self.transport, self.owner
+
+    def release(self, success):
+        self._check_context()
+        require(self.active and type(success) is bool, 'example_file_hardware_not_borrowed')
+        self.active = False
+        self.poisoned = self.poisoned or not success
+        self.transport.host_timing = None
+
+    def poison(self):
+        """Stop reuse after a surrounding verification/publication failure."""
+        self._check_context()
+        self.poisoned = True
+
+    def close(self):
+        self._check_context()
+        if self.closed:
+            return
+        require(not self.active, 'example_file_hardware_still_borrowed')
+        self.closed = True
+        errors = []
+        for close in ([self.owner.close] if self.owner is not None else []) + (
+                [self.transport.close] if self.transport is not None else []):
+            try:
+                close()
+            except BaseException as error:
+                errors.append(error)
+        if errors:
+            raise BaseExceptionGroup('File hardware cleanup failed', errors)
+
+    def __enter__(self):
+        self._check_context()
+        require(not self.closed and not self.poisoned, 'example_file_hardware_not_available')
+        return self
+
+    def __exit__(self, kind, error, trace):
+        try:
+            self.close()
+        except BaseException as cleanup:
+            if error is not None:
+                raise BaseExceptionGroup('File transfer and hardware cleanup failed', [error, cleanup]) from None
+            raise
+
+
+def run_object(args, raw, admission, version, payload, window, factory, *, hardware=None):
     plan = json.loads(raw)
     admitted_limits = OperationLimits.from_plan(plan)
     limits = operation_journal_limits(args, admitted_limits)
     timing = HostPhaseTimings() if getattr(args, 'profile_host', False) else None
     timing_kw = {} if timing is None else dict(host_timing=timing)
-    transport = (LinuxHAT() if args.interface == 'hat' else
-                 ExclusiveSerial(args.device, usb_serial=args.usb_serial, **timing_kw))
-    cleanup, errors, result = [transport.close], [], None
+    if hardware is None:
+        transport = (LinuxHAT() if args.interface == 'hat' else
+                     ExclusiveSerial(args.device, usb_serial=args.usb_serial, **timing_kw))
+        owner, cleanup = None, [transport.close]
+    else:
+        require(type(hardware) is FileHardware, 'example_requires_file_hardware')
+        transport, owner = hardware.borrow(args, window, timing)
+        cleanup = []
+    errors, result = [], None
     try:
-        owner = HeldHardware(transport, by_id=args.device if args.interface == 'usb' else None,
-                             usb_serial=args.usb_serial)
-        cleanup.append(owner.close)
+        if hardware is None:
+            owner = HeldHardware(transport, by_id=args.device if args.interface == 'usb' else None,
+                                 usb_serial=args.usb_serial)
+            cleanup.append(owner.close)
         authority = RunAuthority(args.grant_directory, expected_unit=args.unit,
             host_boot_id=host_boot(), clock=clock, owner_probe=lambda: owner.current() and window.current(), radio_admission=admission)
         cleanup.append(authority.close)
@@ -515,6 +631,11 @@ def run_object(args, raw, admission, version, payload, window, factory):
         for close in reversed(cleanup):
             try:
                 close()
+            except BaseException as error:
+                errors.append(error)
+        if hardware is not None:
+            try:
+                hardware.release(not errors)
             except BaseException as error:
                 errors.append(error)
     if errors:

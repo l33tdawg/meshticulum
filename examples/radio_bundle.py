@@ -18,6 +18,7 @@ from meshticulum.resources import lamplighter, resource
 import radio_file as base
 
 FILE_WINDOW_HEADROOM_US = 300_000_000
+MAX_BATCH_PARTS = (kp.BUNDLE_BYTES + byte_bundle.PART_BYTES - 1) // byte_bundle.PART_BYTES
 
 
 def max_file_window_us(part_count):
@@ -98,7 +99,8 @@ def load_bundle(args):
 
 def describe_part(args):
     _, _, _, manifest, expected = load_bundle(args)
-    require(0 <= args.part < len(expected['parts']), 'example_bundle_part_index')
+    require(type(args.part) is int and 0 <= args.part < len(expected['parts']),
+            'example_bundle_part_index')
     entry = manifest['chunks'][args.part]
     raw = base.read_file(args.pack / 'chunks' / (entry['sha256'] + '.json'), kp.BUNDLE_CHUNK_BYTES)
     response = response_for(args.manifest_sha256, entry, raw)
@@ -107,10 +109,86 @@ def describe_part(args):
                 service=service_for(entry, response, args.file_expires_epoch_us))
 
 
-def transfer(args):
+def sent_parts(state, count, manifest_sha256, window):
+    """Read exact local peer-receipt markers; these do not authorize a new part."""
+    verified = []
+    for index in range(count):
+        path = state / ('sent-' + str(index) + '.json')
+        if path.exists():
+            require(base.read_file(path, 4096, private=True) == kp.canonical_json(
+                dict(manifest_sha256=manifest_sha256,
+                     file_window_sha256=base.sha(window.raw), part=index)),
+                'example_bundle_local_receipt_changed')
+            verified.append(index)
+    window.check()
+    return tuple(verified)
+
+
+def transfer_batch(part_args):
+    """Run a bounded list of pre-admitted parts in this process, in caller order.
+
+    Each option namespace has the same fields as ``transfer``. All parts share
+    one file/window/device binding, but every part consumes its own pinned grant
+    and creates, drains, disarms and retires fresh worker/journal/cipher state.
+    OS ownership is held across the file, not the ARM or crypto session.
+    A subset is permitted for verified-piece continuation; no missing part is
+    silently skipped and list order need not match manifest order. Yielded
+    ``{'part': index, 'result': ...}`` records follow successful cleanup. Any
+    exception stops iteration before another grant is consumed. The iterator
+    holds hardware between yields: consume it completely or call ``close()``
+    in a ``finally`` block (or use ``contextlib.closing``) when stopping early.
+
+    This function opens no management connection and issues no grants. Existing
+    run_object/factory hooks can observe per-part entry and DATA; later calls are
+    part invocations, not new process-start measurements.
+    """
+    require(type(part_args) in (list, tuple) and 0 < len(part_args) <= MAX_BATCH_PARTS,
+            'example_bundle_batch_bound')
+    parts = tuple(argparse.Namespace(**vars(args)) for args in part_args)
+    first = parts[0]
+    shared = ('pack', 'manifest_sha256', 'trust_root', 'trust_root_sha256', 'state',
+        'file_issued_epoch_us', 'file_expires_epoch_us', 'unit', 'interface', 'device',
+        'usb_serial', 'admission', 'admission_sha256', 'firmware_source',
+        'firmware_source_sha256', 'profile_host', 'confirm_receipt')
+    require(all(all(getattr(args, name, None) == getattr(first, name, None)
+                    for name in shared) for args in parts),
+            'example_bundle_batch_binding_changed')
+    _, _, _, _, expected = load_bundle(first)
+    indexes = tuple(args.part for args in parts)
+    require(all(type(index) is int and 0 <= index < len(expected['parts'])
+                for index in indexes) and len(set(indexes)) == len(indexes),
+            'example_bundle_batch_part_indices')
+    require(len({args.grant_directory for args in parts}) == len(parts),
+            'example_bundle_batch_requires_fresh_grants')
+
+    def run():
+        with base.FileHardware(first) as hardware:
+            for args in parts:
+                yield dict(part=args.part, result=transfer(args, hardware=hardware))
+
+    return run()
+
+
+def transfer(args, *, hardware=None):
+    """Consume one pinned part grant, optionally borrowing held file hardware."""
+    require(hardware is None or type(hardware) is base.FileHardware,
+            'example_requires_file_hardware')
+    try:
+        return _transfer(args, hardware=hardware)
+    except BaseException as error:
+        if hardware is not None:
+            try:
+                hardware.poison()
+            except BaseException as cleanup:
+                raise BaseExceptionGroup('Part transfer and hardware poison failed',
+                                         [error, cleanup]) from None
+        raise
+
+
+def _transfer(args, *, hardware=None):
     raw_manifest, signature, trust, manifest, expected = load_bundle(args)
     count, index = len(expected['parts']), args.part
-    require(0 <= index < count and count * base.ACK_GRACE_US
+    require(type(index) is int and 0 <= index < count and count * base.ACK_GRACE_US
             < args.file_expires_epoch_us - args.file_issued_epoch_us,
             'example_bundle_cannot_fit_original_window')
     entry = manifest['chunks'][index]
@@ -146,47 +224,53 @@ def transfer(args):
         bundle_sha256=expected['sha256'], parts=count),
         args.file_issued_epoch_us, args.file_expires_epoch_us,
         max_window_us=max_file_window_us(count))
-    window.require_capacity(count - index)
     args.chunk = index  # Shared hardware receipt index, not a new transport mode.
     sends = plan['sender_unit'] == args.unit
     if sends:
         require(args.interface in ('hat', 'usb'), 'example_bundle_sender_requires_hat_or_usb')
-        for prior in range(index):
-            require(base.read_file(args.state / ('sent-' + str(prior) + '.json'), 4096, private=True)
-                    == kp.canonical_json(dict(manifest_sha256=args.manifest_sha256,
-                        file_window_sha256=base.sha(window.raw), part=prior)),
-                    'example_bundle_prior_local_receipt_missing')
+        verified = sent_parts(args.state, count, args.manifest_sha256, window)
+        window.require_capacity(max(1, count - len(verified)))
         payload = response_for(args.manifest_sha256, entry, base.read_file(
             args.pack / 'chunks' / (entry['sha256'] + '.json'), kp.BUNDLE_CHUNK_BYTES))
         require((len(payload), base.sha(payload)) == (obj['bytes'], obj['sha256']),
                 'example_bundle_sender_object_mismatch')
+        hardware_kw = {} if hardware is None else dict(hardware=hardware)
         result = base.run_object(args, raw, admission, version, payload, window,
             lambda a, w, j, c: BundleTransfer(a, w, j, c, entry, args.manifest_sha256,
                                             index, None, window, clock=base.clock,
-                                            confirm_receipt=getattr(args, 'confirm_receipt', False)))
+                                            confirm_receipt=getattr(args, 'confirm_receipt', False)),
+            **hardware_kw)
         window.check()
-        base.publish(args.state / ('sent-' + str(index) + '.json'), kp.canonical_json(
-            dict(manifest_sha256=args.manifest_sha256, file_window_sha256=base.sha(window.raw), part=index)))
+        receipt = kp.canonical_json(dict(manifest_sha256=args.manifest_sha256,
+            file_window_sha256=base.sha(window.raw), part=index))
+        receipt_path = args.state / ('sent-' + str(index) + '.json')
+        if index in verified:
+            require(base.read_file(receipt_path, 4096, private=True) == receipt,
+                    'example_bundle_local_receipt_changed')
+        else:
+            base.publish(receipt_path, receipt)
         return result
     require(args.interface == 'usb', 'example_bundle_receiver_requires_usb')
     directory = args.state / 'receiver'
     directory.mkdir(mode=0o700, exist_ok=True)
     with byte_bundle.Receiver(directory, raw_manifest, signature, trust, args.manifest_sha256,
             expires_epoch_us=args.file_expires_epoch_us, clock=window.check, boot_reader=base.host_boot) as receiver:
-        require(receiver.reused == index, 'example_bundle_parts_must_be_ordered')
+        window.require_capacity(max(1, len(receiver.missing_parts())))
+        hardware_kw = {} if hardware is None else dict(hardware=hardware)
         result = base.run_object(args, raw, admission, version, None, window,
             lambda a, w, j, c: BundleTransfer(a, w, j, c, entry, args.manifest_sha256,
                                             index, receiver, window, clock=base.clock,
-                                            confirm_receipt=getattr(args, 'confirm_receipt', False)))
+                                            confirm_receipt=getattr(args, 'confirm_receipt', False)),
+            **hardware_kw)
         window.check()
-        if index == count - 1:
+        if not receiver.missing_parts():
             result['whole_file'] = receiver.finish()
             result['whole_file_verified'] = True
             window.check()
         return result
 
 
-def main():
+def parser():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
     build = commands.add_parser('build', help='create a signed public pack offline; grants no RF authority')
@@ -220,7 +304,11 @@ def main():
     run.add_argument('--device', type=Path)
     run.add_argument('--usb-serial')
     run.add_argument('--state', required=True, type=Path)
-    args = parser.parse_args()
+    return parser
+
+
+def main():
+    args = parser().parse_args()
     if args.command == 'build':
         key = base.read_file(args.signing_key, 65, private=True).strip().decode('ascii')
         require(base.re.fullmatch('[0-9a-f]{64}', key), 'example_requires_raw_ed25519_key')

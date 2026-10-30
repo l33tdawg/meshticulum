@@ -195,11 +195,12 @@ receipt confirmation arrives or the existing 20-second ACK grace ends. The
 grace start is never renewed. Cleanup disarms and
 retires the session; uncertain attempts and failed cleanup remain failures.
 After both commands close successfully, coordinate the next approved pair
-through your application/operator channel. Parts must arrive in order; local
-sender receipt markers and reverified receiver quarantine prevent skipping them.
+through your application/operator channel. Correctly indexed signed parts may
+arrive in any order. Local sender receipt markers bind the exact manifest,
+original file window and part; receiver inventory is reverified from quarantine.
 There is no new cross-host daemon, RF grant issuer or automatic retry campaign.
 
-For the final part, the receiver re-verifies every part and the signed whole-file
+Once every expected part is present, the receiver re-verifies every part and the signed whole-file
 length/SHA-256, then durably publishes
 `$PRIVATE_STATE/receiver/bundle.bin` within the original file interval. Its result
 includes the SDK's `publisher_verified`/whole-file result. Sender flow receipt
@@ -210,3 +211,64 @@ Keep the original state, grants, session stores, attempt journals and failures.
 Source models are feasibility evidence only. Your exact hardware, ownership,
 physical completion, useful goodput and notice/release qualification remain
 separate gates.
+
+## Keep one device owner across approved parts
+
+The current source checkout adds `radio_bundle.transfer_batch(part_args)` for
+applications composing this example in one Python process. This API is newer
+than the measured alpha.3 candidate. It accepts a nonempty list or tuple of at
+most 42 option namespaces, with the same fields as `transfer`; `parser()` exposes
+the existing CLI parser for preparing those namespaces. It copies and checks
+the shared file, original window, device and admission bindings before opening
+hardware. Part indices must be unique and each part needs a distinct, pinned,
+preapproved grant directory. Caller order and a subset of parts are supported.
+
+The iterator holds one OS device owner and collision watch for that file.
+Each part still creates fresh authority, worker, journal, session and cipher
+state. It drains, disarms and retires that state before yielding
+`{'part': index, 'result': single_part_result}`. Holding the device does not keep
+the previous ARM or crypto session alive. Original boot and monotonic deadline
+bindings, cumulative MCU debt, uncertain writes and all earlier journals remain
+in force. A failed part stops the batch before another grant is consumed.
+
+Consume the iterator to exhaustion so final device closure is checked. Use
+`contextlib.closing` if application code can stop early:
+
+```python
+from contextlib import closing
+import radio_bundle  # The checkout's examples directory must be on sys.path.
+
+# Each namespace describes an independently approved part at this endpoint.
+with closing(radio_bundle.transfer_batch(approved_part_options)) as batch:
+    for completed in batch:
+        record_part_result(completed)
+```
+
+The application still coordinates both endpoints: confirm that both old part
+sessions have retired, then make the next receiver ready before starting its
+sender. The batch API opens no management connection, issues no grant and does
+not implement that cross-host barrier. Iterator yields describe local cleanup;
+they alone cannot prove peer closure or whole-file publication.
+
+## Inspect verified parts and continue within the original window
+
+`byte_bundle.Receiver.verified_parts()` returns a sorted tuple of retained,
+verified part indices. `missing_parts()` returns the complementary tuple.
+Every call rechecks the held owner, immutable file context, original clocks,
+publisher trust and retained part files. A cached count is never completion
+authority; corrupt or changed state refuses instead of being reported as a
+missing part.
+
+An application can reopen the same protected quarantine, inspect this inventory
+and supply the missing indices in any order, using fresh admitted sessions.
+This is verified-piece continuation within the original file window. It does
+not recover an uncertain in-flight transmission or renew expired authority.
+Receiving the highest index cannot publish an incomplete file. The example
+finishes only when the reverified missing tuple is empty, then checks the whole
+signed length and SHA-256 before publication. The bounds remain 42 parts and
+1,000,000 useful bytes.
+
+The next measurement target is less than one second of aggregate handoff across
+four part transitions, with each transition also below one second. This remains
+unmeasured. See [handoff timing and capacity limits](../docs/HOST_PROFILING.md#bundle-handoff)
+and the [source-only five-part cold plan](../benchmarks/2026-10-30-bundle-handoff/COLD_PLAN.md).

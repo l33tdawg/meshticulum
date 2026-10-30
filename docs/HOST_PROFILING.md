@@ -83,3 +83,83 @@ has its own exact wheel and execution scope. Repeated phase distributions,
 larger-transfer recovery and broader target-host performance remain separate
 measurement work. The earlier [24 October comparison](MCU_ACCELERATION.md#measured-comparison-24-october-2026)
 used a different SDK artifact and had no phase collector.
+
+## Bundle handoff
+
+The [alpha.3 qualification](../benchmarks/2026-10-30-alpha3-qualification/README.md)
+already completed two counterbalanced pairs and a five-part 100,000-byte file.
+The latter took 98.903315 seconds from first sender startup to final authenticated
+receipt, including inter-part management. Its four gaps from a sender receipt
+to the next sender child startup were 3.804074, 3.734973, 3.964503 and 3.610442
+seconds: **15.113992 seconds, or 15.28% of that interval**. These are ordered
+boundaries on the same sender monotonic clock, not differences between
+overlapping phase aggregates. The part startup-to-receipt intervals sum to
+83.789323 seconds. These observations do not identify the individual cost of
+SSH, process creation, environment verification or device acquisition.
+
+The current source checkout's [batch API](../examples/BUNDLE.md#keep-one-device-owner-across-approved-parts)
+retains one OS device owner while renewing authority and retiring the complete
+session for every part. The next target is **less than one second total across
+four handoffs**, with every individual handoff also below one second. This is
+an unmeasured target, not an alpha.3 result. Removing just the recorded 15.114
+seconds would put that old file near 1.19 useful kB/s; it would not establish
+sustained capacity.
+
+A persistent process has no later child-start boundary. Record an explicit
+part-entry marker before setup, and report both receipt-to-next-part-entry and
+receipt-to-next-first-DATA intervals on that sender's monotonic clock. Retain
+first file start through final authenticated receipt and verified publication,
+plus original scope issue through both endpoints closed. Do not shift setup
+outside the interval to meet the target. Cross-host/controller times remain
+separate clock domains. The [five-part cold plan](../benchmarks/2026-10-30-bundle-handoff/COLD_PLAN.md)
+specifies a small source geometry and budget; it supplies no physical result.
+
+## Qualified SF7 capacity model
+
+At the measured SF7/BW500 kHz, CR4/5, eight-symbol preamble profile, a full
+255-byte packet has an estimated 99,904 µs airtime. Its 31-byte wire header,
+16-byte authentication tag and 15-byte inner flow header leave 193 transport
+payload bytes. Thus even an uninterrupted sequence with no guard, ACK or host
+cost has an optimistic ceiling of **1.932 transport kB/s**.
+
+The existing four-frame queue policy includes three 5 ms gaps and a 100 ms
+reverse-listen window per full train. Its ideal calculation is
+`4 × 193 / (4 × 0.099904 + 3 × 0.005 + 0.100)`, or
+**1.500 transport kB/s**. It assumes continuously filled trains and ACKs that
+fit the listen windows. An empty queue can trigger the reverse window early,
+so underfilled trains can be slower. USB pacing remains 64 bytes/2 ms.
+
+For the old 100,000-byte signed shape, 539 DATA frames plus five receipt
+confirmations give 53,778,176 estimated RF µs. Adding 404 within-train gaps and
+135 reverse windows gives an ideal 69,298,176 µs, or **1.443 useful kB/s**.
+This includes its signed-response overhead but assumes no retries, setup,
+extra host delays or queue underfill. It is a source model, not measured
+goodput or a guarantee. All rates here use decimal kB.
+
+The immediate headroom is management reuse and keeping admitted four-frame
+trains fed while preserving the existing pacing and reverse-ACK guards.
+**2–3 useful kB/s requires a faster radio profile and separate qualification**;
+it exceeds even the unguarded transport ceiling of this SF7 profile.
+
+## Fastest supported LoRa profile: next measurement
+
+The next source plan selects **SF5/BW500 kHz, CR4/5, preamble 12**, the fastest
+LoRa configuration supported by the current public SDK and recorded firmware
+source. The firmware requires at least 12 preamble symbols at SF5/6. This is a
+new admitted profile, not a measured upgrade to the SF7 result. The source
+identity check for `mtb1-6cfde1fdd4` confirms these conditions in `main.cpp`;
+it does not itself test the profile on a device.
+
+At SF5, the full 255-byte estimate is 34,640 µs, giving **5.572 transport kB/s**
+without guards. The unchanged four-frame policy gives
+`772 / (4 × 0.034640 + 3 × 0.005 + 0.100)`, or **3.045 transport kB/s**.
+For the planned five 10,000-byte signed parts, 280 DATA frames and five receipt
+confirmations estimate 9,671,760 RF µs. Including 210 within-train gaps and
+70 reverse windows gives 17,721,760 µs, or **2.821 useful kB/s** ideally.
+Host pacing, setup, underfilled trains, ACK behavior and retries can reduce it.
+
+The [50,000-byte cold plan](../benchmarks/2026-10-30-bundle-handoff/COLD_PLAN.md)
+uses A→B and order 4, 2, 0, 3, 1. Its waveform, direction, geometry and lifecycle
+differ from the old B→A 100,000-byte run, so a future result would not isolate
+the handoff improvement or form a paired performance comparison. Faster-profile
+range, loss/recovery and sustained capacity remain separate measurements.

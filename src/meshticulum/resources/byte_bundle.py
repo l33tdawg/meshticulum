@@ -233,6 +233,38 @@ class Receiver:
         target=self.path/'parts'/(self.expected['parts'][index]['chunk_sha256']+'.json')
         kp.require(not target.exists() and not target.is_symlink(),'duplicate bundle part')
         self._live();self._atomic(self.parts_fd,target.name,raw);self._live()
+    def verified_parts(self):
+        """Return sorted retained indexes after fresh publisher/owner checks.
+
+        This is a verified snapshot, not transport completion or admission.
+        Invalid retained bytes raise instead of being treated as missing. The
+        opening-time ``reused`` count is diagnostic and is never consulted.
+        """
+        self._live()
+        names=tuple(entry['chunk_sha256']+'.json' for entry in self.expected['parts'])
+        present=set(os.listdir(self.parts_fd))
+        kp.require(set(os.listdir(self.fd))<={'context.json','parts','bundle.bin'}
+                   and present<=set(names),'foreign bundle quarantine entry')
+        verified=[];identities={}
+        for index,name in enumerate(names):
+            if name not in present:continue
+            self._live()
+            original=self._file_identity(os.stat(name,dir_fd=self.parts_fd,follow_symlinks=False))
+            self._part(index)
+            kp.require(original==self._file_identity(os.stat(name,dir_fd=self.parts_fd,follow_symlinks=False)),
+                       'bundle part changed')
+            identities[name]=original;verified.append(index)
+        # A later part or clock callback must not invalidate an earlier result.
+        self._live()
+        kp.require(set(os.listdir(self.parts_fd))==present
+                   and set(os.listdir(self.fd))<={'context.json','parts','bundle.bin'}
+                   and all(self._file_identity(os.stat(name,dir_fd=self.parts_fd,follow_symlinks=False))==identity
+                           for name,identity in identities.items()),'bundle inventory changed')
+        return tuple(verified)
+    def missing_parts(self):
+        """Return sorted absent indexes, revalidating every retained part first."""
+        verified=set(self.verified_parts())
+        return tuple(index for index in range(len(self.expected['parts'])) if index not in verified)
     def finish(self):
         self._live();whole=bytearray();wire=encoded=padding=0
         for index in range(len(self.expected['parts'])):
