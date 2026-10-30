@@ -39,6 +39,9 @@ _POLICY_ITEMS = tuple(POLICY.items())
 POLICY8 = dict(POLICY, schema='meshticulum.data-burst-policy.v2',
                max_depth=8, train_frames=8)
 _POLICY8_ITEMS = tuple(POLICY8.items())
+POLICY32 = dict(POLICY8, schema='meshticulum.data-burst-policy.v3',
+                flow_window_frames=32)
+_POLICY32_ITEMS = tuple(POLICY32.items())
 
 
 def validate_policy(value):
@@ -46,7 +49,7 @@ def validate_policy(value):
           set(value) == {key for key, _ in items}
           and all(type(value[key]) is type(expected) and value[key] == expected
                   for key, expected in items)
-          for items in (_POLICY_ITEMS, _POLICY8_ITEMS)), 'invalid_data_burst_policy')
+          for items in (_POLICY_ITEMS, _POLICY8_ITEMS, _POLICY32_ITEMS)), 'invalid_data_burst_policy')
     return dict(value)
 
 
@@ -58,6 +61,18 @@ def policy_for_depth(depth=4):
 
 def policy_depth(policy):
     return validate_policy(policy)['max_depth']
+
+
+def policy_for_flow_window(flow_window_frames):
+    """Explicit logical-32/physical-eight policy; existing depth defaults stay unchanged."""
+    _need(type(flow_window_frames) is int and flow_window_frames == 32,
+          'invalid_data_burst_flow_window')
+    return dict(_POLICY32_ITEMS)
+
+
+def policy_flow_window(policy):
+    value = validate_policy(policy)
+    return value.get('flow_window_frames', value['max_depth'])
 
 
 def capability_for_depth(depth=4):

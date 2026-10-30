@@ -22,9 +22,16 @@ on both endpoints, SF5/BW500, and the matching MBQ8 firmware capability:
 `policy_for_depth()` returns a copy of the four-frame policy;
 `policy_for_depth(8)` selects eight explicitly. Unsupported or mismatched
 capabilities fail before OPEN/DATA. The frozen flow/port already support the
-eight-frame credit window; their source and pins are unchanged. This extension
-has source controls, with physical acceptance pending. See
-[scalar eight-frame trains](MCU_EIGHT_TRAIN.md).
+eight-frame credit window; their source and pins are unchanged. See
+[scalar eight-frame trains](MCU_EIGHT_TRAIN.md) for source controls and the finite
+hardware sample, whose measured goodput remains below the current target.
+
+The optional [v3 logical-window32 policy](LOGICAL_WINDOW32.md) adds exactly
+`flow_window_frames: 32` to the v2 bounds and changes the schema to
+`meshticulum.data-burst-policy.v3`. It retains physical depth/train eight and
+every serial format below. Only host credit/reassembly becomes 32; no new
+opcode, firmware capability or RF allowance is implied. This policy has source
+evidence only.
 
 The record participates in the original shared route/grant digest. It permits
 only locally classified DATA ciphertext. Queue acceptance is an irrevocably
