@@ -1,0 +1,68 @@
+{
+  "candidate": "1.0.0-alpha.4",
+  "findings": [
+    "A single authenticated later SACK is accepted only for an explicitly enabled saturated train12 window with fresh DATA still queued.",
+    "The caller must independently prove live original authority, exact physical DATA drain, matching host/worker inventory and no due ordinary RTO before the offer.",
+    "The first offer enters the existing bounded repair train; later holes remain one per normal host step and the train can contain no more than its admitted frame count.",
+    "Ordinary non-train12 flows retain the three-distinct-later-SACK rule and terminal recovery retains its original-FINAL proof.",
+    "Every repair still passes the owner, cipher, journal, native queue, original deadline and scheduler accounting path without changing byte or sequence state.",
+    "The paired source model reduces elapsed time by 1.079100 to 1.269100 seconds across seven- and nine-hole loss controls with identical attempt counts.",
+    "The seven-hole control retains the same two pre-existing ACK/DATA model collisions in both arms; the nine-hole control has zero collisions."
+  ],
+  "limitations": [
+    "This is source evidence, not a physical RF result.",
+    "The source model excludes real process startup, CPU, fsync and native receive priority.",
+    "The motivating physical run11 remains diagnostic until its post-readback and reviewed result exporter complete.",
+    "Alpha 4 publication still requires fresh finite device trials, repeatable at least 2800 B/s evidence and intact verification/closure."
+  ],
+  "models": {
+    "nine_consecutive_holes": {
+      "attempts_each_arm": 138,
+      "baseline_elapsed_us": 8310935,
+      "collisions": 0,
+      "elapsed_reduction_percent": 12.984098660379368,
+      "elapsed_reduction_us": 1079100,
+      "stall_retry_elapsed_us": 7231835
+    },
+    "seven_consecutive_holes": {
+      "attempts_each_arm": 136,
+      "baseline_elapsed_us": 8267515,
+      "collisions": 2,
+      "elapsed_reduction_percent": 15.350440851936767,
+      "elapsed_reduction_us": 1269100,
+      "stall_retry_elapsed_us": 6998415
+    }
+  },
+  "reviewer": "Rook — Director of Software Engineering",
+  "review_scope": "Root source review and complete local regression suite; independent-agent acceptance remains a separate governance gate.",
+  "schema": "meshticulum.flow-stall-retry-review.v1",
+  "source": {
+    "bench_flow_runtime": {
+      "bytes": 64278,
+      "path": "/Users/l33tdawg/nodejs-projects/sage-commons/work/meshticulum-alpha4-stall-repair-20261030/src/meshticulum/bench/flow_runtime.py",
+      "sha256": "2550b290c34e6d2d4368220c28109bced38b345071e0d89e0fa3e5ba8ad35120"
+    },
+    "flow": {
+      "bytes": 102348,
+      "path": "/Users/l33tdawg/nodejs-projects/sage-commons/work/meshticulum-alpha4-stall-repair-20261030/src/meshticulum/flow/flow.py",
+      "sha256": "12dc626a9e1e5cc2120d2e59f1b857164cd74c4f59c89dec64c1637fe22b1e65"
+    },
+    "flow_port": {
+      "sha256": "ea29289b960ca895f54ccb46669b476a50bae79ab9a6b4060342da8c5cfacf07",
+      "unchanged": true
+    }
+  },
+  "status": "root_source_reviewed_pending_independent_and_physical_qualification",
+  "tests": {
+    "focused_train12_controls": {
+      "passed": 75
+    },
+    "full_suite": {
+      "passed": 4048,
+      "skipped": 37,
+      "subtests_passed": 49
+    },
+    "host_stall_initial_offer_within_us": 250000,
+    "verify_frozen_flow": "pass"
+  }
+}

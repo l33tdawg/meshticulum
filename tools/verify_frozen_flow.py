@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PINS = {
-    'flow.py': '963c2a3b4fdd8292d8a473da67dd7eaeee735f27ab4bd77f18702583cd2e1a9e',
+    'flow.py': '12dc626a9e1e5cc2120d2e59f1b857164cd74c4f59c89dec64c1637fe22b1e65',
     'flow_port.py': 'ea29289b960ca895f54ccb46669b476a50bae79ab9a6b4060342da8c5cfacf07',
 }
 for name, expected in PINS.items():

@@ -96,7 +96,11 @@ def test_peer_binding_changes_while_logical_credit_rto_authority_and_caps_do_not
     assert old.sender.burst_frames==8 and new.sender.burst_frames==12
     assert new.receiver.burst_max_hold_us==old.receiver.burst_max_hold_us==2_000_000
     assert new.receiver.burst_quiet_us==old.receiver.burst_quiet_us==250_000
-    assert old.sender.flow.limits==new.sender.flow.limits
+    assert not old.sender.flow.limits.selective_stall_retry
+    assert new.sender.flow.limits.selective_stall_retry
+    assert not new.receiver.flow.limits.selective_stall_retry
+    assert replace(new.sender.flow.limits,selective_stall_retry=False)==old.sender.flow.limits
+    assert new.sender.snapshot()['timing_policy']['selective_stall_retry'] is True
     assert old.authorities[0].operation_limits==new.authorities[0].operation_limits
     assert old.authorities[0].contract.limits==new.authorities[0].contract.limits
     assert old.authorities[0].carrier_profile.initial_rto_seconds==new.authorities[0].carrier_profile.initial_rto_seconds==2.22

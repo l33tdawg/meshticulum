@@ -224,6 +224,10 @@ class FlowLimits:
     # Separately admitted and explicitly requested terminal recovery. Bulk
     # recovery still needs three later SACKs, even when this option is enabled.
     selective_terminal_retry: bool = False
+    # Explicit host-driven recovery for a fully occupied logical window where a
+    # later authenticated SACK proves that the oldest flight is blocking all
+    # fresh DATA. The host must also prove its physical DATA queue drained.
+    selective_stall_retry: bool = False
     # A confirmed retry handover starts a fresh, bounded selective-proof epoch.
     # Old peers/defaults retain one early opportunity per logical flight.
     selective_repeat_retry: bool = False
@@ -235,6 +239,10 @@ class FlowLimits:
             raise FlowError("invalid limit: selective_terminal_retry must be a bool")
         if self.selective_terminal_retry and not self.selective_fast_retry:
             raise FlowError("terminal retry requires selective fast retry")
+        if type(self.selective_stall_retry) is not bool:
+            raise FlowError("invalid limit: selective_stall_retry must be a bool")
+        if self.selective_stall_retry and not self.selective_fast_retry:
+            raise FlowError("stall retry requires selective fast retry")
         if type(self.selective_repeat_retry) is not bool:
             raise FlowError("invalid limit: selective_repeat_retry must be a bool")
         if self.selective_repeat_retry and not self.selective_fast_retry:
@@ -840,6 +848,55 @@ class ReliableFlow:
                         and pending.seq not in self._deferred_retries
                         for pending in self._in_flight.values()))
 
+    def selective_stall_ready(self) -> bool:
+        """Whether one authenticated later SACK can free a blocked window.
+
+        This is a strict logical hint, not physical-drain or authority proof.
+        It is enabled only by an explicit host option, requires fresh DATA still
+        queued, and requires the current peer/window allowance to be fully
+        occupied. Callers must independently verify the physical sender queue
+        drained and remain live before offering a retry.
+        """
+        if (not self.limits.selective_stall_retry or not self.limits.selective_fast_retry
+                or self._fenced or self.failure is not None
+                or self.send_state is not FlowState.OPEN
+                or self.queued_bytes() == 0 or self._peer_credit is None):
+            return False
+        allowance = min(self.limits.window_frames, max(0, self._peer_credit))
+        if allowance <= 0 or self.in_flight() < allowance:
+            return False
+        return any(
+            not pending.fast_retry_offered and len(pending.selective_evidence) >= 1
+            and pending.attempts < self.limits.max_retries
+            and pending.seq not in self._deferred_retries
+            for pending in self._in_flight.values()
+        )
+
+    @staticmethod
+    def _valid_retry_time(now: float) -> bool:
+        try:
+            return type(now) in (int, float) and math.isfinite(now) and now >= 0
+        except OverflowError:
+            return False
+
+    def _selective_offer(self, now: float, *, required: int) -> bool:
+        """Offer one eligible selective retry after caller-side eligibility."""
+        if self.link.incarnation(self.peer) != self._peer_incarnation:
+            self._fail_session("peer_restarted")
+            return False
+        for pending in self._in_flight.values():
+            if (pending.fast_retry_offered or len(pending.selective_evidence) < required
+                    or pending.attempts >= self.limits.max_retries
+                    or pending.seq in self._deferred_retries
+                    or now < max(pending.handed_over_at, pending.selective_evidence_at)
+                    or now - pending.sent_at >= pending.rto):
+                continue
+            pending.fast_retry_offered = True
+            self.fast_retry_offers += 1
+            self._offer_retry(pending, now, fast=True)
+            return True
+        return False
+
     def retry_selective_gap(self, now: float, *, terminal: bool = False) -> bool:
         """Offer at most one early retry backed by accepted later SACKs.
 
@@ -864,11 +921,7 @@ class ReliableFlow:
         Ordinary timeout recovery remains the fallback if this offer is lost
         or never sent.
         """
-        try:
-            valid_time = type(now) in (int, float) and math.isfinite(now) and now >= 0
-        except OverflowError:
-            valid_time = False
-        if not valid_time:
+        if not self._valid_retry_time(now):
             raise FlowError("fast retry time must be finite and non-negative")
         required = self._selective_evidence_required(terminal)
         if not self.limits.selective_fast_retry:
@@ -878,21 +931,28 @@ class ReliableFlow:
         self._selective_retry_clock = now
         if not self.selective_retry_ready(terminal=terminal):
             return False
-        if self.link.incarnation(self.peer) != self._peer_incarnation:
-            self._fail_session("peer_restarted")
+        return self._selective_offer(now, required=required)
+
+    def retry_selective_stall(self, now: float) -> bool:
+        """Offer one proven hole when a saturated logical window is stalled.
+
+        Unlike ordinary and terminal recovery, this path accepts one distinct
+        later SACK. It is safe only under the explicit stalled-window predicate:
+        fresh DATA remains, the peer/window allowance is fully occupied, and the
+        caller separately proves all earlier physical DATA has drained. Refusal,
+        deferred handover, lost repair and attempts retain the ordinary RTO
+        fallback; this API changes no byte, sequence, credit or accounting state.
+        """
+        if not self._valid_retry_time(now):
+            raise FlowError("fast retry time must be finite and non-negative")
+        if not self.limits.selective_stall_retry:
             return False
-        for pending in self._in_flight.values():
-            if (pending.fast_retry_offered or len(pending.selective_evidence) < required
-                    or pending.attempts >= self.limits.max_retries
-                    or pending.seq in self._deferred_retries
-                    or now < max(pending.handed_over_at, pending.selective_evidence_at)
-                    or now - pending.sent_at >= pending.rto):
-                continue
-            pending.fast_retry_offered = True
-            self.fast_retry_offers += 1
-            self._offer_retry(pending, now, fast=True)
-            return True
-        return False
+        if self._selective_retry_clock is not None and now < self._selective_retry_clock:
+            raise FlowError("fast retry time regressed")
+        self._selective_retry_clock = now
+        if not self.selective_stall_ready():
+            return False
+        return self._selective_offer(now, required=1)
 
     def stall(self) -> None:
         """Model a consumer that stops taking delivery; credit must fall to zero."""

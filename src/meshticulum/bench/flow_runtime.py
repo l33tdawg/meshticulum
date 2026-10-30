@@ -74,6 +74,7 @@ class BenchFlow:
         self._selective_repeat_retry = self.data_burst and policy_repeat_retry(policy)
         self._selective_repair_train = self.data_burst and policy_repair_train(policy)
         self._repair_train_active = self._repair_train_offer = False
+        self._repair_train_mode = None
         self._repair_train_domains = set()
         self._last_queued_domain = None
         self._scalar_fill_extra = False
@@ -114,6 +115,8 @@ class BenchFlow:
         selected_depth = policy_depth(policy) if policy is not None else 4
         selected_window = policy_flow_window(policy) if policy is not None else 4
         selected_train = policy_train_frames(policy) if policy is not None else selected_depth
+        self._selective_stall_retry = (self._selective_repair_train
+                                       and selected_train == 12)
         require(selected_depth == 4 or radio_is_sf5(authority.profile),
                 'burst_eight_requires_sf5')
         if selected_window != selected_depth:
@@ -216,6 +219,7 @@ class BenchFlow:
                 max_persist_acks=16,
                 selective_fast_retry=self.data_burst and fast_sf5,
                 selective_terminal_retry=self._selective_terminal_retry,
+                selective_stall_retry=self._selective_stall_retry,
                 selective_repeat_retry=self._selective_repeat_retry),
             flow_id=flow_key.flow_id, generation=1, sends=sends, receive=not sends,
             startup=None)
@@ -331,6 +335,8 @@ class BenchFlow:
                 if self._repair_train_offer:
                     self._repair_train_domains.add(domain)
                     self.counts['repair_train_extra'] += 1
+                    if self._repair_train_mode == 'stall':
+                        self.counts['stall_repair_extra'] += 1
             self._physical_data[result.request] = dict(domain=domain,
                 packet_sha256=hashlib.sha256(packet).hexdigest(), bytes=len(packet),
                 queue_submit_mono_us=worker_started_us, queue_accept_mono_us=worker_finished_us,
@@ -615,6 +621,12 @@ class BenchFlow:
         # flow use its exact existing interval, including its clock origin.
         return self._ack_persistence_streak > 0 and now_us < self._ack_persistence_due_us
 
+    def _begin_repair_train(self, mode):
+        require(mode in ('terminal', 'stall'), 'invalid_repair_train_mode')
+        self._repair_train_active = True
+        self._repair_train_mode = mode
+        self._repair_train_domains = {self._last_queued_domain}
+
     def _hold_fast_retry_turn(self):
         # Only the explicit v8 terminal policy may group distinct proven
         # holes. The first repair reached this point through the ordinary
@@ -627,9 +639,18 @@ class BenchFlow:
                 and self._last_queued_domain is not None
                 and 0 < self.burst_sent < self.burst_frames and self.next_send_us == 0
                 and self.flow.selective_retry_ready(terminal=True)):
-            self._repair_train_active = True
-            self._repair_train_domains = {self._last_queued_domain}
+            self._begin_repair_train('terminal')
             self.counts['repair_train_turn'] += 1
+            return
+        # The v9/train12 host separates the final twelve-admission train from
+        # its eight physical slots. If every logical-window slot is occupied
+        # and one authenticated later SACK proves that a drained DATA flight is
+        # blocking all fresh work, spend the same bounded repair train without
+        # waiting for an ordinary two-second RTO.
+        if (self._selective_stall_retry and self._last_queued_domain is not None
+                and self.flow.selective_stall_ready()):
+            self._begin_repair_train('stall')
+            self.counts['stall_repair_turn'] += 1
             return
         # Only an explicitly admitted v4 policy can carry fresh DATA after a
         # repair. The QUEUED repair already counts toward this same admitted
@@ -651,6 +672,7 @@ class BenchFlow:
     def _hold_repair_reverse_turn(self):
         self._repair_fill_active = False
         self._repair_train_active = False
+        self._repair_train_mode = None
         self._repair_train_domains.clear()
         self.next_send_us = self.clock()[1] + self.worker.pending_airtime_us + self.sender_control_hold_us
         self.burst_sent = 0
@@ -675,21 +697,32 @@ class BenchFlow:
                 or set(self.worker.pending_physical) != set(self._physical_data)
                 or not 0 < self.burst_sent < self.burst_frames
                 or len(self._repair_train_domains) >= self.burst_frames
-                or now_us < self.next_send_us or self.flow.queued_bytes() != 0
-                or not self.flow._original_final_handed_over
-                or not self.flow._peer_original_final_received
+                or now_us < self.next_send_us
                 or any(self.link.now - p.sent_at >= p.rto for p in self.flow._in_flight.values())
-                or not self.flow.selective_retry_ready(terminal=True)):
+                or self._repair_train_mode not in ('terminal', 'stall')):
+            self._hold_repair_reverse_turn()
+            return
+        terminal = self._repair_train_mode == 'terminal'
+        if terminal:
+            ready = (self.flow.queued_bytes() == 0
+                     and self.flow._original_final_handed_over
+                     and self.flow._peer_original_final_received
+                     and self.flow.selective_retry_ready(terminal=True))
+        else:
+            ready = self.flow.selective_stall_ready()
+        if not ready:
             self._hold_repair_reverse_turn()
             return
         fast_before = self.flow.fast_retransmits
         self._repair_train_offer = True
         try:
-            offered = self.flow.retry_selective_gap(self.link.now, terminal=True)
+            offered = (self.flow.retry_selective_gap(self.link.now, terminal=True)
+                       if terminal else self.flow.retry_selective_stall(self.link.now))
         finally:
             self._repair_train_offer = False
         if (not offered or self.flow.fast_retransmits != fast_before + 1
-                or not self.flow.selective_retry_ready(terminal=True)):
+                or not (self.flow.selective_retry_ready(terminal=True)
+                        if terminal else self.flow.selective_stall_ready())):
             # REFUSED and DEFERRED retain normal owner/flow state. They never
             # authorize another offer or bypass the existing reverse hold.
             self._hold_repair_reverse_turn()
@@ -893,11 +926,17 @@ class BenchFlow:
                 self._pump_scalar_fill_pair(queued_before, fresh_before, fast_before_step)
                 self._check_flow()
                 return self._completion_ready()
+            normal_ready = stall_ready = False
             if self.clock()[1] < self.next_send_us:
                 self.owner.settle_sending()
-            elif (self.data_burst and self.receipt_confirmation_enabled
+            else:
+                normal_ready = (self.data_burst and self.receipt_confirmation_enabled
                     and not self._repair_fill_active
-                    and self.flow.selective_retry_ready(terminal=self._selective_terminal_retry)
+                    and self.flow.selective_retry_ready(terminal=self._selective_terminal_retry))
+                stall_ready = (not normal_ready and self._selective_stall_retry
+                    and self.flow.selective_stall_ready())
+            if (self.data_burst and self.receipt_confirmation_enabled
+                    and (normal_ready or stall_ready)
                     and not self._physical_data and not self.worker.pending_physical):
                 # Peer SACK is logical evidence, never local physical drain.
                 # Verify release/STATUS before offering one early retransmit;
@@ -908,7 +947,10 @@ class BenchFlow:
                 now_us = self.clock()[1]
                 self.link.now = now_us / 1000000
                 fast_before = self.flow.fast_retransmits
-                if self.flow.retry_selective_gap(self.link.now, terminal=self._selective_terminal_retry):
+                offered = (self.flow.retry_selective_gap(
+                    self.link.now, terminal=self._selective_terminal_retry)
+                    if normal_ready else self.flow.retry_selective_stall(self.link.now))
+                if offered:
                     if self.flow.fast_retransmits > fast_before:
                         self._hold_fast_retry_turn()
                         self._pump_scalar_fill_pair(queued_before, fresh_before, fast_before_step)
@@ -968,6 +1010,7 @@ class BenchFlow:
                              'flow_window_frames': self.flow.limits.window_frames,
                              'selective_repair_fill': self._selective_repair_fill,
                              'selective_terminal_retry': self._selective_terminal_retry,
+                             'selective_stall_retry': self._selective_stall_retry,
                              'burst_frames': self.burst_frames, 'burst_quiet_us': self.burst_quiet_us,
                              'burst_max_hold_us': self.burst_max_hold_us,
                              'sender_control_hold_us': self.sender_control_hold_us,
