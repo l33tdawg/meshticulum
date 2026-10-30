@@ -203,10 +203,17 @@ class FlowLimits:
     # Explicit host-driven recovery only. Three distinct later SACK receipts
     # may justify one early retry; ordinary pump() remains timeout-driven.
     selective_fast_retry: bool = False
+    # Separately admitted and explicitly requested terminal recovery. Bulk
+    # recovery still needs three later SACKs, even when this option is enabled.
+    selective_terminal_retry: bool = False
 
     def __post_init__(self):
         if type(self.selective_fast_retry) is not bool:
             raise FlowError("invalid limit: selective_fast_retry must be a bool")
+        if type(self.selective_terminal_retry) is not bool:
+            raise FlowError("invalid limit: selective_terminal_retry must be a bool")
+        if self.selective_terminal_retry and not self.selective_fast_retry:
+            raise FlowError("terminal retry requires selective fast retry")
         for name, value in (
             ("frame_payload_bytes", self.frame_payload_bytes), ("window_frames", self.window_frames),
             ("initial_credit_frames", self.initial_credit_frames),
@@ -575,6 +582,8 @@ class ReliableFlow:
         self._started = False
         self._next_seq = 0
         self._total = 0
+        self._original_final_handed_over = False
+        self._peer_original_final_received = False
         self._in_flight: dict[int, _Pending] = {}
         self._acked_frames = 0
         # Credit that is granted and then lost leaves queued data, an empty
@@ -782,21 +791,35 @@ class ReliableFlow:
     def settled(self) -> bool:
         return not self._outbound and not self._in_flight
 
-    def selective_retry_ready(self) -> bool:
+    def _selective_evidence_required(self, terminal: bool) -> int:
+        if type(terminal) is not bool:
+            raise FlowError("terminal retry request must be a bool")
+        return (1 if terminal and self.limits.selective_terminal_retry
+                and self._original_final_handed_over and not self._outbound
+                and self._peer_original_final_received else 3)
+
+    def selective_retry_ready(self, *, terminal: bool = False) -> bool:
         """Read-only eligibility hint, never physical readiness or authority.
 
         A host must still preserve its own dispatch/physical-drain boundaries;
         retry_selective_gap() rechecks logical eligibility before any offer.
         """
+        required = self._selective_evidence_required(terminal)
         return (self.limits.selective_fast_retry and not self._fenced and self.failure is None
                 and self.send_state is FlowState.OPEN
-                and any(not pending.fast_retry_offered and len(pending.selective_evidence) >= 3
+                and any(not pending.fast_retry_offered and len(pending.selective_evidence) >= required
                         and pending.attempts < self.limits.max_retries
                         and pending.seq not in self._deferred_retries
                         for pending in self._in_flight.values()))
 
-    def retry_selective_gap(self, now: float) -> bool:
-        """Offer at most one early retry backed by three distinct later SACKs.
+    def retry_selective_gap(self, now: float, *, terminal: bool = False) -> bool:
+        """Offer at most one early retry backed by accepted later SACKs.
+
+        Existing calls require three distinct later receipts. Explicit terminal
+        mode additionally needs its admitted limit, actual original FINAL
+        handover, no outbound bytes and canonical peer receipt of that FINAL.
+        Only then can one later receipt suffice. A deferred/unsent FINAL is
+        neither a handover nor a receipt; a missing FINAL has no later evidence.
 
         Default off; pump() never invokes this API. True means one offer was
         made, including refusal or DEFERRED, not a physical transmission or a
@@ -817,18 +840,19 @@ class ReliableFlow:
             valid_time = False
         if not valid_time:
             raise FlowError("fast retry time must be finite and non-negative")
+        required = self._selective_evidence_required(terminal)
         if not self.limits.selective_fast_retry:
             return False
         if self._selective_retry_clock is not None and now < self._selective_retry_clock:
             raise FlowError("fast retry time regressed")
         self._selective_retry_clock = now
-        if not self.selective_retry_ready():
+        if not self.selective_retry_ready(terminal=terminal):
             return False
         if self.link.incarnation(self.peer) != self._peer_incarnation:
             self._fail_session("peer_restarted")
             return False
         for pending in self._in_flight.values():
-            if (pending.fast_retry_offered or len(pending.selective_evidence) < 3
+            if (pending.fast_retry_offered or len(pending.selective_evidence) < required
                     or pending.attempts >= self.limits.max_retries
                     or pending.seq in self._deferred_retries
                     or now < max(pending.handed_over_at, pending.selective_evidence_at)
@@ -1297,6 +1321,8 @@ class ReliableFlow:
                                         handed_over_at=now, original_last=original_last)
         self._next_seq = (seq + 1) % self.seq_modulus
         self._handed_over.add(seq)
+        if original_last:
+            self._original_final_handed_over = True
 
     def handover(self, seq: int, *, at: float) -> bool:
         """Record that a frame this endpoint had queued was actually handed over.
@@ -1715,6 +1741,8 @@ class ReliableFlow:
         self.startup_pending = False
         self._startup_wait_at = None
         for pending in newly:
+            if pending.original_last:
+                self._peer_original_final_received = True
             del self._in_flight[pending.seq]
             self._handed_over.discard(pending.seq)
         if self.limits.selective_fast_retry:
