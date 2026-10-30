@@ -31,8 +31,15 @@ The isolated C-host installation passed: 72 runtime files and pinned dependencie
 verified, offline signed-resource and synthetic journal-recovery controls passed,
 20 tracked service states and lifetimes unchanged, all children joined, and no
 radio opened. The [release status](docs/RELEASE_READINESS.md#alpha3-hardware-evidence)
-identifies the tested candidate. A/B transfer evidence remains pending; record
-the exact firmware, retained failures and cleanup before publication.
+identifies the tested candidate. A/B completed four fresh 8,164-byte files in two
+opposite-order synchronous/queued pairs and one queued 100,000-byte file in five
+parts, all with host profiling enabled. The larger file reached **1.0111 kB/s**
+including sender startup and between-part management. All five files verified,
+with zero DATA retries, receive-drop increases or new UNKNOWN outcomes. The
+[qualification record](benchmarks/2026-10-30-alpha3-qualification/README.md)
+keeps receipt, physical drain and endpoint closure separate. Current distance
+was not reconfirmed; this is a finite candidate result, not a comparison with
+alpha.2 or a sustained-capacity claim.
 
 ## 1.0.0-alpha.2 (`1.0.0a2`) — 2026-10-24
 

@@ -33,24 +33,58 @@ states and lifetimes were unchanged, all children joined, and no radio was
 opened or production runtime activated. This qualifies the bounded host check;
 it does not establish a C radio result.
 
-**A/B transfer evidence pending.** Insert the bounded transfer results, exact
-firmware, retained failures, physical drain and service-preservation checks
-before publication. Final release artifacts retain their own source and runtime
-correspondence record.
-The [30 October qualification record](../benchmarks/2026-10-30-alpha3-qualification/README.md)
-will retain the measured files and timing boundaries. Profiling-enabled runs
-must be labeled as such; they are not a direct alpha.2-to-alpha.3 speed comparison.
+A/B completed five fresh B→A USB LoRa files using the same candidate, from
+source `7b38c1f585786d764a952a2a67cbfcf56af0ad80`, with all 72 installed runtime
+files checked. Both endpoints used firmware `mtb1-6cfde1fdd4` and SF7/BW500 kHz,
+CR4/5 at 921.375 MHz. **Host profiling was enabled on both endpoints for every
+part**, so its overhead is included in every rate below.
+
+| Case | Mode | Useful bytes | Sender startup → final receipt (s) | Profiled useful kB/s | Scope → both closed (s) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| 1 | Queued | 8,164 | 7.729350 | 1.0562 | 15.166408 |
+| 2 | Synchronous | 8,164 | 8.656340 | 0.9431 | 15.937535 |
+| 3 | Synchronous | 8,164 | 9.046716 | 0.9024 | 15.664650 |
+| 4 | Queued | 8,164 | 7.883593 | 1.0356 | 14.692559 |
+| 5 | Queued | 100,000 | 98.903315 | 1.0111 | 106.907634 |
+
+The four 8,164-byte cases form two pairs in queued/synchronous then
+synchronous/queued order. Their paired queued rate differences were **+11.99%**
+and **+14.75%**. They compare modes within this candidate, not alpha.3 against
+alpha.2. The **100,000-byte** file completed in **five signed parts**; its
+**98.903315-second** sender-startup interval includes management and setup gaps
+between parts. Rates use decimal kB/s and end at the final authenticated peer
+receipt. Scope-to-closure uses the separate controller wall clock and includes
+setup, retirement and both final endpoint RPCs joining.
+
+All five whole files and nine part receipts verified. All 18 endpoint children
+completed with exit status zero and no forced cleanup. No DATA retransmissions,
+receive-drop increases, new UNKNOWN outcomes or new journal fences were
+recorded. Queued sender completion after physical drain followed its receipt
+by **6.929–8.595 ms**; that interval is outside the receipt rate. The
+[qualification record](../benchmarks/2026-10-30-alpha3-qualification/README.md)
+retains the phase reports, queue evidence and cumulative accounting, including
+older failures and unknown actual RF costs. The 24 host phase intervals overlap
+and cannot be summed into transfer duration.
+
+Current distance was **not reconfirmed**. These two short pairs and one larger
+file do not establish sustained capacity, field range, loss/restart recovery or
+broader hardware qualification. The earlier 24 October distance and alpha.2
+records retain their own artifacts and scope.
 
 ### Alpha.3 artifact validation
 
-The initial local candidate passed two independent clean-export builds,
-byte-identical wheels and normalized source archives, a wheel rebuild from the
-normalized archive, and a clean noneditable install with all 72 runtime files
-checked. The installed public-resource CLI and offline signed-resource example
-passed. Final release artifacts must repeat these checks after documentation
-is complete; their exact hashes belong in the external release manifest and
-validation record. Changes to README metadata or archive timestamps can change
-wheel bytes even when runtime files are unchanged.
+The release manifest and validation record bind the final selected source,
+wheel and normalized source archive. Artifact checks cover two independent
+clean-export builds, byte-identical wheels and normalized archives, a wheel
+rebuilt from the normalized archive, and a clean noneditable install with all
+72 runtime files checked. The installed public-resource CLI and offline
+signed-resource example are included in that validation.
+
+The RF measurements above belong to the exact `ed3f8d…` candidate wheel.
+Final release artifacts have their own hashes and runtime-correspondence proof;
+they are not described as having been executed over RF merely because their
+runtime files match. README metadata and archive timestamps can change wheel
+bytes while leaving runtime code unchanged.
 
 ## Published 1.0.0-alpha.2 — 2026-10-24
 
