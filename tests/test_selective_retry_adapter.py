@@ -106,7 +106,7 @@ def test_deferred_fast_retry_spends_once_at_its_actual_handover(outcome):
     case.port.outcome = outcome
     assert case.link.dispatch_queued() is True
     assert case.port.owner.rf_attempts == 5 and len(case.port.carrier_calls) == 5
-    assert pending.attempts == 2 and pending.handed_over_at == .3 and pending.rto > old_rto
+    assert pending.attempts == 2 and pending.handed_over_at == .3 and pending.rto == old_rto
     assert case.flow.retransmits == case.flow.fast_retransmits == 1
     assert case.flow._next_seq == 4 and case.flow.queued_bytes() == QUANTUM
     assert markers(case.flow) == 0 and case.link._held is None

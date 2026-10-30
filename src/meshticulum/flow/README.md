@@ -14,6 +14,46 @@ bytes this one replaces are held in
 revision 8 bytes this one repairs are held in
 `work/rook-meshticulum-r8e-review-20261006/candidate/`.
 
+## Revision 11: selective repair backoff, 30 October 2026
+
+The owner explicitly accepted this source revision after two independent
+reviews of `flow.py` SHA-256
+`e3aedfa63f844dd237b13f8a592d691de65eafeca8ed802e889d2bfe4659eae4`.
+The unchanged `flow_port.py` retains SHA-256
+`57596421d916f0c49d61599653b5ab75154d64e5bc806ba1444fa5905ad025ca`.
+These are the current accepted verifier pins. The prior R10 bytes and its
+physical evidence remain separate historical records.
+
+R11 distinguishes an evidence-triggered selective repair from an expired
+retry timer. A handed-over selective repair preserves the flight's existing
+RTO; an ordinary timeout handover still doubles it within the same limits.
+Both increment the attempt count and reanchor the timer after the same
+conservative queued-carrier delay. R11 does not reset to the current adaptive
+global RTO, lower the configured minimum or add another early opportunity.
+
+The default-off option, three-distinct-later-SACK requirement, canonical receipt
+and owner checks, one offer per logical flight, exact deferred settlement,
+retry ceiling and original LAST flag remain unchanged. So do all handover,
+cipher, nonce, journal, finite-authority and physical-drain requirements.
+The queued SF5 minimum remains 2.22 seconds; native deadlines and the existing
+receive/reverse guards remain in force. No wire, port, worker or firmware
+change is part of this revision.
+
+`journal_review` authored the change and its controls. `meshticulum_checkpoint`
+independently approved the exact source with 65 focused tests passing.
+`profile_design` independently passed 21 controls against R11; the identical
+controls produced seven expected failures and 14 passes against accepted R10.
+These include actual receiver-generated selective receipts, loss of the original
+and its fast repair, two holes with new credit, and real owner/scheduler
+ACCEPTED, UNKNOWN, deferred, refused, cancelled and terminal settlement.
+The author suite passed 3,462 tests with 37 skips and 49 passing subtests.
+
+This is accepted source behavior, not R11 RF qualification or a throughput
+claim. The motivating R10 physical result remains below the target. See the
+[R11 review note](../../../docs/FLOW_R11_REVIEW.md) for the timing distinction,
+scope and evidence limits; separately authorized physical validation is still
+required.
+
 ## Revision 10: selective retry, 30 October 2026
 
 The owner requested repair of the measured SF5 recovery stalls. This explicit
