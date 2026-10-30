@@ -156,7 +156,7 @@
   "radio_devices_opened": 0,
   "response_sha256": "e8d8586348a556ea9c1384131810c0398cdd44e34b8030c346c81aff224e600a",
   "schema": "meshticulum.sf5-stall-retry-source.v1",
-  "source_base_commit": "42a4378ed1b47d18973158042484475c86a5e8d5",
+  "source_base_commit": "36383d102e8de4ed4143f05cdbd2d8bf61836be2",
   "source_checkout_modified": false,
   "source_inputs_stable": true,
   "source_only": true,
