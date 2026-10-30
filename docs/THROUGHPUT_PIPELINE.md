@@ -16,7 +16,11 @@ the physical train still eight. The [selective-repair fill sample](../benchmarks
 completed in 19.537686 seconds including startup, or 1,223.276902 useful B/s,
 with 13 DATA retries and nine repair-fill turns. Its loss pattern differed from
 the earlier samples; this is not an isolated causal performance comparison.
-All four samples miss the target.
+The subsequent [terminal-policy/native-RX diagnostic sample](../benchmarks/2026-10-30-sf5-terminal-retry-profile/README.md)
+verified the same useful bytes in 11.793771 seconds including startup, or
+2,026.493477 B/s, with six DATA retries. All six used the existing bulk
+selective path; the enabled terminal threshold was not exercised. Firmware
+and loss patterns differed. All five samples miss the target.
 
 ## Existing piece and recovery behavior
 
@@ -141,7 +145,17 @@ not log the exact internal retry due times. Receive-drop counts do not identify
 the cause of a missing packet. Host terminal delivery follows the worker's
 normal release flush, so these envelope measurements are not RF airtime.
 
-Next source work examines terminal recovery and release/host costs while keeping
+The terminal-policy sample spent 3.417723 seconds without host-observed DATA
+outstanding and 7.626313 seconds inside DATA envelopes. Its retained native
+trace includes six empty-queue transitions within eight-frame groups, each
+followed by the existing roughly 100 ms listening floor. Both receiver and
+sender drops were exclusively header-only IRQ restarts (20 and three);
+these categories do not identify missing packets or their RF cause. Keeping
+the native queue fed and investigating receive handling are the next measured
+leads. The [terminal recovery](TERMINAL_RETRY.md) source controls separately
+exercise late holes absent from this sample.
+
+Next source work examines queue refill and release/host costs while keeping
 canonical ACK evidence, one selective offer per flight, paid attempts and
 original finite deadlines. A source model or a faster isolated number cannot
 qualify the 3,000 useful B/s goal.
