@@ -43,7 +43,7 @@ There is also an intentional difference in identity policy. Meshticulum's curren
 
 ## Published performance comparison
 
-The latest **1,071.3 B/s** Meshticulum finite resource result is numerically **2.61×** the **410 B/s** contributor measurement in [MeshCore issue #3404](https://github.com/meshcore-dev/MeshCore/issues/3404). Both state SF7/BW500, but the MeshCore report times individually acknowledged 128-byte frames and our result times a windowed resource reply. This supports a scoped comparison between published observations, not a general speed or security ranking. Reticulum's cited **3.1 kbit/s** figure describes on-air bitrate under different settings; it is neither **3.1 kB/s** nor encrypted application goodput. [Performance](PERFORMANCE.md#comparison-with-published-figures) keeps the units, conditions and missing measurements explicit.
+The earlier **1,071.3 B/s** Meshticulum finite resource result is numerically **2.61×** the **410 B/s** earlier frame-ACK report by the same project author in [MeshCore issue #3404](https://github.com/meshcore-dev/MeshCore/issues/3404). Both state SF7/BW500, but the MeshCore report times individually acknowledged 128-byte frames and our result times a windowed resource reply. This supports a scoped comparison between published observations, not independent corroboration or a general speed or security ranking. Reticulum's cited **3.1 kbit/s** figure describes on-air bitrate under different settings; it is neither **3.1 kB/s** nor encrypted application goodput. [Performance](PERFORMANCE.md#comparison-with-published-figures) keeps the units, conditions and missing measurements explicit.
 
 Six matched pairs on 18 October 2026 provide a same-payload SF7/SF8 comparison
 on the public bench path. At BW500, CR4/5, 921.375 MHz and 0 dBm,
@@ -54,6 +54,47 @@ authenticated receipts passed. The MCU's 1,024-attempt cap stood at 380 after
 both campaigns, leaving 644 attempts of headroom, on one boot generation with
 zero receive drops. This is a matched profile comparison on one near-bench
 link, not a range result or an upstream ranking.
+
+## Throughput design review, 30 October 2026
+
+The current search of official documentation, release source and published
+reports did not find a reproducible upstream LoRa file benchmark matching our
+startup-inclusive boundary. This does not establish that no such result exists.
+An eventual Meshticulum result above 2,800 useful B/s would meet our current
+target; it would not by itself establish superiority over either project.
+
+Reticulum's RNode interface calculates an on-air bitrate and supports SF5 on
+compatible radios. Its common SF7 settings therefore do not establish its
+fastest supported profile. The `rncp` sender starts its speed timer after link
+setup, resource preparation and entry into transfer. Compare both stacks with
+an external invocation-to-authenticated-completion timer, identical
+incompressible file bytes and declared compression, rather than comparing that
+display with our whole-file target.
+[RNode interface](https://github.com/markqvist/Reticulum/blob/7f2b3b9b524c9386316379af1313b43a5e4f7a5d/RNS/Interfaces/RNodeInterface.py#L697),
+[`rncp` timer](https://github.com/markqvist/Reticulum/blob/7f2b3b9b524c9386316379af1313b43a5e4f7a5d/RNS/Utilities/rncp.py#L711).
+
+The source review supplies concrete design ideas:
+
+| Upstream mechanism | Application to Meshticulum |
+| --- | --- |
+| MeshCore's MCU dispatcher handles queued radio work and local timing. [Dispatcher](https://github.com/meshcore-dev/MeshCore/blob/81dbae592ffad40b4212bc0b37e82b38da08f4bc/src/Dispatcher.cpp#L66) | Continue bounded MCU delegation. Our four-entry queue already drives admitted ciphertexts locally; the dormant batch prototype aims to amortize host admission and release. Its production integration and performance remain unqualified. |
+| Reticulum Resources request missing part hashes, adapt their window and prepare subsequent segments during transfer. [Resource](https://github.com/markqvist/Reticulum/blob/7f2b3b9b524c9386316379af1313b43a5e4f7a5d/RNS/Resource.py#L58) | Preserve existing verified-piece inventory, selective recovery and bounded parallel planning. Measure preparation/transfer overlap and larger useful parts before adding another recovery mechanism. |
+| Reticulum's encrypted Resource path encrypts a complete segment before packetizing it. [Resource preparation](https://github.com/markqvist/Reticulum/blob/7f2b3b9b524c9386316379af1313b43a5e4f7a5d/RNS/Resource.py#L343) | Investigate envelope overhead separately from the radio window. Changing our per-frame authentication needs its own protocol review; it is not a setting in the current batch prototype. |
+
+These are architectural comparisons, not evidence that any one mechanism makes
+an upstream stack faster. The [pipeline record](THROUGHPUT_PIPELINE.md) separates
+implemented host wakeups, dormant MCU code, ideal estimates and missing physical
+measurements. A comparable LoRa test must also declare actual preamble,
+header/CRC mode, power, hop count, discovery state, link conditions and retries.
+Matching SF/BW/CR alone is insufficient.
+
+This throughput review pins MeshCore companion v1.18.0 / `81dbae5`, Reticulum
+1.5.5 / `7f2b3b9`, and RNode firmware 1.86 / `9b39b6c`. The earlier security review
+below retains its own source baseline. These source identities do not identify
+firmware used in the historical measurements.
+[MeshCore release](https://github.com/meshcore-dev/MeshCore/releases/tag/companion-v1.18.0),
+[Reticulum release](https://github.com/markqvist/Reticulum/releases/tag/1.5.5),
+[RNode release](https://github.com/markqvist/RNode_Firmware/releases/tag/1.86).
 
 ## Security properties and gaps
 

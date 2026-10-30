@@ -76,6 +76,7 @@ def model(monkeypatch, tmp_path):
     monkeypatch.setattr(example, 'ExclusiveSerial', Channel)
     monkeypatch.setattr(example, 'HeldHardware', Owner)
     monkeypatch.setattr(example, 'host_boot', lambda: 'model-boot')
+    monkeypatch.setattr(example, 'clock', lambda: (1_000_000, 1_000_000))
     monkeypatch.setattr(example, 'RunAuthority', authority)
     monkeypatch.setattr(example, 'SerialWorker', Worker)
     monkeypatch.setattr(example, 'AttemptJournal', journal)

@@ -175,3 +175,27 @@ The final selective-retry source passed **3,126 tests, 37 skips and 49 subtests*
 plus accepted-flow pins, repository/history boundaries, documentation, website
 and benchmark checks. The private supervisor projection passed 74 tests and
 8 subtests independently.
+
+## Offline native timing analysis
+
+The [sanitized timing summary](NATIVE_TIMING.json) analyzes the retained sender
+MCU events from the separate 2 kB selective-retry and earlier 3 kB ACK-recovery
+trials. It adds no RF execution and is not a paired comparison between them.
+The three relevant native source files are identical in both candidate exports.
+
+Of 36 complete DATA lifecycles, 18 adjacent transitions have the next packet
+strictly QUEUED before the preceding RF_DONE. Across those selected transitions,
+mean RF_DONE to next ISSUED is 6.780 ms and next ISSUED to STARTED is 3.850 ms,
+giving 10.630 ms between local completion and the next transmit-start record.
+The components are disjoint within each pair. Other interval families overlap
+and must not be added to them. These are software timestamps, not captured RF
+edges or peer receipt.
+
+The next packet was already present in these transitions. The pre-issue bucket
+includes RX rearm, the complete mandatory listening floor and loop/IRQ/output
+gates. The later bucket includes checked standby, IRQ checks, board preparation
+and `startTransmit`; it is not wholly attributed to one call or proven removable.
+The next profiling work should isolate those phases while preserving the full
+5/100 ms listening floors from successful RX rearm. Separate late-refill cases
+remain visible in the retained analysis; prefilling may move preparation before
+first RF, so avoiding a tail does not by itself establish a speedup.
