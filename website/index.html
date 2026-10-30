@@ -43,8 +43,8 @@
           <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>A SAGE Foundation project / Experimental alpha published</p>
           <h1>Small radios.<br><em>Bigger possibilities.</em></h1>
           <p class="hero-description">Encrypted messages. Verified resources. A transport designed to make more of every radio link, and use faster paths when they become available.</p>
-          <div class="hero-actions"><a class="button button-amber" href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3">Download 1.0.0-alpha.3 <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum">Explore the source <span aria-hidden="true">↗</span></a></div>
-          <p class="hero-footnote">Latest: 1.0.0-alpha.3 / Python package 1.0.0a3.<br>Durable host accounting and optional phase timings. <a href="roadmap.html#host-profiling">Read the update</a>.</p>
+          <div class="hero-actions"><a class="button button-amber" href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4">Download 1.0.0-alpha.4 <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum">Explore the source <span aria-hidden="true">↗</span></a></div>
+          <p class="hero-footnote">Latest: 1.0.0-alpha.4 / Python package 1.0.0a4.<br>Three repeated SF5 files above 3 kB/s. <a href="roadmap.html#alpha4-qualification">Read the update</a>.</p>
         </div>
         <figure class="hero-figure">
           <img src="assets/network.svg" width="620" height="550" alt="Illustrative network: verified resources and encrypted messages pass between radio peers, with an optional faster IP path.">
@@ -82,7 +82,17 @@
     <section class="section paper evidence-section" id="evidence">
       <div class="container">
         <div class="section-heading"><div><p class="eyebrow">03 / Measured, with scope</p><h2>More than a modem<br>bitrate.</h2></div><p>We measure useful bytes in authenticated encrypted transfers, and require independent publisher and content verification. Timing boundaries matter.</p></div>
-        <div class="measurement-note"><span aria-hidden="true">↳</span><p><strong>Post-alpha.3 SF5 recovery:</strong> a fresh 2 kB file exercised a selective retry 16.725 ms after an authenticated ACK identified the missing packet. End-to-end delivery took 2.554067 seconds including sender startup (0.783065 useful kB/s). Host setup and ACK waits remain performance work; this is one small file, not a paired SF5/SF7 speed comparison. Published alpha.3 assets are unchanged. <a href="roadmap.html#sf5-recovery">Read the recovery evidence</a>.</p></div>
+        <div class="measurement-note"><span aria-hidden="true">↳</span><p><strong>Alpha.4 SF5 repeat:</strong> three fresh exact-wheel files delivered 23,900 useful bytes at 3,149.246, 3,188.156 and 3,192.081 bytes/s including sender process startup. Each verified the whole file and used one DATA retransmission. These are three finite near-bench samples; sustained larger-file performance and field range remain open. <a href="roadmap.html#alpha4-qualification">Read the timing, native accounting and limits</a>.</p></div>
+        <div class="evidence-panel" id="alpha4-qualification">
+          <div class="evidence-head"><span class="label">Alpha.4 candidate / Repeated SF5 qualification</span><span class="date">30 October 2026</span></div>
+          <div class="metrics-grid file-metrics">
+            <div class="metric primary-metric"><strong>3.149–3.192<span>useful kB/s</span></strong><p>Three fresh files<br>sender startup → authenticated receipt</p></div>
+            <div class="metric"><strong>23,900<span>useful bytes each</span></strong><p>One signed file part<br>12 authenticated sender ACKs</p></div>
+            <div class="metric"><strong>1 DATA retry<span>per sample</span></strong><p>128 DATA frames<br>zero duplicate flow events</p></div>
+          </div>
+          <div class="measurement-note"><span aria-hidden="true">↳</span><p>All three samples used SF5/BW500, CR4/5, sync word 18, a 32-symbol preamble and firmware <code>mtb1-e2eaa9f94c</code>. Every receiver verified the complete file; both endpoint children exited zero without forced cleanup. Each expired-scope read-only post-run probe matched the final native counters and issued no RF, reset or grant command. Authenticated receipt remains separate from final physical drain and endpoint closure. <a href="roadmap.html#alpha4-qualification">Read the exact sample table and scope</a>.</p></div>
+          <div class="radio-settings"><span>SF5 · BW500 kHz · CR4:5</span><span>921.375 MHz · 0 dBm chip setting</span><span>Three finite near-bench samples</span><span>Sustained throughput and field range remain open</span></div>
+        </div>
         <div class="evidence-panel" id="alpha3-qualification">
           <div class="evidence-head"><span class="label">Alpha.3 candidate / Profiled USB LoRa qualification</span><span class="date">30 October 2026</span></div>
           <div class="metrics-grid file-metrics">
@@ -162,7 +172,7 @@
     </section>
 
     <section class="get-started paper">
-      <div class="container start-grid"><div><p class="eyebrow">Explore the work</p><h2>Open code.<br>Explicit evidence.</h2><p>Download the experimental alpha, read the design, inspect the results, or help build the next piece.</p></div><div class="start-actions"><a class="button button-dark" href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3">Download alpha.3 <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum">Open the repository <span aria-hidden="true">↗</span></a><a class="text-link" href="roadmap.html">See the roadmap <span aria-hidden="true">↗</span></a></div></div>
+      <div class="container start-grid"><div><p class="eyebrow">Explore the work</p><h2>Open code.<br>Explicit evidence.</h2><p>Download the experimental alpha, read the design, inspect the results, or help build the next piece.</p></div><div class="start-actions"><a class="button button-dark" href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4">Download alpha.4 <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum">Open the repository <span aria-hidden="true">↗</span></a><a class="text-link" href="roadmap.html">See the roadmap <span aria-hidden="true">↗</span></a></div></div>
     </section>
   </main>
   <footer class="site-footer"><div class="container footer-inner"><a class="brand" href="#">meshticulum<span class="brand-period">.</span></a><p>A <a href="https://sage-foundation.net/">SAGE Foundation</a> project.<br>© 2026 Dhillon Andrew Kannabhiran · <a href="https://github.com/l33tdawg/meshticulum/blob/main/LICENSE">Apache 2.0</a></p><a href="getting-started.html">Developer guide <span aria-hidden="true">↗</span></a><a href="roadmap.html">Project roadmap <span aria-hidden="true">↗</span></a><a href="https://l33tdawg.github.io/sage/">Discover SAGE <span aria-hidden="true">↗</span></a></div></footer>

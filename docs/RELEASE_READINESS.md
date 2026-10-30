@@ -1,6 +1,57 @@
 # Meshticulum alpha release status
 
-## 1.0.0-alpha.3 — 2026-10-30
+## 1.0.0-alpha.4 — 2026-10-30
+
+Python package **`1.0.0a4`** is the Alpha 4 SDK update. The
+[`v1.0.0-alpha.4` release assets](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4)
+carry the final source identity, wheel and normalized source archive, validation
+record, manifest and checksums. Earlier release tags and assets remain
+unchanged.
+
+Alpha 4 repairs a saturated train12 recovery stall. A fresh authenticated later
+SACK can enter the existing bounded selective-repair train only when the logical
+window is fully occupied, physical DATA has drained, the original authority is
+live, fresh DATA remains and the ordinary retry timer is not due. Ordinary
+flows retain three-SACK recovery. Every repair still passes owner, cipher,
+durable journal, native queue, scheduler and original-deadline checks.
+
+### Alpha.4 hardware evidence
+
+Three independent physical B-to-A USB-SF5 files used the exact wheel SHA-256
+`f40ef1947bfc53208b711546e7a195e5932f6ac7d745a001b158c012f8f9c64c`,
+runtime source `c8b82a527efca916415dc87eb4836991d55d7e80` and firmware
+`mtb1-e2eaa9f94c`. The profile was 921.375 MHz, 500 kHz, SF5, CR4/5, sync 18,
+32-symbol preamble and 0 dBm requested chip power. Each used the same
+23,900-byte signed fixture.
+
+| Sample | Sender startup → authenticated receipt | Useful goodput | DATA retransmissions |
+| --- | ---: | ---: | ---: |
+| 13 | 7.496496 s | 3,188.156 B/s | 1 |
+| 14 | 7.487278 s | 3,192.081 B/s | 1 |
+| 15 | 7.589117 s | 3,149.246 B/s | 1 |
+
+All three clear the required **2.8 kB/s** checkpoint and the **3.0 kB/s**
+stretch target. Every sample sent 128 DATA frames, accepted 12 authenticated
+ACK snapshots, had zero duplicate flow events, verified the complete file and
+closed both endpoint children with exit zero and no forced cleanup. Each
+expired-scope read-only post-run probe matched the final native counters and
+issued no RF, reset or grant command. The [repeat qualification](../benchmarks/2026-10-30-sf5-alpha4-repeat-profile/README.md)
+retains exact evidence hashes, native deltas and timing limits.
+
+This is repeatability for three finite near-bench files, not a sustained
+completion distribution. The timing endpoint precedes final physical drain,
+endpoint closure and reader verification. Field range, LoRa-profile behavior,
+energy/EIRP, wider hardware and global quiescence remain open. Historical debt
+still has unknown actual costs and is not complete.
+
+### Alpha.4 artifact validation
+
+The final release wheel and normalized source archive are independently rebuilt
+and checked below. Runtime correspondence, clean installation, frozen-flow,
+documentation, website and archive-content checks are recorded separately from
+the physical samples. A matching runtime file inventory is not a new RF run.
+
+## Previous 1.0.0-alpha.3 — 2026-10-30
 
 Python package **`1.0.0a3`** is the alpha.3 SDK update. The
 [`v1.0.0-alpha.3` release assets](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3)

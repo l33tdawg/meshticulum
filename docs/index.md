@@ -1,6 +1,6 @@
 # Meshticulum documentation
 
-Meshticulum brings bounded radio transfers, authenticated service boundaries and verified resources into a system intended to span LoRa and IP. This guide starts with the design, then follows the source and the evidence needed to qualify it. [Experimental alpha.3](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3) adds durable journal accounting improvements and optional host phase timings; start with the [SDK installation guide](SDK_GUIDE.md#install-the-alpha-or-checkout).
+Meshticulum brings bounded radio transfers, authenticated service boundaries and verified resources into a system intended to span LoRa and IP. This guide starts with the design, then follows the source and the evidence needed to qualify it. [Experimental alpha.4](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4) repairs saturated train12 recovery stalls and adds three repeated physical SF5 samples above 3 kB/s; start with the [SDK installation guide](SDK_GUIDE.md#install-the-alpha-or-checkout).
 
 ## Understand the project
 
@@ -39,7 +39,7 @@ Start with [installation and the standalone test command](../README.md#install-a
 | [Lantern's SAGE integration](SAGE_INTEGRATION.md) | Understand the separate owning repository for protected capture, replay and private inbox admission |
 | [Extraction and provenance](EXTRACTION.md) | Trace code to its original snapshot, inspect frozen flow pins or understand package bridges |
 | [Coordinated public pilot](HARDWARE_PILOT.md) | Follow native provisioning, relay provenance, publisher verification and the remaining physical checks |
-| [Alpha release status](RELEASE_READINESS.md) | Check alpha.3 artifacts and hardware evidence, earlier releases and remaining qualification |
+| [Alpha release status](RELEASE_READINESS.md) | Check alpha.4 artifacts and hardware evidence, earlier releases and remaining qualification |
 | [Third-party inventory](THIRD_PARTY.md) | Identify runtime and firmware dependencies and outstanding redistribution requirements |
 | [Repository instructions](../AGENTS.md) | Change transport or integration behavior while preserving its contracts and writer ownership |
 | [Frozen flow history](../src/meshticulum/flow/README.md) | Inspect the accepted candidate's revisions, invariants and historical source controls |
@@ -48,7 +48,7 @@ The flow history includes references to lab receipts in the original SAGE checko
 
 ## Follow qualification
 
-The [roadmap](ROADMAP.md) separates current evidence, published alpha scope and later work. The alpha records useful encrypted delivery above 1 kB/s (8 kbit/s) including sender startup on its declared near-bench path, reliable verified completion and a deployable SDK/firmware source-build path. The later 250 kB, 500 kB and 1 MB files reach 2.111, 2.216 and 2.230 kB/s whole-file, clearing the owner's 2.0 kB/s floor; a first 1 MB sample measured 1.750 kB/s under heavy sender-host load and stays in the record. Three HTTP gateway browser requests rendered public pages in 17.77–17.99 seconds with a normal 30-second timeout. Wider mixed/native integration, private security and field qualification remain required. The optional 4 to 5 kB/s (32 to 40 kbit/s) stretch and post-quantum feasibility work belong after the baseline.
+The [roadmap](ROADMAP.md) separates current evidence, published alpha scope and later work. Alpha 4 records three useful encrypted deliveries above 3 kB/s (24 kbit/s) including sender startup on its declared near-bench SF5 path, with reliable verified completion and a deployable SDK/firmware source-build path. The 250 kB, 500 kB and 1 MB files reach 2.111, 2.216 and 2.230 kB/s whole-file, clearing the owner's 2.0 kB/s floor; a first 1 MB sample measured 1.750 kB/s under heavy sender-host load and stays in the record. Three HTTP gateway browser requests rendered public pages in 17.77–17.99 seconds with a normal 30-second timeout. Sustained larger-file performance, wider mixed/native integration, private security and field qualification remain required. The optional 4 to 5 kB/s (32 to 40 kbit/s) stretch and post-quantum feasibility work belong after the baseline.
 
 Read [Performance](PERFORMANCE.md) alongside that roadmap. Source controls, modeled workers and loopback transfers provide useful implementation evidence. Physical RF completion, peer receipt, publisher verification and production application acceptance need their respective observations.
 
@@ -62,9 +62,9 @@ GitHub renders the Mermaid blocks in the Markdown. Every figure also links to an
 
 
 [Throughput pipeline work](THROUGHPUT_PIPELINE.md) records the existing verified
-piece behavior, bounded host wakeups and dormant MCU batch prototype. The
-active goal is repeated physical runs at least 3,000 useful file bytes/s including startup, with an
-above-2,800 B/s checkpoint. The [SPI8 sample](../benchmarks/2026-10-30-sf5-spi8-profile/README.md)
+piece behavior, bounded host wakeups and dormant MCU batch prototype. Alpha 4
+met the repeated physical goal for three finite files at least 3,000 useful
+bytes/s including startup. The [SPI8 sample](../benchmarks/2026-10-30-sf5-spi8-profile/README.md)
 records faster native setup alongside lower file goodput under different losses.
 
 [Bounded scalar fill pair](SCALAR_FILL_PAIR.md) describes the explicit v6 policy
@@ -104,6 +104,15 @@ changed the explicit sync word to `0x12`; this does not prove the cause of the
 preceding failure. Repeated 3,000 B/s and comparisons against MeshCore or
 Reticulum remain unqualified. The v8/v9 source work below was not used in
 this physical run.
+
+The final Alpha 4 [repeat qualification](../benchmarks/2026-10-30-sf5-alpha4-repeat-profile/README.md)
+completed three fresh exact-wheel SF5 files at **3,149.246, 3,188.156 and
+3,192.081 B/s** including sender startup. Each used the repaired train12
+policy, accepted 12 authenticated ACKs, verified the whole file, closed both
+endpoint children without forced cleanup and had one DATA retransmission.
+This clears both the 2.8 kB/s required checkpoint and the 3.0 kB/s stretch
+target for three finite near-bench samples. Sustained larger-file throughput,
+field range and matched upstream comparisons remain open.
 
 [Terminal repair trains](TERMINAL_REPAIR_TRAIN.md) are now accepted in source as
 an explicit v8 policy. After original FINAL handover and authenticated peer

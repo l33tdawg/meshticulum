@@ -29,7 +29,7 @@ python examples/offline_resource_demo.py
 ```
 
 Keep the commit printed by `git rev-parse HEAD`. The import check should show
-the version in that checkout's `pyproject.toml` (`1.0.0a3` for this checkout)
+the version in that checkout's `pyproject.toml` (`1.0.0a4` for this checkout)
 and a path in your virtual environment's `site-packages`. CLI help
 should list `serve`, `serve-cache` and `fetch`; it starts no service.
 
