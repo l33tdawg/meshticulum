@@ -46,7 +46,9 @@ underfill can still produce a shorter physical train.
 With no outbound DATA, no spare credit, a full train or an existing hold, the
 original single-repair reverse turn applies. A full-size final frame retains its
 FINAL bit. If new DATA finishes the file before eight positions fill, the
-receiver's existing complete-ACK path applies.
+sender closes that partial train with the same reverse hold. The receiver's
+existing complete-ACK path applies. This also keeps another hole's retry out
+of the train if its deadline passes during the final enqueue handover.
 
 An active fill cannot accept another selective repair. If an ordinary timeout
 becomes due, the adapter reads the unchanged R11 pending deadlines and ends the
@@ -68,6 +70,9 @@ All 30 source cases complete with exact response/chunk checks and no modeled
 collisions. Tests also cover timeout during a fill with and without a prepared
 new-DATA handle: journal, nonce, owner attempts, scheduler debt and pending
 reservations stay unchanged at the hold boundary.
+The partial-final regression also advances time inside an accepted final
+handover: the next step cannot add another retry, nonce or paid attempt to the
+closed repair-fill train.
 
 This policy cannot accelerate a missing final DATA when no later data remains.
 It does not rebase retry clocks on RF_DONE, shorten the 2.22-second queued

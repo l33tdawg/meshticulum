@@ -6,7 +6,13 @@ workloads with publisher and whole-file verification. Strictly above 2,800
 bytes/s remains the net-win checkpoint. Neither has been established. The
 [first eight-frame hardware sample](../benchmarks/2026-10-30-sf5-eight-profile/README.md)
 verified 23,900 useful bytes in 29.821904 seconds including startup, or
-801.424349 useful B/s. It retained 14 DATA retries and all attempt debt.
+801.424349 useful B/s. It retained 14 DATA retries and all attempt debt. A
+[matched R11 sample](../benchmarks/2026-10-30-sf5-r11/README.md) completed the same
+useful bytes at 1,053.284286 B/s in 22.690930 seconds, with 10 DATA retries.
+The different loss patterns prevent an isolated causal gain estimate. A
+[subsequent logical-window32 sample](../benchmarks/2026-10-30-sf5-window32-profile/README.md)
+verified the same useful bytes at 1,276.917174 B/s in 18.716954 seconds, with
+the physical train still eight. This also misses the target.
 
 ## Existing piece and recovery behavior
 
@@ -117,15 +123,17 @@ are inclusive where documented and cannot be added as disjoint costs. Three
 lost selective repairs fell back to roughly 4.7-second waits. A focused retry
 review produced [flow revision 11](FLOW_R11_REVIEW.md): selective repair keeps
 its existing RTO while actual timeout retries retain backoff. Its two independent
-reviews passed; physical performance of that revision remains pending.
+reviews passed. Its matched hardware sample spent 14.125908 seconds without
+physical DATA outstanding; native setup still averaged about 4.060 ms. The
+remaining recovery stalls require further work.
 
-The next physical comparison must use equal useful workloads, exact installed
+Further physical comparisons must use equal useful workloads, exact installed
 source/firmware correspondence and original finite budgets. Retain failed runs
 and complete allocations. No modeled result renews old authority, resets native
 counters or qualifies a release artifact.
 
 The eight-frame and native-profile candidate passed **3,453 tests, 37 skips
 and 49 subtests** locally, with green Python 3.11–3.13 and crypto-prototype CI.
-Source tests and the single hardware sample retain their separate scopes.
+Source tests and physical samples retain their separate scopes.
 The subsequent reviewed retry revision passed 3,462 tests, 37 skips and 49
 subtests; its independent controls distinguish the previous backoff behavior.

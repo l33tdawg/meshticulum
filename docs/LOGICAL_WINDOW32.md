@@ -93,3 +93,14 @@ The independent-host model keeps real flow, owner, cipher, journal and serial
 code; radio clocks and RX setup are modeled. Physical qualification needs a
 fresh finite scope, the same useful-file/startup/receipt boundary and complete
 publisher, journal and physical closure evidence.
+
+## First physical sample
+
+The [matched window32 sample](../benchmarks/2026-10-30-sf5-window32-profile/README.md)
+verified the same 23,900 useful bytes in 18.716954 seconds including startup,
+or 1,276.917174 useful B/s. The prior R11/eight-window sample measured
+1,053.284286 B/s. Both used 10 DATA retries, but loss positions and ACK losses
+differed, so the pair does not isolate a causal speedup. Native queue depth and
+train length stayed eight, with unchanged firmware and original role budgets.
+Both endpoints closed with all attempts reconciled. The 3,000 B/s goal remains
+open; per-repair control holds and remaining recovery delays are under review.

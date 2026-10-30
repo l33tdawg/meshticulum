@@ -310,8 +310,12 @@ class BenchFlow:
                 self.burst_sent = 0
                 self._repair_fill_active = False
                 self.owner.settle_sending()
-            elif parsed['last']:
-                self._repair_fill_active = False
+            elif parsed['last'] and self._repair_fill_active:
+                # A partial final train still owes its reverse turn. Another
+                # flight can become due inside this accepted handover, after
+                # the pre-pump expiry check, so clearing the flag alone would
+                # allow that retry to join a fresh-DATA-only fill.
+                self._hold_repair_reverse_turn()
             return CommitOutcome.ACCEPTED
         if self.data_burst and kind is FrameKind.DATA and result.outcome == 'UNKNOWN':
             # Physical proof may already be buffered even though queue handover
