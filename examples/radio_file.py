@@ -9,6 +9,7 @@ No application or fleet integration is imported by this example.
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -23,6 +24,7 @@ from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import OperationLimits, RunAuthority
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.host_timing import HostPhaseTimings, Phase, phase
+from meshticulum.bench.host_pump import run_host_pump
 from meshticulum.bench.gfsk250_profile import Gfsk250Profile
 from meshticulum.bench.hat_worker import Gfsk250HATWorker, HATWorker, journal_binding as hat_binding
 from meshticulum.bench.linux_hat import LinuxHAT
@@ -613,10 +615,22 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
         cleanup.append(session.close)
         if payload is not None:
             session.send(payload)
-        while not session.step():
-            window.check()
+        def wait_for_work(timeout):
+            wait = getattr(worker, 'wait_for_activity', None)
+            if wait is not None and wait(timeout) is not None:
+                return
             with phase(timing, Phase.HOST_LOOP_SLEEP):
-                time.sleep(.005)
+                time.sleep(timeout)
+
+        endpoint = session.endpoint
+        queued = bool(getattr(endpoint, 'data_burst', False))
+        run_host_pump(session.step, check=window.check, wait=wait_for_work,
+            clock_us=lambda: clock()[1],
+            deadline_us=min(window.deadline_us,
+                math.floor(authority.deadlines.application_deadline_monotonic * 1_000_000)),
+            progress=(lambda: endpoint.counts['tx_QUEUED']) if queued else None,
+            can_repump=(lambda: worker.has_capacity and clock()[1] >= endpoint.next_send_us)
+                if queued else None)
         window.check()
         result = {'chunk': args.chunk, 'sender_peer_receipt': authority.sends,
                   'receiver_chunk_verified': not authority.sends,

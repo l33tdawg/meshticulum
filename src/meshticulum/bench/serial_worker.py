@@ -254,6 +254,28 @@ class SerialWorker:
         require(self.channel.monotonic() < self.armed_until, 'radio_lease_expired')
         return self._received.popleft() if self._received else None
 
+    @property
+    def has_buffered_activity(self):
+        """Only receive work the next step can consume, not unmatched replies."""
+        return bool(self._received)
+
+    def wait_for_activity(self, timeout):
+        """Non-consuming wake hint; None means the channel lacks this capability.
+
+        Callers must use their bounded sleep fallback for None, rather than
+        interpreting unsupported readiness as an immediate timeout.
+        """
+        require(type(timeout) in (int, float) and 0 <= timeout <= .005
+                and math.isfinite(timeout), 'invalid_serial_activity_timeout')
+        if self.has_buffered_activity:
+            return True
+        wait = getattr(self.channel, 'wait_readable', None)
+        if not callable(wait):
+            return None
+        ready = wait(timeout)
+        require(type(ready) is bool, 'invalid_serial_activity_result')
+        return ready
+
     def disarm(self):
         require(self.journal is not None and self.identity is not None, 'missing_owner')
         self.armed_until = 0.0

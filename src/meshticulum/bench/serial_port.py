@@ -1,6 +1,7 @@
 """One Linux owner for a pinned USB radio. Opening does not arm or transmit."""
 import fcntl
 import hashlib
+import math
 import os
 from pathlib import Path
 import platform
@@ -114,6 +115,17 @@ class ExclusiveSerial:
             return b''
         require(bool(data), 'serial_read_disconnected')
         return data
+
+    def wait_readable(self, timeout):
+        """Wait without consuming bytes; readiness is never permission to send.
+
+        The single worker remains the only reader and interprets disconnects,
+        partial records and bound replies through its existing receive path.
+        """
+        require(type(timeout) in (int, float) and 0 <= timeout <= .005
+                and math.isfinite(timeout), 'invalid_serial_activity_timeout')
+        with phase(getattr(self, 'host_timing', None), Phase.SERIAL_READ_WAIT):
+            return bool(select.select([self.fd], [], [], timeout)[0])
 
     def close(self):
         for name in ('fd', 'lock_fd'):

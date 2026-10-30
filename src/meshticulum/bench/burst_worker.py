@@ -443,6 +443,15 @@ class BurstSerialWorker(SerialWorker):
         self._terminals.clear()
         return results
 
+    @property
+    def has_buffered_activity(self):
+        # Command replies belong to their serialized _wait(), not this pump.
+        # A terminal still needs normal collection/release; it is not capacity.
+        return (super().has_buffered_activity or bool(self._terminals)
+                or any(record['event'] is not None and record['event'].stage in TERMINAL
+                       and not record.get('host_unknown', False)
+                       for record in self._physical.values()))
+
     def receive(self, timeout=0.0):
         self._live()
         self._pump_physical()

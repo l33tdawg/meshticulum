@@ -126,6 +126,7 @@ def run_model(examples, monkeypatch, tmp_path):
             current=lambda: True, close=lambda: calls.append('owner.close')))
         monkeypatch.setattr(example, 'RunAuthority', lambda *a, **k: authority)
         monkeypatch.setattr(example, 'host_boot', lambda: 'source-model')
+        monkeypatch.setattr(example, 'clock', lambda: (1_000_000, 1_000_000))
         monkeypatch.setattr(example, 'SessionStore', lambda *a, **k: SimpleNamespace(
             retire=lambda: calls.append('store.retire'), close=lambda: calls.append('store.close')))
         monkeypatch.setattr(example, 'SessionCipher', lambda *a, **k: object())

@@ -26,6 +26,7 @@ from meshticulum.bench.burst_protocol import (
 )
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.flow_runtime import BenchFlow
+from meshticulum.bench.host_pump import run_host_pump
 from meshticulum.bench.serial_protocol import Decoder, Frame, Message, Outcome, RadioProfile
 from meshticulum.bench.serial_worker import SerialWorker, estimated_airtime_us, journal_binding
 from meshticulum.bench.state import SessionStore
@@ -347,9 +348,15 @@ class RadioChannel:
         del self.inbound[:4096]
         return raw
 
+    def wait_readable(self, timeout):
+        assert 0 <= timeout <= .005
+        if not self.inbound:
+            self.timeline.sleep(self.index, round(timeout * 1_000_000), incoming=True)
+        return bool(self.inbound)
+
 
 def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
-             receipt_confirmation=False, host_work_us=(0, 0)):
+             receipt_confirmation=False, host_work_us=(0, 0), host_pump=False):
     timeline = Timeline()
     air = Air(timeline, drop_data=drop_data, drop_final_ack=drop_final_ack)
     air.channels = [RadioChannel(timeline, air, i) for i in range(2)]
@@ -411,18 +418,30 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
             if index == 0:
                 endpoint.send(PAYLOAD)
             received_at = None
-            while not timeline.stop_flows:
+            def drive_step():
+                nonlocal received_at
+                if timeline.stop_flows:
+                    return True
                 complete = endpoint.step()
                 if complete:
                     if index == 0:
                         if receipt_confirmation:
                             endpoint.confirm_receipt()
                         timeline.stop_flows = True
-                        break
+                        return True
                     received_at = received_at or timeline.now
                     if timeline.now >= received_at + 20_000_000:
-                        break
-                timeline.sleep(index, 5000)
+                        return True
+                return False
+            if host_pump:
+                run_host_pump(drive_step, check=lambda: None, wait=worker.wait_for_activity,
+                    clock_us=lambda: timeline.now, deadline_us=authority.application_deadline_us,
+                    progress=(lambda: endpoint.counts['tx_QUEUED']) if index == 0 else None,
+                    can_repump=(lambda: worker.has_capacity and timeline.now >= endpoint.next_send_us)
+                        if index == 0 else None)
+            else:
+                while not drive_step():
+                    timeline.sleep(index, 5000)
             results[index].update(snapshot=endpoint.snapshot(), received=bytes(endpoint.received),
                                   received_at=received_at, complete=endpoint.flow.complete,
                                   settled_states=journal.db.execute('SELECT state,COUNT(*) FROM attempts GROUP BY state').fetchall())
