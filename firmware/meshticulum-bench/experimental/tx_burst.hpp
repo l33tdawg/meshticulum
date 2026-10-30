@@ -18,6 +18,7 @@
 
 namespace mtbench { namespace experimental {
 constexpr std::size_t TX_BURST_DEPTH=4, TX_PACKET_BYTES=255;
+constexpr std::size_t TX_BURST_MAX_DEPTH=8;
 constexpr std::uint64_t MAX_AUTONOMOUS_HOLD_US=2000000, START_GUARD_US=100000;
 
 struct Binding { std::uint8_t boot[16]={}, context_sha256[32]={}; };
@@ -37,6 +38,7 @@ struct Admission {
     std::uint64_t lease_deadline_us=0;
     std::uint32_t max_attempts=0;
     std::uint64_t max_airtime_us=0;
+    std::uint8_t depth=TX_BURST_DEPTH;
 };
 enum class PacketKind : std::uint8_t { Data=1, Ack=2, Control=3 };
 struct Packet {
@@ -78,9 +80,9 @@ class TxBurstQueue {
     std::uint64_t& last_now_;
     bool& fenced_;
     bool& containment_required_;
-    Slot slots_[TX_BURST_DEPTH];
+    Slot slots_[TX_BURST_MAX_DEPTH];
     std::uint64_t burst_deadline_=0;
-    std::size_t admitted_=0, active_=TX_BURST_DEPTH;
+    std::size_t admitted_=0, active_=TX_BURST_MAX_DEPTH;
     bool valid_=false, owns_=false;
 
     static bool nonzero(const std::uint8_t* bytes,std::size_t size) {
@@ -121,7 +123,7 @@ class TxBurstQueue {
                 state(slot,State::Unknown); containment_required_=true;
             } else if(slot.state==State::Queued) state(slot,State::NotSent);
         }
-        active_=TX_BURST_DEPTH;
+        active_=TX_BURST_MAX_DEPTH;
         fenced_=fenced_ || fence || containment_required_;
     }
     bool observe(std::uint64_t now,bool expire=true) {
@@ -142,6 +144,7 @@ public:
         high_request_(boot.request_highwater),last_now_(boot.last_now_us),fenced_(boot.fenced),containment_required_(boot.containment_required) {
         if(!boot.initialized) { boot.paid_floor=boot.counters; boot.initialized=true; }
         valid_=nonzero(admission.binding.boot,16) && nonzero(admission.binding.context_sha256,32)
+            && (admission.depth==TX_BURST_DEPTH || admission.depth==TX_BURST_MAX_DEPTH)
             && std::memcmp(admission.binding.boot,boot.boot,16)==0
             && admission.lease_deadline_us>0 && admission.max_attempts>0 && admission.max_attempts<=100000
             && admission.max_airtime_us>0 && admission.max_airtime_us<=300000000
@@ -176,7 +179,7 @@ public:
         if(packet.deadline_us<=now || packet.deadline_us>admission_.lease_deadline_us
             || packet.deadline_us-now>MAX_AUTONOMOUS_HOLD_US) return Code::Expired;
         if(burst_deadline_ && packet.deadline_us!=burst_deadline_) return Code::Conflict;
-        if(admitted_==TX_BURST_DEPTH) return Code::Full;
+        if(admitted_==admission_.depth) return Code::Full;
         std::uint64_t needed=packet.estimated_airtime_us+START_GUARD_US;
         if(needed<packet.estimated_airtime_us) return Code::Invalid;
         for(const auto& slot:slots_) if(slot.state==State::Queued || slot.state==State::Issued || slot.state==State::Started) {
@@ -203,13 +206,13 @@ public:
     Dispatch issue(std::uint64_t now,bool rx_pending,bool evidence_output_available) {
         if(!observe(now)) return {Code::ClockRegressed,nullptr};
         if(fenced_) return {Code::Fenced,nullptr};
-        if(active_!=TX_BURST_DEPTH) return {Code::Busy,nullptr};
+        if(active_!=TX_BURST_MAX_DEPTH) return {Code::Busy,nullptr};
         if(rx_pending) return {Code::RxPending,nullptr};
         if(!evidence_output_available) return {Code::OutputBlocked,nullptr};
-        std::size_t next=TX_BURST_DEPTH;
-        for(std::size_t n=0;n<TX_BURST_DEPTH;n++) if(slots_[n].state==State::Queued
-            && (next==TX_BURST_DEPTH || slots_[n].packet.request<slots_[next].packet.request)) next=n;
-        if(next==TX_BURST_DEPTH) return {Code::Missing,nullptr};
+        std::size_t next=TX_BURST_MAX_DEPTH;
+        for(std::size_t n=0;n<TX_BURST_MAX_DEPTH;n++) if(slots_[n].state==State::Queued
+            && (next==TX_BURST_MAX_DEPTH || slots_[n].packet.request<slots_[next].packet.request)) next=n;
+        if(next==TX_BURST_MAX_DEPTH) return {Code::Missing,nullptr};
         auto& slot=slots_[next];
         if(now>=slot.packet.deadline_us || slot.packet.estimated_airtime_us+START_GUARD_US>slot.packet.deadline_us-now) {
             stop(false); return {Code::Expired,nullptr};
@@ -225,7 +228,7 @@ public:
         // Expiry fences future work; it does not erase its completion evidence.
         if(!observe(now,false)) return Code::ClockRegressed;
         if(!bound(value.binding)) return Code::WrongBinding;
-        for(std::size_t n=0;n<TX_BURST_DEPTH;n++) {
+        for(std::size_t n=0;n<TX_BURST_MAX_DEPTH;n++) {
             auto& slot=slots_[n];
             if(slot.state==State::Empty || slot.packet.request!=value.request) continue;
             if(!proof(slot,value)) { stop(true); return Code::Mismatch; }
@@ -246,7 +249,7 @@ public:
                 if(started && slot.state==State::Started) return Code::Replayed;
                 slot.evidence=value; slot.state=value.state;
                 slot.evidence.event_us=now; slot.evidence.deadline_us=slot.packet.deadline_us;
-                if(done) active_=TX_BURST_DEPTH;
+                if(done) active_=TX_BURST_MAX_DEPTH;
                 if(burst_deadline_ && now>=burst_deadline_) stop(false);
                 return Code::Accepted;
             }
@@ -265,7 +268,7 @@ public:
     std::size_t pending() const { std::size_t count=0;for(const auto& s:slots_) if(s.state!=State::Empty && !terminal(s.state)) count++;return count; }
     std::size_t queued() const { std::size_t count=0;for(const auto& s:slots_) if(s.state==State::Queued) count++;return count; }
     bool evidenceAt(std::size_t index,Evidence& value) const {
-        if(index>=TX_BURST_DEPTH || slots_[index].state==State::Empty) return false;
+        if(index>=TX_BURST_MAX_DEPTH || index>=admission_.depth || slots_[index].state==State::Empty) return false;
         value=slots_[index].evidence;return true;
     }
     // Report checked physical containment; this never unfences or refunds debt.

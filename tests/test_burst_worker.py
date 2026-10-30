@@ -10,6 +10,7 @@ import pytest
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.burst_protocol import (
     ACK, CAPABILITY, CANCEL, CLOCK, DATA, EVENT, OPEN, POLICY, STATUS, TOKEN,
+    capability_for_depth, capability_request_body, policy_for_depth,
 )
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.linux_hat import HardwareError
@@ -23,7 +24,9 @@ PROFILE = RadioProfile(921375000, 500000, 7, 5, 0, 8, 0x42, 60000, 128, 20_000_0
 
 
 class Channel:
-    def __init__(self, fault=None):
+    def __init__(self, fault=None, *, train_depth=4, profile=PROFILE):
+        self.train_depth = train_depth
+        self.profile = profile
         self.time = 100.
         self.inbound = bytearray()
         self.writes = []
@@ -78,13 +81,17 @@ class Channel:
             reply(Message.HELLO_REPLY, struct.pack('!BBH', 1, 1, 255)
                   + (VERSION.encode() + b'\0').ljust(16, b'\0'))
         elif frame.type is Message.BURST_CAPABILITIES:
+            if frame.body != capability_request_body(self.train_depth):
+                reply(Message.REFUSED, b'\x01')
+                return
             reply(Message.BURST_CAPABILITIES_REPLY,
-                  b'?' * len(CAPABILITY) if self.fault == 'capability' else CAPABILITY)
+                  b'?' * len(CAPABILITY) if self.fault == 'capability'
+                  else capability_for_depth(self.train_depth))
         elif frame.type is Message.DISARM:
             reply(Message.DISARM_REPLY, b'\0')
         elif frame.type is Message.ARM:
             self.arm_request = frame.request
-            self.arm_end = self.now_us() + PROFILE.lease_ms * 1000
+            self.arm_end = self.now_us() + self.profile.lease_ms * 1000
             reply(Message.ARM_REPLY, frame.body)
         elif frame.type is Message.BURST_CLOCK:
             reply(Message.BURST_CLOCK_REPLY, CLOCK.pack(
@@ -93,7 +100,9 @@ class Channel:
             if self.fault == 'slow_clock':
                 self.time += .051
         elif frame.type is Message.BURST_OPEN:
-            self.context, arm, self.open_end = OPEN.unpack(frame.body)
+            prefix = capability_request_body(self.train_depth)
+            assert frame.body[:len(prefix)] == prefix
+            self.context, arm, self.open_end = OPEN.unpack(frame.body[len(prefix):])
             assert arm == self.arm_request and self.open_end <= self.arm_end
             self.token = frame.request
             reply(Message.BURST_OPEN_REPLY, frame.body)
@@ -102,7 +111,7 @@ class Channel:
             packet = frame.body[DATA.size:]
             assert token == self.token and kind == 1 and size == len(packet)
             assert digest == hashlib.sha256(packet).digest()
-            assert estimate == estimated_airtime_us(PROFILE, size)
+            assert estimate == estimated_airtime_us(self.profile, size)
             assert self.now_us() < end <= min(self.open_end, self.now_us() + 2_000_000)
             self.on_data(frame, packet)
             if self.fault == 'refused':
@@ -154,7 +163,7 @@ class Channel:
             assert not self.events
             assert self.now_us() >= self.next_start_us
             digest = hashlib.sha256(frame.body).digest()
-            estimate = estimated_airtime_us(PROFILE, len(frame.body))
+            estimate = estimated_airtime_us(self.profile, len(frame.body))
             reply(Message.TX_RESULT, struct.pack('!B32sQQIh', Outcome.RF_DONE,
                                                 digest, estimate, estimate + 500, 1, 0))
         else:
@@ -173,9 +182,9 @@ class Channel:
 def setup(tmp_path):
     tmp_path.chmod(0o700)
     journals = []
-    def make(fault=None, authorize=lambda: True, profile=PROFILE):
-        channel = Channel(fault)
-        worker = BurstSerialWorker(channel, policy=dict(POLICY))
+    def make(fault=None, authorize=lambda: True, profile=PROFILE, train_depth=4):
+        channel = Channel(fault, train_depth=train_depth, profile=profile)
+        worker = BurstSerialWorker(channel, policy=policy_for_depth(train_depth))
         identity = worker.discover(expected_board_id=1, expected_version=VERSION)
         path = tmp_path / (str(len(journals)) + '.sqlite')
         journal = AttemptJournal(path, binding=journal_binding(b'c' * 32, identity, profile),

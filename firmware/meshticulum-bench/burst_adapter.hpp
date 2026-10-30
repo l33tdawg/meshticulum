@@ -11,15 +11,16 @@ alignas(burst_native::TxBurstQueue) static uint8_t burstStorage[sizeof(burst_nat
 static burst_native::TxBurstQueue* burstQueue=nullptr;
 static burst_native::Binding burstBinding;
 static uint64_t burstToken=0, burstOpenDeadline=0, burstArmRequest=0, burstNextStartUs=0;
-static uint8_t burstOpenBody[48]={}, burstTrainCount=0;
+static uint8_t burstOpenBody[49]={}, burstOpenSize=0, burstTrainCount=0, burstDepth=4;
 static bool burstBoardPrepared=false;
 static uint64_t burstHeaderSeenUs=0;
 static uint64_t burstRxDelayUs=0;
+static uint64_t burstLastRxStartUs=0;
 static uint8_t burstDriverPacket[255]={}; // Never overwrite legacy replay bytes.
 struct BurstOffered { uint64_t request=0, at=0; burst_native::State state=burst_native::State::Empty; };
-static BurstOffered burstOffered[4];
+static BurstOffered burstOffered[burst_native::TX_BURST_MAX_DEPTH];
 struct BurstAckReceipt { uint64_t command=0; uint8_t body[57]={}; };
-static BurstAckReceipt burstAckReceipts[4];
+static BurstAckReceipt burstAckReceipts[burst_native::TX_BURST_MAX_DEPTH];
 static size_t burstAckNext=0;
 static Frame burstCancelReceipt;
 struct BurstMutationFloor {
@@ -51,17 +52,31 @@ static Frame burstEvent(const burst_native::Evidence& e) {
 }
 static void burstFlushEvents() {
     if(!burstQueue) return;
-    for(size_t n=0;n<4 && output.freeSlots()>2;n++) {
+    for(size_t n=0;n<burstDepth && output.freeSlots()>2;n++) {
         burst_native::Evidence e;if(!burstQueue->evidenceAt(n,e)) { burstOffered[n]=BurstOffered{};continue; }
         auto& sent=burstOffered[n];
         if(sent.request==e.request && sent.at==e.event_us && sent.state==e.state) continue;
         if(output.offer(burstEvent(e))) { sent.request=e.request;sent.at=e.event_us;sent.state=e.state; }
     }
 }
+static void burstPromoteEmptyTail() {
+    // A queued suffix can become known-unsent after an earlier completion.
+    // Its disappearance makes that completion the actual train tail. Retain
+    // the full reverse floor from checked RX rearm, across release/new OPEN.
+    if(!burstQueue || !burstTrainCount || burstQueue->pending()) return;
+    if(burstRxDelayUs) burstRxDelayUs=BURST_REVERSE_US;
+    else if(burstLastRxStartUs) {
+        const uint64_t next=burstLastRxStartUs+BURST_REVERSE_US;
+        if(next>burstNextStartUs) burstNextStartUs=next;
+    }
+    burstTrainCount=0;
+}
 static void burstCloseEmpty() {
     if(!burstQueue || burstQueue->retained()) return;
+    burstPromoteEmptyTail();
     burstQueue->~TxBurstQueue();burstQueue=nullptr;burstToken=burstOpenDeadline=burstArmRequest=0;
     burstBinding=burst_native::Binding{};memset(burstOpenBody,0,sizeof(burstOpenBody));
+    burstOpenSize=0;burstDepth=4;
     for(auto& sent:burstOffered) sent=BurstOffered{};
 }
 static bool burstMutation(const Frame& frame) {
@@ -96,7 +111,9 @@ static void burstReceiveStarted() {
     burstHeaderSeenUs=0;
     const uint64_t delay=burstRxDelayUs ? burstRxDelayUs : (burstQueue ? BURST_RX_US : 0);
     if(delay) {
-        const uint64_t next=nowUs()+delay;
+        const uint64_t now=nowUs();
+        if(burstRxDelayUs) burstLastRxStartUs=now;
+        const uint64_t next=now+delay;
         if(next>burstNextStartUs) burstNextStartUs=next;
         burstRxDelayUs=0;
     }
@@ -113,7 +130,7 @@ static bool burstOutcome(uint8_t outcome,uint64_t elapsed,uint32_t flags,int16_t
     }
     if(outcome==RF_DONE) {
         burstActiveRequest=0;burstTrainCount++;
-        const bool tail=burstTrainCount>=4 || !burstQueue->queued();
+        const bool tail=burstTrainCount>=burstDepth || !burstQueue->queued();
         burstRxDelayUs=tail ? BURST_REVERSE_US : BURST_RX_US;
         if(tail) burstTrainCount=0;
     }
@@ -125,9 +142,10 @@ static bool burstCommand(const Frame& frame) {
     // DATA's queue check runs before this exit guard so accepted IDs are not
     // mistakenly stale; exact retained replays still precede stale refusal.
     BurstMutationFloor floor{frame.request,frame.type==BURST_OPEN || frame.type==BURST_DATA || frame.type==BURST_ACK || frame.type==BURST_CANCEL};
-    if(frame.type==BURST_CAPABILITIES && frame.size==0) {
+    if(frame.type==BURST_CAPABILITIES && (frame.size==0 || (frame.size==1 && frame.body[0]==8))) {
+        const bool eight=frame.size==1;
         Frame reply=response(BURST_CAPABILITIES_REPLY,frame.request);reply.size=24;
-        memcpy(reply.body,"MBQ1",4);reply.body[4]=4;reply.body[5]=7;put16(reply.body+6,255);
+        memcpy(reply.body,eight ? "MBQ8" : "MBQ1",4);reply.body[4]=eight ? 8 : 4;reply.body[5]=7;put16(reply.body+6,255);
         put32(reply.body+8,2000000);put32(reply.body+12,100000);put32(reply.body+16,BURST_RX_US);put32(reply.body+20,BURST_REVERSE_US);
         output.offer(reply);return true;
     }
@@ -147,28 +165,32 @@ static bool burstCommand(const Frame& frame) {
         put64(reply.body+61,nowUs());put64(reply.body+69,burstNextStartUs);put32(reply.body+77,attempted);put64(reply.body+81,reservedUs);
         output.offer(reply);return true;
     }
-    if(frame.type==BURST_OPEN && frame.size==48) {
+    if(frame.type==BURST_OPEN && (frame.size==48 || (frame.size==49 && frame.body[0]==8))) {
+        const uint8_t depth=frame.size==49 ? 8 : 4;
+        const uint8_t* body=frame.body+(depth==8 ? 1 : 0);
         if(burstToken && frame.request==burstToken) {
-            if(memcmp(frame.body,burstOpenBody,48)) refuse(frame,ATTEMPT_CONFLICT);
-            else { auto reply=response(BURST_OPEN_REPLY,frame.request);reply.size=48;memcpy(reply.body,burstOpenBody,48);output.offer(reply); }
+            if(frame.size!=burstOpenSize || memcmp(frame.body,burstOpenBody,frame.size)) refuse(frame,ATTEMPT_CONFLICT);
+            else { auto reply=response(BURST_OPEN_REPLY,frame.request);reply.size=burstOpenSize;memcpy(reply.body,burstOpenBody,burstOpenSize);output.offer(reply); }
             return true;
         }
         if(!burstMutation(frame)) return true;
         if(transmitting || resultPending || (burstQueue && burstQueue->retained())) { refuse(frame,mtbench::BUSY);return true; }
         if(!ready || fenced || gfskMode || !armed || nowUs()>=deadlineUs) { refuse(frame,NOT_ARMED);return true; }
-        bool context=false;for(size_t n=0;n<32;n++) context=context || frame.body[n];
-        if(!context || u64(frame.body+32)!=armMutationRequest || u64(frame.body+40)<=nowUs() || u64(frame.body+40)>deadlineUs) {
+        if(depth==8 && (profile[8]!=5 || u32(profile+4)!=500000)) { refuse(frame,BAD_PROFILE);return true; }
+        bool context=false;for(size_t n=0;n<32;n++) context=context || body[n];
+        if(!context || u64(body+32)!=armMutationRequest || u64(body+40)<=nowUs() || u64(body+40)>deadlineUs) {
             refuse(frame,BAD_PROFILE);return true;
         }
-        if(burstQueue && !memcmp(frame.body,burstBinding.context_sha256,32) && burstArmRequest==armMutationRequest
-            && u64(frame.body+40)>burstOpenDeadline) { refuse(frame,BAD_PROFILE);return true; }
-        burstCloseEmpty();memcpy(burstBinding.boot,boot,16);memcpy(burstBinding.context_sha256,frame.body,32);
-        burst_native::Admission admission;admission.binding=burstBinding;admission.lease_deadline_us=u64(frame.body+40);
+        if(burstQueue && !memcmp(body,burstBinding.context_sha256,32) && burstArmRequest==armMutationRequest
+            && (u64(body+40)>burstOpenDeadline || depth!=burstDepth)) { refuse(frame,BAD_PROFILE);return true; }
+        burstCloseEmpty();memcpy(burstBinding.boot,boot,16);memcpy(burstBinding.context_sha256,body,32);
+        burst_native::Admission admission;admission.binding=burstBinding;admission.lease_deadline_us=u64(body+40);
         admission.max_attempts=capCount;admission.max_airtime_us=capUs;
+        admission.depth=depth;burstDepth=depth;
         burstQueue=new(burstStorage) burst_native::TxBurstQueue(admission,burstBoot);
         burstToken=frame.request;burstArmRequest=armMutationRequest;burstOpenDeadline=admission.lease_deadline_us;
-        memcpy(burstOpenBody,frame.body,48);
-        auto reply=response(BURST_OPEN_REPLY,frame.request);reply.size=48;memcpy(reply.body,frame.body,48);output.offer(reply);return true;
+        burstOpenSize=frame.size;memcpy(burstOpenBody,frame.body,burstOpenSize);
+        auto reply=response(BURST_OPEN_REPLY,frame.request);reply.size=burstOpenSize;memcpy(reply.body,burstOpenBody,burstOpenSize);output.offer(reply);return true;
     }
     if(frame.type==BURST_ACK && frame.size==57) {
         // Check retained releases before the global stale gate, including a
@@ -187,7 +209,7 @@ static bool burstCommand(const Frame& frame) {
         }
         if(!burstMutation(frame)) return true;
         if(released) {
-            auto& receipt=burstAckReceipts[burstAckNext++%4];receipt.command=frame.request;memcpy(receipt.body,frame.body,57);
+            auto& receipt=burstAckReceipts[burstAckNext++%burstDepth];receipt.command=frame.request;memcpy(receipt.body,frame.body,57);
             auto reply=response(BURST_ACK_REPLY,frame.request);reply.size=57;memcpy(reply.body,frame.body,57);output.offer(reply);return true;
         }
         if(!burstQueue || u64(frame.body)!=burstToken) { refuse(frame,ATTEMPT_CONFLICT);return true; }
@@ -197,7 +219,7 @@ static bool burstCommand(const Frame& frame) {
             || memcmp(e.digest,frame.body+25,32)) { refuse(frame,ATTEMPT_CONFLICT);return true; }
         const auto code=burstQueue->acknowledge(burstBinding,e.request,e.digest,e.state);
         if(code!=burst_native::Code::Accepted) { refuse(frame,burstReason(code));return true; }
-        auto& receipt=burstAckReceipts[burstAckNext++%4];receipt.command=frame.request;memcpy(receipt.body,frame.body,57);
+        auto& receipt=burstAckReceipts[burstAckNext++%burstDepth];receipt.command=frame.request;memcpy(receipt.body,frame.body,57);
         auto reply=response(BURST_ACK_REPLY,frame.request);reply.size=57;memcpy(reply.body,frame.body,57);output.offer(reply);return true;
     }
     if(frame.type==BURST_CANCEL && frame.size==8) {
@@ -233,7 +255,7 @@ static bool burstCommand(const Frame& frame) {
         if(!replay) {
             if(!armed || gfskMode || nowUs()>=deadlineUs) { refuse(frame,NOT_ARMED);return true; }
             uint64_t needed=estimate+100000+BURST_RX_US;
-            for(size_t n=0;n<4;n++) {
+            for(size_t n=0;n<burstDepth;n++) {
                 burst_native::Evidence e;if(burstQueue->evidenceAt(n,e) && !burstTerminal(e.state)) needed+=e.estimated_airtime_us+100000+BURST_RX_US;
             }
             const uint64_t now=nowUs();if(burstNextStartUs>now) needed+=burstNextStartUs-now;
@@ -242,7 +264,7 @@ static bool burstCommand(const Frame& frame) {
         const auto code=burstQueue->enqueue(burstBinding,packet,estimate,nowUs());
         if(code==burst_native::Code::Accepted || code==burst_native::Code::Replayed) {
             burstQueue->evidence(frame.request,retained);output.offer(burstEvent(retained));
-            for(size_t n=0;n<4;n++) {
+            for(size_t n=0;n<burstDepth;n++) {
                 burst_native::Evidence e;if(burstQueue->evidenceAt(n,e) && e.request==frame.request) {
                     burstOffered[n].request=e.request;burstOffered[n].at=e.event_us;burstOffered[n].state=e.state;
                 }
@@ -254,7 +276,7 @@ static bool burstCommand(const Frame& frame) {
 }
 static void burstService(bool dispatch) {
     if(!burstQueue) return;
-    burstQueue->poll(nowUs());burstTryContain();burstFlushEvents();
+    burstQueue->poll(nowUs());burstPromoteEmptyTail();burstTryContain();burstFlushEvents();
     if(!dispatch || !ready || !armed || fenced || transmitting || resultPending || nowUs()<burstNextStartUs
         || output.freeSlots()<5 || !burstQueue->queued()) return;
     uint32_t flags=0;
@@ -277,26 +299,53 @@ static void burstService(bool dispatch) {
     burstHeaderSeenUs=0;
     // Claim only after receive/evidence priority. A second checked standby/IRQ
     // drain closes the decode-to-FIFO race; every failure after claim is UNKNOWN.
-    const auto claim=burstQueue->issue(nowUs(),false,true);
-    if(!claim.packet) { burstFlushEvents();return; }
+    const uint64_t issueAt=nowUs();
+    const auto claim=burstQueue->issue(issueAt,false,true);
+    if(!claim.packet) { burstPromoteEmptyTail();burstFlushEvents();return; }
+    MT_PROFILE_SCOPE_AT(issueTotal,IssuedToStarted,issueAt);
     burstActiveRequest=claim.packet->request;startedUs=nowUs();previousEstimate=claim.packet->estimated_airtime_us;
+    MT_PROFILE_SCOPE(issuePublish,IssuedPublish);
     burstFlushEvents();
+    MT_PROFILE_END(issuePublish,true);
+    MT_PROFILE_SCOPE(issueStandby,IssueStandby);
     int16_t error=radio.standby();
-    if(error==RADIOLIB_ERR_NONE) error=readIrqFlags(flags);
+    MT_PROFILE_END(issueStandby,error==RADIOLIB_ERR_NONE);
+    if(error==RADIOLIB_ERR_NONE) {
+        MT_PROFILE_SCOPE(issueIrq,IssueIrqReread);
+        error=readIrqFlags(flags);
+        MT_PROFILE_END(issueIrq,error==RADIOLIB_ERR_NONE);
+    }
     if(error==RADIOLIB_ERR_NONE && (flags&RADIOLIB_SX126X_IRQ_RX_DONE)) {
+        MT_PROFILE_SCOPE(issueDrain,IssueRxDrain);
         if(!drainCompletedReceive(false,true)) error=-1;
+        MT_PROFILE_END(issueDrain,error==RADIOLIB_ERR_NONE);
     } else if(error==RADIOLIB_ERR_NONE && (flags&RADIOLIB_SX126X_IRQ_HEADER_VALID)) {
         // A valid in-progress header appeared during standby. Do not overwrite
         // it or label this issued operation NOT_SENT; fail closed and contain.
         burstStop();return;
     }
-    if(error==RADIOLIB_ERR_NONE) error=radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+    if(error==RADIOLIB_ERR_NONE) {
+        MT_PROFILE_SCOPE(issueClear,IssueIrqClear);
+        error=radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+        MT_PROFILE_END(issueClear,error==RADIOLIB_ERR_NONE);
+    }
     if(error!=RADIOLIB_ERR_NONE || nowUs()>=claim.packet->deadline_us
         || claim.packet->estimated_airtime_us+100000>claim.packet->deadline_us-nowUs()) {
         burstOutcome(UNKNOWN,nowUs()-startedUs,flags,error ? error : -1);return;
     }
+    MT_PROFILE_SCOPE(issuePrepare,IssueCopyPrepare);
     memcpy(burstDriverPacket,claim.packet->ciphertext,claim.packet->size);
-    board.onBeforeTransmit();burstBoardPrepared=true;error=radio.startTransmit(burstDriverPacket,claim.packet->size);
-    if(error!=RADIOLIB_ERR_NONE) { burstOutcome(UNKNOWN,nowUs()-startedUs,flags,error);return; }
+    board.onBeforeTransmit();burstBoardPrepared=true;
+    MT_PROFILE_END(issuePrepare,true);
+    MT_PROFILE_SCOPE(issueStart,IssueTxStartCall);
+    error=radio.startTransmit(burstDriverPacket,claim.packet->size);
+    MT_PROFILE_END(issueStart,error==RADIOLIB_ERR_NONE);
+    if(error!=RADIOLIB_ERR_NONE) {
+        MT_PROFILE_END(issueTotal,false);
+        burstOutcome(UNKNOWN,nowUs()-startedUs,flags,error);return;
+    }
+    MT_PROFILE_SCOPE(startedPublish,StartedPublish);
     transmitting=true;burstOutcome(STARTED,0,0,0);
+    MT_PROFILE_END(startedPublish,transmitting && !fenced);
+    MT_PROFILE_END(issueTotal,transmitting && !fenced);
 }

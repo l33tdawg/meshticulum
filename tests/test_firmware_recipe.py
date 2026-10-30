@@ -6,6 +6,7 @@ import io
 import json
 from pathlib import Path
 import tarfile
+import subprocess
 import pytest
 
 
@@ -74,3 +75,54 @@ def test_existing_archive_is_verified_instead_of_silently_refetched(recipe, tmp_
     with pytest.raises(RuntimeError, match='firmware_archive_mismatch'):
         recipe.fetch(tmp_path)
     assert not calls and (tmp_path / 'input.tar.gz').read_bytes() == b'bad'
+
+
+def test_profile_build_setting_is_pinned_in_exact_application_identity(recipe, tmp_path):
+    off, off_id = recipe.prepare_application(tmp_path / 'off')
+    on, on_id = recipe.prepare_application(tmp_path / 'on', native_profile=True)
+    again, again_id = recipe.prepare_application(tmp_path / 'again', native_profile=True)
+    assert on == again and on_id == again_id and off_id != on_id
+    assert set(off) == set(on) == {'main.cpp', 'protocol.hpp', 'gfsk_profile.hpp',
+        'gfsk250_profile.hpp', 'burst_adapter.hpp', 'experimental/tx_burst.hpp',
+        'native_profile.hpp', 'native_profile_config.hpp'}
+    assert {name for name in off if off[name] != on[name]} == {'native_profile_config.hpp'}
+    assert '#define MTBENCH_NATIVE_PROFILE 0' in (tmp_path / 'off/native_profile_config.hpp').read_text()
+    assert '#define MTBENCH_NATIVE_PROFILE 1' in (tmp_path / 'on/native_profile_config.hpp').read_text()
+    assert '#error' in (tmp_path / 'on/native_profile_config.hpp').read_text()
+
+
+@pytest.mark.parametrize('option', [0, 1, None, 'true'])
+def test_profile_option_requires_bool_before_creating_output(recipe, tmp_path, option):
+    with pytest.raises(RuntimeError, match='invalid_native_profile_option'):
+        recipe.prepare_application(tmp_path / 'never-created', native_profile=option)
+    assert not (tmp_path / 'never-created').exists()
+
+
+def test_generated_profile_config_rejects_external_override(recipe, tmp_path):
+    recipe.prepare_application(tmp_path / 'on', native_profile=True)
+    header = tmp_path / 'on/native_profile_config.hpp'
+    command = ['clang++', '-x', 'c++', '-E', '-include', str(header), '-']
+    valid = subprocess.run(command, input='MTBENCH_NATIVE_PROFILE\n', capture_output=True,
+                           text=True, timeout=10)
+    assert valid.returncode == 0 and valid.stdout.rstrip().endswith('1')
+    changed = subprocess.run(command[:-1] + ['-DMTBENCH_NATIVE_PROFILE=0', '-'],
+                             input='', capture_output=True, text=True, timeout=10)
+    assert changed.returncode != 0 and 'pinned by the prepared application' in changed.stderr
+
+
+def test_changed_profile_metadata_cannot_invoke_build_tool(recipe, tmp_path, monkeypatch):
+    output = tmp_path / 'prepared'
+    app = output / 'project/examples/meshticulum_bench'
+    app.parent.mkdir(parents=True)
+    application, identity = recipe.prepare_application(app, native_profile=True)
+    record = dict(schema='meshticulum.raw-firmware-prepared.v1',
+        lock_sha256=recipe.sha(recipe.HERE / 'inputs.lock.json'),
+        recipe_sha256=recipe.sha(Path(recipe.__file__)),
+        source=recipe.tree(output), application=application, identity=identity,
+        build_options=dict(native_profile=False))
+    (output / 'SOURCE.json').write_text(json.dumps(record))
+    invoked = []
+    monkeypatch.setattr(recipe.subprocess, 'check_output', lambda *a, **k: invoked.append(a))
+    with pytest.raises(RuntimeError, match='firmware_application_identity_mismatch'):
+        recipe.build(output, tmp_path / 'never-executed-python', list(recipe.TARGETS))
+    assert not invoked and not (output / 'evidence').exists()

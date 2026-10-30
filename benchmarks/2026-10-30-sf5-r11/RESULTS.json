@@ -1,0 +1,334 @@
+{
+  "ACK_attempts": 34,
+  "ACK_received": 32,
+  "CONTROL_attempts": 1,
+  "DATA_attempts": 138,
+  "DATA_retries": 10,
+  "all_bursts_drained": true,
+  "all_serial_channels_closed": true,
+  "checkpoint_above_2800_achieved": false,
+  "comparison": {
+    "fresh_pack_signature_sessions_and_grants": true,
+    "identical_useful_payload": true,
+    "isolated_causal_gain_established": false,
+    "loss_patterns_differ": true,
+    "observed_rate_change_percent": 31.42653915022433,
+    "previous_result_sha256": "faae3652929cdb270471463bb66b528b92dd77d7b50b81db2d0a2b994588af07",
+    "previous_useful_bytes_per_second": 801.4243490288212,
+    "same_firmware": true,
+    "same_radio": true,
+    "same_train_policy": true
+  },
+  "date": "2026-10-30",
+  "endpoints": {
+    "receiver": {
+      "after_observation_sha256": "25a82cee82ae1b2986900d48bb52390b599010efbedb979fc83799e406f65797",
+      "attempts": 34,
+      "before_observation_sha256": "8cb55ee0a6d3a1ad9b52106ed404a5cb0c249dda611b568d5050c1d174a2a180",
+      "host_reserved_estimated_airtime_us": 443938,
+      "memory_after": {
+        "internal_free_bytes": 340352,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335204,
+        "loop_stack_minimum_free_bytes": 4632,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "memory_before": {
+        "internal_free_bytes": 340352,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335204,
+        "loop_stack_minimum_free_bytes": 4632,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "native_receive_drop_delta": 28,
+      "native_reserved_estimated_airtime_us": 372640,
+      "native_timing": {
+        "parent_phases_overlap": true,
+        "per_run_minima_maxima_available": false,
+        "records": [
+          {
+            "calls": 34,
+            "inclusive": false,
+            "phase": "TX_FINISH_CLEANUP",
+            "phase_id": 0,
+            "total_us": 6269
+          },
+          {
+            "calls": 192,
+            "inclusive": false,
+            "phase": "RX_START_CALL",
+            "phase_id": 1,
+            "total_us": 169783
+          },
+          {
+            "calls": 34,
+            "inclusive": true,
+            "phase": "TX_DONE_TO_RX_RETURN",
+            "phase_id": 2,
+            "total_us": 41118
+          },
+          {
+            "calls": 0,
+            "inclusive": true,
+            "phase": "ISSUED_TO_STARTED",
+            "phase_id": 3,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUED_PUBLISH",
+            "phase_id": 4,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_STANDBY",
+            "phase_id": 5,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_REREAD",
+            "phase_id": 6,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_RX_DRAIN",
+            "phase_id": 7,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_CLEAR",
+            "phase_id": 8,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_COPY_PREPARE",
+            "phase_id": 9,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_TX_START_CALL",
+            "phase_id": 10,
+            "total_us": 0
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "STARTED_PUBLISH",
+            "phase_id": 11,
+            "total_us": 0
+          }
+        ],
+        "same_boot_difference": true,
+        "schema": "MNP1"
+      }
+    },
+    "sender": {
+      "after_observation_sha256": "4516f798ecaf2f018c06c6bd81e97ab0e10ef6628c53df851b0220c7db0c61b7",
+      "attempts": 139,
+      "before_observation_sha256": "5d7b1806b0f91a45f8826129b97153d9ae686c7d881f30b1478f3aeaa659bbc8",
+      "host_reserved_estimated_airtime_us": 5391457,
+      "memory_after": {
+        "internal_free_bytes": 340496,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335348,
+        "loop_stack_minimum_free_bytes": 4632,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "memory_before": {
+        "internal_free_bytes": 340496,
+        "internal_largest_free_block_bytes": 303092,
+        "internal_region_minimum_sum_bytes": 335348,
+        "loop_stack_minimum_free_bytes": 4648,
+        "regional_minima_are_not_simultaneous": true,
+        "runtime_heap_stack_qualified": false,
+        "schema": "MNS1",
+        "units": "bytes"
+      },
+      "native_receive_drop_delta": 4,
+      "native_reserved_estimated_airtime_us": 4774960,
+      "native_timing": {
+        "parent_phases_overlap": true,
+        "per_run_minima_maxima_available": false,
+        "records": [
+          {
+            "calls": 139,
+            "inclusive": false,
+            "phase": "TX_FINISH_CLEANUP",
+            "phase_id": 0,
+            "total_us": 27864
+          },
+          {
+            "calls": 176,
+            "inclusive": false,
+            "phase": "RX_START_CALL",
+            "phase_id": 1,
+            "total_us": 165728
+          },
+          {
+            "calls": 139,
+            "inclusive": true,
+            "phase": "TX_DONE_TO_RX_RETURN",
+            "phase_id": 2,
+            "total_us": 188966
+          },
+          {
+            "calls": 138,
+            "inclusive": true,
+            "phase": "ISSUED_TO_STARTED",
+            "phase_id": 3,
+            "total_us": 560270
+          },
+          {
+            "calls": 138,
+            "inclusive": false,
+            "phase": "ISSUED_PUBLISH",
+            "phase_id": 4,
+            "total_us": 21505
+          },
+          {
+            "calls": 138,
+            "inclusive": false,
+            "phase": "ISSUE_STANDBY",
+            "phase_id": 5,
+            "total_us": 20189
+          },
+          {
+            "calls": 138,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_REREAD",
+            "phase_id": 6,
+            "total_us": 11908
+          },
+          {
+            "calls": 0,
+            "inclusive": false,
+            "phase": "ISSUE_RX_DRAIN",
+            "phase_id": 7,
+            "total_us": 0
+          },
+          {
+            "calls": 138,
+            "inclusive": false,
+            "phase": "ISSUE_IRQ_CLEAR",
+            "phase_id": 8,
+            "total_us": 10928
+          },
+          {
+            "calls": 138,
+            "inclusive": false,
+            "phase": "ISSUE_COPY_PREPARE",
+            "phase_id": 9,
+            "total_us": 2371
+          },
+          {
+            "calls": 138,
+            "inclusive": false,
+            "phase": "ISSUE_TX_START_CALL",
+            "phase_id": 10,
+            "total_us": 460759
+          },
+          {
+            "calls": 138,
+            "inclusive": false,
+            "phase": "STARTED_PUBLISH",
+            "phase_id": 11,
+            "total_us": 25422
+          }
+        ],
+        "same_boot_difference": true,
+        "schema": "MNP1"
+      }
+    }
+  },
+  "fast_DATA_retries": 6,
+  "firmware": {
+    "bytes": 404096,
+    "identity": "mtb1-bc5858fa0b",
+    "proof": "pinned source SHA-256 and ROM-verified programmed-span MD5; no full new-image SHA-256 readback",
+    "sha256": "7bf8a3f2403203635beb5fb45d49205b9bec685f9179ac4b54b0fc2f764e2cc6",
+    "target": "mtbench_heltec_v4"
+  },
+  "global_historical_debt_complete": false,
+  "goal_3000_achieved": false,
+  "historical_unknown_actual_cost": null,
+  "host_profiling": true,
+  "limits": {
+    "eirp_dbm": null,
+    "energy_joules": null,
+    "field_range_qualified": false,
+    "matched_four_frame_comparison": false,
+    "measured_RF_airtime_us": null,
+    "native_parent_phases_overlap": true,
+    "native_timing_is_software_boundaries": true,
+    "receive_drop_cause_identified": false,
+    "repeated_capacity_qualified": false,
+    "runtime_memory_exhaustively_qualified": false,
+    "single_run": true,
+    "upstream_superiority_qualified": false
+  },
+  "logical_DATA_frames": 128,
+  "native_profiling": true,
+  "original_scope_closed_and_expired": true,
+  "part_invocation_to_authenticated_receipt_us": 22280864,
+  "policy": {
+    "handover": "irrevocably-charged-at-queue-acceptance",
+    "inter_packet_rx_us": 5000,
+    "max_depth": 8,
+    "max_hold_us": 2000000,
+    "reverse_listen_us": 100000,
+    "schema": "meshticulum.data-burst-policy.v2",
+    "train_frames": 8
+  },
+  "protected_service_lifetimes_unchanged": true,
+  "publisher_and_whole_file_verified": true,
+  "radio": {
+    "bandwidth_hz": 500000,
+    "coding_rate": 5,
+    "frequency_hz": 921375000,
+    "preamble": 12,
+    "requested_chip_power_dbm": 0,
+    "requested_spi_hz": 2000000,
+    "spreading_factor": 5,
+    "sync_word": 66
+  },
+  "refunds": 0,
+  "response_bytes": 24565,
+  "result_sha256": "10f4e47ce7682abcbf6027c85d3da39d62bd4d99695ae2f951cef875b4c1fc70",
+  "root_reconciliation_sha256": "6323650872bf6c988387b2b1e21af3211a9445a04981af0dda29808c56fad00b",
+  "schema": "meshticulum.sanitized-sf5-r11-sample.v1",
+  "sender_startup_to_authenticated_receipt_us": 22690930,
+  "source_commit": "bb5b2bcb1f827ca7fe5a8c68f5f5b158c33cc24a",
+  "source_tree": "f083efe7b1f943ee6775e3d9a184857d332e8e0f",
+  "timing_partition_us": {
+    "DATA_physical_outstanding_union": 7928237,
+    "invocation_to_first_DATA_submit": 226719,
+    "no_DATA_physical_outstanding": 14125908,
+    "process_startup": 410066
+  },
+  "unresolved_UNKNOWN": 0,
+  "useful_bytes": 23900,
+  "useful_bytes_per_second": 1053.2842858357942,
+  "wheel_sha256": "a7dd6ba38063781d20ecb424ec1dc7337eb2b70f2430db8611221a49b1257e74"
+}

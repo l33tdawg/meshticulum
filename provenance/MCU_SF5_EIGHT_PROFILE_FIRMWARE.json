@@ -1,0 +1,92 @@
+{
+  "application": {
+    "burst_adapter.hpp": "e48d0ab40cc35d70f5a38799f51b281a05fd5a7bcf0970253f57785a2e7ff227",
+    "experimental/tx_burst.hpp": "648e4a275d098721b619a7d1e05c1f0a36093dd1f2d37a26ce6210e12e9edee2",
+    "gfsk250_profile.hpp": "379c0023940a6091a93c20f2199f2dcb0f70e7678c680681107622ea71cd6aba",
+    "gfsk_profile.hpp": "eae3b0883490663c89bdd6b636aa054e0031e294651185e52cf4ebd292cb4d82",
+    "main.cpp": "73bf9b69d9c04ba4390df1e025d636d2e1f86bf8d05412e05e4aa4eb5e376968",
+    "native_profile.hpp": "f1d45712a110ea6abca4baf6d77448e508420cd5df336f6da9b9ca7cc5596f29",
+    "native_profile_config.hpp": "76491d613095d2c3cf56a78c078bbcc647caeca0464f120b3607735e74496d06",
+    "protocol.hpp": "0b7ce8f0c78127112ffb1a2a6411d09ab44ea1a72cde999958912583e88eedf7"
+  },
+  "build_manifest_sha256": "3488497e0b2eae3475edcf157cbd33a01e76ec6fa673e4ae929a54be2db48e64",
+  "build_options": {
+    "native_profile": true
+  },
+  "flashed": false,
+  "host": {
+    "machine": "arm64",
+    "system": "Darwin"
+  },
+  "identity": "mtb1-bc5858fa0b",
+  "independent_preparations": 1,
+  "linked_static_ram_bytes": {
+    "mtbench_heltec_v4": 35204,
+    "mtbench_xiao_s3_wio": 34868
+  },
+  "lock_sha256": "9d2d534dbf784db3c13b729ab91d20832e0dd536dd8edf7ce2ccd79985c6dfb2",
+  "notices_complete": false,
+  "platformio_version": "6.1.19",
+  "recipe_sha256": "b9dbad2e945426e24996592ae762c62dc97083305e704d2447e6f39b64795d24",
+  "results": [
+    {
+      "artifacts": {
+        "bootloader.bin": {
+          "bytes": 15104,
+          "sha256": "2a71d69b471e20c2bac7fb469f3c6a807b3ebee780e348e5889db0da849ca363"
+        },
+        "firmware.bin": {
+          "bytes": 404096,
+          "sha256": "7bf8a3f2403203635beb5fb45d49205b9bec685f9179ac4b54b0fc2f764e2cc6"
+        },
+        "firmware.elf": {
+          "bytes": 12164328,
+          "sha256": "8a6bab3820582da38dcb3766bbb3041380780f22e3eee2addb4cc6d20a041e3b"
+        },
+        "firmware.map": {
+          "bytes": 14088622,
+          "sha256": "9041538e76ea6011b6792cb2a80acdd849483ad8f205b3882ac02f7510ee0b26"
+        },
+        "partitions.bin": {
+          "bytes": 3072,
+          "sha256": "bd0f7954aca2ef7d925ee21aaa1f3dc8822d1d6ce5cbbd26a135e5886bfff6ce"
+        }
+      },
+      "log_sha256": "a396d0c29f0b830815a55b837940ee53fd7204d75eaa10fc46648b33b4112e35",
+      "returncode": 0,
+      "target": "mtbench_heltec_v4"
+    },
+    {
+      "artifacts": {
+        "bootloader.bin": {
+          "bytes": 15104,
+          "sha256": "1776e4dd896a69d0a5c2e79957b0e2a88aa4129b1381d6478683515a1f6af343"
+        },
+        "firmware.bin": {
+          "bytes": 397744,
+          "sha256": "8053cf9f2bf538aa324a5a8b6c5fb6581f200d8c9c6f0a4844bfe34457476d73"
+        },
+        "firmware.elf": {
+          "bytes": 11629780,
+          "sha256": "e9550d9759b114dbbd5544947284a78bc793f075502c320a0e842c8da685194c"
+        },
+        "firmware.map": {
+          "bytes": 14093934,
+          "sha256": "88658a4e0b0141d23ce8ba2bde003f8b2e44f70265823c92098a712713a78497"
+        },
+        "partitions.bin": {
+          "bytes": 3072,
+          "sha256": "1d9cca96de0fe07ad7fc0648b9878ddecd9ce565e38b589ad20fea698ed4c80c"
+        }
+      },
+      "log_sha256": "2f109baacf75fa616da28ef7291ceef92381eca2c318770e44a4ce2db751c125",
+      "returncode": 0,
+      "target": "mtbench_xiao_s3_wio"
+    }
+  ],
+  "rf_qualified": false,
+  "runtime_heap_stack_qualified": false,
+  "schema": "meshticulum.sf5-eight-profile-build.v1",
+  "scope": "One pinned source preparation, two target builds; no reproduction, installation or RF qualification.",
+  "source_manifest_sha256": "e53cdef107e1399de71c2e445fcaa1a490b02b8065e82d4538b34be2b33b87b3"
+}

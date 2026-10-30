@@ -27,6 +27,7 @@ from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .public_block import object_limit
+from .burst_protocol import policy_depth
 
 
 def _flow_modules():
@@ -100,7 +101,10 @@ class BenchFlow:
         # Owner credit uses the admitted frame bound (208). Derive the DATA
         # overhead from the actual MT3 wire encoder, not older adapter prose:
         # the reviewed encoding uses fifteen bytes, leaving 193 useful bytes.
-        window = min(4, limits.window_bytes // limits.max_payload_bytes,
+        selected_depth = policy_depth(policy) if policy is not None else 4
+        require(selected_depth == 4 or radio_is_sf5(authority.profile),
+                'burst_eight_requires_sf5')
+        window = min(selected_depth, limits.window_bytes // limits.max_payload_bytes,
                      limits.max_reassembly_frames)
         require(window >= 1, 'bench_window_too_small')
         self.burst_frames = window if radio_is_fast(authority.profile) else 1
@@ -261,7 +265,8 @@ class BenchFlow:
         elif self.data_burst:
             # ACK/control keep their synchronous canonical-handover path.
             self._collect_physical(self.worker.drain_physical())
-        packet = self.cipher.seal(frame.payload, kind, authorize=self.authority.live)
+        with phase(self.host_timing, Phase.CIPHER_SEAL):
+            packet = self.cipher.seal(frame.payload, kind, authorize=self.authority.live)
         worker_started_us = self.clock()[1]
         result = (self.worker.queue_data(packet, logical_id=logical_id,
                                        owner_frame_id=frame.request.frame_id)
@@ -570,7 +575,8 @@ class BenchFlow:
                 break
             at, raw = item
             try:
-                verified = self.cipher.open(raw.packet, authorize=self.authority.live)
+                with phase(self.host_timing, Phase.CIPHER_OPEN):
+                    verified = self.cipher.open(raw.packet, authorize=self.authority.live)
                 if verified.kind is FrameKind.CONTROL:
                     require(self.receipt_confirmation_enabled and not self.sends
                             and not self.receipt_confirmed and self.flow.complete

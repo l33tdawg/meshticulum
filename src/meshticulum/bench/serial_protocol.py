@@ -48,6 +48,7 @@ class Message(IntEnum):
     BURST_ACK = 16
     BURST_CANCEL = 17
     BURST_STATUS = 18
+    NATIVE_PROFILE = 19
     HELLO_REPLY = 0x81
     ARM_REPLY = 0x82
     TX_RESULT = 0x83
@@ -68,6 +69,7 @@ class Message(IntEnum):
     GFSK250_RECEIVE = 0x92
     BURST_EVENT = 0x93
     BURST_STATUS_REPLY = 0x94
+    NATIVE_PROFILE_REPLY = 0x95
     REFUSED = 0xFF
 
 

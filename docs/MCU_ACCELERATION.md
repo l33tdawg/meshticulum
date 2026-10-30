@@ -7,13 +7,18 @@ plans use the synchronous path; an immutable grant record must opt into bounded
 queue handover. Linux retains session keys, AEAD, peer ACK authentication,
 credit, retries and application verification.
 
-The candidate now has a **completed finite hardware comparison** as well as
-host/native tests and a Heltec V4 build (`mtb1-6cfde1fdd4`). Two independent
+The four-frame implementation has a **completed finite hardware comparison** as
+well as host/native tests and a Heltec V4 build (`mtb1-6cfde1fdd4`). Two independent
 preparations on the same pinned macOS-arm64 host produced identical application BIN and ELF bytes. The
 [build record](../provenance/MCU_BURST_FIRMWARE.json) binds all six application
 inputs, recipe, lock and output hashes; the
-[verifier](../tools/verify_burst_firmware.py) checks that source/provenance binding.
-That record establishes same-host build reproduction. The finite deployment
+[verifier](../tools/verify_burst_firmware.py) checks the pinned historical record
+and separately reports whether its recorded inputs match the current checkout.
+Use `--require-current` to require that match. The historical record establishes
+same-host build reproduction for that image. Current preparation includes the
+native profiler and its generated build configuration as two additional inputs;
+profiling enabled and disabled produce distinct identities. Those new identities
+do not inherit the historical image's build or RF qualification. The finite deployment
 and RF comparison below have their own evidence; cross-host reproduction and
 wider hardware qualification remain open. The [serial and admission contract](MCU_BURST_PROTOCOL.md)
 defines the policy, records, clock assumptions and closure requirements.
@@ -107,7 +112,7 @@ radio was opened. Journaling was not established as the main delay.
 
 The grant's exact `data_burst` record participates in the original shared
 route/grant digest. It selects irrevocably charged carrier handover at queue
-acceptance, depth four, a maximum 2,000,000 us MCU hold, 5,000 us between-packet
+acceptance, depth four by default, a maximum 2,000,000 us MCU hold, 5,000 us between-packet
 receive dwell and 100,000 us reverse listen. The full record is in the
 [protocol contract](MCU_BURST_PROTOCOL.md#admission-and-ownership). Locally
 classified DATA is the only queued lane. ACK snapshots and control remain on
@@ -123,8 +128,8 @@ MCU deadline or extends an existing deadline.
 
 A DATA item binds the boot, OPEN token, exact request, ciphertext hash/length,
 independently checked airtime estimate and common burst deadline. The firmware
-recomputes the hash and estimate. At most four admissions share that deadline;
-retained terminal outcomes also occupy the four slots. Pending airtime, 100 ms
+recomputes the hash and estimate. At most the selected number of admissions share
+that deadline; retained terminal outcomes also occupy those slots. Pending airtime, 100 ms
 start guards and receive cooldown must fit before it. The adapter drains RX
 before driver handover, defers to an active header, retains receive dwell and
 reverse listen, and reports stable MCU event timestamps. Legacy control waits

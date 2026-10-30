@@ -102,7 +102,32 @@ def tree(directory):
             and path.name not in ('.piopm', 'appstate.json') and path.suffix not in ('.pyc', '.pyo')}
 
 
-def prepare(archive_directory, output):
+def native_profile_config(native_profile):
+    require(type(native_profile) is bool, 'invalid_native_profile_option')
+    return ('#pragma once\n#ifdef MTBENCH_NATIVE_PROFILE\n'
+            '#error "native profiling is pinned by the prepared application"\n#endif\n'
+            f'#define MTBENCH_NATIVE_PROFILE {int(native_profile)}\n')
+
+
+def prepare_application(app, *, native_profile=False):
+    """Copy exact generic app inputs and bind the build option into its identity."""
+    require(type(native_profile) is bool, 'invalid_native_profile_option')
+    app = Path(app)
+    app.mkdir()
+    for name in ('main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
+                 'burst_adapter.hpp', 'experimental/tx_burst.hpp', 'native_profile.hpp'):
+        (app / name).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(HERE / name, app / name)
+    # Forced inclusion makes an external -D override an error, not a different
+    # binary silently using the same application identity.
+    (app / 'native_profile_config.hpp').write_text(native_profile_config(native_profile))
+    application = tree(app)
+    identity = 'mtb1-' + hashlib.sha256(json.dumps(application, sort_keys=True).encode()).hexdigest()[:10]
+    return application, identity
+
+
+def prepare(archive_directory, output, *, native_profile=False):
+    require(type(native_profile) is bool, 'invalid_native_profile_option')
     record = lock()
     require(platform.system() == 'Darwin' and platform.machine() == 'arm64', 'recipe_requires_darwin_arm64')
     archives = {row['id']: check_archive(archive_directory, row) for row in record['inputs']}
@@ -149,13 +174,7 @@ def prepare(archive_directory, output):
             version=row['version'], spec=spec), sort_keys=True) + '\n')
     project = locations['meshcore']
     app = project / 'examples/meshticulum_bench'
-    app.mkdir()
-    for name in ('main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
-                 'burst_adapter.hpp', 'experimental/tx_burst.hpp'):
-        (app / name).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(HERE / name, app / name)
-    application = tree(app)
-    identity = 'mtb1-' + hashlib.sha256(json.dumps(application, sort_keys=True).encode()).hexdigest()[:10]
+    application, identity = prepare_application(app, native_profile=native_profile)
     config = ['[platformio]', 'core_dir = ' + str(core), '']
     for target, (parent, board, power) in TARGETS.items():
         config += [f'[env:{target}]', f'extends = {parent}', 'platform = symlink://' + str(locations['platform']),
@@ -168,13 +187,15 @@ def prepare(archive_directory, output):
             f'build_flags = ${{{parent}.build_flags}}']
         config += ['  -U' + name for name in DISABLED]
         config += ['  -ffile-prefix-map=' + str(output) + '=/meshticulum-build']
+        config += ['  -include ' + str(app / 'native_profile_config.hpp')]
         config += ['  -D ARDUINO_USB_MODE=1', '  -D ARDUINO_USB_CDC_ON_BOOT=1',
             f'  -D MESHTICULUM_BOARD_ID={board}', f'  -D MESHTICULUM_MAX_CHIP_DBM={power}',
             f'  \'-D MESHTICULUM_FIRMWARE="{identity}"\'', '']
     (project / 'platformio.local.ini').write_text('\n'.join(config))
     manifest = dict(schema='meshticulum.raw-firmware-prepared.v1', identity=identity,
         lock_sha256=sha(HERE / 'inputs.lock.json'), recipe_sha256=sha(Path(__file__)),
-        application=application, input_archives=record['inputs'], source=tree(output),
+        application=application, build_options=dict(native_profile=native_profile),
+        input_archives=record['inputs'], source=tree(output),
         build_scope='Source preparation; no compile, installation, RF or device authority.',
         source_notices_complete=False)
     (output / 'SOURCE.json').write_text(json.dumps(manifest, sort_keys=True, indent=2) + '\n')
@@ -193,6 +214,17 @@ def build(output, python, targets):
     actual = {name: digest for name, digest in actual.items()
               if not name.startswith('evidence/')}
     require(actual == manifest['source'], 'prepared_firmware_source_drift')
+    options = manifest.get('build_options')
+    require(type(options) is dict and set(options) == {'native_profile'}
+            and type(options['native_profile']) is bool, 'firmware_build_options_mismatch')
+    app = output / 'project/examples/meshticulum_bench'
+    application = tree(app)
+    require(application == manifest.get('application')
+            and (app / 'native_profile_config.hpp').read_text()
+                == native_profile_config(options['native_profile'])
+            and manifest.get('identity') == 'mtb1-' + hashlib.sha256(
+                json.dumps(application, sort_keys=True).encode()).hexdigest()[:10],
+            'firmware_application_identity_mismatch')
     version = subprocess.check_output([str(python), '-I', '-c',
         'import importlib.metadata; print(importlib.metadata.version("platformio"))'], text=True).strip()
     require(version == lock()['platformio_version'], 'wrong_platformio_version')
@@ -229,6 +261,8 @@ def main():
     prep = commands.add_parser('prepare')
     prep.add_argument('--archive-dir', required=True, type=Path)
     prep.add_argument('--output-dir', required=True, type=Path)
+    prep.add_argument('--native-profile', action='store_true',
+                      help='enable bounded boot-cumulative native timing diagnostics')
     run = commands.add_parser('build')
     run.add_argument('--output-dir', required=True, type=Path)
     run.add_argument('--pio-python', required=True, type=Path)
@@ -237,7 +271,7 @@ def main():
     if args.action == 'fetch':
         result = fetch(args.archive_dir)
     elif args.action == 'prepare':
-        result = prepare(args.archive_dir, args.output_dir)
+        result = prepare(args.archive_dir, args.output_dir, native_profile=args.native_profile)
     else:
         result = build(args.output_dir, args.pio_python, args.target or list(TARGETS))
     print(json.dumps(result, sort_keys=True))

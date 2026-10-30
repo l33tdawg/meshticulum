@@ -13,7 +13,8 @@ from .attempts import AttemptError
 from .burst_protocol import (CAPABILITY, CANCEL, TOKEN, INTER_PACKET_RX_US,
     REVERSE_LISTEN_US, MIN_MCU_RATE_PPM, CLOCK_MARGIN_US, BurstEvent, BurstStatus,
     ClockSnapshot, OpenBinding, ack_frame, check_capability, data_frame,
-    open_frame, query_frame, validate_policy)
+    open_frame, query_frame, validate_policy, policy_depth, capability_for_depth,
+    capability_request_body)
 from .linux_hat import HardwareError, require
 from .host_timing import Phase, phase, timed
 from .serial_protocol import Frame, Message, Outcome, RadioProfile, SerialError, TxEvidence
@@ -34,6 +35,7 @@ class BurstSerialWorker(SerialWorker):
     def __init__(self, channel, *, policy, host_timing=None):
         copied = validate_policy(policy)
         self._burst_policy = tuple(sorted(copied.items()))
+        self._depth = policy_depth(copied)
         self._burst_capability = None
         self._open = None
         self._arm_request = None
@@ -42,8 +44,8 @@ class BurstSerialWorker(SerialWorker):
         self._burst_count = 0
         self._physical = {}
         self._logical = {}
-        self._released_events = deque(maxlen=4)
-        self._release_replies = deque(maxlen=4)
+        self._released_events = deque(maxlen=self._depth)
+        self._release_replies = deque(maxlen=self._depth)
         self._terminals = deque()
         self._physical_events = deque(maxlen=512)
         self._routed = {}
@@ -69,7 +71,7 @@ class BurstSerialWorker(SerialWorker):
     @property
     def has_capacity(self):
         return (self._open is not None and not self.fenced
-                and len(self._physical) < 4 and self._burst_count < 4)
+                and len(self._physical) < self._depth and self._burst_count < self._depth)
 
     @property
     def pending_airtime_us(self):
@@ -141,18 +143,20 @@ class BurstSerialWorker(SerialWorker):
         import secrets
         request = secrets.randbits(63) or 1
         deadline = self.channel.monotonic() + 1
-        self._send(Frame(Message.BURST_CAPABILITIES, identity.boot, request), deadline)
+        self._send(Frame(Message.BURST_CAPABILITIES, identity.boot, request,
+                         capability_request_body(self._depth)), deadline)
         reply = self._wait(request, deadline)
-        check_capability(reply, boot=identity.boot, request=request)
-        self._burst_capability = (identity, CAPABILITY)
+        check_capability(reply, boot=identity.boot, request=request, depth=self._depth)
+        self._burst_capability = (identity, capability_for_depth(self._depth))
         return identity
 
     def _capability(self):
-        require(self._burst_capability == (self.identity, CAPABILITY)
+        require(self._burst_capability == (self.identity, capability_for_depth(self._depth))
                 and self._burst_capability[0] is self.identity
                 and type(self.profile) is RadioProfile,
                 'burst_firmware_capability_changed')
-        validate_policy(dict(self._burst_policy))
+        require(policy_depth(dict(self._burst_policy)) == self._depth,
+                'burst_policy_changed')
 
     def _sample_clock(self):
         request = self.journal.command_request(containment=True)
@@ -173,6 +177,9 @@ class BurstSerialWorker(SerialWorker):
 
     def arm(self, **parameters):
         require(parameters.get('profile').__class__ is RadioProfile, 'burst_requires_lora')
+        if self._depth == 8:
+            from .gfsk_profile import radio_is_sf5
+            require(radio_is_sf5(parameters['profile']), 'burst_eight_requires_sf5')
         super().arm(**parameters)
         try:
             self._capability()
@@ -183,13 +190,14 @@ class BurstSerialWorker(SerialWorker):
             context = context_sha256(parameters['context_digest'],
                                     self.profile.encode(board_id=self.identity.board_id))
             token = self.journal.command_request()
-            frame = open_frame(self.identity.boot, token, context, self._arm_request, end)
+            frame = open_frame(self.identity.boot, token, context, self._arm_request, end,
+                               depth=self._depth)
             self._live()
             deadline = self.channel.monotonic() + .2
             self._send(frame, deadline)
             reply = self._wait(token, deadline)
             self._open = OpenBinding.from_frame(reply, boot=self.identity.boot,
-                request=token, expected_body=frame.body)
+                request=token, expected_body=frame.body, depth=self._depth)
             self.assert_drained()
             require(not self.fenced, 'burst_native_fenced')
         except BaseException:
@@ -379,7 +387,7 @@ class BurstSerialWorker(SerialWorker):
         self._send(Frame(Message.BURST_STATUS, self.identity.boot, request,
                          TOKEN.pack(self._open.token)), deadline)
         status = BurstStatus.from_frame(self._wait(request, deadline),
-                                        boot=self.identity.boot, request=request)
+                                        boot=self.identity.boot, request=request, depth=self._depth)
         require((status.token, status.context_sha256, status.arm_request, status.open_deadline_us)
                 == (self._open.token, self._open.context_sha256,
                     self._open.arm_request, self._open.deadline_us), 'burst_status_binding_changed')

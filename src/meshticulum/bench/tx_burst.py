@@ -10,6 +10,7 @@ import hashlib
 import struct
 
 MAX_DEPTH = 4
+MAX_SUPPORTED_DEPTH = 8  # Explicit scalar-eight capability; BTD1 remains depth4.
 MAX_AUTONOMOUS_HOLD_US = 2_000_000
 START_GUARD_US = 100_000
 MAX_PACKET_BYTES = 255

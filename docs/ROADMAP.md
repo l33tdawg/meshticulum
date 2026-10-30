@@ -1,8 +1,17 @@
 # Roadmap
 
-Meshticulum is a public experimental transport and resource project with a published source-build alpha. The next LoRa performance target is repeated reliable completion **above 2.8 kB/s (22.4 kbit/s)** of useful encrypted file bytes, including sender startup, with **3 kB/s (24 kbit/s)** as the immediate stretch. Neither is established by the latest physical trial. The longer-term **4 to 5 kB/s (32 to 40 kbit/s)** goal follows that qualification. There are no promised release dates.
+Meshticulum is a public experimental transport and resource project with a published source-build alpha. The active SF5/BW500 goal is repeated reliable completion at **3 kB/s (24 kbit/s)** of useful encrypted file bytes, measured from sender process startup through authenticated receipt with publisher and whole-file verification. **Above 2.8 kB/s (22.4 kbit/s)** remains the net-win checkpoint. Neither is established by the latest physical trial. The longer-term **4 to 5 kB/s (32 to 40 kbit/s)** goal follows that qualification. There are no promised release dates.
 
 ## Current status
+
+The first [eight-frame SF5 profiling sample](../benchmarks/2026-10-30-sf5-eight-profile/README.md)
+verified 23,900 useful bytes at 801.424349 B/s including startup. Both target
+builds passed and both Heltec installations have live memory observations.
+The [matched R11 sample](../benchmarks/2026-10-30-sf5-r11/README.md) delivered the
+same useful bytes at 1,053.284286 B/s in 22.690930 seconds. Loss differed, so the
+pair does not isolate the retry change. Recovery stalls remain; the 3 kB/s goal
+is open. Next source work separates a 32-frame logical receive window from the
+bounded eight-frame physical train.
 
 The [public repository](https://github.com/l33tdawg/meshticulum) and [project website](https://l33tdawg.github.io/meshticulum/) accompany the [experimental `1.0.0-alpha.3` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.3). The release provides the SDK wheel, normalized source archive and firmware source-build materials. [Release status](RELEASE_READINESS.md) records the exact artifact checks and hardware scope. You can [install from source](../README.md#install-and-explore) or review the release assets.
 

@@ -20,6 +20,8 @@ MIN_MCU_RATE_PPM = 990_000
 CAPABILITY_STRUCT = struct.Struct('!4sBBHIIII')
 CAPABILITY = CAPABILITY_STRUCT.pack(b'MBQ1', MAX_DEPTH, 7, 255,
     MAX_AUTONOMOUS_HOLD_US, START_GUARD_US, INTER_PACKET_RX_US, REVERSE_LISTEN_US)
+CAPABILITY8 = CAPABILITY_STRUCT.pack(b'MBQ8', 8, 7, 255,
+    MAX_AUTONOMOUS_HOLD_US, START_GUARD_US, INTER_PACKET_RX_US, REVERSE_LISTEN_US)
 CLOCK = struct.Struct('!QQQ')
 OPEN = struct.Struct('!32sQQ')
 DATA = struct.Struct('!QQQBH32s')
@@ -34,13 +36,38 @@ POLICY = dict(schema='meshticulum.data-burst-policy.v1',
     max_hold_us=MAX_AUTONOMOUS_HOLD_US, inter_packet_rx_us=INTER_PACKET_RX_US,
     reverse_listen_us=REVERSE_LISTEN_US)
 _POLICY_ITEMS = tuple(POLICY.items())
+POLICY8 = dict(POLICY, schema='meshticulum.data-burst-policy.v2',
+               max_depth=8, train_frames=8)
+_POLICY8_ITEMS = tuple(POLICY8.items())
 
 
 def validate_policy(value):
-    _need(type(value) is dict and set(value) == {key for key, _ in _POLICY_ITEMS}
+    _need(type(value) is dict and any(
+          set(value) == {key for key, _ in items}
           and all(type(value[key]) is type(expected) and value[key] == expected
-                  for key, expected in _POLICY_ITEMS), 'invalid_data_burst_policy')
+                  for key, expected in items)
+          for items in (_POLICY_ITEMS, _POLICY8_ITEMS)), 'invalid_data_burst_policy')
     return dict(value)
+
+
+def policy_for_depth(depth=4):
+    """Select an explicit bounded scalar policy; this creates no authority."""
+    _need(type(depth) is int and depth in (4, 8), 'invalid_data_burst_depth')
+    return dict(_POLICY_ITEMS if depth == 4 else _POLICY8_ITEMS)
+
+
+def policy_depth(policy):
+    return validate_policy(policy)['max_depth']
+
+
+def capability_for_depth(depth=4):
+    policy_for_depth(depth)
+    return CAPABILITY if depth == 4 else CAPABILITY8
+
+
+def capability_request_body(depth=4):
+    policy_for_depth(depth)
+    return b'' if depth == 4 else b'\x08'
 
 
 def _reply(frame, kind, boot, request, size):
@@ -51,9 +78,9 @@ def _reply(frame, kind, boot, request, size):
           and len(frame.body) == size, 'unbound_burst_reply')
 
 
-def check_capability(frame, *, boot, request):
+def check_capability(frame, *, boot, request, depth=4):
     _reply(frame, Message.BURST_CAPABILITIES_REPLY, boot, request, len(CAPABILITY))
-    _need(frame.body == CAPABILITY, 'unsupported_burst_capability')
+    _need(frame.body == capability_for_depth(depth), 'unsupported_burst_capability')
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,24 +133,29 @@ class OpenBinding:
     context_sha256: bytes
     arm_request: int
     deadline_us: int
+    depth: int = 4
 
     def __post_init__(self):
+        policy_for_depth(self.depth)
         for value in (self.token, self.arm_request, self.deadline_us):
             _integer(value, 1, UINT64_MAX, 'invalid_burst_open')
         _bytes(self.context_sha256, 32, 'invalid_burst_context')
         _need(any(self.context_sha256), 'empty_burst_context')
 
     @classmethod
-    def from_frame(cls, frame, *, boot, request, expected_body=None):
-        _reply(frame, Message.BURST_OPEN_REPLY, boot, request, OPEN.size)
+    def from_frame(cls, frame, *, boot, request, expected_body=None, depth=4):
+        policy_for_depth(depth)
+        _reply(frame, Message.BURST_OPEN_REPLY, boot, request, OPEN.size + (depth == 8))
         _need(expected_body is None or frame.body == expected_body, 'burst_open_changed')
-        return cls(frame.request, *OPEN.unpack(frame.body))
+        _need(depth == 4 or frame.body[:1] == b'\x08', 'burst_open_changed')
+        return cls(frame.request, *OPEN.unpack(frame.body[(depth == 8):]), depth)
 
 
-def open_frame(boot, token, context_sha256, arm_request, deadline_us):
-    value = OpenBinding(token, context_sha256, arm_request, deadline_us)
+def open_frame(boot, token, context_sha256, arm_request, deadline_us, *, depth=4):
+    value = OpenBinding(token, context_sha256, arm_request, deadline_us, depth)
     return Frame(Message.BURST_OPEN, boot, token,
-                 OPEN.pack(value.context_sha256, value.arm_request, value.deadline_us))
+                 capability_request_body(depth)
+                 + OPEN.pack(value.context_sha256, value.arm_request, value.deadline_us))
 
 
 def data_frame(boot, token, packet, ciphertext):
@@ -214,13 +246,14 @@ class BurstStatus:
     airtime_us: int
 
     @classmethod
-    def from_frame(cls, frame, *, boot, request):
+    def from_frame(cls, frame, *, boot, request, depth=4):
+        policy_for_depth(depth)
         _reply(frame, Message.BURST_STATUS_REPLY, boot, request, STATUS.size)
         values = list(STATUS.unpack(frame.body))
         _need(all(value in (0, 1) for value in values[6:9]), 'invalid_burst_status_flags')
         values[6:9] = map(bool, values[6:9])
         value = cls(*values)
-        _need(0 <= value.pending <= value.retained <= MAX_DEPTH
+        _need(0 <= value.pending <= value.retained <= depth
               and value.attempts <= 100_000 and value.airtime_us <= 300_000_000,
               'invalid_burst_status_counters')
         if value.token:

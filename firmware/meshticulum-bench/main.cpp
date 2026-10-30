@@ -8,6 +8,12 @@
 #include <mbedtls/sha256.h>
 #include <target.h>
 #include "protocol.hpp"
+#include "native_profile.hpp"
+#if MTBENCH_NATIVE_PROFILE
+#include <esp_heap_caps.h>
+// Pinned ESP32-S3 FreeRTOS reports byte high-water, unlike vanilla word units.
+static_assert(sizeof(StackType_t)==1,"native memory query requires byte stack units");
+#endif
 #include "gfsk_profile.hpp"
 #include "gfsk250_profile.hpp"
 #include "experimental/tx_burst.hpp"
@@ -17,6 +23,9 @@ using namespace mtbench;
 
 static Decoder decoder;
 static OutputQueue output;
+#if MTBENCH_NATIVE_PROFILE
+static mtbench::profiling::Profile nativeProfile;
+#endif
 static constexpr size_t USB_RX_BYTES=2048, USB_RX_DRAIN_BYTES=128;
 static_assert(USB_RX_BYTES>=2*MAX_ENCODED,"USB RX must hold two maximum encoded frames");
 static bool serialReady=false;
@@ -97,7 +106,10 @@ static void contain(uint32_t flags,int16_t error) {
 static void startReceive() {
     if(!armed || fenced) return;
     if(nowUs()>=deadlineUs) { armed=false; if(idleRadio()!=RADIOLIB_ERR_NONE) fenced=true; return; }
-    if(radio.startReceive()!=RADIOLIB_ERR_NONE) { armed=false; fenced=true; idleRadio(); }
+    MT_PROFILE_SCOPE(rxStart,RxStartCall);
+    const int16_t receiveError=radio.startReceive();
+    MT_PROFILE_END(rxStart,receiveError==RADIOLIB_ERR_NONE);
+    if(receiveError!=RADIOLIB_ERR_NONE) { armed=false; fenced=true; idleRadio(); }
     else burstReceiveStarted();
 }
 static bool drainCompletedReceive(bool rearm,bool alreadyStandby=false) {
@@ -177,6 +189,36 @@ static void command(const Frame& frame) {
         memcpy(reply.body+4,version,sizeof(version)); output.offer(reply); return;
     }
     if(!isCurrentBoot(frame)) { refuse(frame,WRONG_BOOT); return; }
+#if MTBENCH_NATIVE_PROFILE
+    if(frame.type==NATIVE_PROFILE) {
+        const bool memory=frame.size==1 && frame.body[0]==0xfe;
+        if(frame.size>1 || (frame.size==1 && !memory && frame.body[0]>=mtbench::profiling::PHASES)) {
+            refuse(frame,BAD_COMMAND);return;
+        }
+        // Read-only boot snapshot: never poll, disarm, release, reset or pay.
+        // Even terminal retained entries must be reconciled before retrieval.
+        if(armed || transmitting || resultPending || serialContainmentPending
+            || burstBoot.containment_required
+            || (burstQueue && (burstQueue->pending() || burstQueue->retained()))) {
+            refuse(frame,mtbench::BUSY);return;
+        }
+        auto reply=response(NATIVE_PROFILE_REPLY,frame.request);
+        if(memory) {
+            if(radioServiceTask==nullptr) { refuse(frame,mtbench::BUSY);return; }
+            // Query-only heap walk/stack scan, after all RF work is closed.
+            // The region minima need not have occurred simultaneously.
+            multi_heap_info_t info={};
+            heap_caps_get_info(&info,MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+            const uint64_t values[]={info.total_free_bytes,info.minimum_free_bytes,
+                info.largest_free_block,uxTaskGetStackHighWaterMark(radioServiceTask)};
+            for(const auto value:values) if(value>UINT32_MAX) { refuse(frame,BAD_COMMAND);return; }
+            reply.size=24;memcpy(reply.body,"MNS1",4);
+            reply.body[4]=1;reply.body[5]=1; // schema version, byte units; 6/7 reserved zero
+            for(size_t n=0;n<4;n++) put32(reply.body+8+4*n,uint32_t(values[n]));
+        } else reply.size=nativeProfile.encode(reply.body,frame.size ? frame.body[0] : -1);
+        output.offer(reply);return;
+    }
+#endif
     if(burstCommand(frame)) return;
     if(frame.type==GFSK250_CAPABILITIES && frame.size==0) {
         // Read-only feature negotiation: no ARM, RF, replay counter or lease.
@@ -319,12 +361,16 @@ static void serviceRadio() {
         const int16_t irqError=readIrqFlags(flags);
         if(irqError!=RADIOLIB_ERR_NONE) { contain(flags,irqError); return; }
         if((flags & RADIOLIB_SX126X_IRQ_TX_DONE) && !(flags & RADIOLIB_SX126X_IRQ_TIMEOUT)) {
+            MT_PROFILE_SCOPE(txToRx,TxDoneToRxReturn);
+            MT_PROFILE_SCOPE(txFinish,TxFinishCleanup);
             const int16_t error=radio.finishTransmit(); board.onAfterTransmit();
+            MT_PROFILE_END(txFinish,error==RADIOLIB_ERR_NONE);
             if(burstActiveRequest) burstBoardPrepared=false;
             if(error!=RADIOLIB_ERR_NONE) { contain(flags,error); return; }
             transmitting=false;
             if(!burstOutcome(RF_DONE,now-startedUs,flags,0)) reportOutcome(RF_DONE,now-startedUs,flags,0);
             startReceive();
+            MT_PROFILE_END(txToRx,armed && !fenced);
         } else if((flags & RADIOLIB_SX126X_IRQ_TIMEOUT) || now-startedUs>previousEstimate+1000000) {
             contain(flags,-1);
         }

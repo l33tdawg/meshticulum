@@ -12,6 +12,20 @@ A private immutable grant opts in with exactly this `data_burst` record:
 {"schema":"meshticulum.data-burst-policy.v1","handover":"irrevocably-charged-at-queue-acceptance","max_depth":4,"max_hold_us":2000000,"inter_packet_rx_us":5000,"reverse_listen_us":100000}
 ```
 
+The separately negotiated scalar-eight source path requires this exact record
+on both endpoints, SF5/BW500, and the matching MBQ8 firmware capability:
+
+```json
+{"schema":"meshticulum.data-burst-policy.v2","handover":"irrevocably-charged-at-queue-acceptance","max_depth":8,"max_hold_us":2000000,"inter_packet_rx_us":5000,"reverse_listen_us":100000,"train_frames":8}
+```
+
+`policy_for_depth()` returns a copy of the four-frame policy;
+`policy_for_depth(8)` selects eight explicitly. Unsupported or mismatched
+capabilities fail before OPEN/DATA. The frozen flow/port already support the
+eight-frame credit window; their source and pins are unchanged. This extension
+has source controls, with physical acceptance pending. See
+[scalar eight-frame trains](MCU_EIGHT_TRAIN.md).
+
 The record participates in the original shared route/grant digest. It permits
 only locally classified DATA ciphertext. Queue acceptance is an irrevocably
 charged in-flight carrier handover: accepted ciphertext may start before its
@@ -49,6 +63,9 @@ they do not authenticate a remote peer.
   packet bytes 255, hold 2,000,000 us, start guard 100,000 us, inter-packet RX
   dwell 5,000 us, post-burst reverse listen 100,000 us. Same discovered firmware
   and boot must match; unsupported capability cannot reach OPEN or DATA.
+  An explicit one-byte request `08` selects the distinct `MBQ8`, depth 8 tuple;
+  all remaining fields are unchanged. Empty requests still return MBQ1/depth4.
+  MBQ8 is scalar acceptance, unrelated to the dormant MBQ2 atomic-job prototype.
 - CLOCK: empty request; reply `!QQQ` = current MCU monotonic microseconds,
   original successful ARM mutation request, immutable ARM end. Read-only;
   returns zero ARM/end when unarmed. It never extends a lease or mutation mark.
@@ -56,6 +73,10 @@ they do not authenticate a remote peer.
   request, mapped original deadline. Header request is the new OPEN token.
   Reply echoes all 48 body bytes. The deadline must be current and no later
   than the original ARM end. No reopen while retained/active work exists.
+  MBQ8 uses byte `08` followed by the same 48 bytes; the reply echoes all 49.
+  Firmware admits that shape only for SF5/BW500. Exact replay binds the shape
+  and selected depth; reopening the same context cannot change depth or extend
+  the original deadline.
 - DATA: header request is the prepaid physical attempt ID. Body
   `!QQQBH32s` followed by exact ciphertext = OPEN token, shared burst deadline,
   independent estimate, local DATA kind 1, size, SHA-256. Body is 60–314 bytes.
@@ -79,6 +100,8 @@ they do not authenticate a remote peer.
   bounded exact ACK receipts, sufficient for the one serialized outstanding ACK
   transaction. Exact replay is idempotent, including after slot release. A fresh
   command may repeat the same exact release identity; changed identity conflicts.
+  An eight-frame OPEN retains eight such receipts. Host delayed-event/reply
+  caches use the same admitted bound; release never refunds attempt debt.
 - CANCEL: fresh command request, body `!Q` OPEN token. Stop claims immediately;
   queued becomes NOT_SENT, issued/started becomes UNKNOWN; debt persists. Try
   checked radio containment and retry failures from the loop. Reply `!QBB` =
@@ -94,7 +117,7 @@ Mutation ordering remains global across ARM, OPEN, DATA, ACK, CANCEL, DISARM and
 legacy TX. Exact retained replays precede stale-request refusal and never repeat
 RF. Reserve/write one DATA mutation at a time; allocate ACK mutations only after
 older reserved DATA requests have been written or settled unsent. Do not
-pre-reserve four IDs then interleave a newer ACK ahead of those writes.
+pre-reserve a train's IDs then interleave a newer ACK ahead of those writes.
 
 ## Clock, RX and closure
 
@@ -115,10 +138,14 @@ current setup, not a guarantee of future oscillator behavior.
 Do not issue while RX_DONE evidence is pending or output is blocked. Drain RX
 again at standby before touching the TX FIFO. Retain at least 5 ms receive dwell
 between DATA operations, and let a detected valid header finish or time out
-before the next claim. After four admissions or an empty queue at RF completion,
+before the next claim. After the selected four or eight admissions, or an empty queue at RF completion,
 retain at least 100 ms reverse listen. The existing host
-coalesces ACKs for a finite four-frame train; do not move ACK snapshots into the
+coalesces ACKs for that finite admitted train; do not move ACK snapshots into the
 queue. Neither receive dwell nor reverse listen extends the original authority.
+Both floors begin only after checked RX restart succeeds. If a never-issued
+suffix expires after a prior completion, promote that completion to a full
+100 ms tail measured from its successful RX restart. Exact release or a new
+OPEN cannot erase the remaining floor. Failed rearm still fences transmission.
 The 100 ms floor admits the reviewed 70-byte SF7/BW500 ACK estimate (32.064 ms)
 plus 60 ms of host allowance. An active header still delays a claim past that
 floor, and Linux must authenticate ACK progress before granting new DATA credit.
