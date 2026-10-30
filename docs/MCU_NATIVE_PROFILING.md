@@ -136,6 +136,73 @@ as successful memory qualification. A linked RAM-size report is not a runtime
 heap or stack margin. Qualification needs exact-build snapshots before and after
 the admitted worst-case work, including eight retained frames and cleanup.
 
+### RX-reason counters (source candidate)
+
+The single selector byte `0xfd` requests `MNR1`, under the same idle, disarmed,
+fully drained gate. This candidate has source controls only: the linked
+`mtb1-bc5858fa0b` build predates these counters and does not support this selector.
+Neither its measured memory margins nor its timing results qualify this change.
+The existing empty `MNP1` discovery and `MNS1` bodies remain unchanged.
+
+The fixed 80-byte reply contains ASCII `MNR1`, bytes `1,17,4,1` (version, count,
+counter width, boot-cumulative flag), a big-endian 32-bit saturation mask, then
+17 big-endian unsigned 32-bit counters. Each counter saturates independently;
+bit *n* means at least one additional increment of counter *n* could not be
+represented. A counter at `UINT32_MAX` without that bit is still exact. Unknown
+bits and a saturation bit for a counter below the maximum are rejected by the
+SDK codec. The first fourteen counters partition the **existing** `droppedRx`
+increment sites; the final three are separate observations.
+
+| ID | Counter | Existing observation |
+| --- | --- | --- |
+| 0 | `READ_PAYLOAD_CRC` | `readData` returned CRC mismatch, with previously checked CRC flag only |
+| 1 | `READ_HEADER` | CRC mismatch, with previously checked header error and no valid header, but no CRC flag |
+| 2 | `READ_BOTH` | CRC mismatch, with both of those checked error conditions |
+| 3 | `READ_INTEGRITY_UNATTRIBUTED` | CRC mismatch without either condition in that earlier IRQ sample |
+| 4 | `READ_TIMEOUT` | `readData` returned RX timeout |
+| 5 | `READ_OTHER_ERROR` | Another `readData` error |
+| 6 | `INVALID_REPORTED_LENGTH` | Reported receive length outside 1–255, including when output is also full |
+| 7 | `OUTPUT_RESERVE_LOW` | Valid reported length, but at most two output slots free at the existing guard |
+| 8 | `OUTPUT_OFFER_FAILED` | Successful read, but the existing output offer failed |
+| 9 | `SYNC_TX_HEADER_PREEMPTED` | Synchronous TX found a valid header/sync word without RX_DONE after standby |
+| 10 | `IRQ_RESTART_CRC_ONLY` | Existing receive-restart branch observed CRC error, without header error |
+| 11 | `IRQ_RESTART_HEADER_ONLY` | That branch observed header error, without CRC error |
+| 12 | `IRQ_RESTART_BOTH` | That branch observed both flags |
+| 13 | `QUEUED_HEADER_STALL` | Existing queued-dispatch header wait exceeded its unchanged bound |
+| 14 | `RX_EXPORTED` | Successful RX frame offer to the output queue, not proof of USB delivery or peer authentication |
+| 15 | `TIMEOUT_ONLY_RESTART` | Existing receive restart for timeout without either error flag; no `droppedRx` increment |
+| 16 | `BACKPRESSURE_DEFER_VISITS` | Visits that defer completed queued RX while output has at most two slots free; not unique packets or drops |
+
+The read-failure classification uses the already checked IRQ sample and the
+existing driver result. RadioLib samples IRQs again internally, so these two
+observations need not describe the same instant. Read-failure classification
+uses `HEADER_VALID`, as the pinned RadioLib integrity check does even in GFSK;
+the unchanged preemption/restart guards select LoRa header or GFSK sync-word
+validity. Restart buckets retain raw sticky
+error flags, including a timeout with a valid header; they do not prove a fresh
+corrupt packet. A bad reported length can also reflect an underlying driver/SPI
+problem. Failures that originally fenced without incrementing `droppedRx` still
+do so, without inventing a drop classification.
+
+There are no packet IDs, payloads, timestamps, event ring, radio reads, clocks,
+heap allocations or reset command. The seventeen counters and mask add exactly
+72 bytes of static profiling storage. In a default-off build the new macros
+evaluate no arguments and instantiate no storage. In an enabled build, fixed
+integer increments add observer work; target image sizes and live memory margins
+remain unmeasured for this candidate. The changed files remain within the
+existing eight hashed application inputs, so any later preparation obtains a
+new identity without changing SPI, RF settings, pacing, authority or debt.
+
+The SDK exposes `rx_reasons_query`, `NativeRxReason` and `NativeRxReasons`.
+Compare exact unsaturated observations only on the same MCU boot, with bounded
+work between observations. The original `droppedRx` counter retains its original
+wrapping behavior; equality with `dropped_total` requires that it has not wrapped
+and no drop bucket has saturated. These aggregate reasons cannot identify which
+missing authenticated DATA frames were lost. Undetected RF has no entry, and
+unrelated RF, sticky flags and later host/authentication rejection can contribute
+to different diagnostics. Counters locate observed software paths; they do not
+establish collision, sensitivity or hardware causes.
+
 ## Source controls and limits
 
 Native sanitizer tests run the actual firmware loop with profiling enabled and

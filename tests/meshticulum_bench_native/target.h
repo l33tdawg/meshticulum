@@ -2,6 +2,8 @@
 #include "Arduino.h"
 #define RADIO_CLASS FakeRadio
 #define RADIOLIB_ERR_NONE 0
+#define RADIOLIB_ERR_RX_TIMEOUT (-6)
+#define RADIOLIB_ERR_CRC_MISMATCH (-7)
 #define RADIOLIB_SX126X_IRQ_TX_DONE 1
 #define RADIOLIB_SX126X_IRQ_RX_DONE 2
 #define RADIOLIB_SX126X_IRQ_HEADER_VALID 0x10
@@ -35,6 +37,7 @@ struct FakeRadio {
     bool receiving=false, shared_fifo=false, overwrite_during_read=false;
     uint32_t irq_on_standby=0, irq_on_receive=0;
     uint64_t read_advance_us=0, receive_advance_us=0;
+    void (*read_hook)()=nullptr;
     uint64_t standby_advance_us=0, clear_advance_us=0, start_advance_us=0,
         finish_advance_us=0, irq_advance_us=0;
     std::vector<uint8_t> received={0xc0,0xdb,0,255};
@@ -53,11 +56,12 @@ struct FakeRadio {
     size_t getPacketLength() { return received.size(); }
     int16_t readData(uint8_t* p,size_t n) {
         const auto irq=flags;
+        if(read_hook) read_hook();
         if(overwrite_during_read && receiving) received.assign(received.size(),0x55);
         if(read_error) return read_error;
         memcpy(p,received.data(),n); flags=0; fake_time+=read_advance_us;
         if((irq & RADIOLIB_SX126X_IRQ_CRC_ERR)
-            || ((irq & RADIOLIB_SX126X_IRQ_HEADER_ERR) && !(irq & (gfsk ? RADIOLIB_SX126X_IRQ_SYNC_WORD_VALID : RADIOLIB_SX126X_IRQ_HEADER_VALID)))) return -7;
+            || ((irq & RADIOLIB_SX126X_IRQ_HEADER_ERR) && !(irq & RADIOLIB_SX126X_IRQ_HEADER_VALID))) return -7;
         return 0;
     }
     float getRSSI() { return -92.5; }
