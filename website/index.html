@@ -82,6 +82,16 @@
     <section class="section paper evidence-section" id="evidence">
       <div class="container">
         <div class="section-heading"><div><p class="eyebrow">03 / Measured, with scope</p><h2>More than a modem<br>bitrate.</h2></div><p>We measure useful bytes in authenticated encrypted transfers, and require independent publisher and content verification. Timing boundaries matter.</p></div>
+        <div class="evidence-panel" id="alpha3-qualification">
+          <div class="evidence-head"><span class="label">Alpha.3 candidate / Profiled USB LoRa qualification</span><span class="date">30 October 2026</span></div>
+          <div class="metrics-grid file-metrics">
+            <div class="metric primary-metric"><strong>1.0111<span>useful kB/s over 100 kB</span></strong><p>98.903315 seconds<br>sender startup → final authenticated receipt</p></div>
+            <div class="metric"><strong>5 / 5<span>signed files verified</span></strong><p>Four 8,164-byte files<br>one 100,000-byte file in five parts</p></div>
+            <div class="metric"><strong>2 pairs<span>queued / synchronous comparisons</span></strong><p>Queued rate gains:<br>11.99% and 14.75%</p></div>
+          </div>
+          <div class="measurement-note"><span aria-hidden="true">↳</span><p>Fresh B → A files used the same installed candidate, with host profiling enabled on both endpoints. The two short pairs ran in opposite orders; their gains compare modes within this candidate. The 100 kB interval includes management and setup between all five parts. All nine part receipts and 18 endpoint children completed, with zero DATA retries, receive-drop increases or new UNKNOWN outcomes. Physical drain and endpoint closure remain separate from authenticated receipt. The tested candidate and rebuilt release artifacts retain their own identities. <a href="roadmap.html#alpha3-qualification">Read all five results, phase reports and qualification limits</a>.</p></div>
+          <div class="radio-settings"><span>SF7 · BW500 kHz · CR4:5</span><span>921.375 MHz · 0 dBm chip setting</span><span>Current distance not reconfirmed</span><span>Two short pairs and one larger file; sustained capacity and field range remain open</span></div>
+        </div>
         <div class="evidence-panel" id="mcu-queue">
           <div class="evidence-head"><span class="label">LoRa / Host-backed MCU DATA queue / about 20 metres</span><span class="date">24 October 2026</span></div>
           <div class="metrics-grid file-metrics">
