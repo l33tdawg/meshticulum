@@ -64,3 +64,5 @@ GitHub renders the Mermaid blocks in the Markdown. Every figure also links to an
 [Throughput pipeline work](THROUGHPUT_PIPELINE.md) records the existing verified
 piece behavior, bounded host wakeups, dormant MCU batch prototype, above
 2.8 kB/s acceptance target and 3 kB/s stretch qualification work.
+
+[Bounded scalar fill pair](SCALAR_FILL_PAIR.md) describes the explicit v6 source candidate.

@@ -48,6 +48,9 @@ _POLICY_REPAIR_FILL_ITEMS = tuple(POLICY_REPAIR_FILL.items())
 POLICY_TERMINAL_RETRY = dict(POLICY_REPAIR_FILL, schema='meshticulum.data-burst-policy.v5',
                             selective_terminal_retry=True)
 _POLICY_TERMINAL_RETRY_ITEMS = tuple(POLICY_TERMINAL_RETRY.items())
+POLICY_SCALAR_FILL_PAIR = dict(POLICY_TERMINAL_RETRY, schema='meshticulum.data-burst-policy.v6',
+                              scalar_fill_pair=True)
+_POLICY_SCALAR_FILL_PAIR_ITEMS = tuple(POLICY_SCALAR_FILL_PAIR.items())
 
 
 def validate_policy(value):
@@ -56,7 +59,8 @@ def validate_policy(value):
           and all(type(value[key]) is type(expected) and value[key] == expected
                   for key, expected in items)
           for items in (_POLICY_ITEMS, _POLICY8_ITEMS, _POLICY32_ITEMS,
-                        _POLICY_REPAIR_FILL_ITEMS, _POLICY_TERMINAL_RETRY_ITEMS)), 'invalid_data_burst_policy')
+                        _POLICY_REPAIR_FILL_ITEMS, _POLICY_TERMINAL_RETRY_ITEMS,
+                        _POLICY_SCALAR_FILL_PAIR_ITEMS)), 'invalid_data_burst_policy')
     return dict(value)
 
 
@@ -98,6 +102,15 @@ def policy_for_terminal_retry():
 
 def policy_terminal_retry(policy):
     return validate_policy(policy).get('selective_terminal_retry', False)
+
+
+def policy_for_scalar_fill_pair():
+    """Explicit logical-32/eight-train admission for a bounded fresh scalar pair."""
+    return dict(_POLICY_SCALAR_FILL_PAIR_ITEMS)
+
+
+def policy_scalar_fill_pair(policy):
+    return validate_policy(policy).get('scalar_fill_pair', False)
 
 
 def capability_for_depth(depth=4):

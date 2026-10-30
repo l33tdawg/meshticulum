@@ -23,7 +23,7 @@ from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.burst_protocol import (
     ACK, CAPABILITY, CANCEL, CLOCK, DATA, EVENT, OPEN, POLICY, STATUS, TOKEN,
     INTER_PACKET_RX_US, REVERSE_LISTEN_US, CAPABILITY8, policy_for_depth, policy_for_flow_window,
-    policy_for_repair_fill, policy_for_terminal_retry,
+    policy_for_repair_fill, policy_for_terminal_retry, policy_for_scalar_fill_pair,
 )
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.flow_runtime import BenchFlow
@@ -372,9 +372,9 @@ class RadioChannel:
 
 
 def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
-             receipt_confirmation=False, host_work_us=(0, 0), host_pump=False,
+             receipt_confirmation=False, host_work_us=(0, 0), host_step_work_us=(0, 0), host_pump=False,
              train_depth=4, sender_cap=20, drop_ack_seqs=None, payload=PAYLOAD,
-             flow_window=None, repair_fill=False, terminal_retry=False, service=None, operation_limits=None, observe=None):
+             flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, service=None, operation_limits=None, observe=None):
     timeline = Timeline()
     air = Air(timeline, drop_data=drop_data, drop_final_ack=drop_final_ack,
               drop_ack_seqs=drop_ack_seqs, payload=payload)
@@ -383,7 +383,7 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
     tmp_path.mkdir(mode=0o700, parents=True, exist_ok=True)
     for unit in ('unit-a', 'unit-b'):
         plan = provision(tmp_path / unit, unit, payload, timeline.clock, PROFILE)
-        plan['data_burst'] = (policy_for_terminal_retry() if terminal_retry else
+        plan['data_burst'] = (policy_for_scalar_fill_pair() if scalar_fill_pair else policy_for_terminal_retry() if terminal_retry else
                                      policy_for_repair_fill() if repair_fill else
                              policy_for_depth(train_depth) if flow_window is None
                               else policy_for_flow_window(flow_window))
@@ -450,6 +450,8 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
                 nonlocal received_at
                 if timeline.stop_flows:
                     return True
+                if host_step_work_us[index]:
+                    timeline.sleep(index, host_step_work_us[index])
                 complete = endpoint.step()
                 if observe is not None:
                     observe(index, endpoint, timeline.now)
