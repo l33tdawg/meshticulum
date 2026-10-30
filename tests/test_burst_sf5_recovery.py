@@ -5,7 +5,7 @@ host threads. Only radio/USB clocks and air are modeled; no device is opened.
 Blocking USB or RF waits yield to the other host, unlike atomic train delivery.
 These fault controls establish source behavior, not an RF performance result.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import heapq
 import json
@@ -399,7 +399,9 @@ class RadioChannel:
 def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
              receipt_confirmation=False, host_work_us=(0, 0), host_step_work_us=(0, 0), host_pump=False,
              train_depth=4, sender_cap=20, drop_ack_seqs=None, payload=PAYLOAD,
-             flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False, train12=False, service=None, operation_limits=None, observe=None):
+             flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False,
+             repeat_retry=False, repair_train=False, train12=False, stall_retry=True,
+             service=None, operation_limits=None, observe=None):
     timeline = Timeline()
     air = Air(timeline, drop_data=drop_data, drop_final_ack=drop_final_ack,
               drop_ack_seqs=drop_ack_seqs, payload=payload)
@@ -463,6 +465,8 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
                 flow_key=authority.flow_key, contract=authority.contract, profile=authority.carrier_profile,
                 ledger=ledger, scheduler_epoch=authority.scheduler_epoch, broker_epoch=authority.broker_epoch,
                 sends=index == 0, clock=timeline.clock)
+            if index == 0 and train12 and not stall_retry:
+                endpoint.flow.limits = replace(endpoint.flow.limits, selective_stall_retry=False)
             opened.append(endpoint.close)
             if receipt_confirmation:
                 endpoint.enable_receipt_confirmation(bytes.fromhex('ab' * 32),

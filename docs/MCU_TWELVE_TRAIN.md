@@ -48,6 +48,24 @@ promise that ACK transmission can never overlap DATA. Terminal repair trains
 use the same twelve-admission ceiling, distinct-domain proof checks and one
 additional offer per normal step. Physical occupancy remains eight.
 
+## Saturated-window repair
+
+The Alpha 4 source adds [stalled-window selective repair](STALLED_WINDOW_RETRY.md).
+When fresh DATA remains, the peer/window allowance is fully occupied, all
+earlier DATA has physically drained, and one authenticated later SACK proves a
+blocking hole, BenchFlow may spend the existing bounded repair train before the
+ordinary 2.22-second timeout. Eligibility is enabled only for the explicit
+train12 policy and remains subject to the same owner, cipher, journal, native
+queue, authority and deadline path for every attempt.
+
+The paired source model injects seven or nine consecutive holes into the same
+signed response geometry. Stall repair reduces modeled elapsed time by
+1.269100 seconds (15.35%) and 1.079100 seconds (12.98%) respectively without
+changing attempt counts within either pair. The seven-hole arm retains two
+pre-existing model collisions in both variants; the nine-hole arm has none.
+These modeled timings exclude real process startup, host cost and physical
+receive priority and do not establish a measured rate.
+
 The original admission fit, in microseconds, is:
 
 ```text

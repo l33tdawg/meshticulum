@@ -14,6 +14,29 @@ bytes this one replaces are held in
 revision 8 bytes this one repairs are held in
 `work/rook-meshticulum-r8e-review-20261006/candidate/`.
 
+## Revision 14 candidate: stalled-window repair, 30 October 2026
+
+The train12 candidate adds default-off
+`FlowLimits.selective_stall_retry`. It requires selective fast retry and accepts
+one distinct later SACK only when fresh DATA remains and the current
+peer/window allowance is fully occupied. BenchFlow enables it only for the
+explicit 12-frame repair-train policy and additionally requires an exact local
+physical drain/STATUS check plus live original authority before each offer.
+
+The bounded repair train may offer one further distinct proven hole per normal
+host step. Every retry still passes the owner, cipher, journal, native queue,
+original deadline, retry ceiling and scheduler path; ordinary non-train12 flows
+retain the three-distinct-later-SACK rule. A lost repair falls back to the
+unchanged ordinary timeout. See
+[stalled-window selective repair](../../../docs/STALLED_WINDOW_RETRY.md).
+
+The candidate `flow.py` SHA-256 is
+`12dc626a9e1e5cc2120d2e59f1b857164cd74c4f59c89dec64c1637fe22b1e65`;
+the independently accepted `flow_port.py` remains unchanged at
+`ea29289b960ca895f54ccb46669b476a50bae79ab9a6b4060342da8c5cfacf07`.
+This hash is a review pin, not a claim that Alpha 4 has passed physical RF
+qualification.
+
 ## Revision 13: fresh proof after accepted retry, 30 October 2026
 
 The owner explicitly accepted the reviewed flow SHA-256
