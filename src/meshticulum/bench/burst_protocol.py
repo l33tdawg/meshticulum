@@ -54,6 +54,9 @@ _POLICY_SCALAR_FILL_PAIR_ITEMS = tuple(POLICY_SCALAR_FILL_PAIR.items())
 POLICY_REPEAT_RETRY = dict(POLICY_SCALAR_FILL_PAIR, schema='meshticulum.data-burst-policy.v7',
                            selective_repeat_retry=True)
 _POLICY_REPEAT_RETRY_ITEMS = tuple(POLICY_REPEAT_RETRY.items())
+POLICY_REPAIR_TRAIN = dict(POLICY_REPEAT_RETRY, schema='meshticulum.data-burst-policy.v8',
+                           selective_repair_train=True)
+_POLICY_REPAIR_TRAIN_ITEMS = tuple(POLICY_REPAIR_TRAIN.items())
 
 
 def validate_policy(value):
@@ -63,7 +66,8 @@ def validate_policy(value):
                   for key, expected in items)
           for items in (_POLICY_ITEMS, _POLICY8_ITEMS, _POLICY32_ITEMS,
                         _POLICY_REPAIR_FILL_ITEMS, _POLICY_TERMINAL_RETRY_ITEMS,
-                        _POLICY_SCALAR_FILL_PAIR_ITEMS, _POLICY_REPEAT_RETRY_ITEMS)), 'invalid_data_burst_policy')
+                        _POLICY_SCALAR_FILL_PAIR_ITEMS, _POLICY_REPEAT_RETRY_ITEMS,
+                        _POLICY_REPAIR_TRAIN_ITEMS)), 'invalid_data_burst_policy')
     return dict(value)
 
 
@@ -123,6 +127,15 @@ def policy_for_repeat_retry():
 
 def policy_repeat_retry(policy):
     return validate_policy(policy).get('selective_repeat_retry', False)
+
+
+def policy_for_repair_train():
+    """Explicit v8 admission for distinct proven holes after peer FINAL receipt."""
+    return dict(_POLICY_REPAIR_TRAIN_ITEMS)
+
+
+def policy_repair_train(policy):
+    return validate_policy(policy).get('selective_repair_train', False)
 
 
 def capability_for_depth(depth=4):
