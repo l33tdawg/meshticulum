@@ -55,6 +55,8 @@ build/firmware-cli/bin/python firmware/meshticulum-bench/prepare_firmware.py bui
 
 Prepared inputs may not drift between preparation and build. Keep failed downloads, preparation errors and build logs as evidence; do not replace them with a successful status from a different input set. Use a fresh output when deliberately revising inputs. Build logs are create-only, so repeat attempts also need independently identified output/evidence.
 
+The current profiling application has eight exact inputs, including its generated configuration header. The optional [Heltec SPI clock experiment](MCU_SPI_EXPERIMENT.md) uses that same eighth input: omission preserves the existing header and identity; an explicit 2 or 8 MHz selection has its own identity while XIAO keeps its 2 MHz radio setting. This option has source controls only and no physical qualification.
+
 The recipe maps its isolated output path to `/meshticulum-build` with `-ffile-prefix-map` and sets `SOURCE_DATE_EPOCH=1786709959` from the locked upstream commit date, `2026-08-14T12:19:19Z`. These reduce path/time variation. The recorded independent pair matched the four artifact types listed below; retain the different maps and do not generalize that result to another host, toolchain or input set.
 
 ## The framework patch

@@ -20,7 +20,15 @@ The subsequent [terminal-policy/native-RX diagnostic sample](../benchmarks/2026-
 verified the same useful bytes in 11.793771 seconds including startup, or
 2,026.493477 B/s, with six DATA retries. All six used the existing bulk
 selective path; the enabled terminal threshold was not exercised. Firmware
-and loss patterns differed. All five samples miss the target.
+and loss patterns differed. The subsequent [8 MHz SPI comparison](../benchmarks/2026-10-30-sf5-spi8-profile/README.md)
+kept the same host code and v5 policy, and verified the file in 23.765471
+seconds including startup, or 1,005.660692 B/s. DATA retries rose to 26;
+the differing loss pattern prevents an isolated estimate of the SPI effect.
+The separate [v6 scalar-fill pair sample](../benchmarks/2026-10-30-sf5-scalar-fill-pair-profile/README.md)
+retained the SPI8 firmware and both MCU boots, and verified the file in
+19.551794 seconds including startup, or 1,222.394221 B/s. It recorded 17 extra
+offers and 26 DATA retries. Different loss and recovery patterns prevent
+causal attribution of its higher rate to v6. All seven samples miss the target.
 
 ## Existing piece and recovery behavior
 
@@ -155,7 +163,16 @@ the native queue fed and investigating receive handling are the next measured
 leads. The [terminal recovery](TERMINAL_RETRY.md) source controls separately
 exercise late holes absent from this sample.
 
-Next source work examines queue refill and release/host costs while keeping
+The SPI8 sample's native transmit-start call averaged 2.237 ms versus the
+prior 3.367 ms, while its interval without DATA outstanding grew to
+14.017466 seconds. Faster setup did not yield higher file goodput in this
+sample. The [explicit scalar-fill pair](SCALAR_FILL_PAIR.md) then recorded
+17 extra offers in its separate physical sample. Its interval without DATA
+outstanding was 10.346933 seconds. Neither that interval nor the observed
+rate increase isolates the benefit of an extra offer; the matched source
+model remains separate evidence.
+
+Further work examines queue refill, receive handling and release/host costs while keeping
 canonical ACK evidence, one selective offer per flight, paid attempts and
 original finite deadlines. A source model or a faster isolated number cannot
 qualify the 3,000 useful B/s goal.
