@@ -14,7 +14,7 @@ from .burst_protocol import (CAPABILITY, CANCEL, TOKEN, INTER_PACKET_RX_US,
     REVERSE_LISTEN_US, MIN_MCU_RATE_PPM, CLOCK_MARGIN_US, BurstEvent, BurstStatus,
     ClockSnapshot, OpenBinding, ack_frame, check_capability, data_frame,
     open_frame, query_frame, validate_policy, policy_depth, capability_for_depth,
-    capability_request_body, policy_train_frames)
+    capability_request_body, policy_train_frames, policy_dynamic_train)
 from .linux_hat import HardwareError, require
 from .host_timing import Phase, phase, timed
 from .serial_protocol import Frame, Message, Outcome, RadioProfile, SerialError, TxEvidence
@@ -43,6 +43,7 @@ class BurstSerialWorker(SerialWorker):
         self._burst_deadline = None
         self._burst_clock = None
         self._burst_count = 0
+        self._train_admission_refused = False
         self._physical = {}
         self._logical = {}
         self._released_events = deque(maxlen=self._depth)
@@ -72,7 +73,24 @@ class BurstSerialWorker(SerialWorker):
     @property
     def has_capacity(self):
         return (self._open is not None and not self.fenced
+                and not self._train_admission_refused
                 and len(self._physical) < self._depth and self._burst_count < self._train_frames)
+
+    @property
+    def train_admission_refused(self):
+        return self._train_admission_refused
+
+    def retire_refused_train(self):
+        """Complete a known-refused turn only after exact physical release.
+
+        This does not sample CLOCK or allocate authority. The runtime must
+        still give the peer its reverse-control turn before another offer.
+        """
+        require(self._train_admission_refused and not self._physical,
+                'refused_train_not_drained')
+        self.assert_drained()
+        require(not self.fenced, 'refused_train_fenced')
+        self._train_admission_refused = False
 
     @property
     def pending_airtime_us(self):
@@ -302,6 +320,12 @@ class BurstSerialWorker(SerialWorker):
                 self._settle_queued(request, packet, 'REFUSED',
                     'firmware_reason_' + str(reply.body[0]), None)
                 self._burst_count -= 1
+                # BUDGET (6) includes exhausted common-deadline headroom.
+                # One refused attempt remains paid; latch the turn closed so
+                # repeated offers cannot spend the remaining retry allowance.
+                if (policy_dynamic_train(dict(self._burst_policy))
+                        and reply.body == b'\x06'):
+                    self._train_admission_refused = True
                 self._forget(request)
                 return AttemptResult(request, 'REFUSED', reservation, None)
             left = deadline - self.channel.monotonic()

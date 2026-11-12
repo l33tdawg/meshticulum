@@ -29,7 +29,7 @@ from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
 from .burst_protocol import (CLOCK_MARGIN_US, INTER_PACKET_RX_US, MAX_CLOCK_RTT_US,
                              REVERSE_LISTEN_US, validate_policy, policy_depth, policy_train_frames,
-                             policy_flow_window)
+                             policy_flow_window, policy_dynamic_train)
 from .tx_burst import MAX_AUTONOMOUS_HOLD_US, MAX_DEPTH, START_GUARD_US
 from .admission import RadioAdmission,GfskAdmission,Gfsk250Admission
 from .gfsk_profile import GfskProfile,radio_airtime_us,radio_is_fast,radio_is_sf5
@@ -190,7 +190,13 @@ class RunAuthority:
             if 'data_burst' in p:
                 depth = policy_depth(p['data_burst'])
                 require(depth == 4 or radio_is_sf5(self.profile), 'burst_eight_requires_sf5')
-                train = policy_train_frames(p['data_burst']) * (radio_airtime_us(self.profile, 255)
+                # v10 admits refills dynamically against the SAME original
+                # native deadline. Prove an eight-slot pending queue can fit;
+                # a full 24-admission train is expressly not promised. Existing
+                # policies retain their conservative whole-train fit check.
+                fit_frames = (depth if policy_dynamic_train(p['data_burst'])
+                              else policy_train_frames(p['data_burst']))
+                train = fit_frames * (radio_airtime_us(self.profile, 255)
                                     + START_GUARD_US + INTER_PACKET_RX_US)
                 require(train + REVERSE_LISTEN_US + MAX_CLOCK_RTT_US
                         <= MAX_AUTONOMOUS_HOLD_US - CLOCK_MARGIN_US

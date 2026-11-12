@@ -102,6 +102,7 @@ class BenchFlow:
         self.last_activity_us = self.clock()[1]
         flow, port = _flow_modules()
         self.next_send_us = 0
+        self._refused_turn_until_us = 0
         self.receive_gap_us = math.ceil(radio_airtime_us(authority.profile,
             flow.ACK_BYTES + 47) * 1.10) + 60000
         self._ack_reservation_us = math.ceil(radio_airtime_us(authority.profile,
@@ -116,7 +117,7 @@ class BenchFlow:
         selected_window = policy_flow_window(policy) if policy is not None else 4
         selected_train = policy_train_frames(policy) if policy is not None else selected_depth
         self._selective_stall_retry = (self._selective_repair_train
-                                       and selected_train == 12)
+                                       and selected_train in (12, 24))
         require(selected_depth == 4 or radio_is_sf5(authority.profile),
                 'burst_eight_requires_sf5')
         if selected_window != selected_depth:
@@ -450,6 +451,17 @@ class BenchFlow:
                     self.owner.settle_sending()
             return CommitOutcome.ACCEPTED
         if result.outcome in ('REFUSED', 'NOT_SENT'):
+            if (self.data_burst and kind is FrameKind.DATA and self.burst_frames == 24
+                    and self.worker.train_admission_refused):
+                # v10's dynamic native fit may end a short train. Keep every
+                # accepted logical flight, collect its exact physical outcome,
+                # and release all slots before a future CLOCK is possible.
+                # Refusal remains charged; the frozen flow owns retransmission.
+                self._collect_physical(self.worker.drain_physical())
+                self.worker.retire_refused_train()
+                self.counts['dynamic_train_refused_turn'] += 1
+                self._hold_repair_reverse_turn()
+                self._refused_turn_until_us = self.next_send_us
             return CommitOutcome.REFUSED_CARRIER
         self.owner.settle_sending()
         return CommitOutcome.UNKNOWN
@@ -656,7 +668,7 @@ class BenchFlow:
         # repair. The QUEUED repair already counts toward this same admitted
         # train; do not reset that count or erase an existing reverse hold.
         # The normal flow/owner still admit each following DATA independently.
-        if (self._selective_repair_fill and self.burst_frames in (8, 12)
+        if (self._selective_repair_fill and self.burst_frames in (8, 12, 24)
                 and 0 < self.burst_sent < self.burst_frames and self.next_send_us == 0
                 and self.flow.queued_bytes() > 0 and self.flow._peer_grant_rev is not None
                 and self.flow.in_flight() < min(self.flow.limits.window_frames, self.flow._peer_credit)
@@ -850,7 +862,8 @@ class BenchFlow:
             # of a conservative reverse-airtime wait before the next DATA.
             if (self.sends and verified.kind is FrameKind.ACK
                     and self.flow.acked_frames() > acknowledged_before):
-                self.next_send_us = min(self.next_send_us, self.last_activity_us)
+                self.next_send_us = max(self._refused_turn_until_us,
+                                        min(self.next_send_us, self.last_activity_us))
                 self.burst_sent = 0
                 self._repair_fill_active = False
                 self._repair_train_active = False

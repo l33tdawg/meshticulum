@@ -23,7 +23,7 @@ from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.burst_protocol import (
     ACK, CAPABILITY, CANCEL, CLOCK, DATA, EVENT, OPEN, POLICY, STATUS, TOKEN,
     INTER_PACKET_RX_US, REVERSE_LISTEN_US, CAPABILITY8, policy_for_depth, policy_for_flow_window,
-    policy_for_repair_fill, policy_for_terminal_retry, policy_for_scalar_fill_pair, policy_for_repeat_retry, policy_for_repair_train, policy_for_train12, capability_for_depth, capability_request_body,
+    policy_for_repair_fill, policy_for_terminal_retry, policy_for_scalar_fill_pair, policy_for_repeat_retry, policy_for_repair_train, policy_for_train12, policy_for_train24, capability_for_depth, capability_request_body,
 )
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.flow_runtime import BenchFlow
@@ -206,6 +206,8 @@ class RadioChannel:
         self.queued = []
         self.dispatch_scheduled = False
         self.peak = 0
+        self.refuse_budget_at = None
+        self.budget_refusal = None
         self.writes = []
 
     def monotonic(self):
@@ -320,12 +322,20 @@ class RadioChannel:
             assert estimate == estimated_airtime_us(PROFILE, size)
             assert self.now_us() < end <= self.open_end
             assert end - self.now_us() <= 2_000_000
+            if self.refuse_budget_at == self.attempts + 1:
+                self.refuse_budget_at = None
+                self.budget_refusal = dict(at_us=self.now_us(), pending=len(self.events),
+                    deadline_us=end, attempts=self.attempts)
+                reply(Message.REFUSED, b'\x06')
+                return
             needed = estimate + 105_000 + sum(e[4] + 105_000 for e in self.events.values()
                 if e[1] not in (Stage.RF_DONE, Stage.NOT_SENT, Stage.UNKNOWN))
             needed += max(0, self.next_start_us - self.now_us())
+            if needed > end - self.now_us():
+                reply(Message.REFUSED, b'\x06')
+                return
             if (self.admitted >= self.train_frames or len(self.events) >= self.train_depth
-                    or self.burst_deadline and end != self.burst_deadline
-                    or needed > end - self.now_us()):
+                    or self.burst_deadline and end != self.burst_deadline):
                 reply(Message.REFUSED, b'\x08')
                 return
             self.attempts += 1
@@ -400,17 +410,18 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
              receipt_confirmation=False, host_work_us=(0, 0), host_step_work_us=(0, 0), host_pump=False,
              train_depth=4, sender_cap=20, drop_ack_seqs=None, payload=PAYLOAD,
              flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False,
-             repeat_retry=False, repair_train=False, train12=False, stall_retry=True,
-             service=None, operation_limits=None, observe=None):
+             repeat_retry=False, repair_train=False, train12=False, train24=False, stall_retry=True,
+             service=None, operation_limits=None, observe=None, refuse_budget_at=None):
     timeline = Timeline()
     air = Air(timeline, drop_data=drop_data, drop_final_ack=drop_final_ack,
               drop_ack_seqs=drop_ack_seqs, payload=payload)
-    air.channels = [RadioChannel(timeline, air, i, train_depth=train_depth, train_frames=12 if train12 else None) for i in range(2)]
+    air.channels = [RadioChannel(timeline, air, i, train_depth=train_depth, train_frames=24 if train24 else 12 if train12 else None) for i in range(2)]
+    air.channels[0].refuse_budget_at = refuse_budget_at
     results = [{}, {}]
     tmp_path.mkdir(mode=0o700, parents=True, exist_ok=True)
     for unit in ('unit-a', 'unit-b'):
         plan = provision(tmp_path / unit, unit, payload, timeline.clock, PROFILE)
-        plan['data_burst'] = (policy_for_train12() if train12 else policy_for_repair_train() if repair_train else policy_for_repeat_retry() if repeat_retry else policy_for_scalar_fill_pair() if scalar_fill_pair else policy_for_terminal_retry() if terminal_retry else
+        plan['data_burst'] = (policy_for_train24() if train24 else policy_for_train12() if train12 else policy_for_repair_train() if repair_train else policy_for_repeat_retry() if repeat_retry else policy_for_scalar_fill_pair() if scalar_fill_pair else policy_for_terminal_retry() if terminal_retry else
                                      policy_for_repair_fill() if repair_fill else
                              policy_for_depth(train_depth) if flow_window is None
                               else policy_for_flow_window(flow_window))
@@ -465,7 +476,7 @@ def exercise(tmp_path, *, receiver_cap=64, drop_data=None, drop_final_ack=False,
                 flow_key=authority.flow_key, contract=authority.contract, profile=authority.carrier_profile,
                 ledger=ledger, scheduler_epoch=authority.scheduler_epoch, broker_epoch=authority.broker_epoch,
                 sends=index == 0, clock=timeline.clock)
-            if index == 0 and train12 and not stall_retry:
+            if index == 0 and (train12 or train24) and not stall_retry:
                 endpoint.flow.limits = replace(endpoint.flow.limits, selective_stall_retry=False)
             opened.append(endpoint.close)
             if receipt_confirmation:
