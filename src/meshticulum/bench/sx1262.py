@@ -312,9 +312,15 @@ class SX1262:
                 if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
                     with phase(getattr(self, 'host_timing', None), Phase.HAT_RX_PACKET_READ):
                         length, offset = self._read(0x13, 2)
-                        require(1 <= length <= 255, 'sx1262_invalid_received_size')
-                        data = self._read(0x1E, length, bytes([offset]))
-                        packet = self._receive_evidence(data, self._read(0x14, 3))
+                        # DS2.2 table 13-68 permits LoRa payload length zero.
+                        # It cannot contain an authenticated wire frame. Drop
+                        # it without a FIFO read or accepted receive evidence;
+                        # SPI status/length checks and IRQ cleanup stay strict.
+                        if length == 0:
+                            self.rx_errors += 1
+                        else:
+                            data = self._read(0x1E, length, bytes([offset]))
+                            packet = self._receive_evidence(data, self._read(0x14, 3))
                 elif flags & (CRC_ERROR | HEADER_ERROR):
                     self.rx_errors += 1
                 self.clear_irq()
