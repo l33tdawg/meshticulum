@@ -208,6 +208,13 @@ class LinuxHAT:
         fcntl.ioctl(self.lines_fd, GPIO_GET_VALUES, values)
         return bool(struct.unpack('=QQ', values)[0] & 4)
 
+    def dio1_ready(self):
+        """Non-consuming level hint on DIO1 in the existing owned GPIO request."""
+        require(self.lines_fd is not None, 'closed_gpio')
+        values = bytearray(struct.pack('=QQ', 0, 8))
+        fcntl.ioctl(self.lines_fd, GPIO_GET_VALUES, values)
+        return bool(struct.unpack('=QQ', values)[0] & 8)
+
     def close(self):
         # No SPI commands from teardown; higher driver owns bounded standby.
         for field in ('lines_fd', 'chip_fd', 'spi_fd', 'lock_fd'):

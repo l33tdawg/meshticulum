@@ -59,6 +59,7 @@ With `--profile-host`, the source candidate also records these fixed phases:
 
 | Phase | Host boundary |
 | --- | --- |
+| `hat_activity_wait` | Bounded DIO1 level wake hint, including actual sleeps and fresh authority checks |
 | `hat_rx_poll` | Whole SX1262 receive poll, including empty polls |
 | `hat_rx_drain` | Completed/error IRQ path: standby, timed-RX cleanup, optional packet read and IRQ clear |
 | `hat_rx_packet_read` | Valid packet length/FIFO/status reads, nested inside drain |
@@ -76,7 +77,7 @@ No per-packet trace or new diagnostic clock is used when profiling is disabled.
 
 ## Format and failure handling
 
-The schema is `meshticulum.host-phase-timing.v1`. Each of its fixed 31 phase
+The schema is `meshticulum.host-phase-timing.v1`. Each of its fixed 32 phase
 names has `count`, `total_ns`, `min_ns`, `max_ns`, `invalid`, `dropped` and
 `saturated`. A valid measured call increments `count` even if that call raises;
 counts do not establish successful completion. An empty phase has null
@@ -301,3 +302,16 @@ wall-time improvement. The wait is at most 5 ms and the original deadline;
 all ordinary step, authority, physical-release and cleanup checks remain.
 The current [MCU batch prototype](MCU_BATCH_PROTOTYPE.md) is source-only and is
 not consumed by the existing worker or installed firmware.
+
+## Direct HAT wake hints
+
+The HAT worker now uses its existing owned DIO1 GPIO input for a non-consuming
+wake hint. A wait is at most the caller's 5 ms bound and the original lease,
+with at most 21 level reads and 20 sleeps of at most 250 microseconds. Readiness
+never clears IRQs, reads SPI/FIFO bytes, rearms RX or proves packet delivery.
+The ordinary receive path still performs those operations under its own guards.
+Fresh ownership, authorization and finite lease checks surround level reads and
+sleeps. Transports without a DIO1 readiness method return None to preserve the
+caller's bounded fallback. The GPIO request ABI and edge configuration do not
+change. Polling adds bounded host work; its effect on physical goodput requires
+a separately authorized measurement.

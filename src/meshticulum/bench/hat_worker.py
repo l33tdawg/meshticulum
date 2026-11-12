@@ -14,7 +14,7 @@ import time
 from types import BuiltinFunctionType, MethodType
 import uuid
 
-from .host_timing import Phase, check_timing, phase
+from .host_timing import Phase, check_timing, phase, timed
 from .linux_hat import LinuxHAT, HardwareError, require
 from .serial_protocol import Outcome, RadioProfile
 from .serial_worker import AttemptResult, estimated_airtime_us
@@ -253,6 +253,38 @@ class HATWorker:
         clock_basis = ('host_monotonic' if self.time_basis == 'host-monotonic'
                        else 'model_monotonic') if driver is not None else None
         return AttemptResult(request, outcome, reservation, driver, clock_basis)
+
+    @timed(Phase.HAT_ACTIVITY_WAIT)
+    def wait_for_activity(self, timeout):
+        """Bounded non-consuming DIO1 wake hint; None selects the caller fallback.
+
+        No SPI/IRQ drain, RX setup, packet delivery or deadline renewal occurs.
+        Poll the already-owned level line because this GPIO request has no edge
+        event ABI. The latched IRQ remains for the ordinary receive path.
+        """
+        require(type(timeout) in (int, float) and math.isfinite(timeout)
+                and 0 <= timeout <= .005, 'invalid_hat_activity_timeout')
+        self._live()
+        transport = self.io
+        readiness = getattr(transport, 'dio1_ready', None)
+        if not callable(readiness):
+            return None
+        end = min(self._clock() + timeout, self._dispatch())
+        for poll_index in range(21):
+            self._live()
+            if self.radio.receive_pending or not self.radio.receiving:
+                # Ordinary receive must drain/rearm; never wait in standby.
+                return True
+            ready = readiness()
+            self._live()
+            require(type(ready) is bool, 'invalid_hat_activity_result')
+            if ready:
+                return True
+            remaining = end - self._clock()
+            if remaining <= 0 or poll_index == 20:
+                return False
+            transport.sleep(min(.00025, remaining))
+            self._live()
 
     def receive(self, timeout=0.0):
         require(type(timeout) in (int, float) and 0 <= timeout <= 0.1, 'invalid_receive_timeout')
