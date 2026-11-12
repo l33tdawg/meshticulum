@@ -83,6 +83,33 @@ def _mountinfo():
     return raw
 
 
+def _event_complete_mount(raw, path, info):
+    """Conservative covering-mount classification; ambiguity keeps enumeration."""
+    target = os.fsencode(os.path.abspath(path))
+    candidates = []
+    try:
+        for line in raw.splitlines():
+            fields = line.split()
+            separator = fields.index(b'-', 6)
+            mount = re.sub(rb'\\([0-7]{3})', lambda m: bytes([int(m[1], 8)]), fields[4])
+            if b'\\' in mount or not mount.startswith(b'/'):
+                return False
+            if target == mount or target.startswith(mount.rstrip(b'/') + b'/'):
+                candidates.append((len(mount), mount, fields[2], fields[separator+1]))
+        if not candidates:
+            return False
+        longest = max(item[0] for item in candidates)
+        chosen = [item for item in candidates if item[0] == longest]
+        if len(chosen) != 1:
+            return False
+        _, mount, device, kind = chosen[0]
+        major, minor = map(int, device.split(b':'))
+        return (kind in (b'tmpfs', b'devtmpfs')
+                and (major, minor) == (os.major(info.st_dev), os.minor(info.st_dev)))
+    except (ValueError, IndexError, TypeError, OverflowError):
+        return False
+
+
 def _nodev_namespace(raw, path):
     path = os.fsencode(path)
     covering = []
@@ -119,7 +146,13 @@ class OpenCollisionWatch:
     Unexpected events, read errors, queue overflow and node changes latch a
     refusal until this object is closed; they never switch to a clean cache.
     """
-    def __init__(self, device_stat, *, device_root='/dev', opener_scan=None):
+    def __init__(self, device_stat, *, device_root='/dev', opener_scan=None,
+                 event_complete_inventory=False):
+        if type(event_complete_inventory) is not bool:
+            raise HardwareError('device_watch_invalid_inventory_option')
+        self.event_complete_inventory = event_complete_inventory
+        self.event_directories = frozenset()
+        self.directory_wds = {}
         self.fd, self.watch_stat, self.closed, self.failed = None, None, False, None
         self.pid = os.getpid()
         self.device_stat = device_stat
@@ -157,10 +190,14 @@ class OpenCollisionWatch:
             raise OSError(code, os.strerror(code))
         self.fd, self.watch_stat = fd, os.fstat(fd)
         try:
+            if self.event_complete_inventory:
+                self.mountinfo = _mountinfo()
             self._inventory(self.root, add)
             if not self.aliases:
                 raise HardwareError('device_watch_node_not_found')
             self.watch_lines = self._fdinfo_watch_lines()
+            if self.event_complete_inventory:
+                self._bind_event_directories()
         except OSError as error:
             if error.errno not in _UNSUPPORTED:
                 raise
@@ -173,6 +210,23 @@ class OpenCollisionWatch:
             self.watch_inodes.clear()
             self.watch_lines = None
             self.mountinfo = None
+            self.event_directories = frozenset()
+
+    def _bind_event_directories(self):
+        # Initial lines were parsed and validated. Every current() must still
+        # freshly reproduce this exact descriptor/watch-mask binding.
+        masks = {}
+        for line in self.watch_lines:
+            match = _WATCH_LINE.fullmatch(line)
+            masks[int(match[1], 16)] = (int(match[4], 16), int(match[5], 16))
+        qualified = set()
+        for path in self.directories:
+            wd = self.directory_wds[path]
+            mask, ignored = masks.get(wd, (0, 0))
+            if (ignored == 0 and mask & _DIRECTORY_EVENTS == _DIRECTORY_EVENTS
+                    and _event_complete_mount(self.mountinfo, path, path.stat())):
+                qualified.add(path)
+        self.event_directories = frozenset(qualified)
 
     def _watch(self, path, info, mask, add):
         wd = add(self.fd, os.fsencode(path), mask | _IN_MASK_ADD)
@@ -188,6 +242,8 @@ class OpenCollisionWatch:
         if path == self.root:
             self.anchor_wd = wd
         self.paths[path] = _identity(info)
+        if mask & _DIRECTORY_EVENTS == _DIRECTORY_EVENTS:
+            self.directory_wds[path] = wd
 
     def _inventory(self, path, add):
         info = path.stat()
@@ -337,6 +393,8 @@ class OpenCollisionWatch:
                 if _identity(path.stat()) != original:
                     return self._fail('device_watch_path_changed')
             for path, original in self.directories.items():
+                if path in getattr(self, 'event_directories', ()):
+                    continue
                 if _entries(path) != original:
                     return self._fail('device_watch_directory_changed')
             return self.failed is None and self._events_current() and self.failed is None

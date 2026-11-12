@@ -319,14 +319,15 @@ class HeldHardware:
     The SDK process must not fork or pass its held device descriptors. Host
     root is trusted; this probe does not isolate the radio from host root.
     """
-    def __init__(self, transport, *, by_id=None, usb_serial=None):
+    def __init__(self, transport, *, by_id=None, usb_serial=None, event_complete_inventory=False):
         self.transport, self.by_id, self.usb_serial = transport, by_id, usb_serial
         self.boot, self.pid = host_boot(), os.getpid()
         names = ('fd', 'lock_fd') if type(transport) is ExclusiveSerial else (
             'spi_fd', 'chip_fd', 'lines_fd', 'lock_fd')
         self.fds = tuple((name, getattr(transport, name), os.fstat(getattr(transport, name)))
                          for name in names)
-        self.opens = OpenCollisionWatch(self.fds[0][2])
+        self.opens = OpenCollisionWatch(self.fds[0][2],
+            event_complete_inventory=event_complete_inventory)
 
     def close(self):
         self.opens.close()
@@ -488,7 +489,7 @@ class FileHardware:
     _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
     _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
                'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
-               'file_issued_epoch_us', 'file_expires_epoch_us')
+               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory')
 
     @classmethod
     def _binding(cls, args):
@@ -504,6 +505,7 @@ class FileHardware:
         self.window_raw = None
         self.options = (args.interface, args.device, getattr(args, 'usb_serial', None))
         self.transport = self.owner = None
+        self.event_complete_inventory = getattr(args, 'event_complete_inventory', False)
 
     def _open(self):
         interface, device, serial = self.options
@@ -511,7 +513,8 @@ class FileHardware:
                           ExclusiveSerial(device, usb_serial=serial))
         try:
             self.owner = HeldHardware(self.transport,
-                by_id=device if interface == 'usb' else None, usb_serial=serial)
+                by_id=device if interface == 'usb' else None, usb_serial=serial,
+                event_complete_inventory=self.event_complete_inventory)
         except BaseException as error:
             self.closed = True
             try:
@@ -605,7 +608,8 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
     try:
         if hardware is None:
             owner = HeldHardware(transport, by_id=args.device if args.interface == 'usb' else None,
-                                 usb_serial=args.usb_serial)
+                                 usb_serial=args.usb_serial,
+                                 event_complete_inventory=getattr(args, 'event_complete_inventory', False))
             cleanup.append(owner.close)
         authority = RunAuthority(args.grant_directory, expected_unit=args.unit,
             host_boot_id=host_boot(), clock=clock, owner_probe=lambda: owner.current() and window.current(), radio_admission=admission)
@@ -731,6 +735,8 @@ def main():
     add_host_timing_argument(run)
     run.add_argument('--pace-selective-repeats', action='store_true',
         help='require confirmation; pace repeated early repairs by the accepted flight RTO')
+    run.add_argument('--event-complete-inventory', action='store_true',
+        help='opt in to fresh inotify inventory proof on bound tmpfs/devtmpfs directories')
     run.add_argument('--confirm-receipt', action='store_true',
         help='opt in on both peers to authenticated receipt confirmation inside the original file window')
     for sub in (run, inspect, compact):
