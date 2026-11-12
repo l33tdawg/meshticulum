@@ -409,8 +409,11 @@ class ChunkTransfer:
 class FileTransfer(ChunkTransfer):
     """Optional authenticated retirement bound to the original file window."""
     def __init__(self, authority, worker, journal, cipher, descriptor, cache, *,
-                 clock, window, chunk, confirm_receipt=False):
+                 clock, window, chunk, confirm_receipt=False, pace_selective_repeats=False):
         require(type(confirm_receipt) is bool, 'invalid_receipt_confirmation_option')
+        require(type(pace_selective_repeats) is bool
+                and (not pace_selective_repeats or confirm_receipt),
+                'invalid_selective_repeat_pacing_option')
         context = None
         if confirm_receipt:
             window.check()
@@ -428,6 +431,8 @@ class FileTransfer(ChunkTransfer):
         super().__init__(authority, worker, journal, cipher, descriptor, cache, clock=clock)
         if context is not None:
             self.enable_receipt_confirmation(context)
+        if pace_selective_repeats:
+            self.endpoint.enable_selective_repeat_pacing()
 
 
 def transfer_chunk(args):
@@ -470,7 +475,8 @@ def transfer_chunk(args):
         lambda authority, worker, journal, cipher: FileTransfer(
             authority, worker, journal, cipher, descriptor, cache, clock=clock,
             window=window, chunk=args.chunk,
-            confirm_receipt=getattr(args, 'confirm_receipt', False)))
+            confirm_receipt=getattr(args, 'confirm_receipt', False),
+            pace_selective_repeats=getattr(args, 'pace_selective_repeats', False)))
 
 
 class FileHardware:
@@ -723,6 +729,8 @@ def main():
     run.add_argument('--admission-sha256', required=True)
     add_operation_limit_arguments(run)
     add_host_timing_argument(run)
+    run.add_argument('--pace-selective-repeats', action='store_true',
+        help='require confirmation; pace repeated early repairs by the accepted flight RTO')
     run.add_argument('--confirm-receipt', action='store_true',
         help='opt in on both peers to authenticated receipt confirmation inside the original file window')
     for sub in (run, inspect, compact):

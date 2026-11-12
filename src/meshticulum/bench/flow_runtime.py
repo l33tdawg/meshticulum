@@ -77,6 +77,8 @@ class BenchFlow:
         self._repair_train_mode = None
         self._repair_train_domains = set()
         self._last_queued_domain = None
+        self._pace_selective_repeats = False
+        self._paced_fast_offers, self._repeat_not_before = {}, {}
         self._scalar_fill_extra = False
         self._repair_fill_active = False
         self._physical_data, self._pending_data_domains = {}, {}
@@ -633,6 +635,70 @@ class BenchFlow:
         # flow use its exact existing interval, including its clock origin.
         return self._ack_persistence_streak > 0 and now_us < self._ack_persistence_due_us
 
+    def enable_selective_repeat_pacing(self):
+        """Default-off host restraint; never edits the frozen flow's clocks."""
+        require(not self.closed and not self.counts
+                and self.receipt_confirmation_enabled and not self._pace_selective_repeats,
+                'invalid_selective_repeat_pacing_setup')
+        self._pace_selective_repeats = True
+
+    def _refresh_repeat_pacing(self):
+        if not self._pace_selective_repeats:
+            return
+        live = self.flow._in_flight
+        for seq, (pending, attempts) in list(self._paced_fast_offers.items()):
+            if live.get(seq) is not pending:
+                del self._paced_fast_offers[seq]
+            elif pending.attempts > attempts:
+                # Only confirmed handover spends an attempt. Preserve this
+                # accepted flight's original RTO boundary, including its
+                # carrier airtime, rather than renewing it on later ACKs.
+                self._repeat_not_before[seq] = (pending, pending.sent_at + pending.rto)
+                del self._paced_fast_offers[seq]
+            elif seq not in self.flow._deferred_retries:
+                del self._paced_fast_offers[seq]
+        for seq, (pending, _) in list(self._repeat_not_before.items()):
+            if live.get(seq) is not pending:
+                del self._repeat_not_before[seq]
+
+    def _paced_selective_candidate(self, *, terminal=False, stall=False):
+        # Mirror only the frozen offer's read-only choice. Never skip a cooled
+        # flight and accidentally ask the core to offer that same flight.
+        required = 1 if stall else self.flow._selective_evidence_required(terminal)
+        for pending in self.flow._in_flight.values():
+            if (pending.fast_retry_offered or len(pending.selective_evidence) < required
+                    or pending.attempts >= self.flow.limits.max_retries
+                    or pending.seq in self.flow._deferred_retries
+                    or self.link.now < max(pending.handed_over_at, pending.selective_evidence_at)
+                    or self.link.now - pending.sent_at >= pending.rto):
+                continue
+            return pending
+        return None
+
+    def _selective_pacing_ready(self, *, terminal=False, stall=False):
+        if not self._pace_selective_repeats:
+            return True
+        self._refresh_repeat_pacing()
+        pending = self._paced_selective_candidate(terminal=terminal, stall=stall)
+        if pending is None:
+            return False
+        previous = self._repeat_not_before.get(pending.seq)
+        return previous is None or self.link.now >= previous[1]
+
+    def _offer_selective(self, *, terminal=False, stall=False):
+        if not self._selective_pacing_ready(terminal=terminal, stall=stall):
+            return False
+        pending = self._paced_selective_candidate(terminal=terminal, stall=stall)
+        attempts = pending.attempts if pending is not None else None
+        offered = (self.flow.retry_selective_stall(self.link.now) if stall
+                   else self.flow.retry_selective_gap(self.link.now, terminal=terminal))
+        if self._pace_selective_repeats and offered and pending is not None:
+            # A refused offer has no new attempt; it cannot start a cooldown.
+            # A deferred offer is observed after its eventual normal settlement.
+            self._paced_fast_offers[pending.seq] = (pending, attempts)
+            self._refresh_repeat_pacing()
+        return offered
+
     def _begin_repair_train(self, mode):
         require(mode in ('terminal', 'stall'), 'invalid_repair_train_mode')
         self._repair_train_active = True
@@ -640,6 +706,7 @@ class BenchFlow:
         self._repair_train_domains = {self._last_queued_domain}
 
     def _hold_fast_retry_turn(self):
+        self._refresh_repeat_pacing()
         # Only the explicit v8 terminal policy may group distinct proven
         # holes. The first repair reached this point through the ordinary
         # exact physical drain/STATUS gate. No fresh DATA remains, and the
@@ -722,14 +789,13 @@ class BenchFlow:
                      and self.flow.selective_retry_ready(terminal=True))
         else:
             ready = self.flow.selective_stall_ready()
-        if not ready:
+        if not ready or not self._selective_pacing_ready(terminal=terminal, stall=not terminal):
             self._hold_repair_reverse_turn()
             return
         fast_before = self.flow.fast_retransmits
         self._repair_train_offer = True
         try:
-            offered = (self.flow.retry_selective_gap(self.link.now, terminal=True)
-                       if terminal else self.flow.retry_selective_stall(self.link.now))
+            offered = self._offer_selective(terminal=terminal, stall=not terminal)
         finally:
             self._repair_train_offer = False
         if (not offered or self.flow.fast_retransmits != fast_before + 1
@@ -950,6 +1016,8 @@ class BenchFlow:
                     and self.flow.selective_stall_ready())
             if (self.data_burst and self.receipt_confirmation_enabled
                     and (normal_ready or stall_ready)
+                    and self._selective_pacing_ready(
+                        terminal=self._selective_terminal_retry, stall=stall_ready)
                     and not self._physical_data and not self.worker.pending_physical):
                 # Peer SACK is logical evidence, never local physical drain.
                 # Verify release/STATUS before offering one early retransmit;
@@ -960,9 +1028,8 @@ class BenchFlow:
                 now_us = self.clock()[1]
                 self.link.now = now_us / 1000000
                 fast_before = self.flow.fast_retransmits
-                offered = (self.flow.retry_selective_gap(
-                    self.link.now, terminal=self._selective_terminal_retry)
-                    if normal_ready else self.flow.retry_selective_stall(self.link.now))
+                offered = self._offer_selective(
+                    terminal=self._selective_terminal_retry, stall=stall_ready)
                 if offered:
                     if self.flow.fast_retransmits > fast_before:
                         self._hold_fast_retry_turn()
@@ -1036,6 +1103,8 @@ class BenchFlow:
                              'control_rate_us_per_second': self.scheduler.policy.control_rate_us_per_second},
             'attempt_journal': self.journal.snapshot(), 'events': list(self.events),
             'scheduler': self.scheduler.snapshot()}
+        if self._pace_selective_repeats:
+            value['timing_policy']['pace_selective_repeats'] = True
         if self._scalar_fill_pair:
             value['timing_policy']['scalar_fill_pair'] = True
         if self._selective_repeat_retry:
