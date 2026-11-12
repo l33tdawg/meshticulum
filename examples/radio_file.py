@@ -406,6 +406,30 @@ class ChunkTransfer:
         self.endpoint.close()
 
 
+class FileTransfer(ChunkTransfer):
+    """Optional authenticated retirement bound to the original file window."""
+    def __init__(self, authority, worker, journal, cipher, descriptor, cache, *,
+                 clock, window, chunk, confirm_receipt=False):
+        require(type(confirm_receipt) is bool, 'invalid_receipt_confirmation_option')
+        context = None
+        if confirm_receipt:
+            window.check()
+            record = window.record
+            require(type(chunk) is int and 0 <= chunk < len(record['manifest']['chunks'])
+                    and descriptor == record['manifest']['chunks'][chunk]
+                    and authority.plan['issued_epoch_us'] == record['issued_epoch_us']
+                    and authority.plan['expires_epoch_us'] == record['expires_epoch_us'],
+                    'example_file_receipt_context_mismatch')
+            context = hashlib.sha256(json.dumps(dict(
+                schema='meshticulum.file-receipt-context.v1', manifest=record['manifest'],
+                chunk=chunk, issued_epoch_us=record['issued_epoch_us'],
+                expires_epoch_us=record['expires_epoch_us']),
+                sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).digest()
+        super().__init__(authority, worker, journal, cipher, descriptor, cache, clock=clock)
+        if context is not None:
+            self.enable_receipt_confirmation(context)
+
+
 def transfer_chunk(args):
     file = load_manifest(args.manifest, args.manifest_sha256)
     require(0 <= args.chunk < len(file['chunks']), 'example_chunk_index')
@@ -443,8 +467,10 @@ def transfer_chunk(args):
     window = bind_file_window(cache, file, args.file_issued_epoch_us, args.file_expires_epoch_us)
     window.require_capacity(len(file['chunks']) - args.chunk)
     return run_object(args, raw, admission, version, payload, window,
-        lambda authority, worker, journal, cipher: ChunkTransfer(
-            authority, worker, journal, cipher, descriptor, cache, clock=clock))
+        lambda authority, worker, journal, cipher: FileTransfer(
+            authority, worker, journal, cipher, descriptor, cache, clock=clock,
+            window=window, chunk=args.chunk,
+            confirm_receipt=getattr(args, 'confirm_receipt', False)))
 
 
 class FileHardware:
@@ -697,6 +723,8 @@ def main():
     run.add_argument('--admission-sha256', required=True)
     add_operation_limit_arguments(run)
     add_host_timing_argument(run)
+    run.add_argument('--confirm-receipt', action='store_true',
+        help='opt in on both peers to authenticated receipt confirmation inside the original file window')
     for sub in (run, inspect, compact):
         sub.add_argument('--firmware-source', required=True, type=Path)
         sub.add_argument('--firmware-source-sha256', required=True)
