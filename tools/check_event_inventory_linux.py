@@ -14,10 +14,10 @@ def main():
  root=Path(tempfile.mkdtemp(prefix='meshticulum-bench-selftest-',dir='/dev'))
  original=root.stat();assert original.st_uid==0 and stat.S_IMODE(original.st_mode)==0o700
  results=[];watch=None
- print(json.dumps(dict(event='private_tree_created',path=str(root),device=original.st_dev,
-   inode=original.st_ino,uid=original.st_uid,mode=stat.S_IMODE(original.st_mode),pid=os.getpid(),
-   original_expires_epoch_us=a.expires_epoch_us)),flush=True)
  try:
+  print(json.dumps(dict(event='private_tree_created',path=str(root),device=original.st_dev,
+    inode=original.st_ino,uid=original.st_uid,mode=stat.S_IMODE(original.st_mode),pid=os.getpid(),
+    original_expires_epoch_us=a.expires_epoch_us)),flush=True)
   for action in ('create_delete','rename','rename_in','rename_out','rename_exchange','replace','symlink','hardlink','chmod','mkdir','rmdir','watched_dir_move'):
    live();case=root/action;case.mkdir(mode=0o700);f=case/'file';f.write_bytes(b'x');sub=case/'dir';sub.mkdir()
    outside=root/(action+'-outside');outside.write_bytes(b'y')
