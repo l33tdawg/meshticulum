@@ -13,6 +13,7 @@ import math
 import struct
 
 from .hat_probe import Probe
+from .host_timing import Phase, phase, timed
 from .linux_hat import HardwareError, require
 from .serial_protocol import Outcome, RadioProfile, RawReceive, TxEvidence
 from .serial_worker import estimated_airtime_us
@@ -270,6 +271,7 @@ class SX1262:
             self.contain()
             return TxEvidence(Outcome.UNKNOWN, self.tx_estimate, elapsed, flags, -1)
 
+    @timed(Phase.HAT_RX_REARM)
     def start_receive(self, *, authority_deadline):
         require(self.profile is not None and not self.transmitting and not self.fenced,
                 'sx1262_not_ready')
@@ -294,27 +296,30 @@ class SX1262:
             self.contain()
             raise
 
+    @timed(Phase.HAT_RX_POLL)
     def poll_receive(self):
         require((self.receiving or self.receive_pending) and not self.fenced, 'sx1262_not_receiving')
         try:
             flags = self.irq()
             if not flags & RX_MASK:
                 return None
-            self.standby()
-            # DS15.3: stop RTC and clear event after any timed RX, even explicit header.
-            self._write_register(0x0902, b'\0')
-            self._bits(0x0944, 0, 2)
-            packet = None
-            if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
-                length, offset = self._read(0x13, 2)
-                require(1 <= length <= 255, 'sx1262_invalid_received_size')
-                data = self._read(0x1E, length, bytes([offset]))
-                packet = self._receive_evidence(data, self._read(0x14, 3))
-            elif flags & (CRC_ERROR | HEADER_ERROR):
-                self.rx_errors += 1
-            self.clear_irq()
-            self.receive_pending = False
-            return packet
+            with phase(getattr(self, 'host_timing', None), Phase.HAT_RX_DRAIN):
+                self.standby()
+                # DS15.3: stop RTC and clear event after any timed RX, even explicit header.
+                self._write_register(0x0902, b'\0')
+                self._bits(0x0944, 0, 2)
+                packet = None
+                if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
+                    with phase(getattr(self, 'host_timing', None), Phase.HAT_RX_PACKET_READ):
+                        length, offset = self._read(0x13, 2)
+                        require(1 <= length <= 255, 'sx1262_invalid_received_size')
+                        data = self._read(0x1E, length, bytes([offset]))
+                        packet = self._receive_evidence(data, self._read(0x14, 3))
+                elif flags & (CRC_ERROR | HEADER_ERROR):
+                    self.rx_errors += 1
+                self.clear_irq()
+                self.receive_pending = False
+                return packet
         except BaseException:
             self.contain()
             raise

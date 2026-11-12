@@ -39,6 +39,11 @@ class Phase(Enum):
     HOST_LOOP_SLEEP = 'host_loop_sleep'
     CIPHER_SEAL = 'cipher_seal'
     CIPHER_OPEN = 'cipher_open'
+    HAT_RX_POLL = 'hat_rx_poll'
+    HAT_RX_DRAIN = 'hat_rx_drain'
+    HAT_RX_PACKET_READ = 'hat_rx_packet_read'
+    HAT_RX_REARM = 'hat_rx_rearm'
+    HAT_TX_TO_RX_RESTORE = 'hat_tx_to_rx_restore'
 
 
 MAX_VALUE = 2**63 - 1

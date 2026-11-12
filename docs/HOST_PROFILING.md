@@ -53,9 +53,30 @@ remain nested within the enclosing flow step/pump/dispatch where applicable.
 Refused, unauthenticated, replayed and cancelled calls can still contribute a
 valid duration; a count does not prove successful sealing or plaintext admission.
 
+## Direct HAT receive diagnostics
+
+With `--profile-host`, the source candidate also records these fixed phases:
+
+| Phase | Host boundary |
+| --- | --- |
+| `hat_rx_poll` | Whole SX1262 receive poll, including empty polls |
+| `hat_rx_drain` | Completed/error IRQ path: standby, timed-RX cleanup, optional packet read and IRQ clear |
+| `hat_rx_packet_read` | Valid packet length/FIFO/status reads, nested inside drain |
+| `hat_rx_rearm` | Whole finite RX setup, including startup, after packet/error drain and after TX |
+| `hat_tx_to_rx_restore` | TX call entry through RX restoration on RF_DONE, before journal settlement |
+
+These are inclusive host durations; poll contains drain, and drain contains
+packet read. TX handoff contains its RX rearm. Declined NOT_SENT attempts and
+failures can end the TX interval before RX is restored. Counts do not prove
+successful RF operations. This interval is not independently measured radio
+deaf time, and phase totals cannot establish packet collisions. The existing
+worker rearms before decrypt/flow processing and before TX journal settlement;
+profiling leaves that order, fresh authority checks and original deadlines intact.
+No per-packet trace or new diagnostic clock is used when profiling is disabled.
+
 ## Format and failure handling
 
-The schema is `meshticulum.host-phase-timing.v1`. Each of its fixed 26 phase
+The schema is `meshticulum.host-phase-timing.v1`. Each of its fixed 31 phase
 names has `count`, `total_ns`, `min_ns`, `max_ns`, `invalid`, `dropped` and
 `saturated`. A valid measured call increments `count` even if that call raises;
 counts do not establish successful completion. An empty phase has null

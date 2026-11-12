@@ -14,6 +14,7 @@ import time
 from types import BuiltinFunctionType, MethodType
 import uuid
 
+from .host_timing import Phase, check_timing, phase
 from .linux_hat import LinuxHAT, HardwareError, require
 from .serial_protocol import Outcome, RadioProfile
 from .serial_worker import AttemptResult, estimated_airtime_us
@@ -51,6 +52,7 @@ class HATWorker:
     def __init__(self, transport, *, journal, profile, context_digest, authorize,
                  authority_deadline, antenna_confirmed, monotonic=None,
                  time_basis='host-monotonic'):
+        timing = check_timing(getattr(journal, 'host_timing', None))
         require(type(profile) is self._profile_type and callable(authorize), 'invalid_hat_authority')
         require(type(antenna_confirmed) is bool, 'invalid_antenna_confirmation')
         require(type(authority_deadline) in (int, float) and math.isfinite(authority_deadline),
@@ -81,6 +83,8 @@ class HATWorker:
             native_clock = monotonic
         self._clock, self.time_basis = native_clock, time_basis
         self.radio = self._driver_type(transport, monotonic=native_clock)
+        self.host_timing = timing
+        self.radio.host_timing = self.host_timing
         self.lease_deadline = min(authority_deadline, native_clock() + profile.lease_ms / 1000)
         original_end = min(authority_deadline, self.lease_deadline)
         pid, thread = os.getpid(), threading.get_ident()
@@ -187,38 +191,41 @@ class HATWorker:
             except HardwareError:
                 outcome, evidence = 'NOT_SENT', 'authority_changed_before_spi'
                 return AttemptResult(request, outcome, reservation, None)
-            started = radio.start_transmit(packet, authority_deadline=owned(),
-                                           antenna_confirmed=self.antenna_confirmed)
-            if started is False:
-                # A completed RX remained intact before any TX/FIFO write.
-                # Recheck the original owner/lease; the paid reservation is
-                # settled, never refunded, and ordinary receive drains it.
-                self._live()
-                outcome, evidence = 'NOT_SENT', 'completed_receive_pending_before_tx'
-                return AttemptResult(request, outcome, reservation, None)
-            while driver is None:
-                driver = radio.poll_transmit()
-                if driver is None:
-                    transport.sleep(0.001)
-            require(type(profile) is RadioProfile or driver.estimated_airtime_us==estimate<=reservation,
-                    'gfsk_driver_estimate_changed')
-            outcome = 'RF_DONE' if driver.outcome is Outcome.RF_DONE else 'UNKNOWN'
-            evidence = json.dumps({'driver_estimate_us': driver.estimated_airtime_us,
-                'host_driver_elapsed_us': driver.driver_elapsed_us, 'irq': driver.irq_flags,
-                'error': driver.driver_error}, separators=(',', ':'))
-            if outcome == 'RF_DONE':
-                # The attempt was durably reserved before RF. Once TX_DONE is
-                # known, listen while its result is saved, rather than leaving
-                # the radio in standby through journal fsync. RX failure is
-                # separate and cannot erase this known transmit evidence.
-                try:
+            # Inclusive host-call bound, including a NOT_SENT RX-preserving attempt;
+            # this is not an independently measured RF-deaf interval.
+            with phase(self.host_timing, Phase.HAT_TX_TO_RX_RESTORE):
+                started = radio.start_transmit(packet, authority_deadline=owned(),
+                                               antenna_confirmed=self.antenna_confirmed)
+                if started is False:
+                    # A completed RX remained intact before any TX/FIFO write.
+                    # Recheck the original owner/lease; the paid reservation is
+                    # settled, never refunded, and ordinary receive drains it.
                     self._live()
-                    require(self.radio is radio and self.io is transport and radio.io is transport,
-                            'hat_driver_changed_after_transmit')
-                    radio.start_receive(authority_deadline=min(receive_deadline, self.deadline,
-                                                              self.lease_deadline))
-                except BaseException as error:
-                    receive_failure(error)
+                    outcome, evidence = 'NOT_SENT', 'completed_receive_pending_before_tx'
+                    return AttemptResult(request, outcome, reservation, None)
+                while driver is None:
+                    driver = radio.poll_transmit()
+                    if driver is None:
+                        transport.sleep(0.001)
+                require(type(profile) is RadioProfile or driver.estimated_airtime_us==estimate<=reservation,
+                        'gfsk_driver_estimate_changed')
+                outcome = 'RF_DONE' if driver.outcome is Outcome.RF_DONE else 'UNKNOWN'
+                evidence = json.dumps({'driver_estimate_us': driver.estimated_airtime_us,
+                    'host_driver_elapsed_us': driver.driver_elapsed_us, 'irq': driver.irq_flags,
+                    'error': driver.driver_error}, separators=(',', ':'))
+                if outcome == 'RF_DONE':
+                    # The attempt was durably reserved before RF. Once TX_DONE is
+                    # known, listen while its result is saved, rather than leaving
+                    # the radio in standby through journal fsync. RX failure is
+                    # separate and cannot erase this known transmit evidence.
+                    try:
+                        self._live()
+                        require(self.radio is radio and self.io is transport and radio.io is transport,
+                                'hat_driver_changed_after_transmit')
+                        radio.start_receive(authority_deadline=min(receive_deadline, self.deadline,
+                                                                  self.lease_deadline))
+                    except BaseException as error:
+                        receive_failure(error)
         except (OSError, HardwareError):
             outcome, evidence, driver = 'UNKNOWN', 'spi_or_evidence_failure', None
         finally:
