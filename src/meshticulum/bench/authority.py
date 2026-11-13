@@ -39,6 +39,8 @@ from .public_block import (PUBLIC32_MARKER,REPRESENTATION_MARKER,TRANSPORT_DESCR
                           public32_service,public_mb1_service,object_limit)
 
 
+from .file_capability import file64_capability, admitted_object_limit, admitted_frame_limit
+
 @dataclass(frozen=True)
 class OperationLimits:
     """One endpoint's incremental journal caps, separate from MCU boot totals."""
@@ -137,6 +139,9 @@ class RunAuthority:
                         'data_burst_requires_lora')
             if 'operation_limits' in p:
                 extras.add('operation_limits')
+            if 'file_capability' in p:
+                extras.add('file_capability')
+                file64_capability(p)
             if is_service and local_deadline_field in p:
                 extras.add(local_deadline_field)
             require(set(p) == fields | extras, 'invalid_bench_plan')
@@ -204,7 +209,7 @@ class RunAuthority:
                         'data_burst_profile_cannot_fit')
             obj = p['object']
             require(type(obj) is dict and set(obj) == {'sha256', 'bytes', 'chunk_index', 'object_id'}
-                    and type(obj['bytes']) is int and 1 <= obj['bytes'] <= object_limit(p.get('service',{}))
+                    and type(obj['bytes']) is int and 1 <= obj['bytes'] <= admitted_object_limit(p)
                     and (not self.public32 or self.service_format != 'MR1.response'
                          or self.mb1_descriptor_sha256 is not None or obj['bytes'] == 32768)
                     and type(obj['chunk_index']) is int and 0 <= obj['chunk_index'] < 64,
@@ -220,6 +225,8 @@ class RunAuthority:
                 self.route_record['data_burst'] = p['data_burst']
             if 'operation_limits' in p:
                 self.route_record['operation_limits'] = p['operation_limits']
+            if 'file_capability' in p:
+                self.route_record['file_capability'] = p['file_capability']
             if is_service:
                 self.route_record['service'] = p['service']
             route_digest = hashlib.sha256(canonical(self.route_record)).digest()
@@ -312,10 +319,10 @@ class RunAuthority:
         self.deadlines = DeadlineSet(min(mono / 1000000 + duration, self.application_deadline_us / 1000000),
                                     self.deadline_us / 1000000,
                                     self.grant.expires_epoch_us / 1000000)
-        maximum = object_limit(self.plan.get('service',{}))
+        maximum = admitted_object_limit(self.plan)
         window = policy_flow_window(self.plan['data_burst']) if 'data_burst' in self.plan else 4
         limits = CapabilityLimits(208, 208 * window, maximum, 0, window, maximum, 4, 1, 1,
-                                  256 if self.public32 and self.service_format == 'MR1.response' else 128, 32)
+                                  admitted_frame_limit(self.plan, public32=self.public32 and self.service_format == 'MR1.response'), 32)
         private = self.service_kind is ServiceKind.MESSAGE
         feature = Feature.PROTECTED_MESSAGE_V2 if private else Feature.OBJECT_RESUME
         self.contract = NegotiatedContract(1, frozenset({Feature.BYTE_CREDIT, Feature.SELECTIVE_ACK_32,

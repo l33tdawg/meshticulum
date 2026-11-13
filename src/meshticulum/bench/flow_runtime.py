@@ -26,7 +26,7 @@ from .wire import FrameKind, WireError, require
 from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
-from .public_block import object_limit
+from .file_capability import admitted_object_limit, admitted_frame_limit
 from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair, policy_repeat_retry, policy_repair_train, policy_train_frames
 
 
@@ -111,7 +111,7 @@ class BenchFlow:
             flow.ACK_BYTES + 47) * 1.10) + 1000
         limits = contract.limits
         self.maximum_bytes = min(limits.max_queued_bytes, limits.max_unconsumed_bytes)
-        require(self.maximum_bytes <= object_limit(authority.plan.get('service',{})), 'bench_transfer_too_large')
+        require(self.maximum_bytes <= admitted_object_limit(authority.plan), 'bench_transfer_too_large')
         # Owner credit uses the admitted frame bound (208). Derive the DATA
         # overhead from the actual MT3 wire encoder, not older adapter prose:
         # the reviewed encoding uses fifteen bytes, leaving 193 useful bytes.
@@ -210,7 +210,7 @@ class BenchFlow:
             flow.FlowLimits(frame_payload_bytes=quantum, window_frames=window,
                 initial_credit_frames=window, max_reassembly_frames=window,
                 max_delivered_bytes=self.maximum_bytes, max_queued_bytes=self.maximum_bytes,
-                max_total_frames=min(256 if authority.public32 else 128, limits.max_total_frames),
+                max_total_frames=min(admitted_frame_limit(authority.plan, public32=authority.public32), limits.max_total_frames),
                 max_retries=limits.max_retry_attempts,
                 initial_rto_s=profile.initial_rto_seconds,
                 min_rto_s=profile.min_rto_seconds, max_rto_s=profile.max_rto_seconds,

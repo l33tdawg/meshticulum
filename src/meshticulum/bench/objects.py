@@ -15,6 +15,7 @@ from .wire import require
 
 
 class VerifiedChunks:
+    _maximum_bytes = 16384
     def __init__(self, directory):
         self.path = Path(directory).absolute()
         self.path.mkdir(mode=0o700, exist_ok=True)
@@ -28,7 +29,7 @@ class VerifiedChunks:
             require(type(value) is str and len(value) == 64 and bytes.fromhex(value).hex() == value,
                     'invalid_chunk_digest')
         require(type(descriptor['chunk_index']) is int and 0 <= descriptor['chunk_index'] < 64
-                and type(descriptor['bytes']) is int and 1 <= descriptor['bytes'] <= 16384,
+                and type(descriptor['bytes']) is int and 1 <= descriptor['bytes'] <= self._maximum_bytes,
                 'invalid_chunk_bound')
         root = self.path / descriptor['object_id']
         root.mkdir(mode=0o700, exist_ok=True)
@@ -51,7 +52,7 @@ class VerifiedChunks:
         if not meta.exists():
             return None
         require(self._read(meta, 4096) == canonical(descriptor), 'chunk_descriptor_changed')
-        value = self._read(data, 16384)
+        value = self._read(data, self._maximum_bytes)
         require(len(value) == descriptor['bytes'] and hashlib.sha256(value).hexdigest() == descriptor['sha256'],
                 'stored_chunk_corrupt')
         return value
@@ -78,7 +79,7 @@ class VerifiedChunks:
             require(previous == payload, 'chunk_content_conflict')
             return False
         if data.exists():
-            require(self._read(data, 16384) == payload, 'incomplete_chunk_content_conflict')
+            require(self._read(data, self._maximum_bytes) == payload, 'incomplete_chunk_content_conflict')
         else:
             self._publish(data, payload)
         self._publish(meta, canonical(descriptor))
@@ -98,3 +99,25 @@ class VerifiedChunks:
         value = b''.join(chunks)
         require(hashlib.sha256(value).hexdigest() == object_id, 'whole_object_hash_mismatch')
         return value
+
+
+class VerifiedFile64(VerifiedChunks):
+    """Explicit singleton64KiB cache in an isolated namespace."""
+    _maximum_bytes = 65536
+
+    def __init__(self, directory):
+        root = Path(directory).absolute()
+        root.mkdir(mode=0o700, exist_ok=True)
+        _private_info(root.lstat(), directory=True)
+        super().__init__(root / 'file64-v1')
+
+    def _paths(self, descriptor):
+        require(type(descriptor) is dict and type(descriptor.get('bytes')) is int
+                and descriptor['bytes'] == 65536 and type(descriptor.get('chunk_index')) is int
+                and descriptor['chunk_index'] == 0
+                and descriptor.get('object_id') == descriptor.get('sha256'), 'invalid_file64_descriptor')
+        return super()._paths(descriptor)
+
+    def assemble(self, descriptors):
+        require(type(descriptors) is list and len(descriptors) == 1, 'invalid_file64_manifest')
+        return super().assemble(descriptors)
