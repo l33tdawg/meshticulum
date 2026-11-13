@@ -183,3 +183,40 @@ def test_cli_returns_compact_pin_without_hardware_access(tmp_path, monkeypatch, 
     result = json.loads(capsys.readouterr().out)
     assert result['source_manifest_sha256'] == pin
     assert example.firmware_identity(output, result['firmware_source_sha256']) == source['identity']
+
+
+def test_actual_nine_input_firmware_identity(tmp_path):
+    from pathlib import Path
+    source = json.loads((Path(__file__).parent / 'fixtures' /
+                         'firmware_identity_f4029670db.json').read_bytes())
+    assert len(source['application']) == 9
+    assert example.firmware_source_identity(source) == 'mtb1-f4029670db'
+    path = tmp_path / 'source.json'
+    _, pin = write_source(path, source)
+    assert example.firmware_identity(path, pin) == 'mtb1-f4029670db'
+    output = tmp_path / 'compact.json'
+    result = example.compact_firmware_identity(compact_args(path, pin, output))
+    assert example.firmware_identity(output, result['firmware_source_sha256']) == 'mtb1-f4029670db'
+
+
+@pytest.mark.parametrize('mutation', ['missing', 'extra', 'header_hash', 'bad_hash', 'identity'])
+def test_nine_input_firmware_rejects_malformed_inventory(mutation):
+    from pathlib import Path
+    source = json.loads((Path(__file__).parent / 'fixtures' /
+                         'firmware_identity_f4029670db.json').read_bytes())
+    if mutation == 'missing':
+        del source['application']['native_profile_config.hpp']
+    elif mutation == 'extra':
+        source['application']['unrecognized.hpp'] = 'a' * 64
+    elif mutation == 'header_hash':
+        source['application']['burst_wake_hint.hpp'] = 'b' * 64
+    elif mutation == 'bad_hash':
+        source['application']['burst_wake_hint.hpp'] = 'not-a-digest'
+    else:
+        source['identity'] = 'mtb1-0000000000'
+    # Even a self-consistent identity cannot admit an unsupported file set.
+    if mutation in ('missing', 'extra'):
+        source['identity'] = 'mtb1-' + example.sha(json.dumps(
+            source['application'], sort_keys=True).encode())[:10]
+    with pytest.raises(WireError, match='firmware_source_mismatch'):
+        example.firmware_source_identity(source)

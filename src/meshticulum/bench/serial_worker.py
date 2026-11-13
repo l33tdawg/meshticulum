@@ -120,8 +120,15 @@ class SerialWorker:
             require(left > 0, 'serial_reply_deadline')
             self._ingest(self.channel.read(min(left, 0.05)))
 
-    def _send(self, frame, deadline):
-        self.channel.write(frame.encode(), min(deadline, self.channel.monotonic() + 1.0))
+    def _send(self, frame, deadline, *, before_write=None):
+        if before_write is None:
+            self.channel.write(frame.encode(), min(deadline, self.channel.monotonic() + 1.0))
+            return
+        channel=self.channel;write=channel.write;encoded=frame.encode()
+        write_end=min(deadline,channel.monotonic()+1.0)
+        before_write()
+        require(self.channel is channel and channel.write == write,'continuation_channel_changed')
+        write(encoded,write_end)
 
     def discover(self, *, expected_board_id, expected_version):
         require(self.identity is None, 'already_discovered')
@@ -140,11 +147,20 @@ class SerialWorker:
         require(self.__mode_check is check,'serial_modem_guard_changed');check()
         require(self.channel.monotonic() + needed < self.deadline, 'radio_authority_expired')
 
-    def arm(self, *, journal, profile, context_digest, authorize, authority_deadline):
+    def arm(self, *, journal, profile, context_digest, authorize, authority_deadline, continuation=None, continuation_owner=None):
+        from .continuation import ContinuationRecord, ContinuationOwner
+        require((continuation is None and continuation_owner is None) or (type(continuation) is ContinuationRecord and type(continuation_owner) is ContinuationOwner), 'invalid_continuation_arm')
         require(self.identity is not None and self.journal is None, 'invalid_arm_state')
         require(type(profile) is self._profile_type and callable(authorize), 'invalid_arm_parameters')
         require(type(authority_deadline) in (int, float) and math.isfinite(authority_deadline),
                 'invalid_authority_deadline')
+        if continuation is not None:
+            value=continuation.value()
+            require(type(profile) is RadioProfile and profile.max_boot_attempts == value['absolute_ceiling']
+                    and profile.max_boot_estimated_airtime_us == value['cumulative_airtime_us']
+                    and journal.max_attempts == value['operation_limits']['sender']['attempts']
+                    and journal.max_airtime_us == value['operation_limits']['sender']['estimated_airtime_us'],
+                    'continuation_arm_limits_changed')
         admitted_body = profile.encode(board_id=self.identity.board_id)
         admitted_binding = journal_binding(context_digest, self.identity, profile)
         require(journal.binding == admitted_binding,
@@ -159,12 +175,19 @@ class SerialWorker:
         try:
             self.disarm()
             self._live()
+            continuation_send=self._send
+            continuation_proof = (SerialWorker._check_continuation(self, continuation, continuation_owner)
+                                  if continuation is not None else None)
             request = journal.command_request()
             self._live()
             require(self.profile is profile and self.journal is journal and self.authorize is authorize and self.deadline == authority_deadline
                     and journal.binding == admitted_binding and profile.encode(board_id=self.identity.board_id) == admitted_body,
                     'radio_arm_binding_changed')
+            if continuation_proof is not None:
+                continuation_proof[0]()
             started = self.channel.monotonic()
+            if continuation_proof is not None:
+                continuation_proof[1]()
             # The admitted profile remains the immutable journal/crypto ceiling.
             # Preparation and disarm can consume its setup reserve. Narrow only
             # the actual MCU lease, allowing the existing two-second ARM reply
@@ -175,7 +198,11 @@ class SerialWorker:
             armed_profile = profile if lease_ms == profile.lease_ms else replace(profile, lease_ms=lease_ms)
             frame = Frame(self._arm_message, self.identity.boot, request,
                           armed_profile.encode(board_id=self.identity.board_id))
-            self._send(frame, started + 2.0)
+            if continuation_proof is None:
+                self._send(frame, started + 2.0)
+            else:
+                continuation_send(frame, started+2.0,
+                    before_write=continuation_proof[1])
             reply = self._wait(request, started + 2.0)
             confirmed = self.channel.monotonic()
             require(confirmed < started + 2.0, 'serial_reply_deadline')
@@ -187,6 +214,42 @@ class SerialWorker:
         except BaseException:
             self.fenced = True
             raise
+
+    def _check_continuation(self, record, owner):
+        from .burst_protocol import BurstStatus, TOKEN
+        admitted_record=record.raw
+        methods=(self.channel.write,self.channel.read,self.channel.monotonic,self._send)
+        channel,identity,journal,profile,authorize,deadline = self.channel,self.identity,self.journal,self.profile,self.authorize,self.deadline
+        owner_methods=(owner.current,owner.binding_current)
+        def bound():
+            require((owner.current,owner.binding_current)==owner_methods and owner.binding_current() is True,
+                    'continuation_usb_owner_changed')
+            require((channel.write,channel.read,channel.monotonic,self._send)==methods and record.raw == admitted_record and self.channel is channel and self.identity is identity and self.journal is journal
+                    and self.profile is profile and self.authorize is authorize and self.deadline == deadline,
+                    'continuation_arm_binding_changed')
+        def live():
+            bound();self._live()
+            require(owner.current() is True, 'continuation_usb_owner_changed')
+            self._live();bound()
+        live()
+        for kind,body in ((Message.STATUS,b''),(Message.BURST_STATUS,TOKEN.pack(0))):
+            request=journal.command_request();live()
+            end=min(deadline,channel.monotonic()+2.0)
+            self._send(Frame(kind,identity.boot,request,body),end);live()
+            frame=self._wait(request,end);live()
+            if kind is Message.STATUS:
+                record.check_status(frame,request=request,identity=identity,
+                    held_usb_serial=record.value()['baseline']['usb_serial'])
+            else:
+                status=BurstStatus.from_frame(frame,boot=identity.boot,request=request,depth=8)
+                baseline=record.value()['baseline']
+                require(status.token == status.arm_request == status.open_deadline_us == status.pending == status.retained == 0
+                        and status.context_sha256 == bytes(32) and not status.transmitting and not status.fenced
+                        and not status.containment_required and status.attempts == baseline['boot_attempts']
+                        and status.airtime_us == baseline['boot_reserved_estimated_airtime_us'],
+                        'continuation_burst_not_closed')
+        live()
+        return live,bound
 
     def transmit(self, packet):
         self.__mode_check()

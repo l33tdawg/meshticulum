@@ -30,7 +30,9 @@ class Probe:
 
     def status(self, expected_mode):
         value = self.transfer(b'\xc0\0')[1]
-        require(value & 0x81 == 0 and (value >> 4) & 7 == expected_mode,
+        # GetStatus defines mode[6:4] and command[3:1]; bits 7/0 are
+        # reserved, not guaranteed zero (the HAT returns 0xA2).
+        require((value >> 4) & 7 == expected_mode,
                 'unexpected_chip_mode')
         require((value >> 1) & 7 not in (3, 4, 5), 'chip_command_error')
         return value

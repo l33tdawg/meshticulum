@@ -1,0 +1,87 @@
+{
+  "schema": "meshticulum.public-alpha5-benchmark.v1",
+  "measurement_date": "2026-11-13",
+  "measured_sdk_commit": "794ea7111aa51aa9c91867bc6f28b610f3ae79af",
+  "firmware": "mtb1-86f7307b7c",
+  "transport": "Heltec MCU serial sender to SX1262 Linux HAT receiver",
+  "profile": {
+    "modulation": "LoRa",
+    "frequency_hz": 921375000,
+    "bandwidth_hz": 500000,
+    "spreading_factor": 5,
+    "coding_rate": "4/5",
+    "preamble_symbols": 32,
+    "sync_word": 18,
+    "configured_chip_power_dbm": 0
+  },
+  "features": {
+    "train_max_frames": 32,
+    "host_pending_limit": 3,
+    "native_queue_max": 8,
+    "data_turn_end": true,
+    "hat_checked_rearm": true,
+    "hat_spi_hz": 4000000,
+    "compiled_imports": true,
+    "boot_continuation": false,
+    "cpu_readback_mhz": 160,
+    "apb_readback_hz": 80000000
+  },
+  "verified_useful_bytes": 65536,
+  "verified_sha256": "1001a6a0e3434d56de8754205694db235792fb19c79e429c048e2ee78acdadba",
+  "canonical": {
+    "boundary": "first sender process startup to final authenticated receipt",
+    "elapsed_us": 17439448,
+    "useful_Bps": 3757.917108385541
+  },
+  "queue_only": {
+    "boundary": "first host DATA queue submission to final authenticated receipt; not RF start",
+    "elapsed_us": 16716547,
+    "useful_Bps": 3920.4268680607306
+  },
+  "data_retransmissions": 6,
+  "end_markers_sent": 14,
+  "end_markers_received": 14,
+  "sender_paid": {
+    "attempts": 347,
+    "reserved_estimated_airtime_us": 14021410
+  },
+  "receiver_paid": {
+    "attempts": 17,
+    "reserved_estimated_airtime_us": 245905
+  },
+  "native_sender_delta": {
+    "attempts": 347,
+    "reserved_estimated_airtime_us": 12431280,
+    "dropped_receive": 0
+  },
+  "receiver_header_errors": 9,
+  "receiver_crc_errors": 0,
+  "whole_file_verified": true,
+  "both_endpoints_closed": true,
+  "original_scope_expired": true,
+  "prior_failed_attempt": {
+    "completed": false,
+    "valid_goodput_available": false,
+    "sender_paid_attempts": 358,
+    "sender_reserved_estimated_airtime_us": 14503296,
+    "native_paid_attempt_floor_before_recovery": 1370,
+    "native_reserved_estimated_airtime_floor_us_before_recovery": 49077920,
+    "unknown_terminal_outcomes_retained": 2,
+    "debt_refunded": false,
+    "separate_recovery_and_new_RF_approval_required": true
+  },
+  "source_evidence_sha256": {
+    "result": "1ee6083e510f42a798d3ccf1ec95646e413c35a85d7e54da00fd9b73ea59fd83",
+    "sender_snapshot": "4f2b40b7b89598e039631add2a4ece3fda4ea41653dee07ea06bb56f5de10fa5",
+    "receiver_snapshot": "a80a7b1677a84cabcdd91a6e52a77356fc4abf6a9b5d0e75d4b7ba2bde6b6403"
+  },
+  "limitations": [
+    "One finite bench file; not sustained throughput or field-range qualification.",
+    "No general 4000 B/s claim; queue-only rate is a different boundary.",
+    "Readback frequencies are not physical oscillator measurements.",
+    "Diagnostic capture overhead included.",
+    "Release rebuild correspondence is separate from measured SDK execution.",
+    "Prior failures and unknown costs remain retained; recovery does not refund debt.",
+    "No matched causal attribution or global quiescence claim."
+  ]
+}

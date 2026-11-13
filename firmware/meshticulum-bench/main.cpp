@@ -53,7 +53,19 @@ static void IRAM_ATTR radioWake() {
     vTaskNotifyGiveFromISR(radioServiceTask,&woke);
     if(woke==pdTRUE) portYIELD_FROM_ISR();
 }
+#ifndef MTBENCH_BURST_WAKE_HINT
+#define MTBENCH_BURST_WAKE_HINT 0
+#endif
+#if MTBENCH_BURST_WAKE_HINT != 0 && MTBENCH_BURST_WAKE_HINT != 1
+#error "burst wake hint must be zero or one"
+#endif
+#if MTBENCH_BURST_WAKE_HINT
+static void updateBurstWakeHint();
+#endif
 static void waitForRadioOrTick() {
+#if MTBENCH_BURST_WAKE_HINT
+    updateBurstWakeHint();
+#endif
     if(radioServiceTask!=nullptr) ulTaskNotifyTake(pdTRUE,1);
     else delay(1);
 }
@@ -210,6 +222,20 @@ static bool configureGfsk(const uint8_t* body,size_t size,bool fast=false) {
 }
 
 #include "burst_adapter.hpp"
+#if MTBENCH_BURST_WAKE_HINT
+#include "burst_wake_hint.hpp"
+static mtbench::experimental::BurstWakeHint burstWakeHint;
+static void updateBurstWakeHint() {
+    // Read-only hint selection. RX, evidence and authority are checked only by
+    // the unchanged serviceRadio -> burstService path after every wake.
+    const uint64_t now=nowUs();
+    const bool hint=serialReady && ready && armed && !fenced && !transmitting
+        && !resultPending && burstQueue && burstQueue->queued()
+        && !burstQueue->containmentRequired() && now<deadlineUs
+        && burstNextStartUs<deadlineUs;
+    burstWakeHint.update(now,hint ? burstNextStartUs : 0);
+}
+#endif
 
 static void command(const Frame& frame) {
     if(!frame.request || output.freeSlots()<2) return; // Host must treat missing reply as unknown.
@@ -382,6 +408,9 @@ void setup() {
     if(ready && idleRadio()!=RADIOLIB_ERR_NONE) ready=false;
     if(ready) {
         radioServiceTask=xTaskGetCurrentTaskHandle();
+#if MTBENCH_BURST_WAKE_HINT
+        burstWakeHint.initialize(radioServiceTask);
+#endif
         if(radioServiceTask!=nullptr) radio.setDio1Action(radioWake);
     }
     // No Mesh instance, background advertising, automatic forwarding or RF ACK.

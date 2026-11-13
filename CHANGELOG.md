@@ -1,5 +1,28 @@
 # Release notes
 
+## 1.0.0-alpha.5 (`1.0.0a5`) — 2026-11-13
+
+Alpha.5 adds opt-in authenticated DATA end-of-turn markers, bounded train32
+and larger-file bench modes, checked HAT receive rearm, and precise handling
+of proven host-budget refusal. Experimental capabilities remain opt-in, and frozen reliable-flow bytes
+remain unchanged. Existing burst paths now classify proven pre-admission
+budget exhaustion explicitly and bound cleanup of already admitted work.
+Explicit capabilities, original deadlines, replay decisions, owner checks
+and paid debt still govern experimental paths.
+
+One 65,536-byte LoRa file using measured source
+`794ea7111aa51aa9c91867bc6f28b610f3ae79af` completed in **17.439448 seconds**
+from sender startup to authenticated receipt: **3,757.917 useful B/s**.
+Queue-submission-only goodput was **3,920.427 B/s**, a separate boundary.
+Six DATA retries and 14 accepted end markers were observed. Both endpoints
+closed with no new native receive drops; independent whole-file verification
+and original-scope expiry were checked. This single bench sample does not
+establish sustained or general 4 kB/s performance, field range or a causal
+comparison. Prior failed attempts, unknown outcomes and paid debt remain
+retained, including across separately authorized recovery.
+
+[Benchmark and retained failure](benchmarks/2026-11-13-alpha5-file64/README.md).
+
 ## 1.0.0-alpha.4 (`1.0.0a4`) — 2026-10-30
 
 This update repairs a saturated train12 recovery stall. When a logical DATA

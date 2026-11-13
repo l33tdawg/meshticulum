@@ -20,22 +20,26 @@ import threading
 import time
 
 from meshticulum.bench.admission import Gfsk250Admission, RadioAdmission
+from meshticulum.bench.continuation import ContinuationRecord, ContinuationApproval, ContinuationAdmission, ContinuationOwner, canonical as continuation_canonical
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import OperationLimits, RunAuthority
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.host_timing import HostPhaseTimings, Phase, phase
+from meshticulum.bench.authority_timing import AuthorityPhaseTimings, AuthorityPhase, authority_timed, AuthorityTimingBindings
 from meshticulum.bench.host_pump import run_host_pump
 from meshticulum.bench.gfsk250_profile import Gfsk250Profile
 from meshticulum.bench.hat_worker import Gfsk250HATWorker, HATWorker, journal_binding as hat_binding
 from meshticulum.bench.linux_hat import LinuxHAT
 from meshticulum.bench.open_watch import OpenCollisionWatch
-from meshticulum.bench.objects import VerifiedChunks
+from meshticulum.bench.objects import VerifiedChunks, VerifiedFile64, VerifiedFile48
+from meshticulum.bench.file_capability import FILE64_BYTES, FILE64_SCHEMA, FILE48_BYTES, FILE48_SCHEMA, file_capability_mode
 from meshticulum.bench.serial_port import ExclusiveSerial, usb_identity
 from meshticulum.bench.serial_protocol import Frame, Message, Gfsk250Status, RadioProfile
 from meshticulum.bench.serial_worker import Gfsk250SerialWorker, SerialWorker, journal_binding
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.state import SessionStore
 from meshticulum.bench.wire import SessionCipher, require
+from meshticulum.bench.turn_end import admitted as turn_end_admitted
 from meshticulum.scheduler.budget import BudgetPolicy, Ledger
 
 CHUNK_BYTES, MAX_FILE_BYTES, ACK_GRACE_US = 16384, 64 * 16384, 20000000
@@ -68,8 +72,27 @@ def add_operation_limit_arguments(parser):
 
 
 def add_host_timing_argument(parser):
+    parser.add_argument('--data-turn-end', action='store_true',
+                        help='opt in to grant-bound authenticated train32 final-admission DATA')
+    parser.add_argument('--hat-spi-hz', type=int, choices=(1000000, 4000000),
+                        help='Explicit HAT SPI request; default remains 1 MHz. 4 MHz is experimental.')
+    parser.add_argument('--hat-checked-rearm', action='store_true',
+                        help='opt in to checked, consume-once HAT RX rearm handoff')
+    parser.add_argument('--hat-receive-timeline', action='store_true',
+                        help='Bounded receive/rearm timing diagnostic; extra host clocks, no extra SPI')
+    parser.add_argument('--hat-receive-reasons', action='store_true',
+                        help='Collect bounded HAT receive software counters (no packet identities).')
+    parser.add_argument('--profile-authority', action='store_true',
+        help='bounded inclusive wall/thread-CPU authority diagnostics; no scheduler-causation claim')
     parser.add_argument('--profile-host', action='store_true',
         help='include bounded host phase timings; diagnostic only, adds measurement overhead')
+
+
+def hat_spi_options(args):
+    value = getattr(args, 'hat_spi_hz', None)
+    require(value is None or (args.interface == 'hat' and type(value) is int
+            and value in (1000000, 4000000)), 'invalid_hat_spi_hz_option')
+    return {} if value is None else dict(spi_hz=value)
 
 
 def operation_journal_limits(args, admitted):
@@ -109,33 +132,56 @@ def read_file(path, limit, *, pin=None, private=False):
         os.close(fd)
 
 
-def manifest(data):
+def file_mode(*, file64=False, file48=False):
+    require(type(file64) is bool, 'invalid_file64_option')
+    require(type(file48) is bool, 'invalid_file48_option')
+    require(not (file64 and file48), 'invalid_explicit_file_mode')
+    return 'file48' if file48 else ('file64' if file64 else None)
+
+
+def file_cache(mode):
+    return VerifiedFile48 if mode == 'file48' else (VerifiedFile64 if mode == 'file64' else VerifiedChunks)
+
+
+def manifest(data, *, file64=False, file48=False):
+    mode = file_mode(file64=file64, file48=file48)
+    require(not file48 or type(data) is bytes and len(data) == FILE48_BYTES, 'invalid_file48_size')
+    require(not file64 or type(data) is bytes and len(data) == FILE64_BYTES, 'invalid_file64_size')
+    chunk_bytes = FILE48_BYTES if file48 else (FILE64_BYTES if file64 else CHUNK_BYTES)
     require(type(data) is bytes and 0 < len(data) <= MAX_FILE_BYTES, 'example_file_size')
     digest = sha(data)
-    return {'schema': FILE_SCHEMA, 'bytes': len(data), 'sha256': digest,
+    return {'schema': FILE48_SCHEMA if file48 else (FILE64_SCHEMA if file64 else FILE_SCHEMA), 'bytes': len(data), 'sha256': digest,
             'chunks': [{'object_id': digest, 'chunk_index': i, 'bytes': len(part),
                         'sha256': sha(part)} for i, part in enumerate(
-                            data[n:n + CHUNK_BYTES] for n in range(0, len(data), CHUNK_BYTES))]}
+                            data[n:n + chunk_bytes] for n in range(0, len(data), chunk_bytes))]}
 
 
-def load_manifest(path, pin):
+def load_manifest(path, pin, *, file64=False, file48=False):
+    mode = file_mode(file64=file64, file48=file48)
+    chunk_bytes = FILE48_BYTES if file48 else (FILE64_BYTES if file64 else CHUNK_BYTES)
     value = json.loads(read_file(path, 32768, pin=pin))
     require(type(value) is dict and set(value) == {'schema', 'bytes', 'sha256', 'chunks'}
-            and value['schema'] == FILE_SCHEMA and type(value['bytes']) is int
+            and value['schema'] == (FILE48_SCHEMA if file48 else (FILE64_SCHEMA if file64 else FILE_SCHEMA)) and type(value['bytes']) is int
             and 0 < value['bytes'] <= MAX_FILE_BYTES and type(value['chunks']) is list
             and 1 <= len(value['chunks']) <= 64, 'invalid_example_manifest')
     require(type(value['sha256']) is str and re.fullmatch('[0-9a-f]{64}', value['sha256']),
             'invalid_example_digest')
+    require(not file48 or (value['bytes'] == FILE48_BYTES and len(value['chunks']) == 1),
+            'invalid_file48_manifest')
+    require(not file64 or (value['bytes'] == FILE64_BYTES and len(value['chunks']) == 1),
+            'invalid_file64_manifest')
     total = 0
     for index, chunk in enumerate(value['chunks']):
         require(type(chunk) is dict and set(chunk) == {'object_id', 'chunk_index', 'bytes', 'sha256'}
                 and chunk['object_id'] == value['sha256'] and type(chunk['chunk_index']) is int
                 and chunk['chunk_index'] == index and type(chunk['bytes']) is int
-                and 0 < chunk['bytes'] <= CHUNK_BYTES and type(chunk['sha256']) is str
+                and 0 < chunk['bytes'] <= chunk_bytes and type(chunk['sha256']) is str
                 and re.fullmatch('[0-9a-f]{64}', chunk['sha256']), 'invalid_example_chunk')
-        require(index == len(value['chunks']) - 1 or chunk['bytes'] == CHUNK_BYTES,
+        require(index == len(value['chunks']) - 1 or chunk['bytes'] == chunk_bytes,
                 'noncanonical_example_chunks')
         total += chunk['bytes']
+    require(mode is None or value['chunks'][0]['sha256'] == value['sha256'],
+            'invalid_file48_manifest' if file48 else 'invalid_file64_manifest')
     require(total == value['bytes'], 'example_manifest_size_mismatch')
     return value
 
@@ -178,7 +224,10 @@ def firmware_source_identity(source):
                  'burst_adapter.hpp', 'experimental/tx_burst.hpp'},
                 {'main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
                  'burst_adapter.hpp', 'experimental/tx_burst.hpp', 'native_profile.hpp',
-                 'native_profile_config.hpp'})
+                 'native_profile_config.hpp'},
+                {'main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
+                 'burst_adapter.hpp', 'experimental/tx_burst.hpp', 'native_profile.hpp',
+                 'native_profile_config.hpp', 'burst_wake_hint.hpp'})
             and all(type(value) is str and re.fullmatch('[0-9a-f]{64}', value)
                     for value in source['application'].values())
             and source.get('identity') == 'mtb1-' + sha(json.dumps(
@@ -274,6 +323,7 @@ class FileWindow:
         self.deadline_us, self.last = self.record['deadline_monotonic_us'], None
         self.check()
 
+    @authority_timed(AuthorityPhase.FILE_WINDOW_CHECK)
     def check(self):
         info = self.path.lstat()
         require((info.st_dev, info.st_ino) == self.identity
@@ -319,18 +369,20 @@ class HeldHardware:
     The SDK process must not fork or pass its held device descriptors. Host
     root is trusted; this probe does not isolate the radio from host root.
     """
-    def __init__(self, transport, *, by_id=None, usb_serial=None):
+    def __init__(self, transport, *, by_id=None, usb_serial=None, event_complete_inventory=False):
         self.transport, self.by_id, self.usb_serial = transport, by_id, usb_serial
         self.boot, self.pid = host_boot(), os.getpid()
         names = ('fd', 'lock_fd') if type(transport) is ExclusiveSerial else (
             'spi_fd', 'chip_fd', 'lines_fd', 'lock_fd')
         self.fds = tuple((name, getattr(transport, name), os.fstat(getattr(transport, name)))
                          for name in names)
-        self.opens = OpenCollisionWatch(self.fds[0][2])
+        self.opens = OpenCollisionWatch(self.fds[0][2],
+            event_complete_inventory=event_complete_inventory)
 
     def close(self):
         self.opens.close()
 
+    @authority_timed(AuthorityPhase.OWNER_CURRENT)
     def current(self):
         try:
             if os.getpid() != self.pid or host_boot() != self.boot:
@@ -406,14 +458,91 @@ class ChunkTransfer:
         self.endpoint.close()
 
 
+class FileTransfer(ChunkTransfer):
+    """Optional authenticated retirement bound to the original file window."""
+    def __init__(self, authority, worker, journal, cipher, descriptor, cache, *,
+                 clock, window, chunk, confirm_receipt=False, pace_selective_repeats=False,
+                 receiver_ack_quiet_us=None):
+        require(receiver_ack_quiet_us is None or type(receiver_ack_quiet_us) is int
+                and receiver_ack_quiet_us == 150000, 'invalid_receiver_ack_quiet_option')
+        require(type(confirm_receipt) is bool, 'invalid_receipt_confirmation_option')
+        require(type(pace_selective_repeats) is bool
+                and (not pace_selective_repeats or confirm_receipt),
+                'invalid_selective_repeat_pacing_option')
+        context = None
+        if confirm_receipt:
+            window.check()
+            record = window.record
+            require(type(chunk) is int and 0 <= chunk < len(record['manifest']['chunks'])
+                    and descriptor == record['manifest']['chunks'][chunk]
+                    and authority.plan['issued_epoch_us'] == record['issued_epoch_us']
+                    and authority.plan['expires_epoch_us'] == record['expires_epoch_us'],
+                    'example_file_receipt_context_mismatch')
+            context = hashlib.sha256(json.dumps(dict(
+                schema='meshticulum.file-receipt-context.v1', manifest=record['manifest'],
+                chunk=chunk, issued_epoch_us=record['issued_epoch_us'],
+                expires_epoch_us=record['expires_epoch_us']),
+                sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).digest()
+        super().__init__(authority, worker, journal, cipher, descriptor, cache, clock=clock)
+        if context is not None:
+            self.enable_receipt_confirmation(context)
+        if pace_selective_repeats:
+            self.endpoint.enable_selective_repeat_pacing()
+        if receiver_ack_quiet_us is not None:
+            self.endpoint.set_receiver_ack_quiet_us(receiver_ack_quiet_us)
+
+
+def continuation_admission(args, plan, base):
+    enabled=getattr(args,'boot_continuation',False)
+    path=getattr(args,'boot_continuation_approval',None)
+    pin=getattr(args,'boot_continuation_approval_sha256',None)
+    require(type(enabled) is bool,'invalid_continuation_option')
+    if not enabled:
+        require('boot_continuation' not in plan and path is None and pin is None,'explicit_continuation_required')
+        return base
+    require(type(base) is RadioAdmission and path is not None and type(pin) is str
+            and 'boot_continuation' in plan,'explicit_continuation_approval_required')
+    record=ContinuationRecord(continuation_canonical(plan['boot_continuation']))
+    raw=read_file(path,8192,pin=pin,private=True)
+    approval=ContinuationApproval(raw,pin,record)
+    approval.check_plan(plan)
+    return ContinuationAdmission(base,approval)
+
+
+def continuation_native_owner(owner, transport, record):
+    expected=record.value()['baseline']['usb_serial']
+    require(type(owner) is HeldHardware and type(transport) is ExclusiveSerial
+            and owner.transport is transport and owner.usb_serial == expected
+            and owner.by_id is not None,'continuation_requires_held_usb_owner')
+    by_id=owner.by_id;current=owner.current;fds=owner.fds
+    require(type(fds) is tuple and len(fds) == 2
+            and tuple(row[0] for row in fds) == ('fd', 'lock_fd')
+            and all(type(row[1]) is int and row[1] >= 0 for row in fds),
+            'continuation_usb_descriptors_invalid')
+    def binding():
+        return (type(owner) is HeldHardware and owner.transport is transport
+                and owner.usb_serial == expected and owner.by_id == by_id and owner.fds is fds
+                and owner.current.__func__ is current.__func__
+                and all(type(getattr(transport,name,None)) is int
+                        and getattr(transport,name) == fd for name,fd,_ in fds))
+    def check():return binding() and current() is True and binding()
+    require(check(),'continuation_usb_owner_changed')
+    return ContinuationOwner(check,binding)
+
+
 def transfer_chunk(args):
-    file = load_manifest(args.manifest, args.manifest_sha256)
+    file = load_manifest(args.manifest, args.manifest_sha256, file64=getattr(args, 'file64', False), file48=getattr(args, 'file48', False))
     require(0 <= args.chunk < len(file['chunks']), 'example_chunk_index')
     descriptor = file['chunks'][args.chunk]
     raw = read_file(args.grant_directory / 'grant.json', 16384,
                     pin=args.grant_sha256, private=True)
     plan = json.loads(raw)
     modem = plan_modem(plan)
+    mode = file_mode(file64=getattr(args, 'file64', False), file48=getattr(args, 'file48', False))
+    enabled = mode is not None
+    require(file_capability_mode(plan) == mode, 'example_file48_admission_mismatch' if mode == 'file48' else 'example_file64_admission_mismatch')
+    require(not enabled or plan['file_capability']['manifest_sha256'] == args.manifest_sha256,
+            'example_file48_manifest_pin_mismatch' if mode == 'file48' else 'example_file64_manifest_pin_mismatch')
     require(plan['object'] == descriptor
             and plan['schema'] == 'meshticulum.bench-run.v1', 'example_requires_matching_bench_grant')
     require(plan['expires_epoch_us'] - plan['issued_epoch_us'] <= 240000000,
@@ -431,20 +560,25 @@ def transfer_chunk(args):
     if 'waveforms' in admission:
         admission['waveforms'] = tuple(tuple(row) for row in admission['waveforms'])
     admission = modem_classes(modem)[3](**admission)
+    admission = continuation_admission(args, plan, admission)
     payload = None
     if args.input is not None:
         data = read_file(args.input, MAX_FILE_BYTES)
-        require(manifest(data) == file, 'example_input_mismatch')
-        offset = args.chunk * CHUNK_BYTES
+        require(manifest(data, file64=mode == 'file64', file48=mode == 'file48') == file, 'example_input_mismatch')
+        offset = args.chunk * (FILE48_BYTES if mode == 'file48' else (FILE64_BYTES if enabled else CHUNK_BYTES))
         payload = data[offset:offset + descriptor['bytes']]
     require((plan['sender_unit'] == args.unit) == (payload is not None), 'example_role_mismatch')
     version = firmware_identity(args.firmware_source, args.firmware_source_sha256)
-    cache = VerifiedChunks(args.chunks)
+    cache = file_cache(mode)(args.chunks)
     window = bind_file_window(cache, file, args.file_issued_epoch_us, args.file_expires_epoch_us)
     window.require_capacity(len(file['chunks']) - args.chunk)
     return run_object(args, raw, admission, version, payload, window,
-        lambda authority, worker, journal, cipher: ChunkTransfer(
-            authority, worker, journal, cipher, descriptor, cache, clock=clock))
+        lambda authority, worker, journal, cipher: FileTransfer(
+            authority, worker, journal, cipher, descriptor, cache, clock=clock,
+            window=window, chunk=args.chunk,
+            confirm_receipt=getattr(args, 'confirm_receipt', False),
+            pace_selective_repeats=getattr(args, 'pace_selective_repeats', False),
+            receiver_ack_quiet_us=getattr(args, 'receiver_ack_quiet_us', None)))
 
 
 class FileHardware:
@@ -453,10 +587,10 @@ class FileHardware:
     This holds no worker, ARM, cipher or journal across parts. A failed part or
     failed cleanup permanently prevents another loan from this owner.
     """
-    _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
+    _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source','boot_continuation_approval')
     _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
                'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
-               'file_issued_epoch_us', 'file_expires_epoch_us')
+               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'file48', 'hat_receive_reasons', 'hat_receive_timeline', 'hat_spi_hz', 'hat_checked_rearm', 'data_turn_end', 'boot_continuation', 'boot_continuation_approval_sha256')
 
     @classmethod
     def _binding(cls, args):
@@ -471,15 +605,18 @@ class FileHardware:
         self.closed = self.active = self.poisoned = False
         self.window_raw = None
         self.options = (args.interface, args.device, getattr(args, 'usb_serial', None))
+        self.spi_options = hat_spi_options(args)
         self.transport = self.owner = None
+        self.event_complete_inventory = getattr(args, 'event_complete_inventory', False)
 
     def _open(self):
         interface, device, serial = self.options
-        self.transport = (LinuxHAT() if interface == 'hat' else
+        self.transport = (LinuxHAT(**self.spi_options) if interface == 'hat' else
                           ExclusiveSerial(device, usb_serial=serial))
         try:
             self.owner = HeldHardware(self.transport,
-                by_id=device if interface == 'usb' else None, usb_serial=serial)
+                by_id=device if interface == 'usb' else None, usb_serial=serial,
+                event_complete_inventory=self.event_complete_inventory)
         except BaseException as error:
             self.closed = True
             try:
@@ -557,12 +694,37 @@ class FileHardware:
 
 def run_object(args, raw, admission, version, payload, window, factory, *, hardware=None):
     plan = json.loads(raw)
+    turn_end = getattr(args, 'data_turn_end', False)
+    require(type(turn_end) is bool and turn_end is turn_end_admitted(plan),
+            'turn_end_example_capability_mismatch')
+    if type(admission) is ContinuationAdmission:
+        require(getattr(args,'boot_continuation',False) is True,'explicit_continuation_required')
+        admission.approval.check_plan(plan)
+        require(args.interface == ('usb' if plan['unit'] == plan['sender_unit'] else 'hat'),
+                'continuation_requires_usb_sender_hat_receiver')
+    else:
+        require('boot_continuation' not in plan,'explicit_continuation_admission_required')
     admitted_limits = OperationLimits.from_plan(plan)
     limits = operation_journal_limits(args, admitted_limits)
+    checked_rearm = getattr(args, 'hat_checked_rearm', False)
+    require(type(checked_rearm) is bool and (not checked_rearm or args.interface == 'hat'),
+            'invalid_hat_checked_rearm_option')
+    receive_timeline = getattr(args, 'hat_receive_timeline', False)
+    require(type(receive_timeline) is bool and (not receive_timeline or args.interface == 'hat'),
+            'invalid_hat_receive_timeline_option')
+    receive_reasons = getattr(args, 'hat_receive_reasons', False)
+    require(type(receive_reasons) is bool and (not receive_reasons or args.interface == 'hat'),
+            'invalid_hat_receive_reasons_option')
+    spi_options = hat_spi_options(args)
+    worker = None
+    profile_authority = getattr(args, 'profile_authority', False)
+    require(type(profile_authority) is bool, 'invalid_authority_profile_option')
+    authority_timing = AuthorityPhaseTimings() if profile_authority else None
+    diagnostic_bindings = AuthorityTimingBindings(authority_timing)
     timing = HostPhaseTimings() if getattr(args, 'profile_host', False) else None
     timing_kw = {} if timing is None else dict(host_timing=timing)
     if hardware is None:
-        transport = (LinuxHAT() if args.interface == 'hat' else
+        transport = (LinuxHAT(**spi_options) if args.interface == 'hat' else
                      ExclusiveSerial(args.device, usb_serial=args.usb_serial, **timing_kw))
         owner, cleanup = None, [transport.close]
     else:
@@ -573,7 +735,8 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
     try:
         if hardware is None:
             owner = HeldHardware(transport, by_id=args.device if args.interface == 'usb' else None,
-                                 usb_serial=args.usb_serial)
+                                 usb_serial=args.usb_serial,
+                                 event_complete_inventory=getattr(args, 'event_complete_inventory', False))
             cleanup.append(owner.close)
         authority = RunAuthority(args.grant_directory, expected_unit=args.unit,
             host_boot_id=host_boot(), clock=clock, owner_probe=lambda: owner.current() and window.current(), radio_admission=admission)
@@ -605,16 +768,27 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
         if worker is not None:
             # Retain containment even when ARM only partially succeeds.
             cleanup.append(worker.disarm)
+            continuation_kw={}
+            if type(admission) is ContinuationAdmission:
+                require(authority.sends,'continuation_native_sender_required')
+                record=ContinuationRecord(continuation_canonical(authority.plan['boot_continuation']))
+                continuation_kw=dict(continuation=record,continuation_owner=continuation_native_owner(owner,transport,record))
             worker.arm(journal=journal, profile=profile, context_digest=authority.grant.digest,
-                       authorize=authorize, authority_deadline=min(authority.deadlines.application_deadline_monotonic, window.deadline_us / 1000000))
+                       authorize=authorize, authority_deadline=min(authority.deadlines.application_deadline_monotonic, window.deadline_us / 1000000),**continuation_kw)
         else:
             worker = hat_cls(transport, journal=journal, profile=profile,
                 context_digest=authority.grant.digest, authorize=authorize,
                 authority_deadline=min(authority.deadlines.application_deadline_monotonic, window.deadline_us / 1000000),
-                antenna_confirmed=plan['antenna_confirmed'])
+                antenna_confirmed=plan['antenna_confirmed'],
+                **({'receive_reasons': True} if receive_reasons else {}),
+                **({'receive_timeline': True} if receive_timeline else {}),
+                **({'checked_rearm': True} if checked_rearm else {}))
             cleanup.append(worker.disarm)
+        # Start coverage after worker setup, before session construction.
+        for diagnostic_owner in (window, owner, authority, worker):
+            diagnostic_bindings.bind(diagnostic_owner)
         session = factory(authority, worker, journal,
-            SessionCipher(authority.grant, authority.local_peer, store))
+            SessionCipher(authority.grant, authority.local_peer, store, turn_end=turn_end))
         cleanup.append(session.close)
         if payload is not None:
             session.send(payload)
@@ -655,8 +829,27 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
                 hardware.release(not errors)
             except BaseException as error:
                 errors.append(error)
+        diagnostic_bindings.restore(suppress_cancellation=bool(errors))
+    receive_snapshot = (worker.receive_reason_snapshot()
+                        if receive_reasons and worker is not None else None)
+    timeline_snapshot = (worker.receive_timeline_snapshot()
+                         if receive_timeline and worker is not None else None)
+    if timeline_snapshot is not None:
+        timeline_snapshot = {k: v for k, v in timeline_snapshot.items() if k != 'rows'}
+        timeline_snapshot['rows_in_flow_snapshot'] = True
     if errors:
         failure = BaseExceptionGroup('File transfer or cleanup failed; retain all run state', errors)
+        if timeline_snapshot is not None:
+            failure.hat_receive_timeline = timeline_snapshot
+        if receive_snapshot is not None:
+            failure.hat_receive_reasons = receive_snapshot
+        if authority_timing is not None:
+            try:
+                failure.authority_phase_timings = authority_timing.snapshot()
+                if diagnostic_bindings.failed:
+                    failure.authority_phase_timings_unavailable = True
+            except BaseException:
+                failure.authority_phase_timings_unavailable = True
         if timing is not None:
             try:
                 failure.host_phase_timings = timing.snapshot()
@@ -664,11 +857,22 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
                 # Optional diagnostics cannot replace the original failures.
                 failure.host_phase_timings_unavailable = True
         raise failure
+    if authority_timing is not None:
+        try:
+            result['authority_phase_timings'] = authority_timing.snapshot()
+            if diagnostic_bindings.failed:
+                result['authority_phase_timings_unavailable'] = True
+        except Exception:
+            result['authority_phase_timings_unavailable'] = True
     if timing is not None:
         try:
             result['host_phase_timings'] = timing.snapshot()
         except Exception:
             result['host_phase_timings_unavailable'] = True
+    if timeline_snapshot is not None:
+        result['hat_receive_timeline'] = timeline_snapshot
+    if receive_snapshot is not None:
+        result['hat_receive_reasons'] = receive_snapshot
     return result
 
 
@@ -693,10 +897,21 @@ def main():
     run.add_argument('--grant-sha256', required=True)
     run.add_argument('--file-expires-epoch-us', required=True, type=int)
     run.add_argument('--file-issued-epoch-us', required=True, type=int)
+    run.add_argument('--boot-continuation',action='store_true',help='Explicit application-approved same-boot cumulative extension')
+    run.add_argument('--boot-continuation-approval',type=Path)
+    run.add_argument('--boot-continuation-approval-sha256')
     run.add_argument('--admission', required=True, type=Path)
     run.add_argument('--admission-sha256', required=True)
     add_operation_limit_arguments(run)
     add_host_timing_argument(run)
+    run.add_argument('--receiver-ack-quiet-us', type=int, choices=(150000,),
+        help='opt in to 150ms receiver ACK quiet coalescing for SF5 train24')
+    run.add_argument('--pace-selective-repeats', action='store_true',
+        help='require confirmation; pace repeated early repairs by the accepted flight RTO')
+    run.add_argument('--event-complete-inventory', action='store_true',
+        help='opt in to fresh inotify inventory proof on bound tmpfs/devtmpfs directories')
+    run.add_argument('--confirm-receipt', action='store_true',
+        help='opt in on both peers to authenticated receipt confirmation inside the original file window')
     for sub in (run, inspect, compact):
         sub.add_argument('--firmware-source', required=True, type=Path)
         sub.add_argument('--firmware-source-sha256', required=True)
@@ -708,14 +923,18 @@ def main():
     run.add_argument('--device', type=Path)
     run.add_argument('--usb-serial')
     run.add_argument('--input', type=Path, help='sender only; receiver omits it')
+    for sub in (create, run, assemble):
+        sizes = sub.add_mutually_exclusive_group()
+        sizes.add_argument('--file64', action='store_true', help='explicit admitted singleton64KiB file format')
+        sizes.add_argument('--file48', action='store_true', help='explicit admitted singleton48KiB file format')
     args = parser.parse_args()
     if args.command == 'manifest':
-        value = manifest(read_file(args.input, MAX_FILE_BYTES))
+        value = manifest(read_file(args.input, MAX_FILE_BYTES), file64=args.file64, file48=args.file48)
     elif args.command == 'firmware-identity':
         value = compact_firmware_identity(args)
     elif args.command == 'assemble':
-        file = load_manifest(args.manifest, args.manifest_sha256)
-        data = VerifiedChunks(args.chunks).assemble(file['chunks'])
+        file = load_manifest(args.manifest, args.manifest_sha256, file64=getattr(args, 'file64', False), file48=getattr(args, 'file48', False))
+        data = file_cache(file_mode(file64=args.file64, file48=args.file48))(args.chunks).assemble(file['chunks'])
         require(len(data) == file['bytes'], 'example_assembled_size_mismatch')
         publish(args.output, data)
         value = {'whole_file_verified': True, 'bytes': len(data), 'sha256': sha(data)}

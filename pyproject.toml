@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "meshticulum"
-version = "1.0.0a4"
+version = "1.0.0a5"
 description = "Bounded authenticated transport and verified resources for mixed radio and IP networks"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -39,5 +39,6 @@ namespaces = false
 "meshticulum.flow" = ["README.md"]
 
 [tool.pytest.ini_options]
+pythonpath = ["examples"]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"

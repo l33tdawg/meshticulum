@@ -22,6 +22,19 @@ class AttemptError(RuntimeError):
     pass
 
 
+class AttemptBudgetExhausted(AttemptError):
+    """Reservation refused before allocating a request or inserting debt.
+
+    Only escapes reserve when its enclosing transaction rolled back successfully.
+    It says nothing about previously queued attempts or their physical outcomes.
+    """
+    def __init__(self, *, attempts, reserved_us, max_attempts, max_airtime_us, required_us):
+        super().__init__("attempt_budget_exhausted")
+        self.details = dict(attempts=attempts, reserved_estimated_airtime_us=reserved_us,
+            max_attempts=max_attempts, max_airtime_us=max_airtime_us,
+            required_estimated_airtime_us=required_us)
+
+
 def require(ok, reason):
     if not ok:
         raise AttemptError(reason)
@@ -183,8 +196,10 @@ class AttemptJournal:
         with self.transaction():
             owner = self._owner()
             count, reserved = self._totals()
-            require(count < self.max_attempts and reserved + estimated_us <= self.max_airtime_us,
-                    'attempt_budget_exhausted')
+            if count >= self.max_attempts or reserved + estimated_us > self.max_airtime_us:
+                raise AttemptBudgetExhausted(attempts=count, reserved_us=reserved,
+                    max_attempts=self.max_attempts, max_airtime_us=self.max_airtime_us,
+                    required_us=estimated_us)
             request = self._next(owner)
             self.db.execute('INSERT INTO attempts VALUES (?,?,?,?,?,NULL)',
                             (request, hashlib.sha256(packet).digest(), len(packet), estimated_us, 'RESERVED'))

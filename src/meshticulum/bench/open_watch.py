@@ -41,6 +41,10 @@ _IN_ISDIR = 0x40000000
 _SELF_INVALIDATION = _IN_DELETE_SELF | _IN_MOVE_SELF | _IN_UNMOUNT | _IN_IGNORED
 _INVALIDATION = _IN_ATTRIB | _SELF_INVALIDATION
 _DIRECTORY_EVENTS = _INVALIDATION | _IN_MOVED_FROM | _IN_MOVED_TO | _IN_CREATE | _IN_DELETE
+# fdinfo reports inotify_mark_user_mask(): implicit UNMOUNT/IGNORED
+# are omitted although the kernel always delivers them. Require every
+# explicitly requested directory event; still fail on automatic events.
+_DIRECTORY_REPORTED_EVENTS = _DIRECTORY_EVENTS & ~(_IN_UNMOUNT | _IN_IGNORED)
 _DEVICE_EVENTS = _INVALIDATION | _IN_OPEN
 _UNSUPPORTED = {errno.ENOSYS, errno.ENOTSUP, errno.EOPNOTSUPP}
 _ACTIVE = weakref.WeakSet()
@@ -83,6 +87,33 @@ def _mountinfo():
     return raw
 
 
+def _event_complete_mount(raw, path, info):
+    """Conservative covering-mount classification; ambiguity keeps enumeration."""
+    target = os.fsencode(os.path.abspath(path))
+    candidates = []
+    try:
+        for line in raw.splitlines():
+            fields = line.split()
+            separator = fields.index(b'-', 6)
+            mount = re.sub(rb'\\([0-7]{3})', lambda m: bytes([int(m[1], 8)]), fields[4])
+            if b'\\' in mount or not mount.startswith(b'/'):
+                return False
+            if target == mount or target.startswith(mount.rstrip(b'/') + b'/'):
+                candidates.append((len(mount), mount, fields[2], fields[separator+1]))
+        if not candidates:
+            return False
+        longest = max(item[0] for item in candidates)
+        chosen = [item for item in candidates if item[0] == longest]
+        if len(chosen) != 1:
+            return False
+        _, mount, device, kind = chosen[0]
+        major, minor = map(int, device.split(b':'))
+        return (kind in (b'tmpfs', b'devtmpfs')
+                and (major, minor) == (os.major(info.st_dev), os.minor(info.st_dev)))
+    except (ValueError, IndexError, TypeError, OverflowError):
+        return False
+
+
 def _nodev_namespace(raw, path):
     path = os.fsencode(path)
     covering = []
@@ -119,7 +150,13 @@ class OpenCollisionWatch:
     Unexpected events, read errors, queue overflow and node changes latch a
     refusal until this object is closed; they never switch to a clean cache.
     """
-    def __init__(self, device_stat, *, device_root='/dev', opener_scan=None):
+    def __init__(self, device_stat, *, device_root='/dev', opener_scan=None,
+                 event_complete_inventory=False):
+        if type(event_complete_inventory) is not bool:
+            raise HardwareError('device_watch_invalid_inventory_option')
+        self.event_complete_inventory = event_complete_inventory
+        self.event_directories = frozenset()
+        self.directory_wds = {}
         self.fd, self.watch_stat, self.closed, self.failed = None, None, False, None
         self.pid = os.getpid()
         self.device_stat = device_stat
@@ -127,6 +164,7 @@ class OpenCollisionWatch:
         self.scan = opener_scan or _existing_openers
         self.paths, self.directories, self.watches, self.aliases = {}, {}, set(), set()
         self.watch_lines, self.watch_inodes, self.anchor_wd = None, {}, None
+        self._initial_fdinfo_binding = None
         self.mountinfo = None
         try:
             if platform.system() == 'Linux':
@@ -157,10 +195,14 @@ class OpenCollisionWatch:
             raise OSError(code, os.strerror(code))
         self.fd, self.watch_stat = fd, os.fstat(fd)
         try:
+            if self.event_complete_inventory:
+                self.mountinfo = _mountinfo()
             self._inventory(self.root, add)
             if not self.aliases:
                 raise HardwareError('device_watch_node_not_found')
-            self.watch_lines = self._fdinfo_watch_lines()
+            self.watch_lines = self._fdinfo_watch_lines(capture_initial=True)
+            if self.event_complete_inventory:
+                self._bind_event_directories()
         except OSError as error:
             if error.errno not in _UNSUPPORTED:
                 raise
@@ -172,7 +214,25 @@ class OpenCollisionWatch:
             self.aliases.clear()
             self.watch_inodes.clear()
             self.watch_lines = None
+            self._initial_fdinfo_binding = None
             self.mountinfo = None
+            self.event_directories = frozenset()
+
+    def _bind_event_directories(self):
+        # Initial lines were parsed and validated. Every current() must still
+        # freshly reproduce this exact descriptor/watch-mask binding.
+        masks = {}
+        for line in self.watch_lines:
+            match = _WATCH_LINE.fullmatch(line)
+            masks[int(match[1], 16)] = (int(match[4], 16), int(match[5], 16))
+        qualified = set()
+        for path in self.directories:
+            wd = self.directory_wds[path]
+            mask, ignored = masks.get(wd, (0, 0))
+            if (ignored == 0 and mask & _DIRECTORY_REPORTED_EVENTS == _DIRECTORY_REPORTED_EVENTS
+                    and _event_complete_mount(self.mountinfo, path, path.stat())):
+                qualified.add(path)
+        self.event_directories = frozenset(qualified)
 
     def _watch(self, path, info, mask, add):
         wd = add(self.fd, os.fsencode(path), mask | _IN_MASK_ADD)
@@ -188,6 +248,8 @@ class OpenCollisionWatch:
         if path == self.root:
             self.anchor_wd = wd
         self.paths[path] = _identity(info)
+        if mask & _DIRECTORY_EVENTS == _DIRECTORY_EVENTS:
+            self.directory_wds[path] = wd
 
     def _inventory(self, path, add):
         info = path.stat()
@@ -241,7 +303,7 @@ class OpenCollisionWatch:
                 self._watch(child, info, _DEVICE_EVENTS, add)
                 self.aliases.add(child)
 
-    def _fdinfo_watch_lines(self, *, allow_removed=False):
+    def _fdinfo_watch_lines(self, *, allow_removed=False, capture_initial=False):
         # Anonymous inotify fds can share the same fstat inode and flags. Bind
         # the actual watch set too, so an empty/recycled inotify fd cannot pass.
         # This is one bounded procfs file, not a process/descriptor-table scan.
@@ -258,8 +320,22 @@ class OpenCollisionWatch:
                 chunks.append(raw)
         finally:
             os.close(fd)
+        raw = b''.join(chunks)
+        initial = self._initial_fdinfo_binding
+        if capture_initial and (initial is not None or allow_removed):
+            raise HardwareError('device_watch_fdinfo_initial_rebound')
+        # Only parsing is memoized. Every invocation still reads fresh bounded
+        # procfs bytes after the caller's descriptor/flag checks. Bind all state
+        # consulted by the parser; never refresh the initial trusted baseline.
+        if (not allow_removed and not capture_initial and initial is not None
+                and type(self.watches) is set and type(self.watch_inodes) is dict
+                and raw == initial[0] and self.watch_lines == initial[1]
+                and self.watches == initial[2]
+                and self.watch_inodes.items() == initial[3]
+                and self.anchor_wd == initial[4]):
+            return initial[1]
         lines, watches = [], {}
-        for line in b''.join(chunks).splitlines():
+        for line in raw.splitlines():
             if not line.startswith(b'inotify'):
                 continue
             match = _WATCH_LINE.fullmatch(line)
@@ -273,7 +349,12 @@ class OpenCollisionWatch:
         if (not allow_removed and set(watches) != self.watches) or (
                 allow_removed and self.anchor_wd not in watches):
             raise HardwareError('device_watch_fdinfo_rebound')
-        return tuple(sorted(lines))
+        result = tuple(sorted(lines))
+        if capture_initial:
+            self._initial_fdinfo_binding = (
+                raw, result, frozenset(self.watches),
+                frozenset(self.watch_inodes.items()), self.anchor_wd)
+        return result
 
     def _descriptor_current(self, *, allow_removed=False):
         if (_identity(os.fstat(self.fd)) != _identity(self.watch_stat)
@@ -337,6 +418,8 @@ class OpenCollisionWatch:
                 if _identity(path.stat()) != original:
                     return self._fail('device_watch_path_changed')
             for path, original in self.directories.items():
+                if path in getattr(self, 'event_directories', ()):
+                    continue
                 if _entries(path) != original:
                     return self._fail('device_watch_directory_changed')
             return self.failed is None and self._events_current() and self.failed is None

@@ -11,9 +11,11 @@ Hardware TX and RX timers are always finite, including if the host disappears.
 """
 import math
 import struct
+from types import MethodType
 
 from .hat_probe import Probe
-from .linux_hat import HardwareError, require
+from .host_timing import Phase, phase, timed
+from .linux_hat import HardwareError, LinuxHAT, require
 from .serial_protocol import Outcome, RadioProfile, RawReceive, TxEvidence
 from .serial_worker import estimated_airtime_us
 
@@ -28,12 +30,46 @@ _READ_OPCODES = frozenset((0xC0, 0x1D, 0x1E, 0x11, 0x12, 0x13, 0x14, 0x17))
 class SX1262:
     _airtime = staticmethod(estimated_airtime_us)
 
-    def __init__(self, transport, *, monotonic=None):
+    def __setattr__(self, name, value):
+        if getattr(self, '_checked_rearm', False) and name in (
+                '_checked_rearm', '_activity_reader', '_drained_handoff', '_rearm_transfer_epoch'):
+            raise HardwareError('sx1262_rearm_binding_changed')
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name):
+        if getattr(self, '_checked_rearm', False) and name in (
+                '_checked_rearm', '_activity_reader', '_drained_handoff', '_rearm_transfer_epoch'):
+            raise HardwareError('sx1262_rearm_binding_changed')
+        object.__delattr__(self, name)
+
+    def __init__(self, transport, *, monotonic=None, checked_rearm=False):
+        require(type(checked_rearm) is bool, 'invalid_hat_checked_rearm')
         self.io = transport
+        object.__setattr__(self, '_drained_handoff', None)
+        self._activity_reader = None
+        self._rearm_transfer_epoch = None
+        if checked_rearm:
+            require(type(transport) is LinuxHAT, 'hat_checked_rearm_transport_unverified')
+            activity = transport.enable_radio_activity()
+            names = ('transfer','_set','reset','receive_switch','close',
+                     '_record_radio_activity','radio_activity_epoch')
+            bindings = tuple((getattr(transport,n).__self__,getattr(transport,n).__func__) for n in names)
+            def activity_reader():
+                require(self.io is transport and transport._radio_activity is activity
+                        and all(type(method := getattr(transport,n)) is MethodType and method.__self__ is owner
+                                and method.__func__ is fn for n,(owner,fn) in zip(names,bindings)), 'hat_radio_activity_binding_changed')
+                return activity()
+            self._activity_reader = activity_reader
+        self._checked_rearm = checked_rearm
         original_airtime=self._airtime
         hook_names=('_rx_tail_us','_receive_evidence','_packet')
+        if checked_rearm:
+            hook_names += ('_transfer','_write','_ready','standby','clear_irq','poll_receive','start_receive','_handoff_state')
         hooks=tuple((getattr(self,name).__self__,getattr(self,name).__func__) for name in hook_names)
         def same_hooks():
+            if checked_rearm:
+                return all(type(method := getattr(self,name)) is MethodType and method.__self__ is owner
+                           and method.__func__ is function for name,(owner,function) in zip(hook_names,hooks))
             return all(getattr(getattr(self,name),'__self__',None) is owner
                        and getattr(getattr(self,name),'__func__',None) is function
                        for name,(owner,function) in zip(hook_names,hooks))
@@ -54,6 +90,8 @@ class SX1262:
         self.receive_pending = False
         self.attempts = self.reserved_us = 0
         self.rx_errors = 0
+        self.receive_reasons = None
+        self.receive_timeline = None
         self.tx_estimate = self.tx_started = self.tx_deadline = 0
 
     def _ready(self):
@@ -63,8 +101,17 @@ class SX1262:
             self.io.sleep(0.0002)
 
     def _transfer(self, packet):
+        object.__setattr__(self, '_drained_handoff', None)
+        expected = self._rearm_transfer_epoch
+        object.__setattr__(self, '_rearm_transfer_epoch', None)
         require(not self.fenced, 'sx1262_fenced')
+        before = self._handoff_state() if self._checked_rearm else None
         self._ready()
+        current = self._handoff_state() if self._checked_rearm else None
+        if before is not None:
+            require(current == before, 'sx1262_callback_radio_activity')
+        if expected is not None:
+            require(current == expected, 'sx1262_rearm_intervening_activity')
         result = self.io.transfer(packet)
         require(type(result) is bytes and len(result) == len(packet), 'sx1262_short_reply')
         # DS2.2 section 8.3.1: writes assert BUSY within 600 ns after NSS
@@ -73,6 +120,10 @@ class SX1262:
         if packet[0] not in _READ_OPCODES:
             self.io.sleep(0.000002)
         self._ready()
+        if before is not None:
+            after = self._handoff_state()
+            require(after[-1] == before[-1] + 1 and after[:-1] == before[:-1],
+                    'sx1262_callback_radio_activity')
         return result
 
     @staticmethod
@@ -138,6 +189,7 @@ class SX1262:
         require(self._read(0x17, 2) == b'\0\0', 'sx1262_device_error')
 
     def configure(self, profile):
+        object.__setattr__(self, '_drained_handoff', None)
         require(type(profile) is RadioProfile and self.profile is None and not self.fenced,
                 'sx1262_invalid_configuration_state')
         profile.encode(board_id=2)
@@ -189,6 +241,7 @@ class SX1262:
                 and self._now() + seconds < deadline, 'sx1262_authority_deadline')
 
     def start_transmit(self, packet, *, authority_deadline, antenna_confirmed):
+        object.__setattr__(self, '_drained_handoff', None)
         """Start TX, or return False while a valid completed RX awaits draining.
 
         False proves no TX command/FIFO write was issued by this call. A late
@@ -270,14 +323,31 @@ class SX1262:
             self.contain()
             return TxEvidence(Outcome.UNKNOWN, self.tx_estimate, elapsed, flags, -1)
 
+    def _handoff_state(self):
+        # Numeric handle/configuration identity supplements the transport epoch.
+        # OS-level close/reuse outside this API remains the owner's responsibility.
+        transport_state = tuple((type(value), value) for value in (
+            self.io.spi_fd, self.io.lines_fd, self.io.chip_fd, self.io.lock_fd,
+            self.io._spi_hz))
+        return (id(self.profile), self.profile, self.fenced, self.receiving, self.transmitting,
+                self.receive_pending, transport_state, self._activity_reader())
+
+    @timed(Phase.HAT_RX_REARM)
     def start_receive(self, *, authority_deadline):
+        token = self._drained_handoff
+        object.__setattr__(self, '_drained_handoff', None)  # Consume even on refusal.
         require(self.profile is not None and not self.transmitting and not self.fenced,
                 'sx1262_not_ready')
         require(not self.receive_pending, 'sx1262_completed_receive_pending')
         self._room(authority_deadline, 0.020)
         try:
-            self.standby()
-            self.clear_irq()
+            reuse = (self._checked_rearm and token is not None
+                     and token == self._handoff_state())
+            if not reuse:
+                self.standby()
+                self.clear_irq()
+            else:
+                object.__setattr__(self, '_rearm_transfer_epoch', token)
             self._packet(255)
             self._write(0x08, struct.pack('!HHHH', RX_MASK, RX_MASK, 0, 0))
             self.io.receive_switch(True)
@@ -294,28 +364,61 @@ class SX1262:
             self.contain()
             raise
 
+    @timed(Phase.HAT_RX_POLL)
     def poll_receive(self):
+        object.__setattr__(self, '_drained_handoff', None)
         require((self.receiving or self.receive_pending) and not self.fenced, 'sx1262_not_receiving')
+        reasons = self.receive_reasons
+        reading_packet = False
         try:
             flags = self.irq()
+            if self.receive_timeline is not None:
+                self.receive_timeline.irq(flags)
+            if reasons is not None:
+                if flags & (CRC_ERROR | HEADER_ERROR):
+                    reasons.record('irq_crc_header' if flags & CRC_ERROR and flags & HEADER_ERROR
+                                   else 'irq_crc' if flags & CRC_ERROR else 'irq_header')
+                if flags & TIMEOUT:
+                    reasons.record('irq_timeout')
             if not flags & RX_MASK:
                 return None
-            self.standby()
-            # DS15.3: stop RTC and clear event after any timed RX, even explicit header.
-            self._write_register(0x0902, b'\0')
-            self._bits(0x0944, 0, 2)
-            packet = None
-            if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
-                length, offset = self._read(0x13, 2)
-                require(1 <= length <= 255, 'sx1262_invalid_received_size')
-                data = self._read(0x1E, length, bytes([offset]))
-                packet = self._receive_evidence(data, self._read(0x14, 3))
-            elif flags & (CRC_ERROR | HEADER_ERROR):
-                self.rx_errors += 1
-            self.clear_irq()
-            self.receive_pending = False
-            return packet
+            with phase(getattr(self, 'host_timing', None), Phase.HAT_RX_DRAIN):
+                self.standby()
+                # DS15.3: stop RTC and clear event after any timed RX, even explicit header.
+                self._write_register(0x0902, b'\0')
+                self._bits(0x0944, 0, 2)
+                packet = None
+                if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
+                    with phase(getattr(self, 'host_timing', None), Phase.HAT_RX_PACKET_READ):
+                        reading_packet = True
+                        length, offset = self._read(0x13, 2)
+                        # DS2.2 table 13-68 permits LoRa payload length zero.
+                        # It cannot contain an authenticated wire frame. Drop
+                        # it without a FIFO read or accepted receive evidence;
+                        # SPI status/length checks and IRQ cleanup stay strict.
+                        if length == 0:
+                            self.rx_errors += 1
+                            if reasons is not None:
+                                reasons.record('zero_length')
+                        else:
+                            data = self._read(0x1E, length, bytes([offset]))
+                            packet = self._receive_evidence(data, self._read(0x14, 3))
+                        reading_packet = False
+                elif flags & (CRC_ERROR | HEADER_ERROR):
+                    self.rx_errors += 1
+                self.clear_irq()
+                self.receive_pending = False
+                handoff = self._handoff_state() if self._checked_rearm else None
+                if packet is not None and reasons is not None:
+                    reasons.record('physical_packet_returned')
+                if self._checked_rearm:
+                    object.__setattr__(self, '_drained_handoff', handoff)
+                return packet
         except BaseException:
+            if reasons is not None:
+                reasons.record('poll_failure')
+                if reading_packet:
+                    reasons.record('packet_read_failure')
             self.contain()
             raise
 
@@ -329,6 +432,7 @@ class SX1262:
 
     def contain(self):
         """Contain ambiguous hardware outcome by holding RESET low, then fence."""
+        object.__setattr__(self, '_drained_handoff', None)
         self.fenced = True
         self.receiving = self.transmitting = False
         self.receive_pending = False
@@ -338,6 +442,7 @@ class SX1262:
             self.io.receive_switch(True)
 
     def close(self):
+        object.__setattr__(self, '_drained_handoff', None)
         if self.fenced:
             return
         try:

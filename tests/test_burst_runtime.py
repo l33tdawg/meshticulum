@@ -14,7 +14,7 @@ from meshticulum.bench.admission import RadioAdmission
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import RunAuthority
 from meshticulum.bench.burst_protocol import (ACK, POLICY, policy_for_depth,
-    policy_for_flow_window, policy_for_repair_fill, policy_for_terminal_retry, policy_for_scalar_fill_pair, policy_for_repeat_retry, policy_for_repair_train, policy_for_train12)
+    policy_for_flow_window, policy_for_repair_fill, policy_for_terminal_retry, policy_for_scalar_fill_pair, policy_for_repeat_retry, policy_for_repair_train, policy_for_train12, policy_for_train24, policy_for_train32)
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.serial_protocol import Decoder, Frame, Message
@@ -86,7 +86,7 @@ class RadioChannel(Channel):
 @pytest.fixture
 def composition(tmp_path):
     opened = []
-    def make(data=b'x' * 100, *, burst=True, train_depth=4, flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False, train12=False):
+    def make(data=b'x' * 100, *, burst=True, train_depth=4, flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False, train12=False, train24=False, train32=False, turn_end=False, preamble=12, host_attempts=None):
         clock = Clock()
         directory = tmp_path / str(len(opened))
         directory.mkdir(mode=0o700)
@@ -94,10 +94,10 @@ def composition(tmp_path):
         profile = profile_for('sf7-500')
         admission = SOURCE_ADMISSION
         if train_depth == 8:
-            profile = replace(profile, spreading_factor=5, preamble=12)
-            admission = RadioAdmission('MY', ((921375000, 500000, 5, 5, 0, 12, 0x42),),
+            profile = replace(profile, spreading_factor=5, preamble=preamble)
+            admission = RadioAdmission('MY', ((921375000, 500000, 5, 5, 0, preamble, 0x42),),
                                        10000, 180000, 256, 60_000_000)
-        channels = [RadioChannel(clock, train_depth=train_depth, train_frames=12 if train12 else None, profile=profile) for _ in range(2)]
+        channels = [RadioChannel(clock, train_depth=train_depth, train_frames=32 if train32 else 24 if train24 else 12 if train12 else None, profile=profile) for _ in range(2)]
         channels[0].peer, channels[1].peer = channels[1], channels[0]
         # Provision the shared original session times before serial negotiation
         # advances either clock. A later endpoint cannot mint a later grant.
@@ -105,10 +105,16 @@ def composition(tmp_path):
             path = directory / unit
             plan = provision(path, unit, data, clock, profile)
             if burst:
-                plan['data_burst'] = (policy_for_train12() if train12 else policy_for_repair_train() if repair_train else policy_for_repeat_retry() if repeat_retry else policy_for_scalar_fill_pair() if scalar_fill_pair else policy_for_terminal_retry() if terminal_retry else
+                plan['data_burst'] = (policy_for_train32() if train32 else policy_for_train24() if train24 else policy_for_train12() if train12 else policy_for_repair_train() if repair_train else policy_for_repeat_retry() if repeat_retry else policy_for_scalar_fill_pair() if scalar_fill_pair else policy_for_terminal_retry() if terminal_retry else
                                      policy_for_repair_fill() if repair_fill else
                                      policy_for_depth(train_depth) if flow_window is None
                                       else policy_for_flow_window(flow_window))
+                if turn_end:
+                    from meshticulum.bench.turn_end import capability
+                    plan['turn_end_capability'] = capability()
+                    plan['operation_limits'] = {role:dict(attempts=profile.max_boot_attempts,
+                        estimated_airtime_us=profile.max_boot_estimated_airtime_us)
+                        for role in ('sender','receiver')}
                 (path / 'grant.json').write_text(json.dumps(plan))
         for index, unit in enumerate(('unit-a', 'unit-b')):
             path = directory / unit
@@ -119,7 +125,7 @@ def composition(tmp_path):
             identity = worker.discover(expected_board_id=1, expected_version=VERSION)
             journal = AttemptJournal(path / 'attempts.db',
                 binding=journal_binding(authority.grant.digest, identity, profile),
-                max_attempts=profile.max_boot_attempts,
+                max_attempts=host_attempts if index == 0 and host_attempts is not None else profile.max_boot_attempts,
                 max_airtime_us=profile.max_boot_estimated_airtime_us,
                 create=True, request_clock=lambda: clock()[0])
             worker.arm(journal=journal, profile=profile, context_digest=authority.grant.digest,
@@ -130,7 +136,7 @@ def composition(tmp_path):
             ledger = Ledger(BudgetPolicy(180000000, 60000000, 120000000, 1000000,
                                         quantization_us=1), authority.ledger_epoch, clock()[1])
             endpoint = BenchFlow(authority=authority, worker=worker,
-                cipher=SessionCipher(authority.grant, authority.local_peer, store),
+                cipher=SessionCipher(authority.grant, authority.local_peer, store, turn_end=turn_end),
                 journal=journal, flow_key=authority.flow_key, contract=authority.contract,
                 profile=authority.carrier_profile, ledger=ledger,
                 scheduler_epoch=authority.scheduler_epoch, broker_epoch=authority.broker_epoch,

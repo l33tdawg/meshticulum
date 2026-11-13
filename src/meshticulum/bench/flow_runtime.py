@@ -26,7 +26,9 @@ from .wire import FrameKind, WireError, require
 from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
-from .public_block import object_limit
+from .file_capability import admitted_object_limit, admitted_frame_limit
+from .turn_end import admitted as turn_end_admitted
+from .attempts import AttemptBudgetExhausted
 from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair, policy_repeat_retry, policy_repair_train, policy_train_frames
 
 
@@ -77,6 +79,8 @@ class BenchFlow:
         self._repair_train_mode = None
         self._repair_train_domains = set()
         self._last_queued_domain = None
+        self._pace_selective_repeats = False
+        self._paced_fast_offers, self._repeat_not_before = {}, {}
         self._scalar_fill_extra = False
         self._repair_fill_active = False
         self._physical_data, self._pending_data_domains = {}, {}
@@ -98,17 +102,20 @@ class BenchFlow:
         self.events = deque(maxlen=512)
         self.counts = Counter()
         self.dispatch_budget_failure = None
+        self.host_attempt_budget_failure = None
         self.received = bytearray()
         self.last_activity_us = self.clock()[1]
         flow, port = _flow_modules()
         self.next_send_us = 0
+        self._refused_turn_until_us = 0
+        self._train_progress_receipt = None
         self.receive_gap_us = math.ceil(radio_airtime_us(authority.profile,
             flow.ACK_BYTES + 47) * 1.10) + 60000
         self._ack_reservation_us = math.ceil(radio_airtime_us(authority.profile,
             flow.ACK_BYTES + 47) * 1.10) + 1000
         limits = contract.limits
         self.maximum_bytes = min(limits.max_queued_bytes, limits.max_unconsumed_bytes)
-        require(self.maximum_bytes <= object_limit(authority.plan.get('service',{})), 'bench_transfer_too_large')
+        require(self.maximum_bytes <= admitted_object_limit(authority.plan), 'bench_transfer_too_large')
         # Owner credit uses the admitted frame bound (208). Derive the DATA
         # overhead from the actual MT3 wire encoder, not older adapter prose:
         # the reviewed encoding uses fifteen bytes, leaving 193 useful bytes.
@@ -116,7 +123,7 @@ class BenchFlow:
         selected_window = policy_flow_window(policy) if policy is not None else 4
         selected_train = policy_train_frames(policy) if policy is not None else selected_depth
         self._selective_stall_retry = (self._selective_repair_train
-                                       and selected_train == 12)
+                                       and selected_train in (12, 24, 32))
         require(selected_depth == 4 or radio_is_sf5(authority.profile),
                 'burst_eight_requires_sf5')
         if selected_window != selected_depth:
@@ -151,6 +158,12 @@ class BenchFlow:
             # slow train; a full train earns its ACK immediately in step().
             self.burst_max_hold_us = min(self.burst_frames * self.burst_quiet_us, 2_000_000)
         self.burst_sent = 0
+        self._turn_end_enabled = turn_end_admitted(authority.plan)
+        self._turn_end_dispatch = None
+        self._turn_end_highest_received = 0
+        require(not self._turn_end_enabled or (self.burst_frames == 32
+                and cipher._turn_end_enabled is True and cipher._turn_end_binding() is True
+                and (not sends or self.data_burst)), 'turn_end_runtime_not_admitted')
         self.burst_received = 0
         self.burst_started_us = 0
         self.ack_due_us = 0
@@ -207,7 +220,7 @@ class BenchFlow:
             flow.FlowLimits(frame_payload_bytes=quantum, window_frames=window,
                 initial_credit_frames=window, max_reassembly_frames=window,
                 max_delivered_bytes=self.maximum_bytes, max_queued_bytes=self.maximum_bytes,
-                max_total_frames=min(256 if authority.public32 else 128, limits.max_total_frames),
+                max_total_frames=min(admitted_frame_limit(authority.plan, public32=authority.public32), limits.max_total_frames),
                 max_retries=limits.max_retry_attempts,
                 initial_rto_s=profile.initial_rto_seconds,
                 min_rto_s=profile.min_rto_seconds, max_rto_s=profile.max_rto_seconds,
@@ -233,6 +246,9 @@ class BenchFlow:
             self.sender_control_hold_us = (self.burst_quiet_us
                 + math.ceil(self.flow.limits.persist_interval_s * 1000000)
                 + max(self.receive_gap_us, self.burst_quiet_us))
+        self.receiver_ack_quiet_us = self.burst_quiet_us
+        self._receiver_quiet150_eligible = fast_sf5 and selected_train in (24, 32) and self.burst_frames == selected_train
+        self._receiver_quiet_override = False
         self.parse_frame, self.ack_kind = flow.parse_frame, flow.KIND_ACK
         self.closed = False
         self.update_counter()
@@ -246,6 +262,13 @@ class BenchFlow:
                                          self.ledger.epoch), now)
 
     def _send(self, frame):
+        if self.host_attempt_budget_failure is not None:
+            return CommitOutcome.REFUSED_CARRIER
+        if self._turn_end_enabled and (self._turn_end_dispatch is not None
+                or self.sends and self.worker._turn_end_seal is not None):
+            if self.sends:
+                self.worker._turn_end_failed = True
+            require(False, 'turn_end_admission_closed')
         # The authority checks exact object identity of both currently held
         # leases and the immutable request, as well as the OS radio owner.
         self.authority.require_dispatch(frame)
@@ -317,16 +340,84 @@ class BenchFlow:
         elif self.data_burst:
             # ACK/control keep their synchronous canonical-handover path.
             self._collect_physical(self.worker.drain_physical())
-        with phase(self.host_timing, Phase.CIPHER_SEAL):
-            packet = self.cipher.seal(frame.payload, kind, authorize=self.authority.live)
+        seal = None
+        if (self._turn_end_enabled and self.data_burst and kind is FrameKind.DATA
+                and self.worker.train_identity is not None and self.worker.has_capacity):
+            fresh = (parsed['flow_id'] == self.flow.flow_id and parsed['generation'] == self.flow.generation
+                     and parsed['seq'] == self.flow._next_seq
+                     and parsed['payload'] == bytes(self.flow._outbound[:self.flow.limits.frame_payload_bytes]))
+            allowance = min(self.flow.limits.window_frames, max(0, self.flow._peer_credit))
+            tail = (self.worker.train_identity[3] == 31 or fresh and (
+                self.flow.queued_bytes() <= len(parsed['payload'])
+                or self.flow.in_flight() + 1 >= allowance))
+            if tail:
+                seal = self.worker.reserve_turn_end(logical_id=logical_id,
+                    owner_frame_id=frame.request.frame_id, plaintext=frame.payload)
+        if seal is None:
+            with phase(self.host_timing, Phase.CIPHER_SEAL):
+                packet = self.cipher.seal(frame.payload, kind, authorize=self.authority.live)
+        else:
+            bound = (self.authority, self.cipher, self.flow, frame, frame.request, frame.payload)
+            self._turn_end_dispatch = seal
+            try:
+                with phase(self.host_timing, Phase.CIPHER_SEAL):
+                    packet = self.cipher.seal(frame.payload, FrameKind.DATA_TURN_END,
+                                              authorize=self.authority.live)
+                self.worker.validate_turn_end(seal)
+                require((self.authority is bound[0] and self.cipher is bound[1]
+                         and self.flow is bound[2] and frame is bound[3]
+                         and frame.request is bound[4] and frame.payload is bound[5]
+                         and self.worker is seal.worker and self._turn_end_enabled is True
+                         and self.cipher._turn_end_enabled is True
+                         and self.cipher._turn_end_binding() is True
+                         and turn_end_admitted(self.authority.plan)),
+                        'turn_end_candidate_changed')
+                if fresh:
+                    require(parsed['seq'] == self.flow._next_seq
+                            and parsed['payload'] == bytes(self.flow._outbound[:self.flow.limits.frame_payload_bytes]),
+                            'turn_end_fresh_candidate_changed')
+                self.worker.bind_turn_end_packet(seal, packet)
+            except BaseException:
+                seal.worker._turn_end_failed = True
+                raise
         worker_started_us = self.clock()[1]
-        result = (self.worker.queue_data(packet, logical_id=logical_id,
+        if seal is not None:
+            require(self.worker is seal.worker and self.authority is bound[0]
+                    and self.cipher is bound[1] and self.flow is bound[2]
+                    and self._turn_end_enabled is True and self.cipher._turn_end_enabled is True,
+                    'turn_end_dispatch_binding_changed')
+            seal.worker.validate_turn_end(seal)
+        try:
+            result = (self.worker.queue_turn_end(seal, packet) if seal is not None else
+                  self.worker.queue_data(packet, logical_id=logical_id,
                                        owner_frame_id=frame.request.frame_id)
                   if self.data_burst and kind is FrameKind.DATA else self.worker.transmit(packet))
+        except AttemptBudgetExhausted as error:
+            proof = getattr(self.worker, '_known_budget_refusal', None)
+            if (not self.data_burst or kind is not FrameKind.DATA or type(proof) is not tuple
+                    or len(proof) != 3 or proof[0] is not error
+                    or proof[1] is not self.journal or proof[2] is not packet):
+                raise
+            # The journal rejected this candidate before a request/debt/DATA write.
+            # Existing pending attempts remain charged and require normal cleanup.
+            # Do not let the scheduler turn this proven refusal into UNKNOWN.
+            self.host_attempt_budget_failure = dict(error.details)
+            self.counts['host_attempt_budget_refused'] += 1
+            return CommitOutcome.REFUSED_CARRIER
+        finally:
+            self._turn_end_dispatch = None
         worker_finished_us = self.clock()[1]
+        if seal is not None:
+            require(self.worker is seal.worker and self.authority is bound[0]
+                    and self.cipher is bound[1] and self.flow is bound[2]
+                    and self._turn_end_enabled is True and self.cipher._turn_end_enabled is True,
+                    'turn_end_completion_binding_changed')
+            seal.worker.validate_turn_end(seal, increment=1)
         require(type(worker_started_us) is int and type(worker_finished_us) is int
                 and worker_finished_us >= worker_started_us, 'invalid_worker_timing')
         if result.outcome == 'QUEUED':
+            if self.burst_frames == 32:
+                self._train_progress_receipt = None
             require(self.data_burst and kind is FrameKind.DATA and result.driver is None,
                     'invalid_queue_acceptance')
             self._pending_data_domains[domain] = (plaintext_digest, result.request)
@@ -342,7 +433,11 @@ class BenchFlow:
                 queue_submit_mono_us=worker_started_us, queue_accept_mono_us=worker_finished_us,
                 queue_accept_elapsed_us=worker_finished_us - worker_started_us,
                 owner_frame_id=frame.request.frame_id, carrier_outcome='QUEUED')
+            if seal is not None:
+                self._physical_data[result.request]['wire_kind'] = 'DATA_TURN_END'
             self.counts['tx_QUEUED'] += 1
+            if seal is not None:
+                self.counts['tx_DATA_turn_end'] += 1
             self.events.append(dict(event='tx_queued', mono_us=worker_finished_us,
                 outer_kind='DATA', request=result.request,
                 **{key: value for key, value in self._physical_data[result.request].items()
@@ -402,6 +497,8 @@ class BenchFlow:
             if result.outcome == 'RF_DONE':
                 return CommitOutcome.ACCEPTED
             if result.outcome in ('REFUSED', 'NOT_SENT'):
+                if self.burst_frames == 32:
+                    self._train_progress_receipt = None
                 return CommitOutcome.REFUSED_CARRIER
             self.owner.settle_sending()
             return CommitOutcome.UNKNOWN
@@ -450,6 +547,24 @@ class BenchFlow:
                     self.owner.settle_sending()
             return CommitOutcome.ACCEPTED
         if result.outcome in ('REFUSED', 'NOT_SENT'):
+            if self.burst_frames == 32:
+                self._train_progress_receipt = None
+            if (self.data_burst and kind is FrameKind.DATA and self.burst_frames in (24, 32)
+                    and self.worker.train_admission_refused):
+                # v10's dynamic native fit may end a short train. Keep every
+                # accepted logical flight, collect its exact physical outcome,
+                # and release all slots before a future CLOCK is possible.
+                # Refusal remains charged; the frozen flow owns retransmission.
+                self._collect_physical(self.worker.drain_physical())
+                self.worker.retire_refused_train()
+                self.counts['dynamic_train_refused_turn'] += 1
+                previous_hold = self.next_send_us
+                self._hold_repair_reverse_turn()
+                if self.burst_frames == 32:
+                    self.next_send_us = max(previous_hold, self.next_send_us)
+                if self.burst_frames == 32 and self.worker.drained_train_pending:
+                    self.worker.retire_drained_train()
+                self._refused_turn_until_us = self.next_send_us
             return CommitOutcome.REFUSED_CARRIER
         self.owner.settle_sending()
         return CommitOutcome.UNKNOWN
@@ -488,6 +603,23 @@ class BenchFlow:
     def _poll_physical(self):
         if self.data_burst:
             self._collect_physical(self.worker.poll_physical())
+            if self.burst_frames == 32 and self.worker.drained_train_pending and not self.worker.train_admission_refused:
+                # v11 cannot mint another deadline from an empty retained map.
+                # Establish the existing reverse hold before retiring this turn.
+                previous_hold = self.next_send_us
+                progress_permission_unchanged = (self.worker.train_identity is not None
+                    and self._train_progress_receipt == self.worker.train_identity)
+                self._hold_repair_reverse_turn()
+                self.next_send_us = max(previous_hold, self.next_send_us)
+                self.worker.retire_drained_train()
+                if progress_permission_unchanged:
+                    # Authenticated progress already released this wait while
+                    # this local turn binding was unchanged. This does not
+                    # establish that the ACK covers this turn's DATA.
+                    # Retire first; never weaken a prior hold or refusal floor.
+                    self.next_send_us = max(previous_hold, self._refused_turn_until_us)
+                self._train_progress_receipt = None
+                self.counts['explicit_drained_train_turn'] += 1
 
     def _completion_ready(self):
         if not self.flow.complete:
@@ -621,6 +753,79 @@ class BenchFlow:
         # flow use its exact existing interval, including its clock origin.
         return self._ack_persistence_streak > 0 and now_us < self._ack_persistence_due_us
 
+    def set_receiver_ack_quiet_us(self, value):
+        """One pre-activity opt-in; changes only receiver ACK coalescing."""
+        require(type(value) is int and value == 150000 and not self.closed
+                and not self.counts and not self._receiver_quiet_override
+                and self._receiver_quiet150_eligible,
+                'invalid_receiver_ack_quiet_option')
+        self.receiver_ack_quiet_us = value
+        self._receiver_quiet_override = True
+
+    def enable_selective_repeat_pacing(self):
+        """Default-off host restraint; never edits the frozen flow's clocks."""
+        require(not self.closed and not self.counts
+                and self.receipt_confirmation_enabled and not self._pace_selective_repeats,
+                'invalid_selective_repeat_pacing_setup')
+        self._pace_selective_repeats = True
+
+    def _refresh_repeat_pacing(self):
+        if not self._pace_selective_repeats:
+            return
+        live = self.flow._in_flight
+        for seq, (pending, attempts) in list(self._paced_fast_offers.items()):
+            if live.get(seq) is not pending:
+                del self._paced_fast_offers[seq]
+            elif pending.attempts > attempts:
+                # Only confirmed handover spends an attempt. Preserve this
+                # accepted flight's original RTO boundary, including its
+                # carrier airtime, rather than renewing it on later ACKs.
+                self._repeat_not_before[seq] = (pending, pending.sent_at + pending.rto)
+                del self._paced_fast_offers[seq]
+            elif seq not in self.flow._deferred_retries:
+                del self._paced_fast_offers[seq]
+        for seq, (pending, _) in list(self._repeat_not_before.items()):
+            if live.get(seq) is not pending:
+                del self._repeat_not_before[seq]
+
+    def _paced_selective_candidate(self, *, terminal=False, stall=False):
+        # Mirror only the frozen offer's read-only choice. Never skip a cooled
+        # flight and accidentally ask the core to offer that same flight.
+        required = 1 if stall else self.flow._selective_evidence_required(terminal)
+        for pending in self.flow._in_flight.values():
+            if (pending.fast_retry_offered or len(pending.selective_evidence) < required
+                    or pending.attempts >= self.flow.limits.max_retries
+                    or pending.seq in self.flow._deferred_retries
+                    or self.link.now < max(pending.handed_over_at, pending.selective_evidence_at)
+                    or self.link.now - pending.sent_at >= pending.rto):
+                continue
+            return pending
+        return None
+
+    def _selective_pacing_ready(self, *, terminal=False, stall=False):
+        if not self._pace_selective_repeats:
+            return True
+        self._refresh_repeat_pacing()
+        pending = self._paced_selective_candidate(terminal=terminal, stall=stall)
+        if pending is None:
+            return False
+        previous = self._repeat_not_before.get(pending.seq)
+        return previous is None or self.link.now >= previous[1]
+
+    def _offer_selective(self, *, terminal=False, stall=False):
+        if not self._selective_pacing_ready(terminal=terminal, stall=stall):
+            return False
+        pending = self._paced_selective_candidate(terminal=terminal, stall=stall)
+        attempts = pending.attempts if pending is not None else None
+        offered = (self.flow.retry_selective_stall(self.link.now) if stall
+                   else self.flow.retry_selective_gap(self.link.now, terminal=terminal))
+        if self._pace_selective_repeats and offered and pending is not None:
+            # A refused offer has no new attempt; it cannot start a cooldown.
+            # A deferred offer is observed after its eventual normal settlement.
+            self._paced_fast_offers[pending.seq] = (pending, attempts)
+            self._refresh_repeat_pacing()
+        return offered
+
     def _begin_repair_train(self, mode):
         require(mode in ('terminal', 'stall'), 'invalid_repair_train_mode')
         self._repair_train_active = True
@@ -628,6 +833,7 @@ class BenchFlow:
         self._repair_train_domains = {self._last_queued_domain}
 
     def _hold_fast_retry_turn(self):
+        self._refresh_repeat_pacing()
         # Only the explicit v8 terminal policy may group distinct proven
         # holes. The first repair reached this point through the ordinary
         # exact physical drain/STATUS gate. No fresh DATA remains, and the
@@ -656,7 +862,7 @@ class BenchFlow:
         # repair. The QUEUED repair already counts toward this same admitted
         # train; do not reset that count or erase an existing reverse hold.
         # The normal flow/owner still admit each following DATA independently.
-        if (self._selective_repair_fill and self.burst_frames in (8, 12)
+        if (self._selective_repair_fill and self.burst_frames in (8, 12, 24, 32)
                 and 0 < self.burst_sent < self.burst_frames and self.next_send_us == 0
                 and self.flow.queued_bytes() > 0 and self.flow._peer_grant_rev is not None
                 and self.flow.in_flight() < min(self.flow.limits.window_frames, self.flow._peer_credit)
@@ -710,14 +916,13 @@ class BenchFlow:
                      and self.flow.selective_retry_ready(terminal=True))
         else:
             ready = self.flow.selective_stall_ready()
-        if not ready:
+        if not ready or not self._selective_pacing_ready(terminal=terminal, stall=not terminal):
             self._hold_repair_reverse_turn()
             return
         fast_before = self.flow.fast_retransmits
         self._repair_train_offer = True
         try:
-            offered = (self.flow.retry_selective_gap(self.link.now, terminal=True)
-                       if terminal else self.flow.retry_selective_stall(self.link.now))
+            offered = self._offer_selective(terminal=terminal, stall=not terminal)
         finally:
             self._repair_train_offer = False
         if (not offered or self.flow.fast_retransmits != fast_before + 1
@@ -781,6 +986,7 @@ class BenchFlow:
         queued_before, fresh_before, fast_before_step = ((self.counts['tx_QUEUED'],
             self.flow._next_seq, self.flow.fast_retransmits) if self._scalar_fill_pair else (None, None, None))
         require(self.dispatch_budget_failure is None, 'bench_own_airtime_budget_exhausted')
+        require(self.host_attempt_budget_failure is None, 'bench_host_attempt_budget_exhausted')
         require(not self.closed and self.authority.live(), 'bench_authority_not_live')
         self._poll_physical()
         self.update_counter()
@@ -800,6 +1006,10 @@ class BenchFlow:
             try:
                 with phase(self.host_timing, Phase.CIPHER_OPEN):
                     verified = self.cipher.open(raw.packet, authorize=self.authority.live)
+                turn_end = verified.kind is FrameKind.DATA_TURN_END
+                require(not turn_end or (self._turn_end_enabled and not self.sends
+                        and turn_end_admitted(self.authority.plan)), 'turn_end_receive_not_admitted')
+                received_kind = FrameKind.DATA if turn_end else verified.kind
                 if verified.kind is FrameKind.CONTROL:
                     require(self.receipt_confirmation_enabled and not self.sends
                             and not self.receipt_confirmed and self.flow.complete
@@ -812,17 +1022,20 @@ class BenchFlow:
                         'outer_counter': verified.counter, 'outer_kind': 'CONTROL',
                         'packet_sha256': hashlib.sha256(raw.packet).hexdigest(),
                         'bytes': len(raw.packet), 'rssi_dbm': raw.rssi_dbm, 'snr_db': raw.snr_db})
+                    anchor = getattr(self.worker, 'anchor_receive_timeline', None)
+                    if anchor is not None:
+                        anchor(self.events[-1]['packet_sha256'])
                     continue
                 parsed = self.parse_frame(verified.payload)
                 require(parsed is not None, 'invalid_authenticated_inner_frame')
                 expected = FrameKind.ACK if parsed['kind'] == self.ack_kind else FrameKind.DATA
-                require(verified.kind is expected, 'authenticated_inner_lane_mismatch')
+                require(received_kind is expected, 'authenticated_inner_lane_mismatch')
             except WireError as error:
                 self.counts['rx_refused'] += 1
                 self.events.append({'event': 'rx_refused', 'reason': str(error),
                                     'mono_us': self.clock()[1]})
                 continue
-            self.counts['rx_' + verified.kind.name] += 1
+            self.counts['rx_' + received_kind.name] += 1
             self.link.now = at
             # The reviewed flow exposes absorb() for authenticated demultiplexed
             # frames. Apply and consume before pumping output so the first ACK
@@ -835,7 +1048,7 @@ class BenchFlow:
             previous_receipt = (self.flow._peer_grant_rev, self.flow.repeat_grants)
             self.flow.absorb(parsed, at)
             self.last_activity_us = self.clock()[1]
-            if (not self.sends and self.burst_frames > 1 and verified.kind is FrameKind.DATA
+            if (not self.sends and self.burst_frames > 1 and received_kind is FrameKind.DATA
                     and parsed['flow_id'] == self.flow.flow_id
                     and parsed['generation'] == self.flow.generation
                     and self.flow._ack_work_gen > receive_work_before):
@@ -843,14 +1056,25 @@ class BenchFlow:
                     self.burst_started_us = self.last_activity_us
                 self.burst_received += 1
                 self.ack_due_us = (self.last_activity_us if self.burst_received >= self.burst_frames
-                    or self.flow.complete else min(self.last_activity_us + self.burst_quiet_us,
+                    or self.flow.complete else min(self.last_activity_us + self.receiver_ack_quiet_us,
                         self.burst_started_us + self.burst_max_hold_us))
+                if self._turn_end_enabled:
+                    newer = verified.counter > self._turn_end_highest_received
+                    self._turn_end_highest_received = max(self._turn_end_highest_received, verified.counter)
+                    if turn_end and newer:
+                        self.ack_due_us = self.last_activity_us
+                        self.counts['rx_DATA_turn_end'] += 1
+                    elif turn_end:
+                        self.counts['rx_DATA_turn_end_old'] += 1
             # A received authenticated ACK has already finished on air. Once
             # its flow state is applied there is no reason to spend the rest
             # of a conservative reverse-airtime wait before the next DATA.
             if (self.sends and verified.kind is FrameKind.ACK
                     and self.flow.acked_frames() > acknowledged_before):
-                self.next_send_us = min(self.next_send_us, self.last_activity_us)
+                if self.burst_frames == 32:
+                    self._train_progress_receipt = self.worker.train_identity
+                self.next_send_us = max(self._refused_turn_until_us,
+                                        min(self.next_send_us, self.last_activity_us))
                 self.burst_sent = 0
                 self._repair_fill_active = False
                 self._repair_train_active = False
@@ -867,10 +1091,13 @@ class BenchFlow:
                     ack_seq=parsed['ack_seq'], ack_sack=parsed['sack'], ack_credit=parsed['credit'],
                     ack_revision=parsed['grant_revision'])
             self.events.append({'event': 'rx', 'mono_us': self.last_activity_us,
-                'outer_counter': verified.counter, 'outer_kind': verified.kind.name,
+                'outer_counter': verified.counter, 'outer_kind': received_kind.name,
                 'packet_sha256': hashlib.sha256(raw.packet).hexdigest(),
                 'bytes': len(raw.packet), 'rssi_dbm': raw.rssi_dbm, 'snr_db': raw.snr_db,
-                **ack_diagnostics})
+                **ack_diagnostics, **({'wire_kind': 'DATA_TURN_END'} if turn_end else {})})
+            anchor = getattr(self.worker, 'anchor_receive_timeline', None)
+            if anchor is not None:
+                anchor(self.events[-1]['packet_sha256'])
             # Reach the guarded DATA pump when a genuine receipt permits work.
             # Repeated ACKs stay queued instead of consuming the peer's bounded
             # startup/control window while each native receive is checked.
@@ -937,6 +1164,8 @@ class BenchFlow:
                     and self.flow.selective_stall_ready())
             if (self.data_burst and self.receipt_confirmation_enabled
                     and (normal_ready or stall_ready)
+                    and self._selective_pacing_ready(
+                        terminal=self._selective_terminal_retry, stall=stall_ready)
                     and not self._physical_data and not self.worker.pending_physical):
                 # Peer SACK is logical evidence, never local physical drain.
                 # Verify release/STATUS before offering one early retransmit;
@@ -947,9 +1176,8 @@ class BenchFlow:
                 now_us = self.clock()[1]
                 self.link.now = now_us / 1000000
                 fast_before = self.flow.fast_retransmits
-                offered = (self.flow.retry_selective_gap(
-                    self.link.now, terminal=self._selective_terminal_retry)
-                    if normal_ready else self.flow.retry_selective_stall(self.link.now))
+                offered = self._offer_selective(
+                    terminal=self._selective_terminal_retry, stall=stall_ready)
                 if offered:
                     if self.flow.fast_retransmits > fast_before:
                         self._hold_fast_retry_turn()
@@ -966,6 +1194,7 @@ class BenchFlow:
         return self._completion_ready()
 
     def _check_flow(self):
+        require(self.host_attempt_budget_failure is None, 'bench_host_attempt_budget_exhausted')
         if self.flow.failure:
             raise WireError('reliable_flow_' + self.flow.failure)
         if self.worker.fenced:
@@ -1012,6 +1241,7 @@ class BenchFlow:
                              'selective_terminal_retry': self._selective_terminal_retry,
                              'selective_stall_retry': self._selective_stall_retry,
                              'burst_frames': self.burst_frames, 'burst_quiet_us': self.burst_quiet_us,
+                             'receiver_ack_quiet_us': self.receiver_ack_quiet_us,
                              'burst_max_hold_us': self.burst_max_hold_us,
                              'sender_control_hold_us': self.sender_control_hold_us,
                              'ack_delay_seconds': self.flow.limits.ack_delay_s,
@@ -1023,6 +1253,18 @@ class BenchFlow:
                              'control_rate_us_per_second': self.scheduler.policy.control_rate_us_per_second},
             'attempt_journal': self.journal.snapshot(), 'events': list(self.events),
             'scheduler': self.scheduler.snapshot()}
+        receive_snapshot = getattr(self.worker, 'receive_reason_snapshot', None)
+        if receive_snapshot is not None:
+            reasons = receive_snapshot()
+            if reasons is not None:
+                value['hat_receive_reasons'] = reasons
+        timeline_snapshot = getattr(self.worker, 'receive_timeline_snapshot', None)
+        if timeline_snapshot is not None:
+            timeline = timeline_snapshot()
+            if timeline is not None:
+                value['hat_receive_timeline'] = timeline
+        if self._pace_selective_repeats:
+            value['timing_policy']['pace_selective_repeats'] = True
         if self._scalar_fill_pair:
             value['timing_policy']['scalar_fill_pair'] = True
         if self._selective_repeat_retry:
@@ -1032,6 +1274,8 @@ class BenchFlow:
             value['timing_policy']['selective_repair_train'] = True
         if self.dispatch_budget_failure is not None:
             value['dispatch_budget_failure'] = self.dispatch_budget_failure
+        if self.host_attempt_budget_failure is not None:
+            value['host_attempt_budget_failure'] = dict(self.host_attempt_budget_failure)
         if self.data_burst:
             value['physical_queue'] = dict(pending=len(self._physical_data),
                 worker_pending=len(self.worker.pending_physical),
@@ -1051,6 +1295,23 @@ class BenchFlow:
             self.owner.settle_sending()
             try:
                 if self.data_burst:
+                    if (self.host_attempt_budget_failure is not None
+                            and self.worker.pending_physical and not self.worker.fenced):
+                        # Only the next candidate was definitely unsubmitted.
+                        # Collect already-admitted work under its unchanged native
+                        # deadlines before cancelling it unnecessarily. This is
+                        # bounded cleanup, never another DATA admission. A failed
+                        # drain retains the worker's normal poison/cancel path.
+                        try:
+                            remaining = max(0.0, self.worker.deadline - self.worker.channel.monotonic())
+                            self._collect_physical(self.worker.drain_physical(timeout=min(2.5, remaining)))
+                        except BaseException as failure:
+                            try:
+                                self.worker.cancel_pending()
+                            except BaseException as cleanup:
+                                raise BaseExceptionGroup('Known budget drain and containment failed',
+                                                         [failure, cleanup]) from None
+                            raise
                     if self.worker.pending_physical:
                         self.worker.cancel_pending()
                     self._collect_physical(self.worker.drain_physical())

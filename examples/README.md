@@ -267,3 +267,30 @@ attempts. Such a new operation needs a separate file-window record/cache;
 independently verify any reused chunk instead of editing the old window.
 Keep old grants, session state, journals, errors and unknown outcomes.
 Re-running a spent directory refuses instead of silently starting fresh work.
+
+### Source experiment: one 64 KiB file operation
+
+`radio_file.py manifest INPUT --file64` selects the new singleton manifest
+format. Both `transfer` endpoints and `assemble` must also pass `--file64`.
+Without the flag, the existing 16 KiB chunk format remains unchanged. This
+experiment accepts exactly 65,536 bytes; it does not make a larger file into
+multiple operations.
+
+Each already-provisioned bench-run grant must include an explicit
+`file_capability` with schema `meshticulum.file64-capability.v1`,
+`max_object_bytes: 65536`, `max_total_frames: 512`, and `manifest_sha256` equal
+to the exact manifest file hash. It must also contain explicit sender and
+receiver `operation_limits`. The capability is part of the authenticated route
+binding. The sole object descriptor has index zero and identical whole-file
+and chunk hashes. Service-run grants cannot use this capability.
+
+The opt-in cache uses a separate `file64-v1` namespace and retains atomic,
+hash-verified durable publication before receiver receipt confirmation. One
+transfer invocation uses one original grant, worker and session. The existing
+512 outer-frame limit, admitted attempt and airtime budgets, original expiry,
+retry ceiling and native boot debt remain in force. No budget is automatically
+increased to accommodate the larger object. Hardware preflight must independently
+prove sufficient remaining capacity, including prior attempts and cleanup.
+
+Source models verify delivery, corruption recovery and expiry behavior. They
+provide no physical throughput or hardware qualification evidence.
