@@ -2,7 +2,7 @@
 from collections import deque
 import time
 
-CAPACITY = 2048
+CAPACITY = 4096
 DETAIL_LIMIT = 4
 
 

@@ -122,8 +122,8 @@ def test_maximum_timeline_serialized_geometry_and_summary():
    for _ in range(DETAIL_LIMIT):t.irq(65535);item=t.rearm_start();t.rearm_finish(item,False)
    t.finish('failure');t._rows[-1]['packet_sha256']='f'*64
  raw=json.dumps(t.snapshot(),separators=(',',':')).encode()
- assert len(raw)<1600000
- assert len(raw)+2000000<4000000 # Leaves the former2MB C snapshot envelope intact.
+ assert len(raw)<2800000
+ assert len(raw)+1024*1025+65536<4000000 # Requires the paired C1024 flow-ring harness.
  assert 'rows' not in t.summary() and len(json.dumps(t.summary()))<2048
  print('maximum current-schema timeline bytes',len(raw))
 
