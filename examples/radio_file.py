@@ -24,6 +24,7 @@ from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import OperationLimits, RunAuthority
 from meshticulum.bench.flow_runtime import BenchFlow
 from meshticulum.bench.host_timing import HostPhaseTimings, Phase, phase
+from meshticulum.bench.authority_timing import AuthorityPhaseTimings, AuthorityPhase, authority_timed, AuthorityTimingBindings
 from meshticulum.bench.host_pump import run_host_pump
 from meshticulum.bench.gfsk250_profile import Gfsk250Profile
 from meshticulum.bench.hat_worker import Gfsk250HATWorker, HATWorker, journal_binding as hat_binding
@@ -75,6 +76,8 @@ def add_host_timing_argument(parser):
                         help='Bounded receive/rearm timing diagnostic; extra host clocks, no extra SPI')
     parser.add_argument('--hat-receive-reasons', action='store_true',
                         help='Collect bounded HAT receive software counters (no packet identities).')
+    parser.add_argument('--profile-authority', action='store_true',
+        help='bounded inclusive wall/thread-CPU authority diagnostics; no scheduler-causation claim')
     parser.add_argument('--profile-host', action='store_true',
         help='include bounded host phase timings; diagnostic only, adds measurement overhead')
 
@@ -299,6 +302,7 @@ class FileWindow:
         self.deadline_us, self.last = self.record['deadline_monotonic_us'], None
         self.check()
 
+    @authority_timed(AuthorityPhase.FILE_WINDOW_CHECK)
     def check(self):
         info = self.path.lstat()
         require((info.st_dev, info.st_ino) == self.identity
@@ -357,6 +361,7 @@ class HeldHardware:
     def close(self):
         self.opens.close()
 
+    @authority_timed(AuthorityPhase.OWNER_CURRENT)
     def current(self):
         try:
             if os.getpid() != self.pid or host_boot() != self.boot:
@@ -638,6 +643,10 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
             'invalid_hat_receive_reasons_option')
     spi_options = hat_spi_options(args)
     worker = None
+    profile_authority = getattr(args, 'profile_authority', False)
+    require(type(profile_authority) is bool, 'invalid_authority_profile_option')
+    authority_timing = AuthorityPhaseTimings() if profile_authority else None
+    diagnostic_bindings = AuthorityTimingBindings(authority_timing)
     timing = HostPhaseTimings() if getattr(args, 'profile_host', False) else None
     timing_kw = {} if timing is None else dict(host_timing=timing)
     if hardware is None:
@@ -695,6 +704,9 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
                 **({'receive_reasons': True} if receive_reasons else {}),
                 **({'receive_timeline': True} if receive_timeline else {}))
             cleanup.append(worker.disarm)
+        # Start coverage after worker setup, before session construction.
+        for diagnostic_owner in (window, owner, authority, worker):
+            diagnostic_bindings.bind(diagnostic_owner)
         session = factory(authority, worker, journal,
             SessionCipher(authority.grant, authority.local_peer, store))
         cleanup.append(session.close)
@@ -737,6 +749,7 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
                 hardware.release(not errors)
             except BaseException as error:
                 errors.append(error)
+        diagnostic_bindings.restore(suppress_cancellation=bool(errors))
     receive_snapshot = (worker.receive_reason_snapshot()
                         if receive_reasons and worker is not None else None)
     timeline_snapshot = (worker.receive_timeline_snapshot()
@@ -750,6 +763,13 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
             failure.hat_receive_timeline = timeline_snapshot
         if receive_snapshot is not None:
             failure.hat_receive_reasons = receive_snapshot
+        if authority_timing is not None:
+            try:
+                failure.authority_phase_timings = authority_timing.snapshot()
+                if diagnostic_bindings.failed:
+                    failure.authority_phase_timings_unavailable = True
+            except BaseException:
+                failure.authority_phase_timings_unavailable = True
         if timing is not None:
             try:
                 failure.host_phase_timings = timing.snapshot()
@@ -757,6 +777,13 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
                 # Optional diagnostics cannot replace the original failures.
                 failure.host_phase_timings_unavailable = True
         raise failure
+    if authority_timing is not None:
+        try:
+            result['authority_phase_timings'] = authority_timing.snapshot()
+            if diagnostic_bindings.failed:
+                result['authority_phase_timings_unavailable'] = True
+        except Exception:
+            result['authority_phase_timings_unavailable'] = True
     if timing is not None:
         try:
             result['host_phase_timings'] = timing.snapshot()

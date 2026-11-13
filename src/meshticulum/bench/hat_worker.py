@@ -15,6 +15,7 @@ from types import BuiltinFunctionType, MethodType
 import uuid
 
 from .host_timing import Phase, check_timing, phase, timed
+from .authority_timing import AuthorityPhase, authority_timed
 from .linux_hat import LinuxHAT, HardwareError, require
 from .serial_protocol import Outcome, RadioProfile
 from .serial_worker import AttemptResult, estimated_airtime_us
@@ -151,6 +152,7 @@ class HATWorker:
     def _dispatch(self):
         return self.__dispatch
 
+    @authority_timed(AuthorityPhase.HAT_LIVE)
     def _live(self, needed=0):
         require(not self.fenced, 'hat_authority_refused')
         owned, authorize = self._dispatch, self.authorize

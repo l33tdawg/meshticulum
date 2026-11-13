@@ -105,6 +105,9 @@ def _open(path, flags=os.O_RDONLY):
     return fd
 
 
+from .authority_timing import AuthorityPhase, authority_timed
+
+
 class RunAuthority:
     def __init__(self, directory, *, expected_unit, host_boot_id, clock, owner_probe, radio_admission=None):
         require(type(radio_admission) in (RadioAdmission,GfskAdmission,Gfsk250Admission), 'explicit_native_radio_admission_required')
@@ -358,6 +361,7 @@ class RunAuthority:
         record = self._captured_admission()[0].get('data_burst')
         return None if record is None else validate_policy(record)
 
+    @authority_timed(AuthorityPhase.AUTHORITY_LIVE)
     def live(self):
         if self.closed:
             return False
@@ -421,6 +425,7 @@ class RunAuthority:
         require(hashlib.sha256(frame.payload).digest() == frame.request.payload_digest
                 and len(frame.payload) == frame.request.payload_bytes, 'bench_dispatch_payload_changed')
 
+    @authority_timed(AuthorityPhase.APPLICATION_LIVE)
     def application_live(self):
         """Finite service admission only; owner consent remains a separate gate."""
         if not self.live() or self.owner_probe() is not True:
