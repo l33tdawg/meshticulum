@@ -164,6 +164,7 @@ class OpenCollisionWatch:
         self.scan = opener_scan or _existing_openers
         self.paths, self.directories, self.watches, self.aliases = {}, {}, set(), set()
         self.watch_lines, self.watch_inodes, self.anchor_wd = None, {}, None
+        self._initial_fdinfo_binding = None
         self.mountinfo = None
         try:
             if platform.system() == 'Linux':
@@ -199,7 +200,7 @@ class OpenCollisionWatch:
             self._inventory(self.root, add)
             if not self.aliases:
                 raise HardwareError('device_watch_node_not_found')
-            self.watch_lines = self._fdinfo_watch_lines()
+            self.watch_lines = self._fdinfo_watch_lines(capture_initial=True)
             if self.event_complete_inventory:
                 self._bind_event_directories()
         except OSError as error:
@@ -213,6 +214,7 @@ class OpenCollisionWatch:
             self.aliases.clear()
             self.watch_inodes.clear()
             self.watch_lines = None
+            self._initial_fdinfo_binding = None
             self.mountinfo = None
             self.event_directories = frozenset()
 
@@ -301,7 +303,7 @@ class OpenCollisionWatch:
                 self._watch(child, info, _DEVICE_EVENTS, add)
                 self.aliases.add(child)
 
-    def _fdinfo_watch_lines(self, *, allow_removed=False):
+    def _fdinfo_watch_lines(self, *, allow_removed=False, capture_initial=False):
         # Anonymous inotify fds can share the same fstat inode and flags. Bind
         # the actual watch set too, so an empty/recycled inotify fd cannot pass.
         # This is one bounded procfs file, not a process/descriptor-table scan.
@@ -318,8 +320,22 @@ class OpenCollisionWatch:
                 chunks.append(raw)
         finally:
             os.close(fd)
+        raw = b''.join(chunks)
+        initial = self._initial_fdinfo_binding
+        if capture_initial and (initial is not None or allow_removed):
+            raise HardwareError('device_watch_fdinfo_initial_rebound')
+        # Only parsing is memoized. Every invocation still reads fresh bounded
+        # procfs bytes after the caller's descriptor/flag checks. Bind all state
+        # consulted by the parser; never refresh the initial trusted baseline.
+        if (not allow_removed and not capture_initial and initial is not None
+                and type(self.watches) is set and type(self.watch_inodes) is dict
+                and raw == initial[0] and self.watch_lines == initial[1]
+                and self.watches == initial[2]
+                and self.watch_inodes.items() == initial[3]
+                and self.anchor_wd == initial[4]):
+            return initial[1]
         lines, watches = [], {}
-        for line in b''.join(chunks).splitlines():
+        for line in raw.splitlines():
             if not line.startswith(b'inotify'):
                 continue
             match = _WATCH_LINE.fullmatch(line)
@@ -333,7 +349,12 @@ class OpenCollisionWatch:
         if (not allow_removed and set(watches) != self.watches) or (
                 allow_removed and self.anchor_wd not in watches):
             raise HardwareError('device_watch_fdinfo_rebound')
-        return tuple(sorted(lines))
+        result = tuple(sorted(lines))
+        if capture_initial:
+            self._initial_fdinfo_binding = (
+                raw, result, frozenset(self.watches),
+                frozenset(self.watch_inodes.items()), self.anchor_wd)
+        return result
 
     def _descriptor_current(self, *, allow_removed=False):
         if (_identity(os.fstat(self.fd)) != _identity(self.watch_stat)
