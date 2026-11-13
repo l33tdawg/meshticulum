@@ -902,6 +902,9 @@ class BenchFlow:
                         'outer_counter': verified.counter, 'outer_kind': 'CONTROL',
                         'packet_sha256': hashlib.sha256(raw.packet).hexdigest(),
                         'bytes': len(raw.packet), 'rssi_dbm': raw.rssi_dbm, 'snr_db': raw.snr_db})
+                    anchor = getattr(self.worker, 'anchor_receive_timeline', None)
+                    if anchor is not None:
+                        anchor(self.events[-1]['packet_sha256'])
                     continue
                 parsed = self.parse_frame(verified.payload)
                 require(parsed is not None, 'invalid_authenticated_inner_frame')
@@ -962,6 +965,9 @@ class BenchFlow:
                 'packet_sha256': hashlib.sha256(raw.packet).hexdigest(),
                 'bytes': len(raw.packet), 'rssi_dbm': raw.rssi_dbm, 'snr_db': raw.snr_db,
                 **ack_diagnostics})
+            anchor = getattr(self.worker, 'anchor_receive_timeline', None)
+            if anchor is not None:
+                anchor(self.events[-1]['packet_sha256'])
             # Reach the guarded DATA pump when a genuine receipt permits work.
             # Repeated ACKs stay queued instead of consuming the peer's bounded
             # startup/control window while each native receive is checked.
@@ -1121,6 +1127,11 @@ class BenchFlow:
             reasons = receive_snapshot()
             if reasons is not None:
                 value['hat_receive_reasons'] = reasons
+        timeline_snapshot = getattr(self.worker, 'receive_timeline_snapshot', None)
+        if timeline_snapshot is not None:
+            timeline = timeline_snapshot()
+            if timeline is not None:
+                value['hat_receive_timeline'] = timeline
         if self._pace_selective_repeats:
             value['timing_policy']['pace_selective_repeats'] = True
         if self._scalar_fill_pair:

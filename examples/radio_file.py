@@ -71,6 +71,8 @@ def add_operation_limit_arguments(parser):
 def add_host_timing_argument(parser):
     parser.add_argument('--hat-spi-hz', type=int, choices=(1000000, 4000000),
                         help='Explicit HAT SPI request; default remains 1 MHz. 4 MHz is experimental.')
+    parser.add_argument('--hat-receive-timeline', action='store_true',
+                        help='Bounded receive/rearm timing diagnostic; extra host clocks, no extra SPI')
     parser.add_argument('--hat-receive-reasons', action='store_true',
                         help='Collect bounded HAT receive software counters (no packet identities).')
     parser.add_argument('--profile-host', action='store_true',
@@ -522,7 +524,7 @@ class FileHardware:
     _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
     _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
                'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
-               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'hat_receive_reasons', 'hat_spi_hz')
+               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'hat_receive_reasons', 'hat_receive_timeline', 'hat_spi_hz')
 
     @classmethod
     def _binding(cls, args):
@@ -628,6 +630,9 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
     plan = json.loads(raw)
     admitted_limits = OperationLimits.from_plan(plan)
     limits = operation_journal_limits(args, admitted_limits)
+    receive_timeline = getattr(args, 'hat_receive_timeline', False)
+    require(type(receive_timeline) is bool and (not receive_timeline or args.interface == 'hat'),
+            'invalid_hat_receive_timeline_option')
     receive_reasons = getattr(args, 'hat_receive_reasons', False)
     require(type(receive_reasons) is bool and (not receive_reasons or args.interface == 'hat'),
             'invalid_hat_receive_reasons_option')
@@ -687,7 +692,8 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
                 context_digest=authority.grant.digest, authorize=authorize,
                 authority_deadline=min(authority.deadlines.application_deadline_monotonic, window.deadline_us / 1000000),
                 antenna_confirmed=plan['antenna_confirmed'],
-                **({'receive_reasons': True} if receive_reasons else {}))
+                **({'receive_reasons': True} if receive_reasons else {}),
+                **({'receive_timeline': True} if receive_timeline else {}))
             cleanup.append(worker.disarm)
         session = factory(authority, worker, journal,
             SessionCipher(authority.grant, authority.local_peer, store))
@@ -733,8 +739,15 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
                 errors.append(error)
     receive_snapshot = (worker.receive_reason_snapshot()
                         if receive_reasons and worker is not None else None)
+    timeline_snapshot = (worker.receive_timeline_snapshot()
+                         if receive_timeline and worker is not None else None)
+    if timeline_snapshot is not None:
+        timeline_snapshot = {k: v for k, v in timeline_snapshot.items() if k != 'rows'}
+        timeline_snapshot['rows_in_flow_snapshot'] = True
     if errors:
         failure = BaseExceptionGroup('File transfer or cleanup failed; retain all run state', errors)
+        if timeline_snapshot is not None:
+            failure.hat_receive_timeline = timeline_snapshot
         if receive_snapshot is not None:
             failure.hat_receive_reasons = receive_snapshot
         if timing is not None:
@@ -749,6 +762,8 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
             result['host_phase_timings'] = timing.snapshot()
         except Exception:
             result['host_phase_timings_unavailable'] = True
+    if timeline_snapshot is not None:
+        result['hat_receive_timeline'] = timeline_snapshot
     if receive_snapshot is not None:
         result['hat_receive_reasons'] = receive_snapshot
     return result

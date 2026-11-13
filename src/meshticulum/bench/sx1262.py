@@ -56,6 +56,7 @@ class SX1262:
         self.attempts = self.reserved_us = 0
         self.rx_errors = 0
         self.receive_reasons = None
+        self.receive_timeline = None
         self.tx_estimate = self.tx_started = self.tx_deadline = 0
 
     def _ready(self):
@@ -304,6 +305,8 @@ class SX1262:
         reading_packet = False
         try:
             flags = self.irq()
+            if self.receive_timeline is not None:
+                self.receive_timeline.irq(flags)
             if reasons is not None:
                 if flags & (CRC_ERROR | HEADER_ERROR):
                     reasons.record('irq_crc_header' if flags & CRC_ERROR and flags & HEADER_ERROR

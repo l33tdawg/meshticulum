@@ -20,6 +20,7 @@ from .serial_protocol import Outcome, RadioProfile
 from .serial_worker import AttemptResult, estimated_airtime_us
 from .sx1262 import SX1262
 from .rx_reasons import ReceiveReasons
+from .rx_timeline import ReceiveTimeline
 
 
 _NATIVE_MONOTONIC = time.monotonic
@@ -52,7 +53,9 @@ class HATWorker:
 
     def __init__(self, transport, *, journal, profile, context_digest, authorize,
                  authority_deadline, antenna_confirmed, monotonic=None,
-                 time_basis='host-monotonic', receive_reasons=False):
+                 time_basis='host-monotonic', receive_reasons=False, receive_timeline=False):
+        require(type(receive_timeline) is bool, 'invalid_hat_receive_timeline')
+        self._receive_timeline = ReceiveTimeline() if receive_timeline else None
         require(type(receive_reasons) is bool, 'invalid_hat_receive_reasons')
         self._receive_reasons = ReceiveReasons() if receive_reasons else None
         timing = check_timing(getattr(journal, 'host_timing', None))
@@ -89,6 +92,7 @@ class HATWorker:
         self.host_timing = timing
         self.radio.host_timing = self.host_timing
         self.radio.receive_reasons = self._receive_reasons
+        self.radio.receive_timeline = self._receive_timeline
         self.lease_deadline = min(authority_deadline, native_clock() + profile.lease_ms / 1000)
         original_end = min(authority_deadline, self.lease_deadline)
         pid, thread = os.getpid(), threading.get_ident()
@@ -293,19 +297,36 @@ class HATWorker:
     def receive_reason_snapshot(self):
         return None if self._receive_reasons is None else self._receive_reasons.snapshot()
 
+    def receive_timeline_snapshot(self):
+        return None if self._receive_timeline is None else self._receive_timeline.snapshot()
+
+    def anchor_receive_timeline(self, digest):
+        if self._receive_timeline is not None:
+            self._receive_timeline.anchor(digest)
+
     def receive(self, timeout=0.0):
         require(type(timeout) in (int, float) and 0 <= timeout <= 0.1, 'invalid_receive_timeout')
         owned = self._dispatch
         reasons = self._receive_reasons
+        timeline = self._receive_timeline
+        outcome = "failure"
+        if timeline is not None:
+            timeline.begin()
         def rearm():
+            item = timeline.rearm_start() if timeline is not None else None
+            success = False
             if reasons is not None:
                 reasons.record('rearm_attempt')
             try:
                 radio.start_receive(authority_deadline=owned())
+                success = True
             except BaseException:
                 if reasons is not None:
                     reasons.record('rearm_failure')
                 raise
+            finally:
+                if timeline is not None:
+                    timeline.rearm_finish(item, success)
         try:
             owned()
             radio, transport = self.radio, self.io
@@ -328,6 +349,7 @@ class HATWorker:
                     # deadline and fresh authority checks around SPI setup.
                     rearm()
                     now = self._live()
+                    outcome = "packet"
                     return now, received
                 if not radio.receiving:
                     # Finite RX timeout and rejected header/CRC also leave
@@ -342,6 +364,7 @@ class HATWorker:
                 require(type(now) in (int, float) and math.isfinite(now)
                         and now < owned(), 'hat_authority_expired')
                 if now >= until:
+                    outcome = "empty"
                     return None
                 transport.sleep(0.001)
                 self._live()
@@ -354,6 +377,9 @@ class HATWorker:
             except Exception:
                 pass
             raise
+        finally:
+            if timeline is not None:
+                timeline.finish(outcome)
 
     def disarm(self):
         self.lease_deadline = 0
