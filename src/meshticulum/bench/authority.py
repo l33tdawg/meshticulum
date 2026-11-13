@@ -40,6 +40,7 @@ from .public_block import (PUBLIC32_MARKER,REPRESENTATION_MARKER,TRANSPORT_DESCR
 
 
 from .file_capability import file_capability_mode, admitted_object_limit, admitted_frame_limit
+from .turn_end import admitted as turn_end_admitted
 
 @dataclass(frozen=True)
 class OperationLimits:
@@ -145,6 +146,9 @@ class RunAuthority:
             if 'file_capability' in p:
                 extras.add('file_capability')
                 file_capability_mode(p)
+            if 'turn_end_capability' in p:
+                extras.add('turn_end_capability')
+                turn_end_admitted(p)
             if is_service and local_deadline_field in p:
                 extras.add(local_deadline_field)
             require(set(p) == fields | extras, 'invalid_bench_plan')
@@ -230,6 +234,8 @@ class RunAuthority:
                 self.route_record['operation_limits'] = p['operation_limits']
             if 'file_capability' in p:
                 self.route_record['file_capability'] = p['file_capability']
+            if 'turn_end_capability' in p:
+                self.route_record['turn_end_capability'] = p['turn_end_capability']
             if is_service:
                 self.route_record['service'] = p['service']
             route_digest = hashlib.sha256(canonical(self.route_record)).digest()

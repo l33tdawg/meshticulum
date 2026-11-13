@@ -21,6 +21,7 @@ from .serial_protocol import Frame, Message, Outcome, RadioProfile, SerialError,
 from .serial_worker import AttemptResult, SerialWorker
 from .tx_burst import (BurstContractError, PacketDescriptor, Stage, TERMINAL,
                       START_GUARD_US, context_sha256)
+from .turn_end import FinalAdmission
 
 
 _FAILURES = (OSError, HardwareError, SerialError, BurstContractError, AttemptError)
@@ -47,6 +48,12 @@ class BurstSerialWorker(SerialWorker):
         self._burst_count = 0
         self._turn_generation = 0
         self._train_admission_refused = False
+        self._turn_end_seal = None
+        self._turn_end_anchor = None
+        self._turn_end_used = self._turn_end_failed = False
+        self._turn_end_queued = False
+        self._turn_end_packet = None
+        self._turn_end_packet_anchor = None
         self._physical = {}
         self._logical = {}
         self._released_events = deque(maxlen=self._depth)
@@ -76,6 +83,7 @@ class BurstSerialWorker(SerialWorker):
     @property
     def has_capacity(self):
         return (self._open is not None and not self.fenced
+                and self._turn_end_seal is None and self._turn_end_anchor is None
                 and not self._train_admission_refused
                 and not self.drained_train_pending
                 and len(self._physical) < self._host_pending_limit and self._burst_count < self._train_frames)
@@ -97,10 +105,21 @@ class BurstSerialWorker(SerialWorker):
         require(self.drained_train_pending and not self._train_admission_refused,
                 'train_retirement_not_drained')
         self._capability()
+        seal = self._turn_end_seal
+        if seal is not None:
+            require(self._turn_end_queued, 'sealed_train_not_queued')
+            self.validate_turn_end(seal, increment=1)
         self.assert_drained()
         require(not self.fenced and not self._cancelled, 'train_retirement_fenced')
+        if seal is not None:
+            self.validate_turn_end(seal, increment=1)
         self._burst_deadline = self._burst_clock = None
         self._burst_count = 0
+        if seal is not None:
+            self._turn_end_seal = self._turn_end_anchor = None
+            self._turn_end_used = self._turn_end_failed = self._turn_end_queued = False
+            self._turn_end_packet = None
+            self._turn_end_packet_anchor = None
 
     @property
     def train_admission_refused(self):
@@ -112,6 +131,7 @@ class BurstSerialWorker(SerialWorker):
         This does not sample CLOCK or allocate authority. The runtime must
         still give the peer its reverse-control turn before another offer.
         """
+        require(self._turn_end_seal is None, 'sealed_refused_train_requires_containment')
         require(self._train_admission_refused and not self._physical,
                 'refused_train_not_drained')
         self.assert_drained()
@@ -143,6 +163,11 @@ class BurstSerialWorker(SerialWorker):
     def _send(self, frame, deadline):
         if frame.type is Message.ARM:
             self._arm_request = frame.request
+        if frame.type is Message.BURST_DATA and self._turn_end_seal is not None:
+            seal = self._turn_end_seal
+            bounded = min(deadline, self.channel.monotonic() + 1.0)
+            self.validate_turn_end(seal)
+            return self.channel.write(frame.encode(), bounded)
         return super()._send(frame, deadline)
 
     def _ingest(self, data):
@@ -273,8 +298,83 @@ class BurstSerialWorker(SerialWorker):
             logical_id=logical_id.hex(), owner_frame_id=owner_frame_id),
             sort_keys=True, separators=(',', ':')).encode('ascii')
 
+    def reserve_turn_end(self, *, logical_id, owner_frame_id, plaintext):
+        """Irrevocably close an already-open turn before cipher callbacks."""
+        if self._turn_end_anchor is not None:
+            self._turn_end_failed = True
+            require(False, 'turn_end_reservation_reentry')
+        self._capability()
+        require(self._explicit_turn_retirement and self._train_frames == 32
+                and self._turn_end_seal is None and self.has_capacity
+                and self.train_identity is not None and self._burst_count > 0,
+                'turn_end_requires_open_train')
+        require(type(logical_id) is bytes and len(logical_id) == 32 and any(logical_id)
+                and type(owner_frame_id) is int and owner_frame_id > 0
+                and type(plaintext) is bytes and 0 < len(plaintext) <= 208,
+                'invalid_turn_end_candidate')
+        seal = FinalAdmission(self, self._open, self._open.token,
+            self._turn_generation, self._burst_deadline, self._burst_count,
+            logical_id, owner_frame_id, plaintext)
+        self._turn_end_seal = seal
+        self._turn_end_anchor = lambda: seal
+        return seal
+
+    def validate_turn_end(self, seal, *, increment=0):
+        valid = (type(seal) is FinalAdmission and seal is self._turn_end_seal
+                and self._turn_end_anchor() is seal and seal.worker is self
+                and seal.opened is self._open and self._open.token == seal.token
+                and type(self._open.token) is type(seal.token)
+                and type(self._turn_generation) is type(seal.generation) and self._turn_generation == seal.generation
+                and type(self._burst_deadline) is type(seal.deadline) and self._burst_deadline == seal.deadline
+                and type(self._burst_count) is type(seal.count) and self._burst_count == seal.count + increment
+                and not self._turn_end_failed and not self._train_admission_refused
+                and not self.fenced and not self._cancelled
+                and (self._turn_end_packet is None and self._turn_end_packet_anchor is None
+                     or self._turn_end_packet_anchor is not None
+                     and self._turn_end_packet is self._turn_end_packet_anchor()))
+        if not valid:
+            self._turn_end_failed = True
+        require(valid, 'turn_end_binding_changed')
+
+    def bind_turn_end_packet(self, seal, packet):
+        """One immutable ciphertext produced by the caller's admitted cipher."""
+        self.validate_turn_end(seal)
+        require(self._turn_end_packet is None and type(packet) is bytes
+                and 47 < len(packet) <= 255, 'invalid_turn_end_packet_binding')
+        from .wire import HEADER, MAGIC, VERSION, FrameKind
+        magic, version, kind, direction, session, counter, size = HEADER.unpack(packet[:HEADER.size])
+        require(magic == MAGIC and version == VERSION and kind == int(FrameKind.DATA_TURN_END)
+                and direction in (0, 1) and size == len(seal.plaintext)
+                and len(packet) == size + 47, 'turn_end_packet_shape_changed')
+        self._turn_end_packet = packet
+        self._turn_end_packet_anchor = lambda: packet
+
+    @timed(Phase.QUEUE_CALL)
+    def queue_turn_end(self, seal, packet):
+        try:
+            self.validate_turn_end(seal)
+            require(packet is self._turn_end_packet and packet is not None,
+                    'turn_end_packet_identity_changed')
+            require(not self._turn_end_used, 'turn_end_candidate_already_used')
+            self._turn_end_used = True
+            result = self._queue_data(packet, logical_id=seal.logical_id,
+                owner_frame_id=seal.owner_frame_id, turn_end=seal)
+            require(result.outcome == 'QUEUED', 'turn_end_candidate_not_queued')
+            self.validate_turn_end(seal, increment=1)
+            self._turn_end_queued = True
+            return result
+        except BaseException:
+            self._turn_end_failed = True
+            raise
+
     @timed(Phase.QUEUE_CALL)
     def queue_data(self, packet, *, logical_id, owner_frame_id=None):
+        if self._turn_end_seal is not None or self._turn_end_anchor is not None:
+            self._turn_end_failed = True
+            require(False, 'turn_end_further_admission_forbidden')
+        return self._queue_data(packet, logical_id=logical_id, owner_frame_id=owner_frame_id)
+
+    def _queue_data(self, packet, *, logical_id, owner_frame_id=None, turn_end=None):
         self._capability()
         require(type(packet) is bytes and 1 <= len(packet) <= 255, 'invalid_transmit')
         require(type(logical_id) is bytes and len(logical_id) == 32 and any(logical_id),
@@ -283,8 +383,16 @@ class BurstSerialWorker(SerialWorker):
                 'invalid_pending_owner_frame')
         with phase(self.host_timing, Phase.QUEUE_PUMP):
             self._pump_physical()
+        if turn_end is not None:
+            self.validate_turn_end(turn_end)
         self._live(.05)
-        require(self.has_capacity, 'burst_queue_capacity')
+        if turn_end is not None:
+            self.validate_turn_end(turn_end)
+            require(not self.drained_train_pending
+                    and len(self._physical) < self._host_pending_limit
+                    and self._burst_count < self._train_frames, 'burst_queue_capacity')
+        else:
+            require(self.has_capacity, 'burst_queue_capacity')
         require(logical_id not in self._logical, 'duplicate_pending_data')
         if self._burst_deadline is None:
             try:
@@ -316,6 +424,8 @@ class BurstSerialWorker(SerialWorker):
         try:
             try:
                 self._live(.05)
+                if turn_end is not None:
+                    self.validate_turn_end(turn_end)
             except HardwareError:
                 self._settle_queued(request, packet, 'NOT_SENT',
                                            'authority_changed_before_write', None)
@@ -323,10 +433,14 @@ class BurstSerialWorker(SerialWorker):
                 return AttemptResult(request, 'NOT_SENT', reservation, None)
             frame = data_frame(self.identity.boot, self._open.token, descriptor, packet)
             deadline = min(self.deadline, self.channel.monotonic() + .25)
+            if turn_end is not None:
+                self.validate_turn_end(turn_end)
             # The only newly reserved mutation is written before allocating any
             # release command. No batch of IDs can be overtaken by a later ACK.
             with phase(self.host_timing, Phase.QUEUE_SERIAL_WRITE):
                 self._send(frame, deadline)
+            if turn_end is not None:
+                self.validate_turn_end(turn_end)
             self._burst_count += 1
             self._waiting += 1
             try:
@@ -584,6 +698,9 @@ class BurstSerialWorker(SerialWorker):
         return True
 
     def transmit(self, packet):
+        if self._turn_end_seal is not None or self._turn_end_anchor is not None:
+            self._turn_end_failed = True
+            require(False, 'turn_end_scalar_transmit_forbidden')
         if self._physical:
             self._terminals.extend(self.drain_physical())
         if self._open is not None:

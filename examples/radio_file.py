@@ -38,6 +38,7 @@ from meshticulum.bench.serial_worker import Gfsk250SerialWorker, SerialWorker, j
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.state import SessionStore
 from meshticulum.bench.wire import SessionCipher, require
+from meshticulum.bench.turn_end import admitted as turn_end_admitted
 from meshticulum.scheduler.budget import BudgetPolicy, Ledger
 
 CHUNK_BYTES, MAX_FILE_BYTES, ACK_GRACE_US = 16384, 64 * 16384, 20000000
@@ -70,6 +71,8 @@ def add_operation_limit_arguments(parser):
 
 
 def add_host_timing_argument(parser):
+    parser.add_argument('--data-turn-end', action='store_true',
+                        help='opt in to grant-bound authenticated train32 final-admission DATA')
     parser.add_argument('--hat-spi-hz', type=int, choices=(1000000, 4000000),
                         help='Explicit HAT SPI request; default remains 1 MHz. 4 MHz is experimental.')
     parser.add_argument('--hat-checked-rearm', action='store_true',
@@ -547,7 +550,7 @@ class FileHardware:
     _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
     _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
                'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
-               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'file48', 'hat_receive_reasons', 'hat_receive_timeline', 'hat_spi_hz', 'hat_checked_rearm')
+               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'file48', 'hat_receive_reasons', 'hat_receive_timeline', 'hat_spi_hz', 'hat_checked_rearm', 'data_turn_end')
 
     @classmethod
     def _binding(cls, args):
@@ -651,6 +654,9 @@ class FileHardware:
 
 def run_object(args, raw, admission, version, payload, window, factory, *, hardware=None):
     plan = json.loads(raw)
+    turn_end = getattr(args, 'data_turn_end', False)
+    require(type(turn_end) is bool and turn_end is turn_end_admitted(plan),
+            'turn_end_example_capability_mismatch')
     admitted_limits = OperationLimits.from_plan(plan)
     limits = operation_journal_limits(args, admitted_limits)
     checked_rearm = getattr(args, 'hat_checked_rearm', False)
@@ -730,7 +736,7 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
         for diagnostic_owner in (window, owner, authority, worker):
             diagnostic_bindings.bind(diagnostic_owner)
         session = factory(authority, worker, journal,
-            SessionCipher(authority.grant, authority.local_peer, store))
+            SessionCipher(authority.grant, authority.local_peer, store, turn_end=turn_end))
         cleanup.append(session.close)
         if payload is not None:
             session.send(payload)

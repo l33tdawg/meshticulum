@@ -27,6 +27,7 @@ from .serial_protocol import TxEvidence
 from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .file_capability import admitted_object_limit, admitted_frame_limit
+from .turn_end import admitted as turn_end_admitted
 from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair, policy_repeat_retry, policy_repair_train, policy_train_frames
 
 
@@ -155,6 +156,12 @@ class BenchFlow:
             # slow train; a full train earns its ACK immediately in step().
             self.burst_max_hold_us = min(self.burst_frames * self.burst_quiet_us, 2_000_000)
         self.burst_sent = 0
+        self._turn_end_enabled = turn_end_admitted(authority.plan)
+        self._turn_end_dispatch = None
+        self._turn_end_highest_received = 0
+        require(not self._turn_end_enabled or (self.burst_frames == 32
+                and cipher._turn_end_enabled is True and cipher._turn_end_binding() is True
+                and (not sends or self.data_burst)), 'turn_end_runtime_not_admitted')
         self.burst_received = 0
         self.burst_started_us = 0
         self.ack_due_us = 0
@@ -253,6 +260,11 @@ class BenchFlow:
                                          self.ledger.epoch), now)
 
     def _send(self, frame):
+        if self._turn_end_enabled and (self._turn_end_dispatch is not None
+                or self.sends and self.worker._turn_end_seal is not None):
+            if self.sends:
+                self.worker._turn_end_failed = True
+            require(False, 'turn_end_admission_closed')
         # The authority checks exact object identity of both currently held
         # leases and the immutable request, as well as the OS radio owner.
         self.authority.require_dispatch(frame)
@@ -324,13 +336,67 @@ class BenchFlow:
         elif self.data_burst:
             # ACK/control keep their synchronous canonical-handover path.
             self._collect_physical(self.worker.drain_physical())
-        with phase(self.host_timing, Phase.CIPHER_SEAL):
-            packet = self.cipher.seal(frame.payload, kind, authorize=self.authority.live)
+        seal = None
+        if (self._turn_end_enabled and self.data_burst and kind is FrameKind.DATA
+                and self.worker.train_identity is not None and self.worker.has_capacity):
+            fresh = (parsed['flow_id'] == self.flow.flow_id and parsed['generation'] == self.flow.generation
+                     and parsed['seq'] == self.flow._next_seq
+                     and parsed['payload'] == bytes(self.flow._outbound[:self.flow.limits.frame_payload_bytes]))
+            allowance = min(self.flow.limits.window_frames, max(0, self.flow._peer_credit))
+            tail = (self.worker.train_identity[3] == 31 or fresh and (
+                self.flow.queued_bytes() <= len(parsed['payload'])
+                or self.flow.in_flight() + 1 >= allowance))
+            if tail:
+                seal = self.worker.reserve_turn_end(logical_id=logical_id,
+                    owner_frame_id=frame.request.frame_id, plaintext=frame.payload)
+        if seal is None:
+            with phase(self.host_timing, Phase.CIPHER_SEAL):
+                packet = self.cipher.seal(frame.payload, kind, authorize=self.authority.live)
+        else:
+            bound = (self.authority, self.cipher, self.flow, frame, frame.request, frame.payload)
+            self._turn_end_dispatch = seal
+            try:
+                with phase(self.host_timing, Phase.CIPHER_SEAL):
+                    packet = self.cipher.seal(frame.payload, FrameKind.DATA_TURN_END,
+                                              authorize=self.authority.live)
+                self.worker.validate_turn_end(seal)
+                require((self.authority is bound[0] and self.cipher is bound[1]
+                         and self.flow is bound[2] and frame is bound[3]
+                         and frame.request is bound[4] and frame.payload is bound[5]
+                         and self.worker is seal.worker and self._turn_end_enabled is True
+                         and self.cipher._turn_end_enabled is True
+                         and self.cipher._turn_end_binding() is True
+                         and turn_end_admitted(self.authority.plan)),
+                        'turn_end_candidate_changed')
+                if fresh:
+                    require(parsed['seq'] == self.flow._next_seq
+                            and parsed['payload'] == bytes(self.flow._outbound[:self.flow.limits.frame_payload_bytes]),
+                            'turn_end_fresh_candidate_changed')
+                self.worker.bind_turn_end_packet(seal, packet)
+            except BaseException:
+                seal.worker._turn_end_failed = True
+                raise
         worker_started_us = self.clock()[1]
-        result = (self.worker.queue_data(packet, logical_id=logical_id,
+        if seal is not None:
+            require(self.worker is seal.worker and self.authority is bound[0]
+                    and self.cipher is bound[1] and self.flow is bound[2]
+                    and self._turn_end_enabled is True and self.cipher._turn_end_enabled is True,
+                    'turn_end_dispatch_binding_changed')
+            seal.worker.validate_turn_end(seal)
+        try:
+            result = (self.worker.queue_turn_end(seal, packet) if seal is not None else
+                  self.worker.queue_data(packet, logical_id=logical_id,
                                        owner_frame_id=frame.request.frame_id)
                   if self.data_burst and kind is FrameKind.DATA else self.worker.transmit(packet))
+        finally:
+            self._turn_end_dispatch = None
         worker_finished_us = self.clock()[1]
+        if seal is not None:
+            require(self.worker is seal.worker and self.authority is bound[0]
+                    and self.cipher is bound[1] and self.flow is bound[2]
+                    and self._turn_end_enabled is True and self.cipher._turn_end_enabled is True,
+                    'turn_end_completion_binding_changed')
+            seal.worker.validate_turn_end(seal, increment=1)
         require(type(worker_started_us) is int and type(worker_finished_us) is int
                 and worker_finished_us >= worker_started_us, 'invalid_worker_timing')
         if result.outcome == 'QUEUED':
@@ -351,7 +417,11 @@ class BenchFlow:
                 queue_submit_mono_us=worker_started_us, queue_accept_mono_us=worker_finished_us,
                 queue_accept_elapsed_us=worker_finished_us - worker_started_us,
                 owner_frame_id=frame.request.frame_id, carrier_outcome='QUEUED')
+            if seal is not None:
+                self._physical_data[result.request]['wire_kind'] = 'DATA_TURN_END'
             self.counts['tx_QUEUED'] += 1
+            if seal is not None:
+                self.counts['tx_DATA_turn_end'] += 1
             self.events.append(dict(event='tx_queued', mono_us=worker_finished_us,
                 outer_kind='DATA', request=result.request,
                 **{key: value for key, value in self._physical_data[result.request].items()
@@ -919,6 +989,10 @@ class BenchFlow:
             try:
                 with phase(self.host_timing, Phase.CIPHER_OPEN):
                     verified = self.cipher.open(raw.packet, authorize=self.authority.live)
+                turn_end = verified.kind is FrameKind.DATA_TURN_END
+                require(not turn_end or (self._turn_end_enabled and not self.sends
+                        and turn_end_admitted(self.authority.plan)), 'turn_end_receive_not_admitted')
+                received_kind = FrameKind.DATA if turn_end else verified.kind
                 if verified.kind is FrameKind.CONTROL:
                     require(self.receipt_confirmation_enabled and not self.sends
                             and not self.receipt_confirmed and self.flow.complete
@@ -938,13 +1012,13 @@ class BenchFlow:
                 parsed = self.parse_frame(verified.payload)
                 require(parsed is not None, 'invalid_authenticated_inner_frame')
                 expected = FrameKind.ACK if parsed['kind'] == self.ack_kind else FrameKind.DATA
-                require(verified.kind is expected, 'authenticated_inner_lane_mismatch')
+                require(received_kind is expected, 'authenticated_inner_lane_mismatch')
             except WireError as error:
                 self.counts['rx_refused'] += 1
                 self.events.append({'event': 'rx_refused', 'reason': str(error),
                                     'mono_us': self.clock()[1]})
                 continue
-            self.counts['rx_' + verified.kind.name] += 1
+            self.counts['rx_' + received_kind.name] += 1
             self.link.now = at
             # The reviewed flow exposes absorb() for authenticated demultiplexed
             # frames. Apply and consume before pumping output so the first ACK
@@ -957,7 +1031,7 @@ class BenchFlow:
             previous_receipt = (self.flow._peer_grant_rev, self.flow.repeat_grants)
             self.flow.absorb(parsed, at)
             self.last_activity_us = self.clock()[1]
-            if (not self.sends and self.burst_frames > 1 and verified.kind is FrameKind.DATA
+            if (not self.sends and self.burst_frames > 1 and received_kind is FrameKind.DATA
                     and parsed['flow_id'] == self.flow.flow_id
                     and parsed['generation'] == self.flow.generation
                     and self.flow._ack_work_gen > receive_work_before):
@@ -967,6 +1041,14 @@ class BenchFlow:
                 self.ack_due_us = (self.last_activity_us if self.burst_received >= self.burst_frames
                     or self.flow.complete else min(self.last_activity_us + self.receiver_ack_quiet_us,
                         self.burst_started_us + self.burst_max_hold_us))
+                if self._turn_end_enabled:
+                    newer = verified.counter > self._turn_end_highest_received
+                    self._turn_end_highest_received = max(self._turn_end_highest_received, verified.counter)
+                    if turn_end and newer:
+                        self.ack_due_us = self.last_activity_us
+                        self.counts['rx_DATA_turn_end'] += 1
+                    elif turn_end:
+                        self.counts['rx_DATA_turn_end_old'] += 1
             # A received authenticated ACK has already finished on air. Once
             # its flow state is applied there is no reason to spend the rest
             # of a conservative reverse-airtime wait before the next DATA.
@@ -992,10 +1074,10 @@ class BenchFlow:
                     ack_seq=parsed['ack_seq'], ack_sack=parsed['sack'], ack_credit=parsed['credit'],
                     ack_revision=parsed['grant_revision'])
             self.events.append({'event': 'rx', 'mono_us': self.last_activity_us,
-                'outer_counter': verified.counter, 'outer_kind': verified.kind.name,
+                'outer_counter': verified.counter, 'outer_kind': received_kind.name,
                 'packet_sha256': hashlib.sha256(raw.packet).hexdigest(),
                 'bytes': len(raw.packet), 'rssi_dbm': raw.rssi_dbm, 'snr_db': raw.snr_db,
-                **ack_diagnostics})
+                **ack_diagnostics, **({'wire_kind': 'DATA_TURN_END'} if turn_end else {})})
             anchor = getattr(self.worker, 'anchor_receive_timeline', None)
             if anchor is not None:
                 anchor(self.events[-1]['packet_sha256'])

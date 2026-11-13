@@ -86,7 +86,7 @@ class RadioChannel(Channel):
 @pytest.fixture
 def composition(tmp_path):
     opened = []
-    def make(data=b'x' * 100, *, burst=True, train_depth=4, flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False, train12=False, train24=False, train32=False):
+    def make(data=b'x' * 100, *, burst=True, train_depth=4, flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False, train12=False, train24=False, train32=False, turn_end=False, preamble=12):
         clock = Clock()
         directory = tmp_path / str(len(opened))
         directory.mkdir(mode=0o700)
@@ -94,8 +94,8 @@ def composition(tmp_path):
         profile = profile_for('sf7-500')
         admission = SOURCE_ADMISSION
         if train_depth == 8:
-            profile = replace(profile, spreading_factor=5, preamble=12)
-            admission = RadioAdmission('MY', ((921375000, 500000, 5, 5, 0, 12, 0x42),),
+            profile = replace(profile, spreading_factor=5, preamble=preamble)
+            admission = RadioAdmission('MY', ((921375000, 500000, 5, 5, 0, preamble, 0x42),),
                                        10000, 180000, 256, 60_000_000)
         channels = [RadioChannel(clock, train_depth=train_depth, train_frames=32 if train32 else 24 if train24 else 12 if train12 else None, profile=profile) for _ in range(2)]
         channels[0].peer, channels[1].peer = channels[1], channels[0]
@@ -109,6 +109,12 @@ def composition(tmp_path):
                                      policy_for_repair_fill() if repair_fill else
                                      policy_for_depth(train_depth) if flow_window is None
                                       else policy_for_flow_window(flow_window))
+                if turn_end:
+                    from meshticulum.bench.turn_end import capability
+                    plan['turn_end_capability'] = capability()
+                    plan['operation_limits'] = {role:dict(attempts=profile.max_boot_attempts,
+                        estimated_airtime_us=profile.max_boot_estimated_airtime_us)
+                        for role in ('sender','receiver')}
                 (path / 'grant.json').write_text(json.dumps(plan))
         for index, unit in enumerate(('unit-a', 'unit-b')):
             path = directory / unit
@@ -130,7 +136,7 @@ def composition(tmp_path):
             ledger = Ledger(BudgetPolicy(180000000, 60000000, 120000000, 1000000,
                                         quantization_us=1), authority.ledger_epoch, clock()[1])
             endpoint = BenchFlow(authority=authority, worker=worker,
-                cipher=SessionCipher(authority.grant, authority.local_peer, store),
+                cipher=SessionCipher(authority.grant, authority.local_peer, store, turn_end=turn_end),
                 journal=journal, flow_key=authority.flow_key, contract=authority.contract,
                 profile=authority.carrier_profile, ledger=ledger,
                 scheduler_epoch=authority.scheduler_epoch, broker_epoch=authority.broker_epoch,
