@@ -267,8 +267,9 @@ class HATWorker:
         """Bounded non-consuming DIO1 wake hint; None selects the caller fallback.
 
         No SPI/IRQ drain, RX setup, packet delivery or deadline renewal occurs.
-        Poll the already-owned level line because this GPIO request has no edge
-        event ABI. The latched IRQ remains for the ordinary receive path.
+        Use a bounded owned GPIO edge/level hint when the transport supports
+        it; otherwise retain bounded level polling or the caller fallback.
+        The latched radio IRQ remains for the ordinary receive path.
         """
         require(type(timeout) in (int, float) and math.isfinite(timeout)
                 and 0 <= timeout <= .005, 'invalid_hat_activity_timeout')

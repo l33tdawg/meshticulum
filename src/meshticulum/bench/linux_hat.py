@@ -246,15 +246,25 @@ class LinuxHAT:
         high = self.dio1_ready()
         require(self.lines_fd == fd, 'gpio_request_changed')
         if high:
+            # The level already requests a fresh radio poll. Retire at most one
+            # bounded batch of GPIO notifications so this same edge need not
+            # trigger another empty poll after the radio IRQ is drained.
+            self._read_dio1_events(fd)
             return True
         ready, _, _ = select.select([fd], [], [], max(0., end - time.monotonic()))
         require(self.lines_fd == fd, 'gpio_request_changed')
         if not ready:
             return False
+        return self._read_dio1_events(fd)
+
+    def _read_dio1_events(self, fd):
+        """Consume at most16 GPIO hints, never radio IRQ or packet state."""
+        require(self.lines_fd == fd, 'gpio_request_changed')
         # Nonblocking even if a stale readiness notification races a read.
         try:
             events = os.read(fd, 16 * 48)
         except BlockingIOError:
+            require(self.lines_fd == fd, 'gpio_request_changed')
             return False
         require(self.lines_fd == fd, 'gpio_request_changed')
         require(bool(events) and len(events) % 48 == 0, 'invalid_gpio_event_read')

@@ -25,7 +25,7 @@ def test_bounded_transport_hint(monkeypatch,kind):
     if kind in ['malformed','wrong_line']:
         with pytest.raises(HardwareError):io.wait_dio1(.005)
     else:assert io.wait_dio1(.005)==(kind in ['high','event'])
-    if kind=='high':assert calls==[]
+    if kind=='high':assert calls==[('read',768)]
 
 @pytest.mark.parametrize('kind',['normal','revoked','expired','owner','clock','invalid','failure'])
 def test_event_wait_cannot_bypass_fresh_guard(rig,kind):
