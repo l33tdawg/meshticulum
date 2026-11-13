@@ -53,9 +53,31 @@ remain nested within the enclosing flow step/pump/dispatch where applicable.
 Refused, unauthenticated, replayed and cancelled calls can still contribute a
 valid duration; a count does not prove successful sealing or plaintext admission.
 
+## Direct HAT receive diagnostics
+
+With `--profile-host`, the source candidate also records these fixed phases:
+
+| Phase | Host boundary |
+| --- | --- |
+| `hat_activity_wait` | Bounded DIO1 level wake hint, including actual sleeps and fresh authority checks |
+| `hat_rx_poll` | Whole SX1262 receive poll, including empty polls |
+| `hat_rx_drain` | Completed/error IRQ path: standby, timed-RX cleanup, optional packet read and IRQ clear |
+| `hat_rx_packet_read` | Valid packet length/FIFO/status reads, nested inside drain |
+| `hat_rx_rearm` | Whole finite RX setup, including startup, after packet/error drain and after TX |
+| `hat_tx_to_rx_restore` | TX call entry through RX restoration on RF_DONE, before journal settlement |
+
+These are inclusive host durations; poll contains drain, and drain contains
+packet read. TX handoff contains its RX rearm. Declined NOT_SENT attempts and
+failures can end the TX interval before RX is restored. Counts do not prove
+successful RF operations. This interval is not independently measured radio
+deaf time, and phase totals cannot establish packet collisions. The existing
+worker rearms before decrypt/flow processing and before TX journal settlement;
+profiling leaves that order, fresh authority checks and original deadlines intact.
+No per-packet trace or new diagnostic clock is used when profiling is disabled.
+
 ## Format and failure handling
 
-The schema is `meshticulum.host-phase-timing.v1`. Each of its fixed 26 phase
+The schema is `meshticulum.host-phase-timing.v1`. Each of its fixed 32 phase
 names has `count`, `total_ns`, `min_ns`, `max_ns`, `invalid`, `dropped` and
 `saturated`. A valid measured call increments `count` even if that call raises;
 counts do not establish successful completion. An empty phase has null
@@ -280,3 +302,16 @@ wall-time improvement. The wait is at most 5 ms and the original deadline;
 all ordinary step, authority, physical-release and cleanup checks remain.
 The current [MCU batch prototype](MCU_BATCH_PROTOTYPE.md) is source-only and is
 not consumed by the existing worker or installed firmware.
+
+## Direct HAT wake hints
+
+The HAT worker now uses its existing owned DIO1 GPIO input for a non-consuming
+wake hint. A wait is at most the caller's 5 ms bound and the original lease,
+with at most 21 level reads and 20 sleeps of at most 250 microseconds. Readiness
+never clears IRQs, reads SPI/FIFO bytes, rearms RX or proves packet delivery.
+The ordinary receive path still performs those operations under its own guards.
+Fresh ownership, authorization and finite lease checks surround level reads and
+sleeps. Transports without a DIO1 readiness method return None to preserve the
+caller's bounded fallback. The GPIO request ABI and edge configuration do not
+change. Polling adds bounded host work; its effect on physical goodput requires
+a separately authorized measurement.

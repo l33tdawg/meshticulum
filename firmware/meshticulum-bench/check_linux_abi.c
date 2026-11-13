@@ -5,13 +5,14 @@
 #include <stdio.h>
 
 int main(void) {
-    printf("{\"gpio_request_size\":%zu,\"gpio_config_size\":%zu,"
+    printf("{\"gpio_event_size\":%zu,\"gpio_edge_rising_flag\":%lu,\"gpio_request_size\":%zu,\"gpio_config_size\":%zu,"
            "\"gpio_request_config_offset\":%zu,\"gpio_request_fd_offset\":%zu,"
            "\"spi_transfer_size\":%zu,"
            "\"gpio_get_chip\":%lu,\"gpio_get_lines\":%lu,"
            "\"gpio_get_values\":%lu,\"gpio_set_values\":%lu,"
            "\"spi_message\":%lu,\"spi_write_mode\":%lu,"
            "\"spi_write_bits\":%lu,\"spi_write_hz\":%lu}\n",
+           sizeof(struct gpio_v2_line_event), (unsigned long) GPIO_V2_LINE_FLAG_EDGE_RISING,
            sizeof(struct gpio_v2_line_request), sizeof(struct gpio_v2_line_config),
            offsetof(struct gpio_v2_line_request, config),
            offsetof(struct gpio_v2_line_request, fd), sizeof(struct spi_ioc_transfer),

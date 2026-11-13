@@ -185,3 +185,34 @@ class NativeProfileRecord:
     def exact(self):
         """False if any duration was invalid or an aggregate saturated."""
         return self.flags == 0
+
+
+def clock_query(*, boot, request):
+    """Query explicit CPU160 builds only; old firmware refuses selector 0xfc."""
+    require(type(request) is int and request > 0, 'invalid_native_profile_request')
+    return Frame(Message.NATIVE_PROFILE, boot, request, b'\xfc')
+
+
+@dataclass(frozen=True, slots=True)
+class NativeClockSnapshot:
+    """Live readbacks, not a clock mutation or physical timing qualification."""
+    requested_cpu_mhz: int
+    actual_cpu_mhz: int
+    actual_apb_hz: int
+    setup_verified: bool
+
+    @classmethod
+    def from_frame(cls, frame, *, boot, request):
+        require(type(frame) is Frame and frame.type is Message.NATIVE_PROFILE_REPLY
+                and type(boot) is bytes and len(boot) == 16 and frame.boot == boot
+                and type(request) is int and request > 0 and frame.request == request,
+                'wrong_native_clock_reply')
+        require(len(frame.body) == 24 and frame.body[:8] == b'MNC1\x01\0\0\0',
+                'invalid_native_clock_schema')
+        wanted, cpu, apb, verified = struct.unpack('!4I', frame.body[8:])
+        require(wanted == 160 and verified in (0, 1), 'invalid_native_clock_fields')
+        return cls(wanted, cpu, apb, bool(verified))
+
+    @property
+    def matches(self):
+        return self.setup_verified and self.actual_cpu_mhz == 160 and self.actual_apb_hz == 80000000

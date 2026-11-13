@@ -14,10 +14,14 @@ import time
 from types import BuiltinFunctionType, MethodType
 import uuid
 
+from .host_timing import Phase, check_timing, phase, timed
+from .authority_timing import AuthorityPhase, authority_timed
 from .linux_hat import LinuxHAT, HardwareError, require
 from .serial_protocol import Outcome, RadioProfile
 from .serial_worker import AttemptResult, estimated_airtime_us
 from .sx1262 import SX1262
+from .rx_reasons import ReceiveReasons
+from .rx_timeline import ReceiveTimeline
 
 
 _NATIVE_MONOTONIC = time.monotonic
@@ -50,7 +54,14 @@ class HATWorker:
 
     def __init__(self, transport, *, journal, profile, context_digest, authorize,
                  authority_deadline, antenna_confirmed, monotonic=None,
-                 time_basis='host-monotonic'):
+                 time_basis='host-monotonic', receive_reasons=False, receive_timeline=False, checked_rearm=False):
+        require(type(checked_rearm) is bool, 'invalid_hat_checked_rearm')
+        require(not checked_rearm or self._driver_type is SX1262, 'hat_checked_rearm_lora_only')
+        require(type(receive_timeline) is bool, 'invalid_hat_receive_timeline')
+        self._receive_timeline = ReceiveTimeline() if receive_timeline else None
+        require(type(receive_reasons) is bool, 'invalid_hat_receive_reasons')
+        self._receive_reasons = ReceiveReasons() if receive_reasons else None
+        timing = check_timing(getattr(journal, 'host_timing', None))
         require(type(profile) is self._profile_type and callable(authorize), 'invalid_hat_authority')
         require(type(antenna_confirmed) is bool, 'invalid_antenna_confirmation')
         require(type(authority_deadline) in (int, float) and math.isfinite(authority_deadline),
@@ -80,7 +91,11 @@ class HATWorker:
                     and callable(monotonic), 'hat_clock_basis_unverified')
             native_clock = monotonic
         self._clock, self.time_basis = native_clock, time_basis
-        self.radio = self._driver_type(transport, monotonic=native_clock)
+        self.radio = self._driver_type(transport, monotonic=native_clock, **({'checked_rearm': True} if checked_rearm else {}))
+        self.host_timing = timing
+        self.radio.host_timing = self.host_timing
+        self.radio.receive_reasons = self._receive_reasons
+        self.radio.receive_timeline = self._receive_timeline
         self.lease_deadline = min(authority_deadline, native_clock() + profile.lease_ms / 1000)
         original_end = min(authority_deadline, self.lease_deadline)
         pid, thread = os.getpid(), threading.get_ident()
@@ -139,6 +154,7 @@ class HATWorker:
     def _dispatch(self):
         return self.__dispatch
 
+    @authority_timed(AuthorityPhase.HAT_LIVE)
     def _live(self, needed=0):
         require(not self.fenced, 'hat_authority_refused')
         owned, authorize = self._dispatch, self.authorize
@@ -187,38 +203,41 @@ class HATWorker:
             except HardwareError:
                 outcome, evidence = 'NOT_SENT', 'authority_changed_before_spi'
                 return AttemptResult(request, outcome, reservation, None)
-            started = radio.start_transmit(packet, authority_deadline=owned(),
-                                           antenna_confirmed=self.antenna_confirmed)
-            if started is False:
-                # A completed RX remained intact before any TX/FIFO write.
-                # Recheck the original owner/lease; the paid reservation is
-                # settled, never refunded, and ordinary receive drains it.
-                self._live()
-                outcome, evidence = 'NOT_SENT', 'completed_receive_pending_before_tx'
-                return AttemptResult(request, outcome, reservation, None)
-            while driver is None:
-                driver = radio.poll_transmit()
-                if driver is None:
-                    transport.sleep(0.001)
-            require(type(profile) is RadioProfile or driver.estimated_airtime_us==estimate<=reservation,
-                    'gfsk_driver_estimate_changed')
-            outcome = 'RF_DONE' if driver.outcome is Outcome.RF_DONE else 'UNKNOWN'
-            evidence = json.dumps({'driver_estimate_us': driver.estimated_airtime_us,
-                'host_driver_elapsed_us': driver.driver_elapsed_us, 'irq': driver.irq_flags,
-                'error': driver.driver_error}, separators=(',', ':'))
-            if outcome == 'RF_DONE':
-                # The attempt was durably reserved before RF. Once TX_DONE is
-                # known, listen while its result is saved, rather than leaving
-                # the radio in standby through journal fsync. RX failure is
-                # separate and cannot erase this known transmit evidence.
-                try:
+            # Inclusive host-call bound, including a NOT_SENT RX-preserving attempt;
+            # this is not an independently measured RF-deaf interval.
+            with phase(self.host_timing, Phase.HAT_TX_TO_RX_RESTORE):
+                started = radio.start_transmit(packet, authority_deadline=owned(),
+                                               antenna_confirmed=self.antenna_confirmed)
+                if started is False:
+                    # A completed RX remained intact before any TX/FIFO write.
+                    # Recheck the original owner/lease; the paid reservation is
+                    # settled, never refunded, and ordinary receive drains it.
                     self._live()
-                    require(self.radio is radio and self.io is transport and radio.io is transport,
-                            'hat_driver_changed_after_transmit')
-                    radio.start_receive(authority_deadline=min(receive_deadline, self.deadline,
-                                                              self.lease_deadline))
-                except BaseException as error:
-                    receive_failure(error)
+                    outcome, evidence = 'NOT_SENT', 'completed_receive_pending_before_tx'
+                    return AttemptResult(request, outcome, reservation, None)
+                while driver is None:
+                    driver = radio.poll_transmit()
+                    if driver is None:
+                        transport.sleep(0.001)
+                require(type(profile) is RadioProfile or driver.estimated_airtime_us==estimate<=reservation,
+                        'gfsk_driver_estimate_changed')
+                outcome = 'RF_DONE' if driver.outcome is Outcome.RF_DONE else 'UNKNOWN'
+                evidence = json.dumps({'driver_estimate_us': driver.estimated_airtime_us,
+                    'host_driver_elapsed_us': driver.driver_elapsed_us, 'irq': driver.irq_flags,
+                    'error': driver.driver_error}, separators=(',', ':'))
+                if outcome == 'RF_DONE':
+                    # The attempt was durably reserved before RF. Once TX_DONE is
+                    # known, listen while its result is saved, rather than leaving
+                    # the radio in standby through journal fsync. RX failure is
+                    # separate and cannot erase this known transmit evidence.
+                    try:
+                        self._live()
+                        require(self.radio is radio and self.io is transport and radio.io is transport,
+                                'hat_driver_changed_after_transmit')
+                        radio.start_receive(authority_deadline=min(receive_deadline, self.deadline,
+                                                                  self.lease_deadline))
+                    except BaseException as error:
+                        receive_failure(error)
         except (OSError, HardwareError):
             outcome, evidence, driver = 'UNKNOWN', 'spi_or_evidence_failure', None
         finally:
@@ -247,9 +266,85 @@ class HATWorker:
                        else 'model_monotonic') if driver is not None else None
         return AttemptResult(request, outcome, reservation, driver, clock_basis)
 
+    @timed(Phase.HAT_ACTIVITY_WAIT)
+    def wait_for_activity(self, timeout):
+        """Bounded non-consuming DIO1 wake hint; None selects the caller fallback.
+
+        No SPI/IRQ drain, RX setup, packet delivery or deadline renewal occurs.
+        Use a bounded owned GPIO edge/level hint when the transport supports
+        it; otherwise retain bounded level polling or the caller fallback.
+        The latched radio IRQ remains for the ordinary receive path.
+        """
+        require(type(timeout) in (int, float) and math.isfinite(timeout)
+                and 0 <= timeout <= .005, 'invalid_hat_activity_timeout')
+        self._dispatch()  # validate captured clock identity before invoking it
+        wait_started = self._clock()
+        self._live()
+        transport = self.io
+        event_wait = getattr(transport, 'wait_dio1', None)
+        if callable(event_wait):
+            if self.radio.receive_pending or not self.radio.receiving:
+                return True
+            end = min(wait_started + timeout, self._dispatch())
+            ready = event_wait(max(0., min(timeout, end - self._clock())))
+            # The callback is never authority: detect revocation, clock/owner
+            # replacement and original lease expiry before any receive work.
+            self._live()
+            require(type(ready) is bool, 'invalid_hat_activity_result')
+            return ready
+        readiness = getattr(transport, 'dio1_ready', None)
+        if not callable(readiness):
+            return None
+        end = min(self._clock() + timeout, self._dispatch())
+        for poll_index in range(21):
+            self._live()
+            if self.radio.receive_pending or not self.radio.receiving:
+                # Ordinary receive must drain/rearm; never wait in standby.
+                return True
+            ready = readiness()
+            self._live()
+            require(type(ready) is bool, 'invalid_hat_activity_result')
+            if ready:
+                return True
+            remaining = end - self._clock()
+            if remaining <= 0 or poll_index == 20:
+                return False
+            transport.sleep(min(.00025, remaining))
+            self._live()
+
+    def receive_reason_snapshot(self):
+        return None if self._receive_reasons is None else self._receive_reasons.snapshot()
+
+    def receive_timeline_snapshot(self):
+        return None if self._receive_timeline is None else self._receive_timeline.snapshot()
+
+    def anchor_receive_timeline(self, digest):
+        if self._receive_timeline is not None:
+            self._receive_timeline.anchor(digest)
+
     def receive(self, timeout=0.0):
         require(type(timeout) in (int, float) and 0 <= timeout <= 0.1, 'invalid_receive_timeout')
         owned = self._dispatch
+        reasons = self._receive_reasons
+        timeline = self._receive_timeline
+        outcome = "failure"
+        if timeline is not None:
+            timeline.begin()
+        def rearm():
+            item = timeline.rearm_start() if timeline is not None else None
+            success = False
+            if reasons is not None:
+                reasons.record('rearm_attempt')
+            try:
+                radio.start_receive(authority_deadline=owned())
+                success = True
+            except BaseException:
+                if reasons is not None:
+                    reasons.record('rearm_failure')
+                raise
+            finally:
+                if timeline is not None:
+                    timeline.rearm_finish(item, success)
         try:
             owned()
             radio, transport = self.radio, self.io
@@ -257,7 +352,7 @@ class HATWorker:
             until = min(now + timeout, owned())
             while True:
                 if not radio.receiving and not radio.receive_pending:
-                    radio.start_receive(authority_deadline=owned())
+                    rearm()
                     # Configuration runs transport operations; recheck before poll.
                     self._live()
                 # Already-listening polls follow the fresh entry check directly.
@@ -270,8 +365,9 @@ class HATWorker:
                     # burst packet can arrive during the caller's decrypt,
                     # flow and credit processing. Keep the original finite
                     # deadline and fresh authority checks around SPI setup.
-                    radio.start_receive(authority_deadline=owned())
+                    rearm()
                     now = self._live()
+                    outcome = "packet"
                     return now, received
                 if not radio.receiving:
                     # Finite RX timeout and rejected header/CRC also leave
@@ -280,22 +376,28 @@ class HATWorker:
                     # The original finite lease and fresh permission still
                     # bound both the SPI operation and the returned state.
                     self._live()
-                    radio.start_receive(authority_deadline=owned())
+                    rearm()
                     self._live()
                 now = self._clock()
                 require(type(now) in (int, float) and math.isfinite(now)
                         and now < owned(), 'hat_authority_expired')
                 if now >= until:
+                    outcome = "empty"
                     return None
                 transport.sleep(0.001)
                 self._live()
         except BaseException:
+            if reasons is not None:
+                reasons.record('receive_failure')
             self.fenced = True
             try:
                 owned(contain=True)
             except Exception:
                 pass
             raise
+        finally:
+            if timeline is not None:
+                timeline.finish(outcome)
 
     def disarm(self):
         self.lease_deadline = 0

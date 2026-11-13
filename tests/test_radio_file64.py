@@ -1,0 +1,158 @@
+"""Explicit64KiB source admission; no device access."""
+import copy
+import hashlib
+import json
+import os
+import pytest
+import importlib.util
+from pathlib import Path
+_spec=importlib.util.spec_from_file_location('file64_fixture',Path(__file__).with_name('test_radio_file_example.py'))
+f=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(f)
+from meshticulum.bench.authority import RunAuthority
+from meshticulum.bench.objects import VerifiedChunks, VerifiedFile64
+from meshticulum.bench.wire import WireError
+from meshticulum.bench.admission import Gfsk250Admission
+from meshticulum.bench.gfsk250_profile import Gfsk250Profile
+DATA=bytes(range(256))*256
+M=f.example.manifest(DATA,file64=True)
+RAW=json.dumps(M).encode();PIN=hashlib.sha256(RAW).hexdigest()
+CAP=dict(schema='meshticulum.file64-capability.v1',max_object_bytes=65536,max_total_frames=512,manifest_sha256=PIN)
+
+def plan(clock):
+    return dict(schema='meshticulum.bench-run.v1',unit='sender',host_boot_id=f.BOOT,
+        local_peer=f.PEERS[0],initiator=f.PEERS[0],responder=f.PEERS[1],session_id='11'*16,
+        generation='22'*16,issued_epoch_us=clock()[0],expires_epoch_us=clock()[0]+180000000,
+        profile=Gfsk250Profile(921375000,0,180000,512,60000000).to_dict(),radio_modem='gfsk250',
+        sender_unit='sender',country='MY',antenna_confirmed=True,max_frames=512,
+        object=copy.deepcopy(M['chunks'][0]),file_capability=copy.deepcopy(CAP),
+        operation_limits={r:dict(attempts=512,estimated_airtime_us=60000000) for r in ('sender','receiver')})
+
+def admit(root,p,clock):
+    root.mkdir(mode=0o700)
+    for name,data in [('grant.json',json.dumps(p).encode()),('secret.bin',b'K'*32),('active',b'active\n')]:
+        fd=os.open(root/name,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+        with os.fdopen(fd,'wb') as out:out.write(data)
+    return RunAuthority(root,expected_unit=p['unit'],host_boot_id=f.BOOT,clock=clock,
+        owner_probe=lambda:True,radio_admission=Gfsk250Admission('MY',(921375000,),(0,),1000,180000,512,60000000))
+
+@pytest.mark.parametrize('mutation',[
+ lambda p:p.pop('file_capability'),lambda p:p.pop('operation_limits'),
+ lambda p:p['file_capability'].update(max_object_bytes=True),
+ lambda p:p['file_capability'].update(max_total_frames=513),
+ lambda p:p['file_capability'].update(manifest_sha256='Z'*64),
+ lambda p:p.update(schema='meshticulum.service-run.v1'),
+ lambda p:p['object'].update(bytes=65535),lambda p:p['object'].update(chunk_index=True),
+ lambda p:p.update(max_frames=513)])
+def test_invalid_admission(tmp_path,mutation):
+    clock=f.Clock();p=plan(clock);mutation(p)
+    with pytest.raises((WireError,ValueError)):admit(tmp_path/'grant',p,clock)
+
+def test_manifest_cache(tmp_path):
+    path=tmp_path/'m';path.write_bytes(RAW)
+    assert len(f.example.manifest(DATA)['chunks'])==4
+    with pytest.raises(WireError):f.example.load_manifest(path,PIN)
+    assert f.example.load_manifest(path,PIN,file64=True)==M
+    with pytest.raises(WireError):f.example.manifest(DATA[:-1],file64=True)
+    with pytest.raises(WireError):f.example.manifest(DATA,file64=1)
+    d=M['chunks'][0]
+    with pytest.raises(WireError):VerifiedChunks(tmp_path/'old').commit(d,DATA)
+    cache=VerifiedFile64(tmp_path/'cache');assert cache.commit(d,DATA)
+    assert not VerifiedFile64(tmp_path/'cache').commit(d,DATA)
+    assert cache.assemble([d])==DATA
+    with pytest.raises(WireError):cache.assemble([d,d])
+    cache._paths(d)[2].write_bytes(b'X'*65536)
+    with pytest.raises(WireError):cache.get(d)
+
+@pytest.mark.parametrize('field,value',[('bytes',65535),('schema',f.example.FILE_SCHEMA),('chunks',M['chunks']*2)])
+def test_noncanonical(tmp_path,field,value):
+    m=copy.deepcopy(M);m[field]=value;raw=json.dumps(m).encode();p=tmp_path/'m';p.write_bytes(raw)
+    with pytest.raises(WireError):f.example.load_manifest(p,hashlib.sha256(raw).hexdigest(),file64=True)
+
+def test_contract_and_route_immutable(tmp_path):
+    clock=f.Clock();a=admit(tmp_path/'grant',plan(clock),clock)
+    try:
+        assert a.contract.limits.max_queued_bytes==65536
+        assert a.contract.limits.max_total_frames==512
+        assert a.route_record['file_capability']==CAP
+        assert a.operation_limits.attempts==512
+        a.plan['file_capability']['manifest_sha256']='0'*64
+        with pytest.raises(WireError):a.admitted_service_binding()
+    finally:a.close()
+
+from meshticulum.bench.attempts import AttemptJournal
+from meshticulum.bench.serial_worker import AttemptResult
+from meshticulum.bench.state import SessionStore
+from meshticulum.bench.wire import SessionCipher
+
+class Worker(f.ModelWorker):
+    def transmit(self,packet):
+        request=self.journal.reserve(packet,12000)
+        self.cumulative[0]+=1
+        self.journal.settle(request,packet,'RF_DONE','source_radio_model')
+        self.sent.append(packet)
+        if self.corrupt_once:
+            self.corrupt_once=False;packet=packet[:-1]+bytes([packet[-1]^1])
+        self.peer.incoming.append(packet)
+        return AttemptResult(request,'RF_DONE',12000,None)
+
+@pytest.mark.parametrize('loss,expire',[(False,False),(True,False),(False,True)])
+def test_one_operation64k(tmp_path,loss,expire):
+    clock=f.Clock();opened=[];transfers=[];workers=[]
+    try:
+        for unit in ('sender','receiver'):
+            p=plan(clock);p['unit']=unit;p['local_peer']=f.PEERS[int(unit=='receiver')]
+            root=tmp_path/unit;a=admit(root,p,clock)
+            journal=AttemptJournal(root/'attempts.db',binding=bytes(32),max_attempts=512,
+                max_airtime_us=60000000,create=True)
+            w=Worker(journal,clock,[0]);w.corrupt_once=loss and unit=='sender'
+            store=SessionStore(root/'wire.db',a.grant,a.local_peer,boot_id=f.BOOT,clock=clock,create=True)
+            cache=VerifiedFile64(tmp_path/'cache')
+            window=f.example.bind_file_window(cache,M,p['issued_epoch_us'],p['expires_epoch_us'],time_source=clock,boot_reader=lambda:f.BOOT)
+            transfer=f.example.FileTransfer(a,w,journal,SessionCipher(a.grant,a.local_peer,store),
+                M['chunks'][0],cache,clock=clock,window=window,chunk=0,confirm_receipt=True)
+            transfers.append(transfer);workers.append(w);opened.append((transfer,store,a,journal))
+        workers[0].peer,workers[1].peer=workers[1],workers[0]
+        transfers[0].send(DATA)
+        if expire:
+            clock.advance(180000001)
+            with pytest.raises(WireError):transfers[0].step()
+            assert workers[0].cumulative[0]==0
+            assert VerifiedFile64(tmp_path/'cache').get(M['chunks'][0]) is None
+        else:
+            f.finish(transfers,clock)
+            assert bytes(transfers[1].endpoint.received)==DATA
+            assert VerifiedFile64(tmp_path/'cache').assemble(M['chunks'])==DATA
+            assert 340<=workers[0].cumulative[0]<=512
+            assert transfers[1].endpoint.receipt_confirmed
+            assert clock()[0]<p['expires_epoch_us']
+            assert len(workers)==2
+    finally:f.close_pair(opened)
+
+from types import SimpleNamespace
+import subprocess
+import sys
+
+@pytest.mark.parametrize('mismatch',['missing','pin'])
+def test_transfer_refuses_before_hardware(tmp_path,mismatch,monkeypatch):
+    p=plan(f.Clock())
+    if mismatch=='missing':p.pop('file_capability')
+    else:p['file_capability']['manifest_sha256']='0'*64
+    root=tmp_path/'grant';root.mkdir(mode=0o700)
+    raw=json.dumps(p).encode();g=root/'grant.json';g.write_bytes(raw);g.chmod(0o600)
+    m=tmp_path/'manifest';m.write_bytes(RAW)
+    args=SimpleNamespace(manifest=m,manifest_sha256=PIN,file64=True,chunk=0,
+        grant_directory=root,grant_sha256=hashlib.sha256(raw).hexdigest())
+    monkeypatch.setattr(f.example,'ExclusiveSerial',lambda *a,**k:pytest.fail('hardware opened'))
+    with pytest.raises(WireError,match='example_file64_'):
+        f.example.transfer_chunk(args)
+
+
+def test_cli_file64_requires_flag_and_exact_size(tmp_path):
+    src=tmp_path/'data';src.write_bytes(DATA)
+    script=Path(__file__).resolve().parents[1]/'examples/radio_file.py'
+    run=lambda *args:subprocess.run([sys.executable,str(script),*map(str,args)],capture_output=True,text=True)
+    ordinary=run('manifest',src);special=run('manifest',src,'--file64')
+    assert ordinary.returncode==special.returncode==0
+    assert len(json.loads(ordinary.stdout)['chunks'])==4
+    assert json.loads(special.stdout)==M
+    src.write_bytes(DATA[:-1]);assert run('manifest',src,'--file64').returncode!=0

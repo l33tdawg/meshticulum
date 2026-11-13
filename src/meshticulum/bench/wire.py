@@ -49,6 +49,7 @@ class FrameKind(IntEnum):
     DATA = 1
     ACK = 2
     CONTROL = 3
+    DATA_TURN_END = 4
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,8 +117,11 @@ class SessionCipher:
     carrier attempt, but must not treat replay refusal as inner-flow completion.
     A crash after replay commit may lose a delivery; the inner flow must retry.
     """
-    def __init__(self, grant, local_peer, store):
+    def __init__(self, grant, local_peer, store, *, turn_end=False):
         require(type(grant) is BenchGrant, 'invalid_grant')
+        require(type(turn_end) is bool, 'invalid_turn_end_cipher_option')
+        self._turn_end_enabled = turn_end
+        self._turn_end_binding = lambda: turn_end
         self.grant = grant
         self.direction = grant.direction(local_peer)
         self.store = store
@@ -133,7 +137,13 @@ class SessionCipher:
         require(type(payload) is bytes and 0 < len(payload) <= self.grant.max_plaintext,
                 'invalid_payload_size')
         require(type(kind) is FrameKind, 'invalid_frame_kind')
+        require(kind is not FrameKind.DATA_TURN_END or (
+            self._turn_end_enabled is True and self._turn_end_binding() is True),
+            'turn_end_cipher_not_admitted')
         counter = self.store.reserve_transmit(authorize=authorize)
+        require(kind is not FrameKind.DATA_TURN_END or (
+            self._turn_end_enabled is True and self._turn_end_binding() is True),
+            'turn_end_cipher_changed')
         header = HEADER.pack(MAGIC, VERSION, int(kind), self.direction,
                              self.grant.session.session_id, counter, len(payload))
         nonce = bytes(4) + counter.to_bytes(8, 'big')
@@ -149,6 +159,9 @@ class SessionCipher:
         require(session_id == self.grant.session.session_id, 'unknown_session')
         require(1 <= counter <= self.grant.max_frames, 'invalid_counter')
         require(kind in FrameKind._value2member_map_, 'invalid_frame_kind')
+        require(kind != int(FrameKind.DATA_TURN_END) or (
+            self._turn_end_enabled is True and self._turn_end_binding() is True),
+            'turn_end_cipher_not_admitted')
         require(length == len(packet) - HEADER.size - TAG_BYTES, 'length_mismatch')
         self.store.check_live(authorize=authorize)
         nonce = bytes(4) + counter.to_bytes(8, 'big')
@@ -159,4 +172,7 @@ class SessionCipher:
         # Persist replay admission before returning any plaintext. A forged frame
         # never moves the window; authority and expiry are checked again here.
         self.store.record_receive(counter, authorize=authorize)
+        require(kind != int(FrameKind.DATA_TURN_END) or (
+            self._turn_end_enabled is True and self._turn_end_binding() is True),
+            'turn_end_cipher_changed')
         return VerifiedFrame(FrameKind(kind), counter, payload)

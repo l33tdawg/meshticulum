@@ -104,3 +104,38 @@ def test_gpio_claim_never_claims_gnss_spi_or_kernel_chip_select():
     attrs = request.config.attrs
     assert attrs[0].value == 8 and attrs[0].mask == 3  # only reset + RF output
     assert attrs[1].value == 3 and attrs[1].mask == 3  # reset high, RX selection
+
+
+@pytest.mark.parametrize('reserved', [0, 1, 0x80, 0x81])
+def test_probe_reserved_bits_preserve_complete_no_tx_sequence(reserved):
+    class StatusChip(Chip):
+        def transfer(self, value):
+            result = bytearray(super().transfer(value))
+            if value[0] == 0xC0:
+                result[1] |= 2 | reserved
+            return bytes(result)
+    chip = StatusChip()
+    baseline = Chip()
+    result = Probe(chip).run()
+    Probe(baseline).run()
+    assert result['standby_rc_status'] == 0x22 | reserved
+    assert result['standby_xosc_status'] == 0x32 | reserved
+    assert result['final_standby_status'] == 0x22 | reserved
+    assert chip.commands == baseline.commands
+    assert chip.word == b'\x19\x24' and chip.mode == 2
+    assert chip.resets == [False, True] and chip.switches == [True]
+    assert result['rf_transmissions'] == 0
+    assert {c[0] for c in chip.commands} == {0x80, 0xC0, 0x0D, 0x1D}
+
+
+@pytest.mark.parametrize('expected_mode', [2, 3])
+def test_probe_exhaustive_status_bytes_keep_defined_failure_checks(expected_mode):
+    for value in range(256):
+        probe = Probe(Chip())
+        probe.transfer = lambda packet: bytes([0, value])
+        accepted = (value >> 4) & 7 == expected_mode and (value >> 1) & 7 not in (3, 4, 5)
+        if accepted:
+            assert probe.status(expected_mode) == value
+        else:
+            with pytest.raises(HardwareError):
+                probe.status(expected_mode)

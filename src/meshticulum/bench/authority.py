@@ -29,15 +29,19 @@ from .serial_protocol import RadioProfile
 from .serial_worker import estimated_airtime_us
 from .burst_protocol import (CLOCK_MARGIN_US, INTER_PACKET_RX_US, MAX_CLOCK_RTT_US,
                              REVERSE_LISTEN_US, validate_policy, policy_depth, policy_train_frames,
-                             policy_flow_window)
+                             policy_flow_window, policy_dynamic_train)
 from .tx_burst import MAX_AUTONOMOUS_HOLD_US, MAX_DEPTH, START_GUARD_US
 from .admission import RadioAdmission,GfskAdmission,Gfsk250Admission
+from .continuation import ContinuationAdmission
 from .gfsk_profile import GfskProfile,radio_airtime_us,radio_is_fast,radio_is_sf5
 from .gfsk250_profile import Gfsk250Profile
 from .wire import BenchGrant, require
 from .public_block import (PUBLIC32_MARKER,REPRESENTATION_MARKER,TRANSPORT_DESCRIPTOR_MARKER,
                           public32_service,public_mb1_service,object_limit)
 
+
+from .file_capability import file_capability_mode, admitted_object_limit, admitted_frame_limit
+from .turn_end import admitted as turn_end_admitted
 
 @dataclass(frozen=True)
 class OperationLimits:
@@ -103,9 +107,12 @@ def _open(path, flags=os.O_RDONLY):
     return fd
 
 
+from .authority_timing import AuthorityPhase, authority_timed
+
+
 class RunAuthority:
     def __init__(self, directory, *, expected_unit, host_boot_id, clock, owner_probe, radio_admission=None):
-        require(type(radio_admission) in (RadioAdmission,GfskAdmission,Gfsk250Admission), 'explicit_native_radio_admission_required')
+        require(type(radio_admission) in (RadioAdmission,GfskAdmission,Gfsk250Admission,ContinuationAdmission), 'explicit_native_radio_admission_required')
         self.path = Path(directory).absolute()
         _private_info(self.path.lstat(), directory=True)
         self.fds, self.held = {}, {}
@@ -135,8 +142,16 @@ class RunAuthority:
                 validate_policy(p['data_burst'])
                 require(p.get('radio_modem') not in ('gfsk125', 'gfsk250'),
                         'data_burst_requires_lora')
+            if 'boot_continuation' in p:
+                extras.add('boot_continuation')
             if 'operation_limits' in p:
                 extras.add('operation_limits')
+            if 'file_capability' in p:
+                extras.add('file_capability')
+                file_capability_mode(p)
+            if 'turn_end_capability' in p:
+                extras.add('turn_end_capability')
+                turn_end_admitted(p)
             if is_service and local_deadline_field in p:
                 extras.add(local_deadline_field)
             require(set(p) == fields | extras, 'invalid_bench_plan')
@@ -182,15 +197,26 @@ class RunAuthority:
                 require(type(radio_admission) is Gfsk250Admission,'explicit_gfsk250_admission_required')
                 self.profile=Gfsk250Profile.from_dict(p['profile'],board_id=1)
             else:
-                require(type(radio_admission) is RadioAdmission,'wrong_radio_admission_modem')
+                require(type(radio_admission) in (RadioAdmission,ContinuationAdmission),'wrong_radio_admission_modem')
                 self.profile = RadioProfile(**p['profile'])
             self.profile.encode(board_id=1)
             radio_admission.check(p['country'], p['antenna_confirmed'], self.profile)
+            if type(radio_admission) is ContinuationAdmission:
+                require(p.get('boot_continuation') == radio_admission.approval.record.value(), 'continuation_record_changed')
+                radio_admission.approval.check_plan(p)
+            else:
+                require('boot_continuation' not in p, 'explicit_continuation_admission_required')
             OperationLimits.from_plan(p)
             if 'data_burst' in p:
                 depth = policy_depth(p['data_burst'])
                 require(depth == 4 or radio_is_sf5(self.profile), 'burst_eight_requires_sf5')
-                train = policy_train_frames(p['data_burst']) * (radio_airtime_us(self.profile, 255)
+                # v10 admits refills dynamically against the SAME original
+                # native deadline. Prove an eight-slot pending queue can fit;
+                # a full 24-admission train is expressly not promised. Existing
+                # policies retain their conservative whole-train fit check.
+                fit_frames = (depth if policy_dynamic_train(p['data_burst'])
+                              else policy_train_frames(p['data_burst']))
+                train = fit_frames * (radio_airtime_us(self.profile, 255)
                                     + START_GUARD_US + INTER_PACKET_RX_US)
                 require(train + REVERSE_LISTEN_US + MAX_CLOCK_RTT_US
                         <= MAX_AUTONOMOUS_HOLD_US - CLOCK_MARGIN_US
@@ -198,7 +224,7 @@ class RunAuthority:
                         'data_burst_profile_cannot_fit')
             obj = p['object']
             require(type(obj) is dict and set(obj) == {'sha256', 'bytes', 'chunk_index', 'object_id'}
-                    and type(obj['bytes']) is int and 1 <= obj['bytes'] <= object_limit(p.get('service',{}))
+                    and type(obj['bytes']) is int and 1 <= obj['bytes'] <= admitted_object_limit(p)
                     and (not self.public32 or self.service_format != 'MR1.response'
                          or self.mb1_descriptor_sha256 is not None or obj['bytes'] == 32768)
                     and type(obj['chunk_index']) is int and 0 <= obj['chunk_index'] < 64,
@@ -214,8 +240,14 @@ class RunAuthority:
                 self.route_record['data_burst'] = p['data_burst']
             if 'operation_limits' in p:
                 self.route_record['operation_limits'] = p['operation_limits']
+            if 'file_capability' in p:
+                self.route_record['file_capability'] = p['file_capability']
+            if 'turn_end_capability' in p:
+                self.route_record['turn_end_capability'] = p['turn_end_capability']
             if is_service:
                 self.route_record['service'] = p['service']
+            if 'boot_continuation' in p:
+                self.route_record['boot_continuation'] = p['boot_continuation']
             route_digest = hashlib.sha256(canonical(self.route_record)).digest()
             self.grant = BenchGrant(session, 'bench_transfer', route_digest,
                 p['issued_epoch_us'], p['expires_epoch_us'], 208, p['max_frames'], secret)
@@ -306,10 +338,10 @@ class RunAuthority:
         self.deadlines = DeadlineSet(min(mono / 1000000 + duration, self.application_deadline_us / 1000000),
                                     self.deadline_us / 1000000,
                                     self.grant.expires_epoch_us / 1000000)
-        maximum = object_limit(self.plan.get('service',{}))
+        maximum = admitted_object_limit(self.plan)
         window = policy_flow_window(self.plan['data_burst']) if 'data_burst' in self.plan else 4
         limits = CapabilityLimits(208, 208 * window, maximum, 0, window, maximum, 4, 1, 1,
-                                  256 if self.public32 and self.service_format == 'MR1.response' else 128, 32)
+                                  admitted_frame_limit(self.plan, public32=self.public32 and self.service_format == 'MR1.response'), 32)
         private = self.service_kind is ServiceKind.MESSAGE
         feature = Feature.PROTECTED_MESSAGE_V2 if private else Feature.OBJECT_RESUME
         self.contract = NegotiatedContract(1, frozenset({Feature.BYTE_CREDIT, Feature.SELECTIVE_ACK_32,
@@ -345,6 +377,7 @@ class RunAuthority:
         record = self._captured_admission()[0].get('data_burst')
         return None if record is None else validate_policy(record)
 
+    @authority_timed(AuthorityPhase.AUTHORITY_LIVE)
     def live(self):
         if self.closed:
             return False
@@ -408,6 +441,7 @@ class RunAuthority:
         require(hashlib.sha256(frame.payload).digest() == frame.request.payload_digest
                 and len(frame.payload) == frame.request.payload_bytes, 'bench_dispatch_payload_changed')
 
+    @authority_timed(AuthorityPhase.APPLICATION_LIVE)
     def application_live(self):
         """Finite service admission only; owner consent remains a separate gate."""
         if not self.live() or self.owner_probe() is not True:

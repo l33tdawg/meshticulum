@@ -1,4 +1,4 @@
-"""Explicit header preservation is an eighth-input source experiment only."""
+"""Explicit header preservation changes only the generated configuration header."""
 import hashlib
 import json
 from pathlib import Path
@@ -11,7 +11,7 @@ from tests.test_firmware_recipe import recipe
 
 @pytest.mark.parametrize('profile', [False, True])
 @pytest.mark.parametrize('hz', [None, 2000000, 8000000])
-def test_omitted_and_false_keep_header_bytes_options_and_eight_input_identity(recipe,tmp_path,profile,hz):
+def test_omitted_and_false_keep_header_bytes_options_and_current_input_identity(recipe,tmp_path,profile,hz):
     omitted=recipe.native_profile_config(profile,heltec_spi_hz=hz)
     explicit=recipe.native_profile_config(profile,heltec_spi_hz=hz,rx_header_preserve=False)
     assert omitted==explicit and 'MTBENCH_RX_HEADER_PRESERVE' not in omitted
@@ -22,7 +22,7 @@ def test_omitted_and_false_keep_header_bytes_options_and_eight_input_identity(re
     on,on_id=recipe.prepare_application(tmp_path/'on',native_profile=profile,
                                        heltec_spi_hz=hz,rx_header_preserve=True)
     assert off==same and off_id==same_id and on_id!=off_id
-    assert len(on)==len(off)==8
+    assert len(on)==len(off)==9
     assert {key for key in on if on[key]!=off[key]}=={'native_profile_config.hpp'}
     header=(tmp_path/'on/native_profile_config.hpp').read_text()
     assert header.startswith(omitted) and '#define MTBENCH_RX_HEADER_PRESERVE 1\n' in header
