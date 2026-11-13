@@ -272,8 +272,21 @@ class HATWorker:
         """
         require(type(timeout) in (int, float) and math.isfinite(timeout)
                 and 0 <= timeout <= .005, 'invalid_hat_activity_timeout')
+        self._dispatch()  # validate captured clock identity before invoking it
+        wait_started = self._clock()
         self._live()
         transport = self.io
+        event_wait = getattr(transport, 'wait_dio1', None)
+        if callable(event_wait):
+            if self.radio.receive_pending or not self.radio.receiving:
+                return True
+            end = min(wait_started + timeout, self._dispatch())
+            ready = event_wait(max(0., min(timeout, end - self._clock())))
+            # The callback is never authority: detect revocation, clock/owner
+            # replacement and original lease expiry before any receive work.
+            self._live()
+            require(type(ready) is bool, 'invalid_hat_activity_result')
+            return ready
         readiness = getattr(transport, 'dio1_ready', None)
         if not callable(readiness):
             return None

@@ -24,7 +24,7 @@ def hardware(monkeypatch):
  def opening(path,*a):
   trace.append(('open',str(path)))
   return 11 if str(path).endswith('.lock') else 12 if str(path)=='/dev/spidev0.0' else 13
- monkeypatch.setattr(h.os,'open',opening);monkeypatch.setattr(h.os,'fstat',lambda fd:info(stat.S_IFREG|0o600) if fd==11 else info(stat.S_IFCHR|0o600));monkeypatch.setattr(h.os,'close',closed.append);monkeypatch.setattr(h.os,'set_inheritable',lambda *a:None);monkeypatch.setattr(h,'_existing_openers',lambda *a:[]);monkeypatch.setattr(h.fcntl,'flock',lambda *a:None)
+ monkeypatch.setattr(h.os,'open',opening);monkeypatch.setattr(h.os,'fstat',lambda fd:info(stat.S_IFREG|0o600) if fd==11 else info(stat.S_IFCHR|0o600));monkeypatch.setattr(h.os,'close',closed.append);monkeypatch.setattr(h.os,'set_inheritable',lambda *a:None);monkeypatch.setattr(h.os,'set_blocking',lambda *a:None);monkeypatch.setattr(h,'_existing_openers',lambda *a:[]);monkeypatch.setattr(h.fcntl,'flock',lambda *a:None)
  def ioctl(fd,op,value):
   trace.append(('ioctl',op,bytes(value) if isinstance(value,(bytes,bytearray)) else None))
   if state['failure']==op:raise OSError('injected_ioctl')

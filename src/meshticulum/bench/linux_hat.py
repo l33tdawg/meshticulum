@@ -11,6 +11,8 @@ import fcntl
 import os
 from pathlib import Path
 import platform
+import math
+import select
 import stat
 import struct
 import time
@@ -67,7 +69,9 @@ SPI_READ_HZ = ioc(2, 'k', 4, 4)
 
 
 def abi_manifest():
-    return {'gpio_request_size': ctypes.sizeof(LineRequest),
+    return {'gpio_event_size': struct.calcsize('=QIIII6I'),
+            'gpio_edge_rising_flag': 16,
+            'gpio_request_size': ctypes.sizeof(LineRequest),
             'gpio_config_size': ctypes.sizeof(LineConfig),
             'gpio_request_config_offset': LineRequest.config.offset,
             'gpio_request_fd_offset': LineRequest.fd.offset,
@@ -85,9 +89,11 @@ def gpio_request():
     request.num_lines = 4
     request.fd = -1
     request.config.flags = 4  # GPIO_V2_LINE_FLAG_INPUT
-    request.config.num_attrs = 2
+    request.config.num_attrs = 3
     request.config.attrs[0] = Attribute(1, 0, 8, 3)  # first two lines OUTPUT
     request.config.attrs[1] = Attribute(2, 0, 3, 3)  # reset HIGH, RF switch RX
+    request.config.attrs[2] = Attribute(1, 0, 4 | 16, 8)  # DIO1 input + rising edge only
+    request.event_buffer_size = 16
     return request
 
 
@@ -177,6 +183,7 @@ class LinuxHAT:
             require(request.fd >= 0, 'gpio_request_failed')
             self.lines_fd = request.fd
             os.set_inheritable(self.lines_fd, False)
+            os.set_blocking(self.lines_fd, False)
             fcntl.ioctl(self.spi_fd, SPI_WRITE_MODE, bytes([0]))
             fcntl.ioctl(self.spi_fd, SPI_WRITE_BITS, bytes([8]))
             fcntl.ioctl(self.spi_fd, SPI_WRITE_HZ, struct.pack('=I', self._spi_hz))
@@ -224,6 +231,37 @@ class LinuxHAT:
         values = bytearray(struct.pack('=QQ', 0, 8))
         fcntl.ioctl(self.lines_fd, GPIO_GET_VALUES, values)
         return bool(struct.unpack('=QQ', values)[0] & 8)
+
+    def wait_dio1(self, timeout):
+        """Bounded GPIO hint only; never consume radio IRQs or claim a packet.
+
+        Stale/coalesced/overflowed GPIO events may cause an early receive poll.
+        The ordinary radio read remains authoritative. No retry extends timeout.
+        """
+        require(type(timeout) in (int, float) and math.isfinite(timeout)
+                and 0 <= timeout <= .005, 'invalid_hat_activity_timeout')
+        fd = self.lines_fd
+        require(fd is not None, 'closed_gpio')
+        end = time.monotonic() + timeout
+        high = self.dio1_ready()
+        require(self.lines_fd == fd, 'gpio_request_changed')
+        if high:
+            return True
+        ready, _, _ = select.select([fd], [], [], max(0., end - time.monotonic()))
+        require(self.lines_fd == fd, 'gpio_request_changed')
+        if not ready:
+            return False
+        # Nonblocking even if a stale readiness notification races a read.
+        try:
+            events = os.read(fd, 16 * 48)
+        except BlockingIOError:
+            return False
+        require(self.lines_fd == fd, 'gpio_request_changed')
+        require(bool(events) and len(events) % 48 == 0, 'invalid_gpio_event_read')
+        for offset in range(0, len(events), 48):
+            _, kind, line, _, _ = struct.unpack_from('=QIIII', events, offset)
+            require(kind == 1 and line == 5, 'unexpected_gpio_event')
+        return True
 
     def close(self):
         # No SPI commands from teardown; higher driver owns bounded standby.
