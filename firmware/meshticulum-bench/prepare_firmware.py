@@ -116,7 +116,7 @@ def tree(directory):
             and path.name not in ('.piopm', 'appstate.json') and path.suffix not in ('.pyc', '.pyo')}
 
 
-def build_options(native_profile, heltec_spi_hz=None, *, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False):
+def build_options(native_profile, heltec_spi_hz=None, *, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False, heltec_cpu_mhz=None):
     require(type(native_profile) is bool, 'invalid_native_profile_option')
     require(heltec_spi_hz is None or type(heltec_spi_hz) is int
             and heltec_spi_hz in (2000000, 8000000), 'invalid_heltec_spi_option')
@@ -124,7 +124,11 @@ def build_options(native_profile, heltec_spi_hz=None, *, rx_header_preserve=Fals
     require(type(esp32_bulk_spi) is bool, 'invalid_esp32_bulk_spi_option')
     require(type(skip_unchanged_erratum_writes) is bool, 'invalid_skip_unchanged_erratum_writes_option')
     require(type(burst_wake_hint) is bool, 'invalid_burst_wake_hint_option')
+    require(heltec_cpu_mhz is None or type(heltec_cpu_mhz) is int and heltec_cpu_mhz in (80, 160), 'invalid_heltec_cpu_option')
+    require(heltec_cpu_mhz != 160 or native_profile, 'cpu160_requires_native_profile')
     options = dict(native_profile=native_profile)
+    if heltec_cpu_mhz == 160:
+        options['heltec_cpu_mhz'] = 160
     if heltec_spi_hz is not None:
         options['heltec_spi_hz'] = heltec_spi_hz
     if rx_header_preserve:
@@ -138,8 +142,8 @@ def build_options(native_profile, heltec_spi_hz=None, *, rx_header_preserve=Fals
     return options
 
 
-def native_profile_config(native_profile, *, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False):
-    build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint)
+def native_profile_config(native_profile, *, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False, heltec_cpu_mhz=None):
+    build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint, heltec_cpu_mhz=heltec_cpu_mhz)
     original = ('#pragma once\n#ifdef MTBENCH_NATIVE_PROFILE\n'
             '#error "native profiling is pinned by the prepared application"\n#endif\n'
             f'#define MTBENCH_NATIVE_PROFILE {int(native_profile)}\n')
@@ -214,13 +218,78 @@ def native_profile_config(native_profile, *, heltec_spi_hz=None, rx_header_prese
             '#define MTBENCH_SKIP_UNCHANGED_ERRATUM_WRITES 0\n'
             '#else\n#error "unreviewed erratum writes target"\n#endif\n'
             '#define MTBENCH_ERRATUM_WRITES_PATCH_SHA256 "' + ERRATUM_WRITES_PATCH['patch_sha256'] + '"\n')
+    if heltec_cpu_mhz == 160:
+        original += """#ifdef MTBENCH_CPU160
+#error "CPU clock mode is pinned by the prepared application"
+#endif
+#if defined(HELTEC_LORA_V4) && defined(SEEED_XIAO_S3)
+#error "contradictory CPU targets"
+#elif defined(HELTEC_LORA_V4)
+#if !defined(MESHTICULUM_BOARD_ID) || MESHTICULUM_BOARD_ID != 1 || !defined(ARDUINO_ARCH_ESP32)
+#error "CPU160 requires ESP32 Heltec board1"
+#endif
+#define MTBENCH_CPU160 1
+#elif defined(SEEED_XIAO_S3)
+#if !defined(MESHTICULUM_BOARD_ID) || MESHTICULUM_BOARD_ID != 2
+#error "XIAO baseline requires board2"
+#endif
+#define MTBENCH_CPU160 0
+#else
+#error "unreviewed CPU target"
+#endif
+"""
     return original
 
 
-def prepare_application(app, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False):
+
+def cpu160_main(source):
+    """Exact single-anchor generated variant; baseline source stays untouched."""
+    edits = [
+        ('static void command(const Frame& frame) {', """#if MTBENCH_CPU160
+static bool cpuClockVerified=false;
+static bool configureCpuClock() {
+    if(!setCpuFrequencyMhz(160)) return false;
+    return getCpuFrequencyMhz()==160 && getApbFrequency()==80000000;
+}
+#endif
+
+static void command(const Frame& frame) {"""),
+        ('    if(frame.type==NATIVE_PROFILE) {', """    if(frame.type==NATIVE_PROFILE) {
+        if(frame.size==1 && frame.body[0]==0xfc) {
+#if MTBENCH_CPU160
+            if(armed || transmitting || resultPending || serialContainmentPending
+                || burstBoot.containment_required
+                || (burstQueue && (burstQueue->pending() || burstQueue->retained()))) {
+                refuse(frame,mtbench::BUSY);return;
+            }
+            auto reply=response(NATIVE_PROFILE_REPLY,frame.request);
+            reply.size=24;memcpy(reply.body,"MNC1",4);
+            reply.body[4]=1; // schema1; bytes5..7 remain zero
+            put32(reply.body+8,160);
+            put32(reply.body+12,getCpuFrequencyMhz());
+            put32(reply.body+16,getApbFrequency());
+            put32(reply.body+20,cpuClockVerified ? 1 : 0);
+            output.offer(reply);return;
+#else
+            refuse(frame,BAD_COMMAND);return;
+#endif
+        }
+"""),
+        ('    board.begin();', """    board.begin();
+#if MTBENCH_CPU160
+    cpuClockVerified=configureCpuClock();
+    if(!cpuClockVerified) { fenced=true;serialReady=false;return; }
+#endif"""),
+    ]
+    for before, after in edits:
+        require(source.count(before) == 1, 'cpu160_main_anchor_drift')
+        source = source.replace(before, after, 1)
+    return source
+
+def prepare_application(app, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False, heltec_cpu_mhz=None):
     """Copy exact generic app inputs and bind the build option into its identity."""
     header = native_profile_config(native_profile, heltec_spi_hz=heltec_spi_hz,
-                                   rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint)
+                                   rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint, heltec_cpu_mhz=heltec_cpu_mhz)
     app = Path(app)
     app.mkdir()
     for name in ('main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
@@ -230,6 +299,8 @@ def prepare_application(app, *, native_profile=False, heltec_spi_hz=None, rx_hea
     # Forced inclusion makes an external -D override an error, not a different
     # binary silently using the same application identity.
     (app / 'native_profile_config.hpp').write_text(header)
+    if heltec_cpu_mhz == 160:
+        (app / 'main.cpp').write_text(cpu160_main((app / 'main.cpp').read_text()))
     application = tree(app)
     identity = 'mtb1-' + hashlib.sha256(json.dumps(application, sort_keys=True).encode()).hexdigest()[:10]
     return application, identity
@@ -253,8 +324,8 @@ def apply_erratum_writes_patch(vendor):
     require(sha(target) == patch['patched_sha256'], 'wrong_erratum_writes_patch_result')
 
 
-def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False):
-    options = build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint)
+def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False, heltec_cpu_mhz=None):
+    options = build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint, heltec_cpu_mhz=heltec_cpu_mhz)
     record = lock()
     require(platform.system() == 'Darwin' and platform.machine() == 'arm64', 'recipe_requires_darwin_arm64')
     archives = {row['id']: check_archive(archive_directory, row) for row in record['inputs']}
@@ -311,7 +382,7 @@ def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=No
     app = project / 'examples/meshticulum_bench'
     application, identity = prepare_application(app, native_profile=native_profile,
                                                 heltec_spi_hz=heltec_spi_hz,
-                                                rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint)
+                                                rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint, heltec_cpu_mhz=heltec_cpu_mhz)
     config = ['[platformio]', 'core_dir = ' + str(core), '']
     for target, (parent, board, power) in TARGETS.items():
         config += [f'[env:{target}]', f'extends = {parent}', 'platform = symlink://' + str(locations['platform']),
@@ -357,7 +428,7 @@ def build(output, python, targets):
     options = manifest.get('build_options')
     require(type(options) is dict
             and 'native_profile' in options
-            and set(options) <= {'native_profile', 'heltec_spi_hz', 'rx_header_preserve', 'esp32_bulk_spi', 'skip_unchanged_erratum_writes', 'burst_wake_hint'}
+            and set(options) <= {'native_profile', 'heltec_spi_hz', 'rx_header_preserve', 'esp32_bulk_spi', 'skip_unchanged_erratum_writes', 'burst_wake_hint', 'heltec_cpu_mhz'}
             and type(options['native_profile']) is bool
             and ('heltec_spi_hz' not in options or type(options['heltec_spi_hz']) is int
                  and options['heltec_spi_hz'] in (2000000, 8000000))
@@ -365,7 +436,8 @@ def build(output, python, targets):
                  or type(options['rx_header_preserve']) is bool and options['rx_header_preserve'] is True)
             and ('esp32_bulk_spi' not in options or options['esp32_bulk_spi'] is True)
             and ('skip_unchanged_erratum_writes' not in options or options['skip_unchanged_erratum_writes'] is True)
-            and ('burst_wake_hint' not in options or options['burst_wake_hint'] is True),
+            and ('burst_wake_hint' not in options or options['burst_wake_hint'] is True)
+            and ('heltec_cpu_mhz' not in options or type(options['heltec_cpu_mhz']) is int and options['heltec_cpu_mhz'] == 160 and options['native_profile']),
             'firmware_build_options_mismatch')
     app = output / 'project/examples/meshticulum_bench'
     application = tree(app)
@@ -376,10 +448,13 @@ def build(output, python, targets):
                                          rx_header_preserve=options.get('rx_header_preserve', False),
                                          esp32_bulk_spi=options.get('esp32_bulk_spi', False),
                                          skip_unchanged_erratum_writes=options.get('skip_unchanged_erratum_writes', False),
-                                         burst_wake_hint=options.get('burst_wake_hint', False))
+                                         burst_wake_hint=options.get('burst_wake_hint', False),
+                                         heltec_cpu_mhz=options.get('heltec_cpu_mhz'))
             and manifest.get('identity') == 'mtb1-' + hashlib.sha256(
                 json.dumps(application, sort_keys=True).encode()).hexdigest()[:10],
             'firmware_application_identity_mismatch')
+    if 'heltec_cpu_mhz' in options:
+        require((app / 'main.cpp').read_text() == cpu160_main((HERE / 'main.cpp').read_text()), 'cpu160_main_mismatch')
     if 'esp32_bulk_spi' in options:
         require(sha(output / 'vendor/radiolib' / ESP32_BULK_PATCH['target']) == ESP32_BULK_PATCH['patched_sha256'], 'prepared_esp32_bulk_patch_mismatch')
     if 'skip_unchanged_erratum_writes' in options:
@@ -443,6 +518,7 @@ def main():
     prep.add_argument('--skip-unchanged-erratum-writes', action='store_true',
                       help='opt in to Heltec fresh-read conditional erratum writes')
     prep.add_argument('--burst-wake-hint', action='store_true', help='enable bounded timer wake hints with unchanged periodic fallback')
+    prep.add_argument('--heltec-cpu-mhz', type=int, choices=(80, 160), help='explicit CPU160 diagnostic mode; omission/80 preserves baseline')
     run = commands.add_parser('build')
     run.add_argument('--output-dir', required=True, type=Path)
     run.add_argument('--pio-python', required=True, type=Path)
@@ -456,7 +532,8 @@ def main():
                          rx_header_preserve=args.rx_header_preserve,
                          **({'esp32_bulk_spi': True} if args.esp32_bulk_spi else {}),
                          **({'skip_unchanged_erratum_writes': True} if args.skip_unchanged_erratum_writes else {}),
-                         **({'burst_wake_hint': True} if args.burst_wake_hint else {}))
+                         **({'burst_wake_hint': True} if args.burst_wake_hint else {}),
+                         **({'heltec_cpu_mhz': args.heltec_cpu_mhz} if args.heltec_cpu_mhz is not None else {}))
     else:
         result = build(args.output_dir, args.pio_python, args.target or list(TARGETS))
     print(json.dumps(result, sort_keys=True))
