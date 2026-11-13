@@ -410,7 +410,10 @@ class ChunkTransfer:
 class FileTransfer(ChunkTransfer):
     """Optional authenticated retirement bound to the original file window."""
     def __init__(self, authority, worker, journal, cipher, descriptor, cache, *,
-                 clock, window, chunk, confirm_receipt=False, pace_selective_repeats=False):
+                 clock, window, chunk, confirm_receipt=False, pace_selective_repeats=False,
+                 receiver_ack_quiet_us=None):
+        require(receiver_ack_quiet_us is None or type(receiver_ack_quiet_us) is int
+                and receiver_ack_quiet_us == 150000, 'invalid_receiver_ack_quiet_option')
         require(type(confirm_receipt) is bool, 'invalid_receipt_confirmation_option')
         require(type(pace_selective_repeats) is bool
                 and (not pace_selective_repeats or confirm_receipt),
@@ -434,6 +437,8 @@ class FileTransfer(ChunkTransfer):
             self.enable_receipt_confirmation(context)
         if pace_selective_repeats:
             self.endpoint.enable_selective_repeat_pacing()
+        if receiver_ack_quiet_us is not None:
+            self.endpoint.set_receiver_ack_quiet_us(receiver_ack_quiet_us)
 
 
 def transfer_chunk(args):
@@ -477,7 +482,8 @@ def transfer_chunk(args):
             authority, worker, journal, cipher, descriptor, cache, clock=clock,
             window=window, chunk=args.chunk,
             confirm_receipt=getattr(args, 'confirm_receipt', False),
-            pace_selective_repeats=getattr(args, 'pace_selective_repeats', False)))
+            pace_selective_repeats=getattr(args, 'pace_selective_repeats', False),
+            receiver_ack_quiet_us=getattr(args, 'receiver_ack_quiet_us', None)))
 
 
 class FileHardware:
@@ -489,7 +495,7 @@ class FileHardware:
     _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
     _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
                'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
-               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory')
+               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us')
 
     @classmethod
     def _binding(cls, args):
@@ -733,6 +739,8 @@ def main():
     run.add_argument('--admission-sha256', required=True)
     add_operation_limit_arguments(run)
     add_host_timing_argument(run)
+    run.add_argument('--receiver-ack-quiet-us', type=int, choices=(150000,),
+        help='opt in to 150ms receiver ACK quiet coalescing for SF5 train24')
     run.add_argument('--pace-selective-repeats', action='store_true',
         help='require confirmation; pace repeated early repairs by the accepted flight RTO')
     run.add_argument('--event-complete-inventory', action='store_true',

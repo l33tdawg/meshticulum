@@ -236,6 +236,9 @@ class BenchFlow:
             self.sender_control_hold_us = (self.burst_quiet_us
                 + math.ceil(self.flow.limits.persist_interval_s * 1000000)
                 + max(self.receive_gap_us, self.burst_quiet_us))
+        self.receiver_ack_quiet_us = self.burst_quiet_us
+        self._receiver_quiet150_eligible = fast_sf5 and selected_train == 24 and self.burst_frames == 24
+        self._receiver_quiet_override = False
         self.parse_frame, self.ack_kind = flow.parse_frame, flow.KIND_ACK
         self.closed = False
         self.update_counter()
@@ -635,6 +638,15 @@ class BenchFlow:
         # flow use its exact existing interval, including its clock origin.
         return self._ack_persistence_streak > 0 and now_us < self._ack_persistence_due_us
 
+    def set_receiver_ack_quiet_us(self, value):
+        """One pre-activity opt-in; changes only receiver ACK coalescing."""
+        require(type(value) is int and value == 150000 and not self.closed
+                and not self.counts and not self._receiver_quiet_override
+                and self._receiver_quiet150_eligible,
+                'invalid_receiver_ack_quiet_option')
+        self.receiver_ack_quiet_us = value
+        self._receiver_quiet_override = True
+
     def enable_selective_repeat_pacing(self):
         """Default-off host restraint; never edits the frozen flow's clocks."""
         require(not self.closed and not self.counts
@@ -921,7 +933,7 @@ class BenchFlow:
                     self.burst_started_us = self.last_activity_us
                 self.burst_received += 1
                 self.ack_due_us = (self.last_activity_us if self.burst_received >= self.burst_frames
-                    or self.flow.complete else min(self.last_activity_us + self.burst_quiet_us,
+                    or self.flow.complete else min(self.last_activity_us + self.receiver_ack_quiet_us,
                         self.burst_started_us + self.burst_max_hold_us))
             # A received authenticated ACK has already finished on air. Once
             # its flow state is applied there is no reason to spend the rest
@@ -1092,6 +1104,7 @@ class BenchFlow:
                              'selective_terminal_retry': self._selective_terminal_retry,
                              'selective_stall_retry': self._selective_stall_retry,
                              'burst_frames': self.burst_frames, 'burst_quiet_us': self.burst_quiet_us,
+                             'receiver_ack_quiet_us': self.receiver_ack_quiet_us,
                              'burst_max_hold_us': self.burst_max_hold_us,
                              'sender_control_hold_us': self.sender_control_hold_us,
                              'ack_delay_seconds': self.flow.limits.ack_delay_s,
