@@ -11,6 +11,7 @@ Hardware TX and RX timers are always finite, including if the host disappears.
 """
 import math
 import struct
+from types import MethodType
 
 from .hat_probe import Probe
 from .host_timing import Phase, phase, timed
@@ -55,9 +56,8 @@ class SX1262:
             bindings = tuple((getattr(transport,n).__self__,getattr(transport,n).__func__) for n in names)
             def activity_reader():
                 require(self.io is transport and transport._radio_activity is activity
-                        and all(getattr(getattr(transport,n),'__self__',None) is owner
-                                and getattr(getattr(transport,n),'__func__',None) is fn
-                                for n,(owner,fn) in zip(names,bindings)), 'hat_radio_activity_binding_changed')
+                        and all(type(method := getattr(transport,n)) is MethodType and method.__self__ is owner
+                                and method.__func__ is fn for n,(owner,fn) in zip(names,bindings)), 'hat_radio_activity_binding_changed')
                 return activity()
             self._activity_reader = activity_reader
         self._checked_rearm = checked_rearm
@@ -67,6 +67,9 @@ class SX1262:
             hook_names += ('_transfer','_write','_ready','standby','clear_irq','poll_receive','start_receive','_handoff_state')
         hooks=tuple((getattr(self,name).__self__,getattr(self,name).__func__) for name in hook_names)
         def same_hooks():
+            if checked_rearm:
+                return all(type(method := getattr(self,name)) is MethodType and method.__self__ is owner
+                           and method.__func__ is function for name,(owner,function) in zip(hook_names,hooks))
             return all(getattr(getattr(self,name),'__self__',None) is owner
                        and getattr(getattr(self,name),'__func__',None) is function
                        for name,(owner,function) in zip(hook_names,hooks))
@@ -102,14 +105,13 @@ class SX1262:
         expected = self._rearm_transfer_epoch
         object.__setattr__(self, '_rearm_transfer_epoch', None)
         require(not self.fenced, 'sx1262_fenced')
-        activity_before = self._activity_reader() if self._checked_rearm else None
-        state_before = self._handoff_state()[:-1] if self._checked_rearm else None
+        before = self._handoff_state() if self._checked_rearm else None
         self._ready()
-        if activity_before is not None:
-            require(self._activity_reader() == activity_before and self._handoff_state()[:-1] == state_before,
-                    'sx1262_callback_radio_activity')
+        current = self._handoff_state() if self._checked_rearm else None
+        if before is not None:
+            require(current == before, 'sx1262_callback_radio_activity')
         if expected is not None:
-            require(self._handoff_state() == expected, 'sx1262_rearm_intervening_activity')
+            require(current == expected, 'sx1262_rearm_intervening_activity')
         result = self.io.transfer(packet)
         require(type(result) is bytes and len(result) == len(packet), 'sx1262_short_reply')
         # DS2.2 section 8.3.1: writes assert BUSY within 600 ns after NSS
@@ -118,8 +120,9 @@ class SX1262:
         if packet[0] not in _READ_OPCODES:
             self.io.sleep(0.000002)
         self._ready()
-        if activity_before is not None:
-            require(self._activity_reader() == activity_before + 1 and self._handoff_state()[:-1] == state_before,
+        if before is not None:
+            after = self._handoff_state()
+            require(after[-1] == before[-1] + 1 and after[:-1] == before[:-1],
                     'sx1262_callback_radio_activity')
         return result
 

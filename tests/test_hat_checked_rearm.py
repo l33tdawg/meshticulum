@@ -57,13 +57,14 @@ def test_transport_sealed(rig,name):
  c,io,r=setup(rig)
  with pytest.raises(lh.HardwareError):setattr(io,name,None)
  with pytest.raises(lh.HardwareError):delattr(io,name)
+@pytest.mark.parametrize('boundary',[2,3])
 @pytest.mark.parametrize('change',['reset','spi','profile','fenced','pending'])
-def test_ready_callback_mutation(rig,change):
+def test_ready_callback_mutation(rig,change,boundary):
  c,io=rig;state={'armed':False,'r':None,'calls':0}
  def clock():
   if state['armed']:
    state['calls']+=1
-   if state['calls']==2:
+   if state['calls']==boundary:
     r=state['r'];state['armed']=False
     if change=='reset':io.reset(True)
     elif change=='spi':io.transfer(b'\xc0\0')
@@ -195,3 +196,40 @@ def test_worker_fresh_guard_failure_never_uses_handoff(rig,tmp_path,failure):
   assert w.radio.fenced and w.radio._drained_handoff is None and j.snapshot()['attempts']==0
   assert not any(x[0]==0x82 for x in c.commands)
  finally:j.close()
+
+@pytest.mark.parametrize('change',['reset','spi'])
+def test_room_callback_invalidates_expected_token(rig,change):
+ c,io=rig;armed=[False]
+ def clock():
+  if armed[0]:
+   armed[0]=False
+   if change=='reset':io.reset(True)
+   else:io.transfer(b'\x82\0\0\x40')
+  return c.time
+ c,io,r=setup(rig,clock=clock);drain(c,r);armed[0]=True;c.commands.clear()
+ r.start_receive(authority_deadline=c.time+10)
+ assert [x[0] for x in c.commands][-11:]==LEGACY
+
+def test_one_state_observation_per_transfer_boundary(rig):
+ import sys
+ c,io,r=setup(rig);calls=[]
+ def observe(frame,event,arg):
+  if event=='call' and frame.f_code.co_name in ('activity_reader','_handoff_state'):
+   calls.append(frame.f_code.co_name)
+ previous=sys.getprofile()
+ try:
+  sys.setprofile(observe);r.status()
+ finally:sys.setprofile(previous)
+ assert calls.count('_handoff_state')==3 and calls.count('activity_reader')==3
+
+@pytest.mark.parametrize('target',['driver','transport'])
+def test_spoofed_method_attributes_do_not_replace_bound_method(rig,target,monkeypatch):
+ c,io,r=setup(rig);drain(c,r)
+ name='_packet' if target=='driver' else 'transfer';owner=r if target=='driver' else io;old=getattr(owner,name)
+ class Spoof:
+  __self__=old.__self__;__func__=old.__func__
+  def __call__(self,*args):raise AssertionError('spoof callback invoked')
+ # Deliberately bypass ordinary assignment protection to test readback refusal.
+ object.__setattr__(owner,name,Spoof())
+ with pytest.raises(lh.HardwareError):r.start_receive(authority_deadline=c.time+10)
+ assert r.fenced or target=='driver'
