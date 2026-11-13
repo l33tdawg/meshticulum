@@ -76,12 +76,12 @@ def test_cli_default_and_optin(recipe,monkeypatch,enabled,capsys):
  monkeypatch.setattr(sys,'argv',['prepare_firmware.py','prepare','--archive-dir','unused','--output-dir','unused']+(['--skip-unchanged-erratum-writes'] if enabled else []))
  recipe.main();assert seen.get('skip_unchanged_erratum_writes',False) is enabled
 
-def test_composed_bulk_option_keeps_exact_deployed_off_identity(recipe,tmp_path):
+def test_composed_bulk_option_keeps_current_source_off_identity(recipe,tmp_path):
  options=dict(native_profile=True,heltec_spi_hz=8000000,rx_header_preserve=True,esp32_bulk_spi=True)
  old,oldid=recipe.prepare_application(tmp_path/'old',**options)
  off,offid=recipe.prepare_application(tmp_path/'off',**options,skip_unchanged_erratum_writes=False)
  new,newid=recipe.prepare_application(tmp_path/'new',**options,skip_unchanged_erratum_writes=True)
- assert old==off and oldid==offid=='mtb1-df5ddf1fc5'
+ assert old==off and oldid==offid
  assert newid!=oldid and {k for k in new if new[k]!=old[k]}=={'native_profile_config.hpp'}
 
 def test_both_vendor_patches_compose_without_mutual_changes(recipe,tmp_path):

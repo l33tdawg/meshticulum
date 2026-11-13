@@ -11,15 +11,21 @@ from tests.test_firmware_recipe import recipe
 def old_header(enabled):
     return ('#pragma once\n#ifdef MTBENCH_NATIVE_PROFILE\n'
             '#error "native profiling is pinned by the prepared application"\n#endif\n'
-            f'#define MTBENCH_NATIVE_PROFILE {int(enabled)}\n')
+            f'#define MTBENCH_NATIVE_PROFILE {int(enabled)}\n'
+            '#ifdef MTBENCH_BURST_WAKE_HINT\n'
+            '#error "burst wake hint is pinned by the prepared application"\n#endif\n'
+            '#ifdef MTBENCH_BURST_WAKE_HINT_CONFIGURED\n'
+            '#error "burst wake configuration must come from the pinned recipe"\n#endif\n'
+            '#define MTBENCH_BURST_WAKE_HINT_CONFIGURED 1\n'
+            '#define MTBENCH_BURST_WAKE_HINT 0\n')
 
 
 @pytest.mark.parametrize('enabled', [False, True])
-def test_omitted_setting_keeps_exact_predecessor_header_options_and_application(recipe,tmp_path,enabled):
+def test_omitted_spi_setting_keeps_current_pinned_header_options_and_application(recipe,tmp_path,enabled):
     assert recipe.native_profile_config(enabled)==old_header(enabled)
     assert recipe.build_options(enabled)=={'native_profile':enabled}
     app,identity=recipe.prepare_application(tmp_path/'app',native_profile=enabled)
-    assert len(app)==8
+    assert len(app)==9
     assert app['native_profile_config.hpp']==hashlib.sha256(old_header(enabled).encode()).hexdigest()
     expected={name:recipe.sha(recipe.HERE/name) for name in app if name!='native_profile_config.hpp'}
     expected['native_profile_config.hpp']=hashlib.sha256(old_header(enabled).encode()).hexdigest()
@@ -31,12 +37,12 @@ def test_omitted_setting_keeps_exact_predecessor_header_options_and_application(
 
 @pytest.mark.parametrize('enabled', [False, True])
 @pytest.mark.parametrize('hz', [2000000,8000000])
-def test_explicit_option_changes_only_eighth_input_and_is_repeatable(recipe,tmp_path,enabled,hz):
+def test_explicit_option_changes_only_configuration_header_and_is_repeatable(recipe,tmp_path,enabled,hz):
     old,old_id=recipe.prepare_application(tmp_path/'old',native_profile=enabled)
     one,identity=recipe.prepare_application(tmp_path/'one',native_profile=enabled,heltec_spi_hz=hz)
     two,again=recipe.prepare_application(tmp_path/'two',native_profile=enabled,heltec_spi_hz=hz)
     assert one==two and identity==again and identity!=old_id
-    assert set(one)==set(old) and len(one)==8
+    assert set(one)==set(old) and len(one)==9
     assert {name for name in one if one[name]!=old[name]}=={'native_profile_config.hpp'}
     assert recipe.build_options(enabled,hz)==dict(native_profile=enabled,heltec_spi_hz=hz)
 

@@ -116,13 +116,14 @@ def tree(directory):
             and path.name not in ('.piopm', 'appstate.json') and path.suffix not in ('.pyc', '.pyo')}
 
 
-def build_options(native_profile, heltec_spi_hz=None, *, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False):
+def build_options(native_profile, heltec_spi_hz=None, *, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False):
     require(type(native_profile) is bool, 'invalid_native_profile_option')
     require(heltec_spi_hz is None or type(heltec_spi_hz) is int
             and heltec_spi_hz in (2000000, 8000000), 'invalid_heltec_spi_option')
     require(type(rx_header_preserve) is bool, 'invalid_rx_header_preserve_option')
     require(type(esp32_bulk_spi) is bool, 'invalid_esp32_bulk_spi_option')
     require(type(skip_unchanged_erratum_writes) is bool, 'invalid_skip_unchanged_erratum_writes_option')
+    require(type(burst_wake_hint) is bool, 'invalid_burst_wake_hint_option')
     options = dict(native_profile=native_profile)
     if heltec_spi_hz is not None:
         options['heltec_spi_hz'] = heltec_spi_hz
@@ -132,14 +133,22 @@ def build_options(native_profile, heltec_spi_hz=None, *, rx_header_preserve=Fals
         options['esp32_bulk_spi'] = True
     if skip_unchanged_erratum_writes:
         options['skip_unchanged_erratum_writes'] = True
+    if burst_wake_hint:
+        options['burst_wake_hint'] = True
     return options
 
 
-def native_profile_config(native_profile, *, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False):
-    build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes)
+def native_profile_config(native_profile, *, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False):
+    build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint)
     original = ('#pragma once\n#ifdef MTBENCH_NATIVE_PROFILE\n'
             '#error "native profiling is pinned by the prepared application"\n#endif\n'
             f'#define MTBENCH_NATIVE_PROFILE {int(native_profile)}\n')
+    original += ('#ifdef MTBENCH_BURST_WAKE_HINT\n'
+            '#error "burst wake hint is pinned by the prepared application"\n#endif\n'
+            '#ifdef MTBENCH_BURST_WAKE_HINT_CONFIGURED\n'
+            '#error "burst wake configuration must come from the pinned recipe"\n#endif\n'
+            '#define MTBENCH_BURST_WAKE_HINT_CONFIGURED 1\n'
+            f'#define MTBENCH_BURST_WAKE_HINT {int(burst_wake_hint)}\n')
     if heltec_spi_hz is not None:
         original += ('#ifdef MTBENCH_HELTEC_SPI_HZ\n'
         '#error "Heltec SPI clock is pinned by the prepared application"\n#endif\n'
@@ -208,14 +217,14 @@ def native_profile_config(native_profile, *, heltec_spi_hz=None, rx_header_prese
     return original
 
 
-def prepare_application(app, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False):
+def prepare_application(app, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False):
     """Copy exact generic app inputs and bind the build option into its identity."""
     header = native_profile_config(native_profile, heltec_spi_hz=heltec_spi_hz,
-                                   rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes)
+                                   rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint)
     app = Path(app)
     app.mkdir()
     for name in ('main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
-                 'burst_adapter.hpp', 'experimental/tx_burst.hpp', 'native_profile.hpp'):
+                 'burst_adapter.hpp', 'experimental/tx_burst.hpp', 'native_profile.hpp', 'burst_wake_hint.hpp'):
         (app / name).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(HERE / name, app / name)
     # Forced inclusion makes an external -D override an error, not a different
@@ -244,8 +253,8 @@ def apply_erratum_writes_patch(vendor):
     require(sha(target) == patch['patched_sha256'], 'wrong_erratum_writes_patch_result')
 
 
-def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False):
-    options = build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes)
+def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False, skip_unchanged_erratum_writes=False, burst_wake_hint=False):
+    options = build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint)
     record = lock()
     require(platform.system() == 'Darwin' and platform.machine() == 'arm64', 'recipe_requires_darwin_arm64')
     archives = {row['id']: check_archive(archive_directory, row) for row in record['inputs']}
@@ -302,7 +311,7 @@ def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=No
     app = project / 'examples/meshticulum_bench'
     application, identity = prepare_application(app, native_profile=native_profile,
                                                 heltec_spi_hz=heltec_spi_hz,
-                                                rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes)
+                                                rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi, skip_unchanged_erratum_writes=skip_unchanged_erratum_writes, burst_wake_hint=burst_wake_hint)
     config = ['[platformio]', 'core_dir = ' + str(core), '']
     for target, (parent, board, power) in TARGETS.items():
         config += [f'[env:{target}]', f'extends = {parent}', 'platform = symlink://' + str(locations['platform']),
@@ -348,14 +357,15 @@ def build(output, python, targets):
     options = manifest.get('build_options')
     require(type(options) is dict
             and 'native_profile' in options
-            and set(options) <= {'native_profile', 'heltec_spi_hz', 'rx_header_preserve', 'esp32_bulk_spi', 'skip_unchanged_erratum_writes'}
+            and set(options) <= {'native_profile', 'heltec_spi_hz', 'rx_header_preserve', 'esp32_bulk_spi', 'skip_unchanged_erratum_writes', 'burst_wake_hint'}
             and type(options['native_profile']) is bool
             and ('heltec_spi_hz' not in options or type(options['heltec_spi_hz']) is int
                  and options['heltec_spi_hz'] in (2000000, 8000000))
             and ('rx_header_preserve' not in options
                  or type(options['rx_header_preserve']) is bool and options['rx_header_preserve'] is True)
             and ('esp32_bulk_spi' not in options or options['esp32_bulk_spi'] is True)
-            and ('skip_unchanged_erratum_writes' not in options or options['skip_unchanged_erratum_writes'] is True),
+            and ('skip_unchanged_erratum_writes' not in options or options['skip_unchanged_erratum_writes'] is True)
+            and ('burst_wake_hint' not in options or options['burst_wake_hint'] is True),
             'firmware_build_options_mismatch')
     app = output / 'project/examples/meshticulum_bench'
     application = tree(app)
@@ -365,7 +375,8 @@ def build(output, python, targets):
                                          heltec_spi_hz=options.get('heltec_spi_hz'),
                                          rx_header_preserve=options.get('rx_header_preserve', False),
                                          esp32_bulk_spi=options.get('esp32_bulk_spi', False),
-                                         skip_unchanged_erratum_writes=options.get('skip_unchanged_erratum_writes', False))
+                                         skip_unchanged_erratum_writes=options.get('skip_unchanged_erratum_writes', False),
+                                         burst_wake_hint=options.get('burst_wake_hint', False))
             and manifest.get('identity') == 'mtb1-' + hashlib.sha256(
                 json.dumps(application, sort_keys=True).encode()).hexdigest()[:10],
             'firmware_application_identity_mismatch')
@@ -373,18 +384,18 @@ def build(output, python, targets):
         require(sha(output / 'vendor/radiolib' / ESP32_BULK_PATCH['target']) == ESP32_BULK_PATCH['patched_sha256'], 'prepared_esp32_bulk_patch_mismatch')
     if 'skip_unchanged_erratum_writes' in options:
         require(sha(output / 'vendor/radiolib' / ERRATUM_WRITES_PATCH['target']) == ERRATUM_WRITES_PATCH['patched_sha256'], 'prepared_erratum_writes_patch_mismatch')
-    if 'heltec_spi_hz' in options or 'rx_header_preserve' in options or 'esp32_bulk_spi' in options or 'skip_unchanged_erratum_writes' in options:
-        config = configparser.ConfigParser(interpolation=None)
-        try:
-            config.read(output / 'project/platformio.local.ini')
-            expected_include = '-include ' + str(app / 'native_profile_config.hpp')
-            forced = all(config.has_section('env:' + target)
-                and [line.strip() for line in config.get('env:' + target, 'build_flags').splitlines()]
-                    .count(expected_include) == 1 for target in TARGETS)
-        except configparser.Error:
-            forced = False
-        require(forced, 'firmware_erratum_writes_forced_include_missing' if 'skip_unchanged_erratum_writes' in options else 'firmware_bulk_spi_forced_include_missing' if 'esp32_bulk_spi' in options else 'firmware_rx_header_forced_include_missing'
-                if 'rx_header_preserve' in options else 'firmware_spi_forced_include_missing')
+    # The wake option is pinned even when off; every build must include it.
+    config = configparser.ConfigParser(interpolation=None)
+    try:
+        config.read(output / 'project/platformio.local.ini')
+        expected_include = '-include ' + str(app / 'native_profile_config.hpp')
+        forced = all(config.has_section('env:' + target)
+            and [line.strip() for line in config.get('env:' + target, 'build_flags').splitlines()]
+                .count(expected_include) == 1 for target in TARGETS)
+    except configparser.Error:
+        forced = False
+    require(forced, 'firmware_burst_wake_forced_include_missing' if 'burst_wake_hint' in options else 'firmware_erratum_writes_forced_include_missing' if 'skip_unchanged_erratum_writes' in options else 'firmware_bulk_spi_forced_include_missing' if 'esp32_bulk_spi' in options else 'firmware_rx_header_forced_include_missing'
+            if 'rx_header_preserve' in options else 'firmware_spi_forced_include_missing')
     version = subprocess.check_output([str(python), '-I', '-c',
         'import importlib.metadata; print(importlib.metadata.version("platformio"))'], text=True).strip()
     require(version == lock()['platformio_version'], 'wrong_platformio_version')
@@ -431,6 +442,7 @@ def main():
                       help='opt in to pinned ESP32 Heltec bulk SPI; XIAO keeps byte transfers')
     prep.add_argument('--skip-unchanged-erratum-writes', action='store_true',
                       help='opt in to Heltec fresh-read conditional erratum writes')
+    prep.add_argument('--burst-wake-hint', action='store_true', help='enable bounded timer wake hints with unchanged periodic fallback')
     run = commands.add_parser('build')
     run.add_argument('--output-dir', required=True, type=Path)
     run.add_argument('--pio-python', required=True, type=Path)
@@ -443,7 +455,8 @@ def main():
                          heltec_spi_hz=args.heltec_spi_hz,
                          rx_header_preserve=args.rx_header_preserve,
                          **({'esp32_bulk_spi': True} if args.esp32_bulk_spi else {}),
-                         **({'skip_unchanged_erratum_writes': True} if args.skip_unchanged_erratum_writes else {}))
+                         **({'skip_unchanged_erratum_writes': True} if args.skip_unchanged_erratum_writes else {}),
+                         **({'burst_wake_hint': True} if args.burst_wake_hint else {}))
     else:
         result = build(args.output_dir, args.pio_python, args.target or list(TARGETS))
     print(json.dumps(result, sort_keys=True))

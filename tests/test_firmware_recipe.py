@@ -84,7 +84,7 @@ def test_profile_build_setting_is_pinned_in_exact_application_identity(recipe, t
     assert on == again and on_id == again_id and off_id != on_id
     assert set(off) == set(on) == {'main.cpp', 'protocol.hpp', 'gfsk_profile.hpp',
         'gfsk250_profile.hpp', 'burst_adapter.hpp', 'experimental/tx_burst.hpp',
-        'native_profile.hpp', 'native_profile_config.hpp'}
+        'native_profile.hpp', 'native_profile_config.hpp', 'burst_wake_hint.hpp'}
     assert {name for name in off if off[name] != on[name]} == {'native_profile_config.hpp'}
     assert '#define MTBENCH_NATIVE_PROFILE 0' in (tmp_path / 'off/native_profile_config.hpp').read_text()
     assert '#define MTBENCH_NATIVE_PROFILE 1' in (tmp_path / 'on/native_profile_config.hpp').read_text()
