@@ -160,15 +160,18 @@ class BurstSerialWorker(SerialWorker):
         return [dict(event) for event in self._physical_events
                 if request is None or event['request'] == request]
 
-    def _send(self, frame, deadline):
+    def _send(self, frame, deadline, *, before_write=None):
         if frame.type is Message.ARM:
             self._arm_request = frame.request
         if frame.type is Message.BURST_DATA and self._turn_end_seal is not None:
+            require(before_write is None, 'turn_end_unexpected_write_guard')
             seal = self._turn_end_seal
             bounded = min(deadline, self.channel.monotonic() + 1.0)
             self.validate_turn_end(seal)
             return self.channel.write(frame.encode(), bounded)
-        return super()._send(frame, deadline)
+        if before_write is None:
+            return super()._send(frame, deadline)
+        return super()._send(frame, deadline, before_write=before_write)
 
     def _ingest(self, data):
         super()._ingest(data)

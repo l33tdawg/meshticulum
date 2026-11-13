@@ -20,6 +20,7 @@ import threading
 import time
 
 from meshticulum.bench.admission import Gfsk250Admission, RadioAdmission
+from meshticulum.bench.continuation import ContinuationRecord, ContinuationApproval, ContinuationAdmission, ContinuationOwner, canonical as continuation_canonical
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.authority import OperationLimits, RunAuthority
 from meshticulum.bench.flow_runtime import BenchFlow
@@ -491,6 +492,38 @@ class FileTransfer(ChunkTransfer):
             self.endpoint.set_receiver_ack_quiet_us(receiver_ack_quiet_us)
 
 
+def continuation_admission(args, plan, base):
+    enabled=getattr(args,'boot_continuation',False)
+    path=getattr(args,'boot_continuation_approval',None)
+    pin=getattr(args,'boot_continuation_approval_sha256',None)
+    require(type(enabled) is bool,'invalid_continuation_option')
+    if not enabled:
+        require('boot_continuation' not in plan and path is None and pin is None,'explicit_continuation_required')
+        return base
+    require(type(base) is RadioAdmission and path is not None and type(pin) is str
+            and 'boot_continuation' in plan,'explicit_continuation_approval_required')
+    record=ContinuationRecord(continuation_canonical(plan['boot_continuation']))
+    raw=read_file(path,8192,pin=pin,private=True)
+    approval=ContinuationApproval(raw,pin,record)
+    approval.check_plan(plan)
+    return ContinuationAdmission(base,approval)
+
+
+def continuation_native_owner(owner, transport, record):
+    expected=record.value()['baseline']['usb_serial']
+    require(type(owner) is HeldHardware and type(transport) is ExclusiveSerial
+            and owner.transport is transport and owner.usb_serial == expected
+            and owner.by_id is not None,'continuation_requires_held_usb_owner')
+    by_id=owner.by_id;current=owner.current;fds=owner.fds
+    def binding():
+        return (type(owner) is HeldHardware and owner.transport is transport
+                and owner.usb_serial == expected and owner.by_id == by_id and owner.fds is fds
+                and owner.current.__func__ is current.__func__)
+    def check():return binding() and current() is True and binding()
+    require(check(),'continuation_usb_owner_changed')
+    return ContinuationOwner(check,binding)
+
+
 def transfer_chunk(args):
     file = load_manifest(args.manifest, args.manifest_sha256, file64=getattr(args, 'file64', False), file48=getattr(args, 'file48', False))
     require(0 <= args.chunk < len(file['chunks']), 'example_chunk_index')
@@ -521,6 +554,7 @@ def transfer_chunk(args):
     if 'waveforms' in admission:
         admission['waveforms'] = tuple(tuple(row) for row in admission['waveforms'])
     admission = modem_classes(modem)[3](**admission)
+    admission = continuation_admission(args, plan, admission)
     payload = None
     if args.input is not None:
         data = read_file(args.input, MAX_FILE_BYTES)
@@ -547,10 +581,10 @@ class FileHardware:
     This holds no worker, ARM, cipher or journal across parts. A failed part or
     failed cleanup permanently prevents another loan from this owner.
     """
-    _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
+    _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source','boot_continuation_approval')
     _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
                'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
-               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'file48', 'hat_receive_reasons', 'hat_receive_timeline', 'hat_spi_hz', 'hat_checked_rearm', 'data_turn_end')
+               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'file48', 'hat_receive_reasons', 'hat_receive_timeline', 'hat_spi_hz', 'hat_checked_rearm', 'data_turn_end', 'boot_continuation', 'boot_continuation_approval_sha256')
 
     @classmethod
     def _binding(cls, args):
@@ -657,6 +691,13 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
     turn_end = getattr(args, 'data_turn_end', False)
     require(type(turn_end) is bool and turn_end is turn_end_admitted(plan),
             'turn_end_example_capability_mismatch')
+    if type(admission) is ContinuationAdmission:
+        require(getattr(args,'boot_continuation',False) is True,'explicit_continuation_required')
+        admission.approval.check_plan(plan)
+        require(args.interface == ('usb' if plan['unit'] == plan['sender_unit'] else 'hat'),
+                'continuation_requires_usb_sender_hat_receiver')
+    else:
+        require('boot_continuation' not in plan,'explicit_continuation_admission_required')
     admitted_limits = OperationLimits.from_plan(plan)
     limits = operation_journal_limits(args, admitted_limits)
     checked_rearm = getattr(args, 'hat_checked_rearm', False)
@@ -721,8 +762,13 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
         if worker is not None:
             # Retain containment even when ARM only partially succeeds.
             cleanup.append(worker.disarm)
+            continuation_kw={}
+            if type(admission) is ContinuationAdmission:
+                require(authority.sends,'continuation_native_sender_required')
+                record=ContinuationRecord(continuation_canonical(authority.plan['boot_continuation']))
+                continuation_kw=dict(continuation=record,continuation_owner=continuation_native_owner(owner,transport,record))
             worker.arm(journal=journal, profile=profile, context_digest=authority.grant.digest,
-                       authorize=authorize, authority_deadline=min(authority.deadlines.application_deadline_monotonic, window.deadline_us / 1000000))
+                       authorize=authorize, authority_deadline=min(authority.deadlines.application_deadline_monotonic, window.deadline_us / 1000000),**continuation_kw)
         else:
             worker = hat_cls(transport, journal=journal, profile=profile,
                 context_digest=authority.grant.digest, authorize=authorize,
@@ -845,6 +891,9 @@ def main():
     run.add_argument('--grant-sha256', required=True)
     run.add_argument('--file-expires-epoch-us', required=True, type=int)
     run.add_argument('--file-issued-epoch-us', required=True, type=int)
+    run.add_argument('--boot-continuation',action='store_true',help='Explicit application-approved same-boot cumulative extension')
+    run.add_argument('--boot-continuation-approval',type=Path)
+    run.add_argument('--boot-continuation-approval-sha256')
     run.add_argument('--admission', required=True, type=Path)
     run.add_argument('--admission-sha256', required=True)
     add_operation_limit_arguments(run)

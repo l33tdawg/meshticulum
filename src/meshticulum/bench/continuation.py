@@ -1,9 +1,8 @@
-"""Inert, versioned same-boot continuation proposal. This creates no authority.
+"""Explicit, independently approved same-boot continuation admission.
 
-Only an initial extension from a <=1024 baseline is modeled; records cannot
-chain automatically. The legacy RadioAdmission and RunAuthority deliberately do not accept this
-record yet. An approved integration must additionally query current STATUS and
-BURST_STATUS through the exclusively held native channel before ARM.
+Records alone create no authority. Only one extension from a <=1024 baseline is
+supported. The sender checks current closed native state on its held channel
+before ARM; legacy RadioAdmission remains unchanged.
 """
 from dataclasses import dataclass
 import hashlib
@@ -118,3 +117,69 @@ class ContinuationRecord:
         require(frame.body[46:] == b'\0\0\0' and attempts == baseline['boot_attempts']
                 and airtime == baseline['boot_reserved_estimated_airtime_us'] and drops == baseline['dropped_receive'],
                 'continuation_native_debt_or_state_changed')
+
+@dataclass(frozen=True, slots=True)
+class ContinuationApproval:
+    """Exact application-provided approval bytes, independently pinned by caller."""
+    raw: bytes
+    expected_sha256: str
+    record: ContinuationRecord
+
+    def __post_init__(self):
+        require(type(self.record) is ContinuationRecord and type(self.raw) is bytes
+                and 0 < len(self.raw) <= 8192 and _sha(self.expected_sha256), 'invalid_continuation_approval')
+        require(hashlib.sha256(self.raw).hexdigest() == self.expected_sha256 == self.record.value()['approval_sha256'],
+                'continuation_approval_pin_changed')
+        value = json.loads(self.raw); terms = self.record.value();terms.pop('approval_sha256')
+        require(type(value) is dict and canonical(value) == self.raw
+                and set(value) == {'schema','approved','terms_sha256','issued_epoch_us','expires_epoch_us'}
+                and value['schema'] == 'meshticulum.same-boot-continuation-approval.v1'
+                and value['approved'] is True
+                and value['terms_sha256'] == hashlib.sha256(canonical(terms)).hexdigest()
+                and _uint(value['issued_epoch_us'],1,2**63-1)
+                and _uint(value['expires_epoch_us'],1,2**63-1)
+                and 0 < value['expires_epoch_us']-value['issued_epoch_us'] <= 1800000000,
+                'continuation_approval_terms_changed')
+
+    def check_plan(self, plan):
+        self.record.check_plan(plan)
+        value=json.loads(self.raw)
+        require(type(plan['issued_epoch_us']) is int and type(plan['expires_epoch_us']) is int
+                and value['issued_epoch_us'] <= plan['issued_epoch_us'] < plan['expires_epoch_us'] <= value['expires_epoch_us'],
+                'continuation_outside_approved_window')
+
+@dataclass(frozen=True, slots=True)
+class ContinuationAdmission:
+    """Explicit opt-in admission; legacy RadioAdmission is not widened."""
+    base: object
+    approval: ContinuationApproval
+
+    def __post_init__(self):
+        from .admission import RadioAdmission
+        require(type(self.base) is RadioAdmission and self.base.max_boot_attempts == 1024
+                and self.base.max_boot_estimated_airtime_us == 300000000
+                and type(self.approval) is ContinuationApproval, 'invalid_continuation_admission')
+
+    def check(self, country, antenna_confirmed, profile):
+        base=self.base;record=self.approval.record.value()
+        require(country == base.country and antenna_confirmed is True and type(profile) is RadioProfile
+                and (profile.frequency_hz,profile.bandwidth_hz,profile.spreading_factor,profile.coding_rate,
+                     profile.chip_power_dbm,profile.preamble,profile.sync_word) in base.waveforms
+                and base.min_lease_ms <= profile.lease_ms <= base.max_lease_ms
+                and profile.max_boot_attempts == record['absolute_ceiling']
+                and profile.max_boot_estimated_airtime_us == base.max_boot_estimated_airtime_us,
+                'unsupported_continuation_profile')
+        profile.encode(board_id=1)
+
+
+@dataclass(frozen=True, slots=True)
+class ContinuationOwner:
+    """Application-held USB owner: fresh check plus callback-free binding check.
+
+    binding_current must inspect captured identity/descriptor references only;
+    current performs the existing fresh ownership checks. Neither grants authority.
+    """
+    current: object
+    binding_current: object
+    def __post_init__(self):
+        require(callable(self.current) and callable(self.binding_current), 'invalid_continuation_owner')

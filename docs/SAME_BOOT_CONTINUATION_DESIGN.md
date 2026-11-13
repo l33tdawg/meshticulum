@@ -1,9 +1,9 @@
-# Same-boot continuation: inert first checkpoint
+# Explicit same-boot continuation
 
-This source checkpoint adds only a record validator and a bound STATUS decoder.
-RadioAdmission, RunAuthority, public CLI and serial workers are unchanged. They
-continue to refuse LoRa ceilings above1024. No new grant or device authority can
-be obtained with this module. It is not a supported execution path yet.
+This successor implements a separate opt-in ContinuationAdmission. The default
+RadioAdmission remains limited to1024. Independently pinned application approval
+bytes must bind the exact finite operation. Source qualification creates no grant,
+application approval or hardware authorization.
 
 The versioned canonical record contains the original1024 ceiling; exact boot,
 firmware, USB serial and paid baseline; sender/receiver incremental limits; exact
@@ -22,7 +22,7 @@ excluded from its own context hash; if embedded it must exactly match the checke
 record bytes. Canonical immutable bytes prevent caller mutations of a returned
 mapping from changing the record.
 
-## Required execution integration, not implemented here
+## Implemented execution contract
 
 1. Add a distinct explicit admission type, never a subclass trick or monkeypatch.
    Legacy RadioAdmission's constructor and checks remain <=1024. New admission
@@ -46,8 +46,8 @@ mapping from changing the record.
    flags, with matching cumulative counters. No received callback can update the
    trusted baseline or extend the original deadline. Any counter increment,
    response mismatch, owner revocation, dirty burst or timeout refuses ARM.
-5. STATUS validation alone is not sufficient: this checkpoint intentionally returns
-   no reusable admission token and does not sample a device. The future worker
+5. STATUS validation alone is not sufficient: the record decoder returns
+   no reusable admission token. The worker
    must bind both observations to the current call/owner/identity and original
    authority, with no cached proof across retries. If a radio reset or boot change
    occurs, this record is invalid; old debt remains retained.
@@ -56,8 +56,8 @@ mapping from changing the record.
    native shared BootState and cumulative airtime accounting remain unchanged.
    Existing scopes and journals must never be rewritten to the larger value.
 
-The public CLI needs an explicit default-off selector and independently pinned
-admission input. Constructor/owner/worker exception paths must keep bounded cleanup.
+The public CLI uses default-off --boot-continuation, independently pinned by
+--boot-continuation-approval and --boot-continuation-approval-sha256. Constructor/owner/worker exception paths must keep bounded cleanup.
 Do not enable the higher cap in a campaign before source integration, full standalone
 suite/frozen-flow verification, independent review, concrete user/application
 approval and fresh finite hardware authorization.
@@ -69,3 +69,11 @@ canonical representation, immutable copies, bool/limit/identity mutations, futur
 capability and unknown-field handling, and STATUS boot/request/profile/counter/
 closed-flag failures. They use synthetic identities and frames and no device I/O.
 They do not prove live owner continuity, burst closure or physical feasibility.
+
+Execution models additionally exercise actual SerialWorker and BurstSerialWorker
+ARM/OPEN/DATA bookkeeping, fresh native state/owner refusal, callback replacement,
+advancing-clock lease narrowing and public run_object cleanup. The final ARM lease
+is narrowed after expensive fresh owner checks using the original deadline; pure
+captured-reference checks run after the final clock and immediately before the
+protected write. Burst subclass ARM bookkeeping remains intact. No baseline is
+refreshed, old journal rewritten, or paid attempt/airtime debt refunded.

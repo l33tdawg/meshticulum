@@ -32,6 +32,7 @@ from .burst_protocol import (CLOCK_MARGIN_US, INTER_PACKET_RX_US, MAX_CLOCK_RTT_
                              policy_flow_window, policy_dynamic_train)
 from .tx_burst import MAX_AUTONOMOUS_HOLD_US, MAX_DEPTH, START_GUARD_US
 from .admission import RadioAdmission,GfskAdmission,Gfsk250Admission
+from .continuation import ContinuationAdmission
 from .gfsk_profile import GfskProfile,radio_airtime_us,radio_is_fast,radio_is_sf5
 from .gfsk250_profile import Gfsk250Profile
 from .wire import BenchGrant, require
@@ -111,7 +112,7 @@ from .authority_timing import AuthorityPhase, authority_timed
 
 class RunAuthority:
     def __init__(self, directory, *, expected_unit, host_boot_id, clock, owner_probe, radio_admission=None):
-        require(type(radio_admission) in (RadioAdmission,GfskAdmission,Gfsk250Admission), 'explicit_native_radio_admission_required')
+        require(type(radio_admission) in (RadioAdmission,GfskAdmission,Gfsk250Admission,ContinuationAdmission), 'explicit_native_radio_admission_required')
         self.path = Path(directory).absolute()
         _private_info(self.path.lstat(), directory=True)
         self.fds, self.held = {}, {}
@@ -141,6 +142,8 @@ class RunAuthority:
                 validate_policy(p['data_burst'])
                 require(p.get('radio_modem') not in ('gfsk125', 'gfsk250'),
                         'data_burst_requires_lora')
+            if 'boot_continuation' in p:
+                extras.add('boot_continuation')
             if 'operation_limits' in p:
                 extras.add('operation_limits')
             if 'file_capability' in p:
@@ -194,10 +197,15 @@ class RunAuthority:
                 require(type(radio_admission) is Gfsk250Admission,'explicit_gfsk250_admission_required')
                 self.profile=Gfsk250Profile.from_dict(p['profile'],board_id=1)
             else:
-                require(type(radio_admission) is RadioAdmission,'wrong_radio_admission_modem')
+                require(type(radio_admission) in (RadioAdmission,ContinuationAdmission),'wrong_radio_admission_modem')
                 self.profile = RadioProfile(**p['profile'])
             self.profile.encode(board_id=1)
             radio_admission.check(p['country'], p['antenna_confirmed'], self.profile)
+            if type(radio_admission) is ContinuationAdmission:
+                require(p.get('boot_continuation') == radio_admission.approval.record.value(), 'continuation_record_changed')
+                radio_admission.approval.check_plan(p)
+            else:
+                require('boot_continuation' not in p, 'explicit_continuation_admission_required')
             OperationLimits.from_plan(p)
             if 'data_burst' in p:
                 depth = policy_depth(p['data_burst'])
@@ -238,6 +246,8 @@ class RunAuthority:
                 self.route_record['turn_end_capability'] = p['turn_end_capability']
             if is_service:
                 self.route_record['service'] = p['service']
+            if 'boot_continuation' in p:
+                self.route_record['boot_continuation'] = p['boot_continuation']
             route_digest = hashlib.sha256(canonical(self.route_record)).digest()
             self.grant = BenchGrant(session, 'bench_transfer', route_digest,
                 p['issued_epoch_us'], p['expires_epoch_us'], 208, p['max_frames'], secret)
