@@ -135,6 +135,41 @@ class LinuxHAT:
     monotonic = staticmethod(time.monotonic)
     sleep = staticmethod(time.sleep)
 
+    _activity_sealed_names = frozenset(('_radio_activity', 'radio_activity_epoch',
+        'enable_radio_activity', '_record_radio_activity', 'transfer', '_set',
+        'reset', 'receive_switch', 'close'))
+
+    def __setattr__(self, name, value):
+        if getattr(self, '_radio_activity', None) is not None and name in LinuxHAT._activity_sealed_names:
+            raise HardwareError('hat_radio_activity_binding_changed')
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name):
+        if getattr(self, '_radio_activity', None) is not None and name in LinuxHAT._activity_sealed_names:
+            raise HardwareError('hat_radio_activity_binding_changed')
+        object.__delattr__(self, name)
+
+    def enable_radio_activity(self):
+        require(getattr(self, '_radio_activity', None) is None, 'hat_radio_activity_already_enabled')
+        epoch = 0
+        def activity(advance=False):
+            nonlocal epoch
+            if advance:
+                epoch += 1
+            return epoch
+        self._radio_activity = activity
+        return activity
+
+    def radio_activity_epoch(self):
+        activity = getattr(self, '_radio_activity', None)
+        require(activity is not None, 'hat_radio_activity_not_enabled')
+        return activity()
+
+    def _record_radio_activity(self):
+        activity = getattr(self, '_radio_activity', None)
+        if activity is not None:
+            activity(True)
+
     def __init__(self, *, spi_hz=1000000):
         require(type(spi_hz) is int and spi_hz in (1000000, 4000000),
                 'unsupported_hat_spi_hz')
@@ -198,6 +233,7 @@ class LinuxHAT:
             raise
 
     def transfer(self, data):
+        self._record_radio_activity()
         require(type(data) is bytes and 1 <= len(data) <= 260, 'invalid_spi_transfer')
         require(self.spi_fd is not None, 'closed_spi')
         tx = (ctypes.c_uint8 * len(data)).from_buffer_copy(data)
@@ -209,6 +245,7 @@ class LinuxHAT:
         return bytes(rx)
 
     def _set(self, mask, values):
+        self._record_radio_activity()
         require(self.lines_fd is not None, 'closed_gpio')
         fcntl.ioctl(self.lines_fd, GPIO_SET_VALUES, struct.pack('=QQ', values, mask))
 
@@ -274,6 +311,7 @@ class LinuxHAT:
         return True
 
     def close(self):
+        self._record_radio_activity()
         # No SPI commands from teardown; higher driver owns bounded standby.
         for field in ('lines_fd', 'chip_fd', 'spi_fd', 'lock_fd'):
             fd = getattr(self, field, None)

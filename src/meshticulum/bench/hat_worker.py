@@ -54,7 +54,9 @@ class HATWorker:
 
     def __init__(self, transport, *, journal, profile, context_digest, authorize,
                  authority_deadline, antenna_confirmed, monotonic=None,
-                 time_basis='host-monotonic', receive_reasons=False, receive_timeline=False):
+                 time_basis='host-monotonic', receive_reasons=False, receive_timeline=False, checked_rearm=False):
+        require(type(checked_rearm) is bool, 'invalid_hat_checked_rearm')
+        require(not checked_rearm or self._driver_type is SX1262, 'hat_checked_rearm_lora_only')
         require(type(receive_timeline) is bool, 'invalid_hat_receive_timeline')
         self._receive_timeline = ReceiveTimeline() if receive_timeline else None
         require(type(receive_reasons) is bool, 'invalid_hat_receive_reasons')
@@ -89,7 +91,7 @@ class HATWorker:
                     and callable(monotonic), 'hat_clock_basis_unverified')
             native_clock = monotonic
         self._clock, self.time_basis = native_clock, time_basis
-        self.radio = self._driver_type(transport, monotonic=native_clock)
+        self.radio = self._driver_type(transport, monotonic=native_clock, **({'checked_rearm': True} if checked_rearm else {}))
         self.host_timing = timing
         self.radio.host_timing = self.host_timing
         self.radio.receive_reasons = self._receive_reasons

@@ -72,6 +72,8 @@ def add_operation_limit_arguments(parser):
 def add_host_timing_argument(parser):
     parser.add_argument('--hat-spi-hz', type=int, choices=(1000000, 4000000),
                         help='Explicit HAT SPI request; default remains 1 MHz. 4 MHz is experimental.')
+    parser.add_argument('--hat-checked-rearm', action='store_true',
+                        help='opt in to checked, consume-once HAT RX rearm handoff')
     parser.add_argument('--hat-receive-timeline', action='store_true',
                         help='Bounded receive/rearm timing diagnostic; extra host clocks, no extra SPI')
     parser.add_argument('--hat-receive-reasons', action='store_true',
@@ -529,7 +531,7 @@ class FileHardware:
     _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
     _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
                'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
-               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'hat_receive_reasons', 'hat_receive_timeline', 'hat_spi_hz')
+               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'hat_receive_reasons', 'hat_receive_timeline', 'hat_spi_hz', 'hat_checked_rearm')
 
     @classmethod
     def _binding(cls, args):
@@ -635,6 +637,9 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
     plan = json.loads(raw)
     admitted_limits = OperationLimits.from_plan(plan)
     limits = operation_journal_limits(args, admitted_limits)
+    checked_rearm = getattr(args, 'hat_checked_rearm', False)
+    require(type(checked_rearm) is bool and (not checked_rearm or args.interface == 'hat'),
+            'invalid_hat_checked_rearm_option')
     receive_timeline = getattr(args, 'hat_receive_timeline', False)
     require(type(receive_timeline) is bool and (not receive_timeline or args.interface == 'hat'),
             'invalid_hat_receive_timeline_option')
@@ -702,7 +707,8 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
                 authority_deadline=min(authority.deadlines.application_deadline_monotonic, window.deadline_us / 1000000),
                 antenna_confirmed=plan['antenna_confirmed'],
                 **({'receive_reasons': True} if receive_reasons else {}),
-                **({'receive_timeline': True} if receive_timeline else {}))
+                **({'receive_timeline': True} if receive_timeline else {}),
+                **({'checked_rearm': True} if checked_rearm else {}))
             cleanup.append(worker.disarm)
         # Start coverage after worker setup, before session construction.
         for diagnostic_owner in (window, owner, authority, worker):
