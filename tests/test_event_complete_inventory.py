@@ -56,3 +56,13 @@ def test_public_option_bound_without_hardware():
  args.event_complete_inventory=True
  assert hardware.binding != hardware._binding(args)
  assert hardware.transport is None
+
+@pytest.mark.parametrize('mask,qualified', [(0xfc4, True), (0xfc4 & ~m._IN_CREATE, False), (0xfc4 & ~m._IN_ATTRIB, False)])
+def test_actual_linux_fdinfo_omits_implicit_events(mask, qualified):
+ p=Path('/synthetic');watch=object.__new__(m.OpenCollisionWatch)
+ watch.directories={p:()};watch.directory_wds={p:3};watch.mountinfo=b'table'
+ watch.watch_lines=(f'inotify wd:3 ino:1 sdev:7 mask:{mask:x} ignored_mask:0'.encode(),)
+ with mock.patch.object(m,'_event_complete_mount',return_value=True),mock.patch.object(Path,'stat',return_value=SimpleNamespace(st_dev=7)):
+  watch._bind_event_directories()
+ assert (p in watch.event_directories) is qualified
+ assert m._DIRECTORY_REPORTED_EVENTS == 0xfc4

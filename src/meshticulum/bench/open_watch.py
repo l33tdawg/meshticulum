@@ -41,6 +41,10 @@ _IN_ISDIR = 0x40000000
 _SELF_INVALIDATION = _IN_DELETE_SELF | _IN_MOVE_SELF | _IN_UNMOUNT | _IN_IGNORED
 _INVALIDATION = _IN_ATTRIB | _SELF_INVALIDATION
 _DIRECTORY_EVENTS = _INVALIDATION | _IN_MOVED_FROM | _IN_MOVED_TO | _IN_CREATE | _IN_DELETE
+# fdinfo reports inotify_mark_user_mask(): implicit UNMOUNT/IGNORED
+# are omitted although the kernel always delivers them. Require every
+# explicitly requested directory event; still fail on automatic events.
+_DIRECTORY_REPORTED_EVENTS = _DIRECTORY_EVENTS & ~(_IN_UNMOUNT | _IN_IGNORED)
 _DEVICE_EVENTS = _INVALIDATION | _IN_OPEN
 _UNSUPPORTED = {errno.ENOSYS, errno.ENOTSUP, errno.EOPNOTSUPP}
 _ACTIVE = weakref.WeakSet()
@@ -223,7 +227,7 @@ class OpenCollisionWatch:
         for path in self.directories:
             wd = self.directory_wds[path]
             mask, ignored = masks.get(wd, (0, 0))
-            if (ignored == 0 and mask & _DIRECTORY_EVENTS == _DIRECTORY_EVENTS
+            if (ignored == 0 and mask & _DIRECTORY_REPORTED_EVENTS == _DIRECTORY_REPORTED_EVENTS
                     and _event_complete_mount(self.mountinfo, path, path.stat())):
                 qualified.add(path)
         self.event_directories = frozenset(qualified)
