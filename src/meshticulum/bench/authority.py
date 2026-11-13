@@ -39,7 +39,7 @@ from .public_block import (PUBLIC32_MARKER,REPRESENTATION_MARKER,TRANSPORT_DESCR
                           public32_service,public_mb1_service,object_limit)
 
 
-from .file_capability import file64_capability, admitted_object_limit, admitted_frame_limit
+from .file_capability import file_capability_mode, admitted_object_limit, admitted_frame_limit
 
 @dataclass(frozen=True)
 class OperationLimits:
@@ -144,7 +144,7 @@ class RunAuthority:
                 extras.add('operation_limits')
             if 'file_capability' in p:
                 extras.add('file_capability')
-                file64_capability(p)
+                file_capability_mode(p)
             if is_service and local_deadline_field in p:
                 extras.add(local_deadline_field)
             require(set(p) == fields | extras, 'invalid_bench_plan')

@@ -121,3 +121,25 @@ class VerifiedFile64(VerifiedChunks):
     def assemble(self, descriptors):
         require(type(descriptors) is list and len(descriptors) == 1, 'invalid_file64_manifest')
         return super().assemble(descriptors)
+
+
+class VerifiedFile48(VerifiedChunks):
+    """Explicit singleton48KiB cache in an isolated namespace."""
+    _maximum_bytes = 49152
+
+    def __init__(self, directory):
+        root = Path(directory).absolute()
+        root.mkdir(mode=0o700, exist_ok=True)
+        _private_info(root.lstat(), directory=True)
+        super().__init__(root / 'file48-v1')
+
+    def _paths(self, descriptor):
+        require(type(descriptor) is dict and type(descriptor.get('bytes')) is int
+                and descriptor['bytes'] == 49152 and type(descriptor.get('chunk_index')) is int
+                and descriptor['chunk_index'] == 0
+                and descriptor.get('object_id') == descriptor.get('sha256'), 'invalid_file48_descriptor')
+        return super()._paths(descriptor)
+
+    def assemble(self, descriptors):
+        require(type(descriptors) is list and len(descriptors) == 1, 'invalid_file48_manifest')
+        return super().assemble(descriptors)

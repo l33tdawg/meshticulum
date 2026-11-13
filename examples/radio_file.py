@@ -30,8 +30,8 @@ from meshticulum.bench.gfsk250_profile import Gfsk250Profile
 from meshticulum.bench.hat_worker import Gfsk250HATWorker, HATWorker, journal_binding as hat_binding
 from meshticulum.bench.linux_hat import LinuxHAT
 from meshticulum.bench.open_watch import OpenCollisionWatch
-from meshticulum.bench.objects import VerifiedChunks, VerifiedFile64
-from meshticulum.bench.file_capability import FILE64_BYTES, FILE64_SCHEMA, file64_capability
+from meshticulum.bench.objects import VerifiedChunks, VerifiedFile64, VerifiedFile48
+from meshticulum.bench.file_capability import FILE64_BYTES, FILE64_SCHEMA, FILE48_BYTES, FILE48_SCHEMA, file_capability_mode
 from meshticulum.bench.serial_port import ExclusiveSerial, usb_identity
 from meshticulum.bench.serial_protocol import Frame, Message, Gfsk250Status, RadioProfile
 from meshticulum.bench.serial_worker import Gfsk250SerialWorker, SerialWorker, journal_binding
@@ -128,28 +128,42 @@ def read_file(path, limit, *, pin=None, private=False):
         os.close(fd)
 
 
-def manifest(data, *, file64=False):
+def file_mode(*, file64=False, file48=False):
     require(type(file64) is bool, 'invalid_file64_option')
+    require(type(file48) is bool, 'invalid_file48_option')
+    require(not (file64 and file48), 'invalid_explicit_file_mode')
+    return 'file48' if file48 else ('file64' if file64 else None)
+
+
+def file_cache(mode):
+    return VerifiedFile48 if mode == 'file48' else (VerifiedFile64 if mode == 'file64' else VerifiedChunks)
+
+
+def manifest(data, *, file64=False, file48=False):
+    mode = file_mode(file64=file64, file48=file48)
+    require(not file48 or type(data) is bytes and len(data) == FILE48_BYTES, 'invalid_file48_size')
     require(not file64 or type(data) is bytes and len(data) == FILE64_BYTES, 'invalid_file64_size')
-    chunk_bytes = FILE64_BYTES if file64 else CHUNK_BYTES
+    chunk_bytes = FILE48_BYTES if file48 else (FILE64_BYTES if file64 else CHUNK_BYTES)
     require(type(data) is bytes and 0 < len(data) <= MAX_FILE_BYTES, 'example_file_size')
     digest = sha(data)
-    return {'schema': FILE64_SCHEMA if file64 else FILE_SCHEMA, 'bytes': len(data), 'sha256': digest,
+    return {'schema': FILE48_SCHEMA if file48 else (FILE64_SCHEMA if file64 else FILE_SCHEMA), 'bytes': len(data), 'sha256': digest,
             'chunks': [{'object_id': digest, 'chunk_index': i, 'bytes': len(part),
                         'sha256': sha(part)} for i, part in enumerate(
                             data[n:n + chunk_bytes] for n in range(0, len(data), chunk_bytes))]}
 
 
-def load_manifest(path, pin, *, file64=False):
-    require(type(file64) is bool, 'invalid_file64_option')
-    chunk_bytes = FILE64_BYTES if file64 else CHUNK_BYTES
+def load_manifest(path, pin, *, file64=False, file48=False):
+    mode = file_mode(file64=file64, file48=file48)
+    chunk_bytes = FILE48_BYTES if file48 else (FILE64_BYTES if file64 else CHUNK_BYTES)
     value = json.loads(read_file(path, 32768, pin=pin))
     require(type(value) is dict and set(value) == {'schema', 'bytes', 'sha256', 'chunks'}
-            and value['schema'] == (FILE64_SCHEMA if file64 else FILE_SCHEMA) and type(value['bytes']) is int
+            and value['schema'] == (FILE48_SCHEMA if file48 else (FILE64_SCHEMA if file64 else FILE_SCHEMA)) and type(value['bytes']) is int
             and 0 < value['bytes'] <= MAX_FILE_BYTES and type(value['chunks']) is list
             and 1 <= len(value['chunks']) <= 64, 'invalid_example_manifest')
     require(type(value['sha256']) is str and re.fullmatch('[0-9a-f]{64}', value['sha256']),
             'invalid_example_digest')
+    require(not file48 or (value['bytes'] == FILE48_BYTES and len(value['chunks']) == 1),
+            'invalid_file48_manifest')
     require(not file64 or (value['bytes'] == FILE64_BYTES and len(value['chunks']) == 1),
             'invalid_file64_manifest')
     total = 0
@@ -162,7 +176,8 @@ def load_manifest(path, pin, *, file64=False):
         require(index == len(value['chunks']) - 1 or chunk['bytes'] == chunk_bytes,
                 'noncanonical_example_chunks')
         total += chunk['bytes']
-    require(not file64 or value['chunks'][0]['sha256'] == value['sha256'], 'invalid_file64_manifest')
+    require(mode is None or value['chunks'][0]['sha256'] == value['sha256'],
+            'invalid_file48_manifest' if file48 else 'invalid_file64_manifest')
     require(total == value['bytes'], 'example_manifest_size_mismatch')
     return value
 
@@ -474,17 +489,18 @@ class FileTransfer(ChunkTransfer):
 
 
 def transfer_chunk(args):
-    file = load_manifest(args.manifest, args.manifest_sha256, file64=getattr(args, 'file64', False))
+    file = load_manifest(args.manifest, args.manifest_sha256, file64=getattr(args, 'file64', False), file48=getattr(args, 'file48', False))
     require(0 <= args.chunk < len(file['chunks']), 'example_chunk_index')
     descriptor = file['chunks'][args.chunk]
     raw = read_file(args.grant_directory / 'grant.json', 16384,
                     pin=args.grant_sha256, private=True)
     plan = json.loads(raw)
     modem = plan_modem(plan)
-    enabled = getattr(args, 'file64', False)
-    require(type(enabled) is bool and file64_capability(plan) == enabled, 'example_file64_admission_mismatch')
+    mode = file_mode(file64=getattr(args, 'file64', False), file48=getattr(args, 'file48', False))
+    enabled = mode is not None
+    require(file_capability_mode(plan) == mode, 'example_file48_admission_mismatch' if mode == 'file48' else 'example_file64_admission_mismatch')
     require(not enabled or plan['file_capability']['manifest_sha256'] == args.manifest_sha256,
-            'example_file64_manifest_pin_mismatch')
+            'example_file48_manifest_pin_mismatch' if mode == 'file48' else 'example_file64_manifest_pin_mismatch')
     require(plan['object'] == descriptor
             and plan['schema'] == 'meshticulum.bench-run.v1', 'example_requires_matching_bench_grant')
     require(plan['expires_epoch_us'] - plan['issued_epoch_us'] <= 240000000,
@@ -505,12 +521,12 @@ def transfer_chunk(args):
     payload = None
     if args.input is not None:
         data = read_file(args.input, MAX_FILE_BYTES)
-        require(manifest(data, file64=enabled) == file, 'example_input_mismatch')
-        offset = args.chunk * (FILE64_BYTES if enabled else CHUNK_BYTES)
+        require(manifest(data, file64=mode == 'file64', file48=mode == 'file48') == file, 'example_input_mismatch')
+        offset = args.chunk * (FILE48_BYTES if mode == 'file48' else (FILE64_BYTES if enabled else CHUNK_BYTES))
         payload = data[offset:offset + descriptor['bytes']]
     require((plan['sender_unit'] == args.unit) == (payload is not None), 'example_role_mismatch')
     version = firmware_identity(args.firmware_source, args.firmware_source_sha256)
-    cache = (VerifiedFile64 if enabled else VerifiedChunks)(args.chunks)
+    cache = file_cache(mode)(args.chunks)
     window = bind_file_window(cache, file, args.file_issued_epoch_us, args.file_expires_epoch_us)
     window.require_capacity(len(file['chunks']) - args.chunk)
     return run_object(args, raw, admission, version, payload, window,
@@ -531,7 +547,7 @@ class FileHardware:
     _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
     _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
                'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
-               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'hat_receive_reasons', 'hat_receive_timeline', 'hat_spi_hz', 'hat_checked_rearm')
+               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'file48', 'hat_receive_reasons', 'hat_receive_timeline', 'hat_spi_hz', 'hat_checked_rearm')
 
     @classmethod
     def _binding(cls, args):
@@ -847,15 +863,17 @@ def main():
     run.add_argument('--usb-serial')
     run.add_argument('--input', type=Path, help='sender only; receiver omits it')
     for sub in (create, run, assemble):
-        sub.add_argument('--file64', action='store_true', help='explicit admitted singleton64KiB file format')
+        sizes = sub.add_mutually_exclusive_group()
+        sizes.add_argument('--file64', action='store_true', help='explicit admitted singleton64KiB file format')
+        sizes.add_argument('--file48', action='store_true', help='explicit admitted singleton48KiB file format')
     args = parser.parse_args()
     if args.command == 'manifest':
-        value = manifest(read_file(args.input, MAX_FILE_BYTES), file64=args.file64)
+        value = manifest(read_file(args.input, MAX_FILE_BYTES), file64=args.file64, file48=args.file48)
     elif args.command == 'firmware-identity':
         value = compact_firmware_identity(args)
     elif args.command == 'assemble':
-        file = load_manifest(args.manifest, args.manifest_sha256, file64=getattr(args, 'file64', False))
-        data = (VerifiedFile64 if args.file64 else VerifiedChunks)(args.chunks).assemble(file['chunks'])
+        file = load_manifest(args.manifest, args.manifest_sha256, file64=getattr(args, 'file64', False), file48=getattr(args, 'file48', False))
+        data = file_cache(file_mode(file64=args.file64, file48=args.file48))(args.chunks).assemble(file['chunks'])
         require(len(data) == file['bytes'], 'example_assembled_size_mismatch')
         publish(args.output, data)
         value = {'whole_file_verified': True, 'bytes': len(data), 'sha256': sha(data)}
