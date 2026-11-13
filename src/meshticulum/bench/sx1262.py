@@ -324,8 +324,13 @@ class SX1262:
             return TxEvidence(Outcome.UNKNOWN, self.tx_estimate, elapsed, flags, -1)
 
     def _handoff_state(self):
+        # Numeric handle/configuration identity supplements the transport epoch.
+        # OS-level close/reuse outside this API remains the owner's responsibility.
+        transport_state = tuple((type(value), value) for value in (
+            self.io.spi_fd, self.io.lines_fd, self.io.chip_fd, self.io.lock_fd,
+            self.io._spi_hz))
         return (id(self.profile), self.profile, self.fenced, self.receiving, self.transmitting,
-                self.receive_pending, self._activity_reader())
+                self.receive_pending, transport_state, self._activity_reader())
 
     @timed(Phase.HAT_RX_REARM)
     def start_receive(self, *, authority_deadline):

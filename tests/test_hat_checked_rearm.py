@@ -233,3 +233,25 @@ def test_spoofed_method_attributes_do_not_replace_bound_method(rig,target,monkey
  object.__setattr__(owner,name,Spoof())
  with pytest.raises(lh.HardwareError):r.start_receive(authority_deadline=c.time+10)
  assert r.fenced or target=='driver'
+
+@pytest.mark.parametrize('field',['spi_fd','lines_fd','chip_fd','lock_fd','_spi_hz'])
+def test_descriptor_change_after_drain_cannot_reuse(rig,field):
+ c,io,r=setup(rig);drain(c,r);old=getattr(io,field);setattr(io,field,old+1);c.commands.clear()
+ r.start_receive(authority_deadline=c.time+10)
+ assert [x[0] for x in c.commands]==LEGACY
+
+@pytest.mark.parametrize('boundary',[2,3])
+@pytest.mark.parametrize('field',['spi_fd','lines_fd','chip_fd','lock_fd','_spi_hz'])
+def test_descriptor_change_in_ready_callback_contains(rig,field,boundary):
+ c,io=rig;armed=[False];calls=[0]
+ def clock():
+  if armed[0]:
+   calls[0]+=1
+   if calls[0]==boundary:
+    armed[0]=False;setattr(io,field,getattr(io,field)+1)
+  return c.time
+ c,io,r=setup(rig,clock=clock);drain(c,r);armed[0]=True;c.commands.clear()
+ with pytest.raises(lh.HardwareError):r.start_receive(authority_deadline=c.time+10)
+ assert r.fenced and r._drained_handoff is None and c.resets[-1] is False
+ assert not any(x[0]==0x82 for x in c.commands)
+ assert [x[0] for x in c.commands]==([] if boundary==2 else [0x8c])
