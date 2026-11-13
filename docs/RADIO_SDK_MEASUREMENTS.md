@@ -1,4 +1,28 @@
-# Public SDK radio measurements: 17–24 October 2026
+# Public SDK radio measurements
+
+## Alpha.5 finite 64 KiB sample — 13 November 2026
+
+Alpha.5 adds opt-in authenticated DATA end-of-turn markers, bounded train32
+and larger-file bench modes, checked HAT receive rearm, and precise handling
+of proven host-budget refusal. Default paths and frozen reliable-flow bytes
+remain unchanged; explicit capabilities, original deadlines, replay decisions,
+owner checks and paid debt still govern experimental paths.
+
+One 65,536-byte LoRa file using measured source
+`794ea7111aa51aa9c91867bc6f28b610f3ae79af` completed in **17.439448 seconds**
+from sender startup to authenticated receipt: **3,757.917 useful B/s**.
+Queue-submission-only goodput was **3,920.427 B/s**, a separate boundary.
+Six DATA retries and 14 accepted end markers were observed. Both endpoints
+closed with no new native receive drops; independent whole-file verification
+and original-scope expiry were checked. This single bench sample does not
+establish sustained or general 4 kB/s performance, field range or a causal
+comparison. Prior failed attempts, unknown outcomes and paid debt remain
+retained, including across separately authorized recovery.
+
+[Full benchmark and sanitized data](../benchmarks/2026-11-13-alpha5-file64/README.md).
+
+## Earlier dated measurements
+
 
 This page retains the dated radio campaigns below. The
 [alpha.3 hardware evidence](RELEASE_READINESS.md#alpha3-hardware-evidence)

@@ -1,6 +1,7 @@
 # Host phase timings
 
-Available in Python package `1.0.0a4` and the alpha.4 checkout examples.
+Available in Python package `1.0.0a5` and the Alpha.5 checkout examples;
+the original host timing feature remains available in earlier releases.
 The [release record](RELEASE_READINESS.md) identifies the tested artifacts;
 the [journal profile](../benchmarks/2026-10-30-host-journal/README.md) covers
 separate local measurements on synthetic retained history.

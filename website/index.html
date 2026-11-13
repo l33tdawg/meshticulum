@@ -40,11 +40,11 @@
     <section class="hero">
       <div class="container hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>A SAGE Foundation project / Experimental alpha published</p>
+          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>A SAGE Foundation project / Experimental Alpha.5</p>
           <h1>Small radios.<br><em>Bigger possibilities.</em></h1>
           <p class="hero-description">Encrypted messages. Verified resources. A transport designed to make more of every radio link, and use faster paths when they become available.</p>
-          <div class="hero-actions"><a class="button button-amber" href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4-r2">Download 1.0.0-alpha.4 <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum">Explore the source <span aria-hidden="true">↗</span></a></div>
-          <p class="hero-footnote">Latest: 1.0.0-alpha.4 / Python package 1.0.0a4.<br>Three repeated SF5 files above 3 kB/s. <a href="roadmap.html#alpha4-qualification">Read the update</a>.</p>
+          <div class="hero-actions"><a class="button button-amber" href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.5">Alpha.5 release <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum">Explore the source <span aria-hidden="true">↗</span></a></div>
+          <p class="hero-footnote">Alpha.5 / Python package 1.0.0a5.<br>One verified 64 KiB file at 3.76 kB/s including startup. <a href="roadmap.html#alpha5-measurement">Read the measurement</a>.</p>
         </div>
         <figure class="hero-figure">
           <img src="assets/network.svg" width="620" height="550" alt="Illustrative network: verified resources and encrypted messages pass between radio peers, with an optional faster IP path.">
@@ -82,6 +82,7 @@
     <section class="section paper evidence-section" id="evidence">
       <div class="container">
         <div class="section-heading"><div><p class="eyebrow">03 / Measured, with scope</p><h2>More than a modem<br>bitrate.</h2></div><p>We measure useful bytes in authenticated encrypted transfers, and require independent publisher and content verification. Timing boundaries matter.</p></div>
+        <div class="evidence-panel" id="alpha5-measurement"><div class="evidence-head"><span class="label">Alpha.5 / One finite SF5 file</span><span class="date">13 November 2026</span></div><div class="metrics-grid file-metrics"><div class="metric primary-metric"><strong>3.758<span>useful kB/s</span></strong><p>17.439448 seconds<br>sender startup → authenticated receipt</p></div><div class="metric"><strong>65,536<span>verified useful bytes</span></strong><p>One file<br>six DATA retries</p></div><div class="metric"><strong>14 markers<span>all received</span></strong><p>Both endpoints closed<br>no new native receive drops</p></div></div><div class="measurement-note"><span aria-hidden="true">↳</span><p>Queue-only goodput was 3,920.427 B/s, excluding startup. The 4,000 B/s target remains open. This is not sustained capacity or field-range qualification. Earlier failed work and charged debt remain retained. <a href="roadmap.html#alpha5-measurement">Read the measured configuration and limits</a>.</p></div></div>
         <div class="measurement-note"><span aria-hidden="true">↳</span><p><strong>Alpha.4 SF5 repeat:</strong> three fresh exact-wheel files delivered 23,900 useful bytes at 3,149.246, 3,188.156 and 3,192.081 bytes/s including sender process startup. Each verified the whole file and used one DATA retransmission. These are three finite near-bench samples; sustained larger-file performance and field range remain open. <a href="roadmap.html#alpha4-qualification">Read the timing, native accounting and limits</a>.</p></div>
         <div class="evidence-panel" id="alpha4-qualification">
           <div class="evidence-head"><span class="label">Alpha.4 candidate / Repeated SF5 qualification</span><span class="date">30 October 2026</span></div>
@@ -172,7 +173,7 @@
     </section>
 
     <section class="get-started paper">
-      <div class="container start-grid"><div><p class="eyebrow">Explore the work</p><h2>Open code.<br>Explicit evidence.</h2><p>Download the experimental alpha, read the design, inspect the results, or help build the next piece.</p></div><div class="start-actions"><a class="button button-dark" href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4-r2">Download alpha.4 <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum">Open the repository <span aria-hidden="true">↗</span></a><a class="text-link" href="roadmap.html">See the roadmap <span aria-hidden="true">↗</span></a></div></div>
+      <div class="container start-grid"><div><p class="eyebrow">Explore the work</p><h2>Open code.<br>Explicit evidence.</h2><p>Download the experimental alpha, read the design, inspect the results, or help build the next piece.</p></div><div class="start-actions"><a class="button button-dark" href="https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.5">Alpha.5 release <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/l33tdawg/meshticulum">Open the repository <span aria-hidden="true">↗</span></a><a class="text-link" href="roadmap.html">See the roadmap <span aria-hidden="true">↗</span></a></div></div>
     </section>
   </main>
   <footer class="site-footer"><div class="container footer-inner"><a class="brand" href="#">meshticulum<span class="brand-period">.</span></a><p>A <a href="https://sage-foundation.net/">SAGE Foundation</a> project.<br>© 2026 Dhillon Andrew Kannabhiran · <a href="https://github.com/l33tdawg/meshticulum/blob/main/LICENSE">Apache 2.0</a></p><a href="getting-started.html">Developer guide <span aria-hidden="true">↗</span></a><a href="roadmap.html">Project roadmap <span aria-hidden="true">↗</span></a><a href="https://l33tdawg.github.io/sage/">Discover SAGE <span aria-hidden="true">↗</span></a></div></footer>

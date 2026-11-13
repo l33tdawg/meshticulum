@@ -1,8 +1,32 @@
 # Roadmap
 
-Meshticulum is a public experimental transport and resource project with a published source-build alpha. Alpha 4 met the SF5/BW500 target for three repeated files: **3,149.246–3,192.081 useful B/s** from sender process startup through authenticated receipt, with publisher and whole-file verification. The **2.8 kB/s required** and **3.0 kB/s stretch** checkpoints are now met for that finite workload. Sustained larger-file performance, field range and broader qualification remain open; the optional **4 to 5 kB/s (32 to 40 kbit/s)** goal follows this qualification. There are no promised release dates.
+Alpha.5 has one verified 65,536-byte LoRa result at **3,757.917 useful B/s**
+including sender startup. The 4,000 B/s target remains open; sustained
+performance, field range and broader qualification remain unproven.
 
 ## Current status
+
+Alpha.5 adds opt-in authenticated DATA end-of-turn markers, bounded train32
+and larger-file bench modes, checked HAT receive rearm, and precise handling
+of proven host-budget refusal. Default paths and frozen reliable-flow bytes
+remain unchanged; explicit capabilities, original deadlines, replay decisions,
+owner checks and paid debt still govern experimental paths.
+
+One 65,536-byte LoRa file using measured source
+`794ea7111aa51aa9c91867bc6f28b610f3ae79af` completed in **17.439448 seconds**
+from sender startup to authenticated receipt: **3,757.917 useful B/s**.
+Queue-submission-only goodput was **3,920.427 B/s**, a separate boundary.
+Six DATA retries and 14 accepted end markers were observed. Both endpoints
+closed with no new native receive drops; independent whole-file verification
+and original-scope expiry were checked. This single bench sample does not
+establish sustained or general 4 kB/s performance, field range or a causal
+comparison. Prior failed attempts, unknown outcomes and paid debt remain
+retained, including across separately authorized recovery.
+
+[Measured configuration and limits](../benchmarks/2026-11-13-alpha5-file64/README.md).
+
+
+## Alpha.4 and earlier measured history
 
 The final [Alpha 4 repeat qualification](../benchmarks/2026-10-30-sf5-alpha4-repeat-profile/README.md)
 completed three exact-wheel SF5 files at **3,188.156, 3,192.081 and 3,149.246

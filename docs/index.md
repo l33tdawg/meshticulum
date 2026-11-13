@@ -1,6 +1,6 @@
 # Meshticulum documentation
 
-Meshticulum brings bounded radio transfers, authenticated service boundaries and verified resources into a system intended to span LoRa and IP. This guide starts with the design, then follows the source and the evidence needed to qualify it. [Experimental alpha.4](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.4-r2) repairs saturated train12 recovery stalls and adds three repeated physical SF5 samples above 3 kB/s; start with the [SDK installation guide](SDK_GUIDE.md#install-the-alpha-or-checkout).
+Meshticulum brings bounded radio transfers, authenticated service boundaries and verified resources into a system intended to span LoRa and IP. This guide starts with the design, then follows the source and the evidence needed to qualify it. [Experimental alpha.5](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.5) adds authenticated turn-end markers and a finite 64 KiB sample at 3,757.917 B/s including startup; start with the [SDK installation guide](SDK_GUIDE.md#install-the-alpha-or-checkout).
 
 ## Understand the project
 
@@ -39,7 +39,7 @@ Start with [installation and the standalone test command](../README.md#install-a
 | [Lantern's SAGE integration](SAGE_INTEGRATION.md) | Understand the separate owning repository for protected capture, replay and private inbox admission |
 | [Extraction and provenance](EXTRACTION.md) | Trace code to its original snapshot, inspect frozen flow pins or understand package bridges |
 | [Coordinated public pilot](HARDWARE_PILOT.md) | Follow native provisioning, relay provenance, publisher verification and the remaining physical checks |
-| [Alpha release status](RELEASE_READINESS.md) | Check alpha.4 artifacts and hardware evidence, earlier releases and remaining qualification |
+| [Alpha release status](RELEASE_READINESS.md) | Check alpha.5 artifacts and hardware evidence, earlier releases and remaining qualification |
 | [Third-party inventory](THIRD_PARTY.md) | Identify runtime and firmware dependencies and outstanding redistribution requirements |
 | [Repository instructions](../AGENTS.md) | Change transport or integration behavior while preserving its contracts and writer ownership |
 | [Frozen flow history](../src/meshticulum/flow/README.md) | Inspect the accepted candidate's revisions, invariants and historical source controls |
