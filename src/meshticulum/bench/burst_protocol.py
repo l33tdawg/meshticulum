@@ -27,6 +27,8 @@ CAPABILITY12 = CAPABILITY_TRAIN_STRUCT.pack(b'MBT1', 8, 12, 7, 255,
     MAX_AUTONOMOUS_HOLD_US, START_GUARD_US, INTER_PACKET_RX_US, REVERSE_LISTEN_US)
 CAPABILITY24 = CAPABILITY_TRAIN_STRUCT.pack(b'MBT2', 8, 24, 7, 255,
     MAX_AUTONOMOUS_HOLD_US, START_GUARD_US, INTER_PACKET_RX_US, REVERSE_LISTEN_US)
+CAPABILITY_TRAIN32 = CAPABILITY_TRAIN_STRUCT.pack(b'MBT3', 8, 32, 7, 255,
+    MAX_AUTONOMOUS_HOLD_US, START_GUARD_US, INTER_PACKET_RX_US, REVERSE_LISTEN_US)
 CLOCK = struct.Struct('!QQQ')
 OPEN = struct.Struct('!32sQQ')
 DATA = struct.Struct('!QQQBH32s')
@@ -70,6 +72,9 @@ _POLICY_TRAIN12_ITEMS = tuple(POLICY_TRAIN12.items())
 POLICY_TRAIN24 = dict(POLICY_TRAIN12, schema='meshticulum.data-burst-policy.v10',
                       train_frames=24, dynamic_train_admission=True)
 _POLICY_TRAIN24_ITEMS = tuple(POLICY_TRAIN24.items())
+POLICY_TRAIN32 = dict(POLICY_TRAIN24, schema="meshticulum.data-burst-policy.v11",
+                      train_frames=32, host_pending_limit=3, explicit_turn_retirement=True)
+_POLICY_TRAIN32_ITEMS = tuple(POLICY_TRAIN32.items())
 
 
 def validate_policy(value):
@@ -80,7 +85,7 @@ def validate_policy(value):
           for items in (_POLICY_ITEMS, _POLICY8_ITEMS, _POLICY32_ITEMS,
                         _POLICY_REPAIR_FILL_ITEMS, _POLICY_TERMINAL_RETRY_ITEMS,
                         _POLICY_SCALAR_FILL_PAIR_ITEMS, _POLICY_REPEAT_RETRY_ITEMS,
-                        _POLICY_REPAIR_TRAIN_ITEMS, _POLICY_TRAIN12_ITEMS, _POLICY_TRAIN24_ITEMS)), 'invalid_data_burst_policy')
+                        _POLICY_REPAIR_TRAIN_ITEMS, _POLICY_TRAIN12_ITEMS, _POLICY_TRAIN24_ITEMS, _POLICY_TRAIN32_ITEMS)), 'invalid_data_burst_policy')
     return dict(value)
 
 
@@ -107,6 +112,10 @@ def policy_for_train12():
 def policy_for_train24():
     """Explicit dynamic train experiment; no deadline, slot or debt extension."""
     return dict(_POLICY_TRAIN24_ITEMS)
+
+
+def policy_for_train32():
+    return dict(_POLICY_TRAIN32_ITEMS)
 
 
 def policy_dynamic_train(policy):
@@ -173,13 +182,15 @@ def policy_repair_train(policy):
 def _train_shape(depth, train_frames):
     policy_for_depth(depth)
     train_frames = depth if train_frames is None else train_frames
-    _need(type(train_frames) is int and (depth, train_frames) in ((4, 4), (8, 8), (8, 12), (8, 24)),
+    _need(type(train_frames) is int and (depth, train_frames) in ((4, 4), (8, 8), (8, 12), (8, 24), (8, 32)),
           'invalid_data_burst_train')
     return train_frames
 
 
 def capability_for_depth(depth=4, *, train_frames=None):
     train_frames = _train_shape(depth, train_frames)
+    if train_frames == 32:
+        return CAPABILITY_TRAIN32
     if train_frames == 24:
         return CAPABILITY24
     if train_frames == 12:
@@ -189,6 +200,8 @@ def capability_for_depth(depth=4, *, train_frames=None):
 
 def capability_request_body(depth=4, *, train_frames=None):
     train_frames = _train_shape(depth, train_frames)
+    if train_frames == 32:
+        return b'\x08\x20'
     if train_frames == 24:
         return b'\x08\x18'
     if train_frames == 12:

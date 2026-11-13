@@ -10,7 +10,7 @@ import pytest
 from meshticulum.bench.attempts import AttemptJournal
 from meshticulum.bench.burst_protocol import (
     ACK, CAPABILITY, CANCEL, CLOCK, DATA, EVENT, OPEN, POLICY, STATUS, TOKEN,
-    capability_for_depth, capability_request_body, policy_for_depth, policy_for_train12, policy_for_train24,
+    capability_for_depth, capability_request_body, policy_for_depth, policy_for_train12, policy_for_train24, policy_for_train32,
 )
 from meshticulum.bench.burst_worker import BurstSerialWorker
 from meshticulum.bench.linux_hat import HardwareError
@@ -186,9 +186,9 @@ class Channel:
 def setup(tmp_path):
     tmp_path.chmod(0o700)
     journals = []
-    def make(fault=None, authorize=lambda: True, profile=PROFILE, train_depth=4, train12=False, train24=False):
-        channel = Channel(fault, train_depth=train_depth, train_frames=24 if train24 else 12 if train12 else None, profile=profile)
-        worker = BurstSerialWorker(channel, policy=policy_for_train24() if train24 else policy_for_train12() if train12 else policy_for_depth(train_depth))
+    def make(fault=None, authorize=lambda: True, profile=PROFILE, train_depth=4, train12=False, train24=False, train32=False):
+        channel = Channel(fault, train_depth=train_depth, train_frames=32 if train32 else 24 if train24 else 12 if train12 else None, profile=profile)
+        worker = BurstSerialWorker(channel, policy=policy_for_train32() if train32 else policy_for_train24() if train24 else policy_for_train12() if train12 else policy_for_depth(train_depth))
         identity = worker.discover(expected_board_id=1, expected_version=VERSION)
         path = tmp_path / (str(len(journals)) + '.sqlite')
         journal = AttemptJournal(path, binding=journal_binding(b'c' * 32, identity, profile),

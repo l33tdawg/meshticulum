@@ -148,7 +148,7 @@ public:
         valid_=nonzero(admission.binding.boot,16) && nonzero(admission.binding.context_sha256,32)
             && (admission.depth==TX_BURST_DEPTH || admission.depth==TX_BURST_MAX_DEPTH)
             && (!admission.train_frames || admission.train_frames==admission.depth
-                || (admission.depth==TX_BURST_MAX_DEPTH && (admission.train_frames==12 || admission.train_frames==24)))
+                || (admission.depth==TX_BURST_MAX_DEPTH && (admission.train_frames==12 || admission.train_frames==24 || admission.train_frames==32)))
             && std::memcmp(admission.binding.boot,boot.boot,16)==0
             && admission.lease_deadline_us>0 && admission.max_attempts>0 && admission.max_attempts<=100000
             && admission.max_airtime_us>0 && admission.max_airtime_us<=300000000

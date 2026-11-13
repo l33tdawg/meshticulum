@@ -142,9 +142,9 @@ static bool burstCommand(const Frame& frame) {
     // DATA's queue check runs before this exit guard so accepted IDs are not
     // mistakenly stale; exact retained replays still precede stale refusal.
     BurstMutationFloor floor{frame.request,frame.type==BURST_OPEN || frame.type==BURST_DATA || frame.type==BURST_ACK || frame.type==BURST_CANCEL};
-    if(frame.type==BURST_CAPABILITIES && frame.size==2 && frame.body[0]==8 && (frame.body[1]==12 || frame.body[1]==24)) {
+    if(frame.type==BURST_CAPABILITIES && frame.size==2 && frame.body[0]==8 && (frame.body[1]==12 || frame.body[1]==24 || frame.body[1]==32)) {
         Frame reply=response(BURST_CAPABILITIES_REPLY,frame.request);reply.size=25;
-        memcpy(reply.body,frame.body[1]==24 ? "MBT2" : "MBT1",4);reply.body[4]=8;reply.body[5]=frame.body[1];reply.body[6]=7;put16(reply.body+7,255);
+        memcpy(reply.body,frame.body[1]==32 ? "MBT3" : (frame.body[1]==24 ? "MBT2" : "MBT1"),4);reply.body[4]=8;reply.body[5]=frame.body[1];reply.body[6]=7;put16(reply.body+7,255);
         put32(reply.body+9,2000000);put32(reply.body+13,100000);put32(reply.body+17,BURST_RX_US);put32(reply.body+21,BURST_REVERSE_US);
         output.offer(reply);return true;
     }
@@ -172,7 +172,7 @@ static bool burstCommand(const Frame& frame) {
         output.offer(reply);return true;
     }
     if(frame.type==BURST_OPEN && (frame.size==48 || (frame.size==49 && frame.body[0]==8)
-        || (frame.size==50 && frame.body[0]==8 && (frame.body[1]==12 || frame.body[1]==24)))) {
+        || (frame.size==50 && frame.body[0]==8 && (frame.body[1]==12 || frame.body[1]==24 || frame.body[1]==32)))) {
         const uint8_t depth=frame.size>=49 ? 8 : 4;
         const uint8_t train=frame.size==50 ? frame.body[1] : depth;
         const uint8_t* body=frame.body+(frame.size-48);

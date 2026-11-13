@@ -37,12 +37,15 @@ class BurstSerialWorker(SerialWorker):
         self._burst_policy = tuple(sorted(copied.items()))
         self._depth = policy_depth(copied)
         self._train_frames = policy_train_frames(copied)
+        self._host_pending_limit = copied.get("host_pending_limit", self._depth)
+        self._explicit_turn_retirement = copied.get("explicit_turn_retirement", False)
         self._burst_capability = None
         self._open = None
         self._arm_request = None
         self._burst_deadline = None
         self._burst_clock = None
         self._burst_count = 0
+        self._turn_generation = 0
         self._train_admission_refused = False
         self._physical = {}
         self._logical = {}
@@ -74,7 +77,30 @@ class BurstSerialWorker(SerialWorker):
     def has_capacity(self):
         return (self._open is not None and not self.fenced
                 and not self._train_admission_refused
-                and len(self._physical) < self._depth and self._burst_count < self._train_frames)
+                and not self.drained_train_pending
+                and len(self._physical) < self._host_pending_limit and self._burst_count < self._train_frames)
+
+    @property
+    def train_identity(self):
+        if (not self._explicit_turn_retirement or self._burst_deadline is None
+                or self.fenced or self._cancelled or self._train_admission_refused):
+            return None
+        return (self._open.token, self._turn_generation, self._burst_deadline, self._burst_count)
+
+    @property
+    def drained_train_pending(self):
+        return (self._explicit_turn_retirement and self._burst_deadline is not None
+                and not self._physical)
+
+    def retire_drained_train(self):
+        """Explicit caller reverse-hold handoff; never a new CLOCK or authority."""
+        require(self.drained_train_pending and not self._train_admission_refused,
+                'train_retirement_not_drained')
+        self._capability()
+        self.assert_drained()
+        require(not self.fenced and not self._cancelled, 'train_retirement_fenced')
+        self._burst_deadline = self._burst_clock = None
+        self._burst_count = 0
 
     @property
     def train_admission_refused(self):
@@ -175,7 +201,10 @@ class BurstSerialWorker(SerialWorker):
                 and type(self.profile) is RadioProfile,
                 'burst_firmware_capability_changed')
         require(policy_depth(dict(self._burst_policy)) == self._depth
-                and policy_train_frames(dict(self._burst_policy)) == self._train_frames,
+                and policy_train_frames(dict(self._burst_policy)) == self._train_frames
+                and type(self._host_pending_limit) is int
+                and dict(self._burst_policy).get("host_pending_limit", self._depth) == self._host_pending_limit
+                and dict(self._burst_policy).get("explicit_turn_retirement", False) is self._explicit_turn_retirement,
                 'burst_policy_changed')
 
     def _sample_clock(self):
@@ -233,6 +262,8 @@ class BurstSerialWorker(SerialWorker):
             sent_us=sent, received_us=received, arm_request=self._arm_request,
             original_cap_us=self._open.deadline_us, burst=True)
         self._burst_clock = clock
+        if self._explicit_turn_retirement:
+            self._turn_generation += 1
 
     def _metadata(self, logical_id, owner_frame_id, estimate):
         return json.dumps(dict(schema='meshticulum.queued-attempt.v1',
@@ -402,7 +433,7 @@ class BurstSerialWorker(SerialWorker):
     def _forget(self, request):
         record = self._physical.pop(request)
         self._logical.pop(record['logical_id'])
-        if not self._physical:
+        if not self._physical and not self._explicit_turn_retirement:
             self._burst_deadline = self._burst_clock = None
             self._burst_count = 0
 

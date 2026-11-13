@@ -105,6 +105,7 @@ class BenchFlow:
         flow, port = _flow_modules()
         self.next_send_us = 0
         self._refused_turn_until_us = 0
+        self._train_progress_receipt = None
         self.receive_gap_us = math.ceil(radio_airtime_us(authority.profile,
             flow.ACK_BYTES + 47) * 1.10) + 60000
         self._ack_reservation_us = math.ceil(radio_airtime_us(authority.profile,
@@ -119,7 +120,7 @@ class BenchFlow:
         selected_window = policy_flow_window(policy) if policy is not None else 4
         selected_train = policy_train_frames(policy) if policy is not None else selected_depth
         self._selective_stall_retry = (self._selective_repair_train
-                                       and selected_train in (12, 24))
+                                       and selected_train in (12, 24, 32))
         require(selected_depth == 4 or radio_is_sf5(authority.profile),
                 'burst_eight_requires_sf5')
         if selected_window != selected_depth:
@@ -237,7 +238,7 @@ class BenchFlow:
                 + math.ceil(self.flow.limits.persist_interval_s * 1000000)
                 + max(self.receive_gap_us, self.burst_quiet_us))
         self.receiver_ack_quiet_us = self.burst_quiet_us
-        self._receiver_quiet150_eligible = fast_sf5 and selected_train == 24 and self.burst_frames == 24
+        self._receiver_quiet150_eligible = fast_sf5 and selected_train in (24, 32) and self.burst_frames == selected_train
         self._receiver_quiet_override = False
         self.parse_frame, self.ack_kind = flow.parse_frame, flow.KIND_ACK
         self.closed = False
@@ -333,6 +334,8 @@ class BenchFlow:
         require(type(worker_started_us) is int and type(worker_finished_us) is int
                 and worker_finished_us >= worker_started_us, 'invalid_worker_timing')
         if result.outcome == 'QUEUED':
+            if self.burst_frames == 32:
+                self._train_progress_receipt = None
             require(self.data_burst and kind is FrameKind.DATA and result.driver is None,
                     'invalid_queue_acceptance')
             self._pending_data_domains[domain] = (plaintext_digest, result.request)
@@ -408,6 +411,8 @@ class BenchFlow:
             if result.outcome == 'RF_DONE':
                 return CommitOutcome.ACCEPTED
             if result.outcome in ('REFUSED', 'NOT_SENT'):
+                if self.burst_frames == 32:
+                    self._train_progress_receipt = None
                 return CommitOutcome.REFUSED_CARRIER
             self.owner.settle_sending()
             return CommitOutcome.UNKNOWN
@@ -456,7 +461,9 @@ class BenchFlow:
                     self.owner.settle_sending()
             return CommitOutcome.ACCEPTED
         if result.outcome in ('REFUSED', 'NOT_SENT'):
-            if (self.data_burst and kind is FrameKind.DATA and self.burst_frames == 24
+            if self.burst_frames == 32:
+                self._train_progress_receipt = None
+            if (self.data_burst and kind is FrameKind.DATA and self.burst_frames in (24, 32)
                     and self.worker.train_admission_refused):
                 # v10's dynamic native fit may end a short train. Keep every
                 # accepted logical flight, collect its exact physical outcome,
@@ -465,7 +472,12 @@ class BenchFlow:
                 self._collect_physical(self.worker.drain_physical())
                 self.worker.retire_refused_train()
                 self.counts['dynamic_train_refused_turn'] += 1
+                previous_hold = self.next_send_us
                 self._hold_repair_reverse_turn()
+                if self.burst_frames == 32:
+                    self.next_send_us = max(previous_hold, self.next_send_us)
+                if self.burst_frames == 32 and self.worker.drained_train_pending:
+                    self.worker.retire_drained_train()
                 self._refused_turn_until_us = self.next_send_us
             return CommitOutcome.REFUSED_CARRIER
         self.owner.settle_sending()
@@ -505,6 +517,23 @@ class BenchFlow:
     def _poll_physical(self):
         if self.data_burst:
             self._collect_physical(self.worker.poll_physical())
+            if self.burst_frames == 32 and self.worker.drained_train_pending and not self.worker.train_admission_refused:
+                # v11 cannot mint another deadline from an empty retained map.
+                # Establish the existing reverse hold before retiring this turn.
+                previous_hold = self.next_send_us
+                progress_permission_unchanged = (self.worker.train_identity is not None
+                    and self._train_progress_receipt == self.worker.train_identity)
+                self._hold_repair_reverse_turn()
+                self.next_send_us = max(previous_hold, self.next_send_us)
+                self.worker.retire_drained_train()
+                if progress_permission_unchanged:
+                    # Authenticated progress already released this wait while
+                    # this local turn binding was unchanged. This does not
+                    # establish that the ACK covers this turn's DATA.
+                    # Retire first; never weaken a prior hold or refusal floor.
+                    self.next_send_us = max(previous_hold, self._refused_turn_until_us)
+                self._train_progress_receipt = None
+                self.counts['explicit_drained_train_turn'] += 1
 
     def _completion_ready(self):
         if not self.flow.complete:
@@ -747,7 +776,7 @@ class BenchFlow:
         # repair. The QUEUED repair already counts toward this same admitted
         # train; do not reset that count or erase an existing reverse hold.
         # The normal flow/owner still admit each following DATA independently.
-        if (self._selective_repair_fill and self.burst_frames in (8, 12, 24)
+        if (self._selective_repair_fill and self.burst_frames in (8, 12, 24, 32)
                 and 0 < self.burst_sent < self.burst_frames and self.next_send_us == 0
                 and self.flow.queued_bytes() > 0 and self.flow._peer_grant_rev is not None
                 and self.flow.in_flight() < min(self.flow.limits.window_frames, self.flow._peer_credit)
@@ -943,6 +972,8 @@ class BenchFlow:
             # of a conservative reverse-airtime wait before the next DATA.
             if (self.sends and verified.kind is FrameKind.ACK
                     and self.flow.acked_frames() > acknowledged_before):
+                if self.burst_frames == 32:
+                    self._train_progress_receipt = self.worker.train_identity
                 self.next_send_us = max(self._refused_turn_until_us,
                                         min(self.next_send_us, self.last_activity_us))
                 self.burst_sent = 0
