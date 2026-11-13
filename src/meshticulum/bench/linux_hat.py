@@ -63,6 +63,7 @@ SPI_MESSAGE = ioc(1, 'k', 0, ctypes.sizeof(SPITransfer))
 SPI_WRITE_MODE = ioc(1, 'k', 1, 1)
 SPI_WRITE_BITS = ioc(1, 'k', 3, 1)
 SPI_WRITE_HZ = ioc(1, 'k', 4, 4)
+SPI_READ_HZ = ioc(2, 'k', 4, 4)
 
 
 def abi_manifest():
@@ -128,7 +129,10 @@ class LinuxHAT:
     monotonic = staticmethod(time.monotonic)
     sleep = staticmethod(time.sleep)
 
-    def __init__(self):
+    def __init__(self, *, spi_hz=1000000):
+        require(type(spi_hz) is int and spi_hz in (1000000, 4000000),
+                'unsupported_hat_spi_hz')
+        self._spi_hz = spi_hz
         self.spi_fd = self.chip_fd = self.lines_fd = self.lock_fd = None
         require(platform.system() == 'Linux' and platform.machine() == 'aarch64',
                 'requires_verified_aarch64_linux')
@@ -175,7 +179,13 @@ class LinuxHAT:
             os.set_inheritable(self.lines_fd, False)
             fcntl.ioctl(self.spi_fd, SPI_WRITE_MODE, bytes([0]))
             fcntl.ioctl(self.spi_fd, SPI_WRITE_BITS, bytes([8]))
-            fcntl.ioctl(self.spi_fd, SPI_WRITE_HZ, struct.pack('=I', 1000000))
+            fcntl.ioctl(self.spi_fd, SPI_WRITE_HZ, struct.pack('=I', self._spi_hz))
+            if self._spi_hz != 1000000:
+                # Readback proves accepted userspace setting, not measured SCLK.
+                configured = bytearray(4)
+                fcntl.ioctl(self.spi_fd, SPI_READ_HZ, configured)
+                require(struct.unpack('=I', configured)[0] == self._spi_hz,
+                        'hat_spi_hz_readback_mismatch')
         except BaseException:
             self.close()
             raise
@@ -186,7 +196,7 @@ class LinuxHAT:
         tx = (ctypes.c_uint8 * len(data)).from_buffer_copy(data)
         rx = (ctypes.c_uint8 * len(data))()
         message = SPITransfer(ctypes.addressof(tx), ctypes.addressof(rx), len(data),
-                              1000000, 0, 8, 0, 0, 0, 0, 0)
+                              self._spi_hz, 0, 8, 0, 0, 0, 0, 0)
         sent = fcntl.ioctl(self.spi_fd, SPI_MESSAGE, message)
         require(sent == len(data), 'partial_spi_transfer')
         return bytes(rx)

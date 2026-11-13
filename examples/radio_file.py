@@ -69,10 +69,19 @@ def add_operation_limit_arguments(parser):
 
 
 def add_host_timing_argument(parser):
+    parser.add_argument('--hat-spi-hz', type=int, choices=(1000000, 4000000),
+                        help='Explicit HAT SPI request; default remains 1 MHz. 4 MHz is experimental.')
     parser.add_argument('--hat-receive-reasons', action='store_true',
                         help='Collect bounded HAT receive software counters (no packet identities).')
     parser.add_argument('--profile-host', action='store_true',
         help='include bounded host phase timings; diagnostic only, adds measurement overhead')
+
+
+def hat_spi_options(args):
+    value = getattr(args, 'hat_spi_hz', None)
+    require(value is None or (args.interface == 'hat' and type(value) is int
+            and value in (1000000, 4000000)), 'invalid_hat_spi_hz_option')
+    return {} if value is None else dict(spi_hz=value)
 
 
 def operation_journal_limits(args, admitted):
@@ -513,7 +522,7 @@ class FileHardware:
     _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
     _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
                'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
-               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'hat_receive_reasons')
+               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'hat_receive_reasons', 'hat_spi_hz')
 
     @classmethod
     def _binding(cls, args):
@@ -528,12 +537,13 @@ class FileHardware:
         self.closed = self.active = self.poisoned = False
         self.window_raw = None
         self.options = (args.interface, args.device, getattr(args, 'usb_serial', None))
+        self.spi_options = hat_spi_options(args)
         self.transport = self.owner = None
         self.event_complete_inventory = getattr(args, 'event_complete_inventory', False)
 
     def _open(self):
         interface, device, serial = self.options
-        self.transport = (LinuxHAT() if interface == 'hat' else
+        self.transport = (LinuxHAT(**self.spi_options) if interface == 'hat' else
                           ExclusiveSerial(device, usb_serial=serial))
         try:
             self.owner = HeldHardware(self.transport,
@@ -621,11 +631,12 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
     receive_reasons = getattr(args, 'hat_receive_reasons', False)
     require(type(receive_reasons) is bool and (not receive_reasons or args.interface == 'hat'),
             'invalid_hat_receive_reasons_option')
+    spi_options = hat_spi_options(args)
     worker = None
     timing = HostPhaseTimings() if getattr(args, 'profile_host', False) else None
     timing_kw = {} if timing is None else dict(host_timing=timing)
     if hardware is None:
-        transport = (LinuxHAT() if args.interface == 'hat' else
+        transport = (LinuxHAT(**spi_options) if args.interface == 'hat' else
                      ExclusiveSerial(args.device, usb_serial=args.usb_serial, **timing_kw))
         owner, cleanup = None, [transport.close]
     else:
