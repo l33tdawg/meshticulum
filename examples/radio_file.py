@@ -69,6 +69,8 @@ def add_operation_limit_arguments(parser):
 
 
 def add_host_timing_argument(parser):
+    parser.add_argument('--hat-receive-reasons', action='store_true',
+                        help='Collect bounded HAT receive software counters (no packet identities).')
     parser.add_argument('--profile-host', action='store_true',
         help='include bounded host phase timings; diagnostic only, adds measurement overhead')
 
@@ -508,7 +510,7 @@ class FileHardware:
     _paths = ('state', 'device', 'pack', 'trust_root', 'admission', 'firmware_source')
     _values = ('unit', 'interface', 'usb_serial', 'manifest_sha256',
                'trust_root_sha256', 'admission_sha256', 'firmware_source_sha256',
-               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64')
+               'file_issued_epoch_us', 'file_expires_epoch_us', 'event_complete_inventory', 'receiver_ack_quiet_us', 'file64', 'hat_receive_reasons')
 
     @classmethod
     def _binding(cls, args):
@@ -613,6 +615,10 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
     plan = json.loads(raw)
     admitted_limits = OperationLimits.from_plan(plan)
     limits = operation_journal_limits(args, admitted_limits)
+    receive_reasons = getattr(args, 'hat_receive_reasons', False)
+    require(type(receive_reasons) is bool and (not receive_reasons or args.interface == 'hat'),
+            'invalid_hat_receive_reasons_option')
+    worker = None
     timing = HostPhaseTimings() if getattr(args, 'profile_host', False) else None
     timing_kw = {} if timing is None else dict(host_timing=timing)
     if hardware is None:
@@ -666,7 +672,8 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
             worker = hat_cls(transport, journal=journal, profile=profile,
                 context_digest=authority.grant.digest, authorize=authorize,
                 authority_deadline=min(authority.deadlines.application_deadline_monotonic, window.deadline_us / 1000000),
-                antenna_confirmed=plan['antenna_confirmed'])
+                antenna_confirmed=plan['antenna_confirmed'],
+                **({'receive_reasons': True} if receive_reasons else {}))
             cleanup.append(worker.disarm)
         session = factory(authority, worker, journal,
             SessionCipher(authority.grant, authority.local_peer, store))
@@ -710,8 +717,12 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
                 hardware.release(not errors)
             except BaseException as error:
                 errors.append(error)
+    receive_snapshot = (worker.receive_reason_snapshot()
+                        if receive_reasons and worker is not None else None)
     if errors:
         failure = BaseExceptionGroup('File transfer or cleanup failed; retain all run state', errors)
+        if receive_snapshot is not None:
+            failure.hat_receive_reasons = receive_snapshot
         if timing is not None:
             try:
                 failure.host_phase_timings = timing.snapshot()
@@ -724,6 +735,8 @@ def run_object(args, raw, admission, version, payload, window, factory, *, hardw
             result['host_phase_timings'] = timing.snapshot()
         except Exception:
             result['host_phase_timings_unavailable'] = True
+    if receive_snapshot is not None:
+        result['hat_receive_reasons'] = receive_snapshot
     return result
 
 

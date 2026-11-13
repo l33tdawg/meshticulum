@@ -55,6 +55,7 @@ class SX1262:
         self.receive_pending = False
         self.attempts = self.reserved_us = 0
         self.rx_errors = 0
+        self.receive_reasons = None
         self.tx_estimate = self.tx_started = self.tx_deadline = 0
 
     def _ready(self):
@@ -299,8 +300,16 @@ class SX1262:
     @timed(Phase.HAT_RX_POLL)
     def poll_receive(self):
         require((self.receiving or self.receive_pending) and not self.fenced, 'sx1262_not_receiving')
+        reasons = self.receive_reasons
+        reading_packet = False
         try:
             flags = self.irq()
+            if reasons is not None:
+                if flags & (CRC_ERROR | HEADER_ERROR):
+                    reasons.record('irq_crc_header' if flags & CRC_ERROR and flags & HEADER_ERROR
+                                   else 'irq_crc' if flags & CRC_ERROR else 'irq_header')
+                if flags & TIMEOUT:
+                    reasons.record('irq_timeout')
             if not flags & RX_MASK:
                 return None
             with phase(getattr(self, 'host_timing', None), Phase.HAT_RX_DRAIN):
@@ -311,6 +320,7 @@ class SX1262:
                 packet = None
                 if flags & RX_DONE and not flags & (CRC_ERROR | HEADER_ERROR | TIMEOUT):
                     with phase(getattr(self, 'host_timing', None), Phase.HAT_RX_PACKET_READ):
+                        reading_packet = True
                         length, offset = self._read(0x13, 2)
                         # DS2.2 table 13-68 permits LoRa payload length zero.
                         # It cannot contain an authenticated wire frame. Drop
@@ -318,15 +328,24 @@ class SX1262:
                         # SPI status/length checks and IRQ cleanup stay strict.
                         if length == 0:
                             self.rx_errors += 1
+                            if reasons is not None:
+                                reasons.record('zero_length')
                         else:
                             data = self._read(0x1E, length, bytes([offset]))
                             packet = self._receive_evidence(data, self._read(0x14, 3))
+                        reading_packet = False
                 elif flags & (CRC_ERROR | HEADER_ERROR):
                     self.rx_errors += 1
                 self.clear_irq()
                 self.receive_pending = False
+                if packet is not None and reasons is not None:
+                    reasons.record('physical_packet_returned')
                 return packet
         except BaseException:
+            if reasons is not None:
+                reasons.record('poll_failure')
+                if reading_packet:
+                    reasons.record('packet_read_failure')
             self.contain()
             raise
 

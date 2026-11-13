@@ -1116,6 +1116,11 @@ class BenchFlow:
                              'control_rate_us_per_second': self.scheduler.policy.control_rate_us_per_second},
             'attempt_journal': self.journal.snapshot(), 'events': list(self.events),
             'scheduler': self.scheduler.snapshot()}
+        receive_snapshot = getattr(self.worker, 'receive_reason_snapshot', None)
+        if receive_snapshot is not None:
+            reasons = receive_snapshot()
+            if reasons is not None:
+                value['hat_receive_reasons'] = reasons
         if self._pace_selective_repeats:
             value['timing_policy']['pace_selective_repeats'] = True
         if self._scalar_fill_pair:

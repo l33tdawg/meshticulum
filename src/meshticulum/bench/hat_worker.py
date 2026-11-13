@@ -19,6 +19,7 @@ from .linux_hat import LinuxHAT, HardwareError, require
 from .serial_protocol import Outcome, RadioProfile
 from .serial_worker import AttemptResult, estimated_airtime_us
 from .sx1262 import SX1262
+from .rx_reasons import ReceiveReasons
 
 
 _NATIVE_MONOTONIC = time.monotonic
@@ -51,7 +52,9 @@ class HATWorker:
 
     def __init__(self, transport, *, journal, profile, context_digest, authorize,
                  authority_deadline, antenna_confirmed, monotonic=None,
-                 time_basis='host-monotonic'):
+                 time_basis='host-monotonic', receive_reasons=False):
+        require(type(receive_reasons) is bool, 'invalid_hat_receive_reasons')
+        self._receive_reasons = ReceiveReasons() if receive_reasons else None
         timing = check_timing(getattr(journal, 'host_timing', None))
         require(type(profile) is self._profile_type and callable(authorize), 'invalid_hat_authority')
         require(type(antenna_confirmed) is bool, 'invalid_antenna_confirmation')
@@ -85,6 +88,7 @@ class HATWorker:
         self.radio = self._driver_type(transport, monotonic=native_clock)
         self.host_timing = timing
         self.radio.host_timing = self.host_timing
+        self.radio.receive_reasons = self._receive_reasons
         self.lease_deadline = min(authority_deadline, native_clock() + profile.lease_ms / 1000)
         original_end = min(authority_deadline, self.lease_deadline)
         pid, thread = os.getpid(), threading.get_ident()
@@ -286,9 +290,22 @@ class HATWorker:
             transport.sleep(min(.00025, remaining))
             self._live()
 
+    def receive_reason_snapshot(self):
+        return None if self._receive_reasons is None else self._receive_reasons.snapshot()
+
     def receive(self, timeout=0.0):
         require(type(timeout) in (int, float) and 0 <= timeout <= 0.1, 'invalid_receive_timeout')
         owned = self._dispatch
+        reasons = self._receive_reasons
+        def rearm():
+            if reasons is not None:
+                reasons.record('rearm_attempt')
+            try:
+                radio.start_receive(authority_deadline=owned())
+            except BaseException:
+                if reasons is not None:
+                    reasons.record('rearm_failure')
+                raise
         try:
             owned()
             radio, transport = self.radio, self.io
@@ -296,7 +313,7 @@ class HATWorker:
             until = min(now + timeout, owned())
             while True:
                 if not radio.receiving and not radio.receive_pending:
-                    radio.start_receive(authority_deadline=owned())
+                    rearm()
                     # Configuration runs transport operations; recheck before poll.
                     self._live()
                 # Already-listening polls follow the fresh entry check directly.
@@ -309,7 +326,7 @@ class HATWorker:
                     # burst packet can arrive during the caller's decrypt,
                     # flow and credit processing. Keep the original finite
                     # deadline and fresh authority checks around SPI setup.
-                    radio.start_receive(authority_deadline=owned())
+                    rearm()
                     now = self._live()
                     return now, received
                 if not radio.receiving:
@@ -319,7 +336,7 @@ class HATWorker:
                     # The original finite lease and fresh permission still
                     # bound both the SPI operation and the returned state.
                     self._live()
-                    radio.start_receive(authority_deadline=owned())
+                    rearm()
                     self._live()
                 now = self._clock()
                 require(type(now) in (int, float) and math.isfinite(now)
@@ -329,6 +346,8 @@ class HATWorker:
                 transport.sleep(0.001)
                 self._live()
         except BaseException:
+            if reasons is not None:
+                reasons.record('receive_failure')
             self.fenced = True
             try:
                 owned(contain=True)
