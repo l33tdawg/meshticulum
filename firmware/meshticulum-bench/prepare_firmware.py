@@ -20,6 +20,13 @@ import urllib.request
 HERE = Path(__file__).resolve().parent
 TARGETS = {'mtbench_heltec_v4': ('Heltec_lora32_v4', 1, 10),
            'mtbench_xiao_s3_wio': ('Xiao_S3_WIO', 2, 22)}
+
+ESP32_BULK_PATCH = dict(path='radiolib-esp32-bulk.patch',
+    target='src/hal/Arduino/ArduinoHal.cpp',
+    original_sha256='018c2555fd5f039e1b9159eded9c18bcdce19f72cadd6a929842d55d111160d1',
+    patched_sha256='1653532d49c1a9a7be820471fac1266547e9134c396cc32f767c2348c4007b4a',
+    patch_sha256='453ec62bd61a68555eee9d57d482645cfb46cdb706122375988299092a199587')
+
 DISABLED = ('ENABLE_ADVERT_ON_BOOT', 'ENABLE_PRIVATE_KEY_IMPORT', 'ENABLE_PRIVATE_KEY_EXPORT',
     'ENV_INCLUDE_GPS', 'ENV_INCLUDE_AHTX0', 'ENV_INCLUDE_BME280', 'ENV_INCLUDE_BMP280',
     'ENV_INCLUDE_SHTC3', 'ENV_INCLUDE_SHT4X', 'ENV_INCLUDE_LPS22HB', 'ENV_INCLUDE_INA3221',
@@ -103,21 +110,24 @@ def tree(directory):
             and path.name not in ('.piopm', 'appstate.json') and path.suffix not in ('.pyc', '.pyo')}
 
 
-def build_options(native_profile, heltec_spi_hz=None, *, rx_header_preserve=False):
+def build_options(native_profile, heltec_spi_hz=None, *, rx_header_preserve=False, esp32_bulk_spi=False):
     require(type(native_profile) is bool, 'invalid_native_profile_option')
     require(heltec_spi_hz is None or type(heltec_spi_hz) is int
             and heltec_spi_hz in (2000000, 8000000), 'invalid_heltec_spi_option')
     require(type(rx_header_preserve) is bool, 'invalid_rx_header_preserve_option')
+    require(type(esp32_bulk_spi) is bool, 'invalid_esp32_bulk_spi_option')
     options = dict(native_profile=native_profile)
     if heltec_spi_hz is not None:
         options['heltec_spi_hz'] = heltec_spi_hz
     if rx_header_preserve:
         options['rx_header_preserve'] = True
+    if esp32_bulk_spi:
+        options['esp32_bulk_spi'] = True
     return options
 
 
-def native_profile_config(native_profile, *, heltec_spi_hz=None, rx_header_preserve=False):
-    build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve)
+def native_profile_config(native_profile, *, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False):
+    build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi)
     original = ('#pragma once\n#ifdef MTBENCH_NATIVE_PROFILE\n'
             '#error "native profiling is pinned by the prepared application"\n#endif\n'
             f'#define MTBENCH_NATIVE_PROFILE {int(native_profile)}\n')
@@ -146,13 +156,33 @@ def native_profile_config(native_profile, *, heltec_spi_hz=None, rx_header_prese
             '#error "RX header configuration must come from the pinned recipe"\n#endif\n'
             '#define MTBENCH_RX_HEADER_PRESERVE_CONFIGURED 1\n'
             '#define MTBENCH_RX_HEADER_PRESERVE 1\n')
+    if esp32_bulk_spi:
+        require(sha(HERE / ESP32_BULK_PATCH['path']) == ESP32_BULK_PATCH['patch_sha256'],
+                'esp32_bulk_patch_source_mismatch')
+        original += ('#ifdef MTBENCH_ESP32_BULK_SPI\n'
+            '#error "ESP32 bulk SPI is pinned by the prepared application"\n#endif\n'
+            '#ifdef MTBENCH_ESP32_BULK_PATCH_SHA256\n'
+            '#error "ESP32 bulk patch identity is pinned"\n#endif\n'
+            '#if !defined(ARDUINO_ARCH_ESP32)\n#error "bulk SPI requires ESP32"\n#endif\n'
+            '#if defined(HELTEC_LORA_V4) && defined(SEEED_XIAO_S3)\n'
+            '#error "contradictory bulk SPI targets"\n'
+            '#elif defined(HELTEC_LORA_V4)\n'
+            '#if !defined(MESHTICULUM_BOARD_ID) || MESHTICULUM_BOARD_ID != 1\n'
+            '#error "Heltec bulk SPI requires board ID 1"\n#endif\n'
+            '#define MTBENCH_ESP32_BULK_SPI 1\n'
+            '#elif defined(SEEED_XIAO_S3)\n'
+            '#if !defined(MESHTICULUM_BOARD_ID) || MESHTICULUM_BOARD_ID != 2\n'
+            '#error "XIAO baseline requires board ID 2"\n#endif\n'
+            '#define MTBENCH_ESP32_BULK_SPI 0\n'
+            '#else\n#error "unreviewed bulk SPI target"\n#endif\n'
+            '#define MTBENCH_ESP32_BULK_PATCH_SHA256 "' + ESP32_BULK_PATCH['patch_sha256'] + '"\n')
     return original
 
 
-def prepare_application(app, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False):
+def prepare_application(app, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False):
     """Copy exact generic app inputs and bind the build option into its identity."""
     header = native_profile_config(native_profile, heltec_spi_hz=heltec_spi_hz,
-                                   rx_header_preserve=rx_header_preserve)
+                                   rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi)
     app = Path(app)
     app.mkdir()
     for name in ('main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
@@ -167,13 +197,24 @@ def prepare_application(app, *, native_profile=False, heltec_spi_hz=None, rx_hea
     return application, identity
 
 
-def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False):
-    options = build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve)
+def apply_esp32_bulk_patch(vendor):
+    patch=ESP32_BULK_PATCH
+    require(sha(HERE / patch['path']) == patch['patch_sha256'], 'esp32_bulk_patch_source_mismatch')
+    target=Path(vendor)/patch['target']
+    require(sha(target) == patch['original_sha256'], 'wrong_esp32_bulk_patch_base')
+    subprocess.run(['/usr/bin/patch','-p1','-F0','-i',str(HERE/patch['path'])],cwd=vendor,check=True)
+    require(sha(target) == patch['patched_sha256'], 'wrong_esp32_bulk_patch_result')
+
+
+def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=None, rx_header_preserve=False, esp32_bulk_spi=False):
+    options = build_options(native_profile, heltec_spi_hz, rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi)
     record = lock()
     require(platform.system() == 'Darwin' and platform.machine() == 'arm64', 'recipe_requires_darwin_arm64')
     archives = {row['id']: check_archive(archive_directory, row) for row in record['inputs']}
     patch = record['framework_patch']
     require(sha(HERE / patch['path']) == patch['patch_sha256'], 'framework_patch_source_mismatch')
+    if esp32_bulk_spi:
+        require(sha(HERE / ESP32_BULK_PATCH['path']) == ESP32_BULK_PATCH['patch_sha256'], 'esp32_bulk_patch_source_mismatch')
     output = Path(output).resolve()
     require(not output.exists(), 'firmware_output_already_exists')
     output.mkdir(parents=True)
@@ -189,6 +230,8 @@ def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=No
             location = output / 'packages' / row['id']
         extract(archives[row['id']], location, row['strip_prefix'])
         locations[row['id']] = location
+    if esp32_bulk_spi:
+        apply_esp32_bulk_patch(locations['radiolib'])
     framework = locations['framework']
     license = record['framework_license']
     require(sha(HERE / license['path']) == license['sha256'], 'framework_license_drift')
@@ -217,7 +260,7 @@ def prepare(archive_directory, output, *, native_profile=False, heltec_spi_hz=No
     app = project / 'examples/meshticulum_bench'
     application, identity = prepare_application(app, native_profile=native_profile,
                                                 heltec_spi_hz=heltec_spi_hz,
-                                                rx_header_preserve=rx_header_preserve)
+                                                rx_header_preserve=rx_header_preserve, esp32_bulk_spi=esp32_bulk_spi)
     config = ['[platformio]', 'core_dir = ' + str(core), '']
     for target, (parent, board, power) in TARGETS.items():
         config += [f'[env:{target}]', f'extends = {parent}', 'platform = symlink://' + str(locations['platform']),
@@ -263,12 +306,13 @@ def build(output, python, targets):
     options = manifest.get('build_options')
     require(type(options) is dict
             and 'native_profile' in options
-            and set(options) <= {'native_profile', 'heltec_spi_hz', 'rx_header_preserve'}
+            and set(options) <= {'native_profile', 'heltec_spi_hz', 'rx_header_preserve', 'esp32_bulk_spi'}
             and type(options['native_profile']) is bool
             and ('heltec_spi_hz' not in options or type(options['heltec_spi_hz']) is int
                  and options['heltec_spi_hz'] in (2000000, 8000000))
             and ('rx_header_preserve' not in options
-                 or type(options['rx_header_preserve']) is bool and options['rx_header_preserve'] is True),
+                 or type(options['rx_header_preserve']) is bool and options['rx_header_preserve'] is True)
+            and ('esp32_bulk_spi' not in options or options['esp32_bulk_spi'] is True),
             'firmware_build_options_mismatch')
     app = output / 'project/examples/meshticulum_bench'
     application = tree(app)
@@ -276,11 +320,14 @@ def build(output, python, targets):
             and (app / 'native_profile_config.hpp').read_text()
                 == native_profile_config(options['native_profile'],
                                          heltec_spi_hz=options.get('heltec_spi_hz'),
-                                         rx_header_preserve=options.get('rx_header_preserve', False))
+                                         rx_header_preserve=options.get('rx_header_preserve', False),
+                                         esp32_bulk_spi=options.get('esp32_bulk_spi', False))
             and manifest.get('identity') == 'mtb1-' + hashlib.sha256(
                 json.dumps(application, sort_keys=True).encode()).hexdigest()[:10],
             'firmware_application_identity_mismatch')
-    if 'heltec_spi_hz' in options or 'rx_header_preserve' in options:
+    if 'esp32_bulk_spi' in options:
+        require(sha(output / 'vendor/radiolib' / ESP32_BULK_PATCH['target']) == ESP32_BULK_PATCH['patched_sha256'], 'prepared_esp32_bulk_patch_mismatch')
+    if 'heltec_spi_hz' in options or 'rx_header_preserve' in options or 'esp32_bulk_spi' in options:
         config = configparser.ConfigParser(interpolation=None)
         try:
             config.read(output / 'project/platformio.local.ini')
@@ -290,7 +337,7 @@ def build(output, python, targets):
                     .count(expected_include) == 1 for target in TARGETS)
         except configparser.Error:
             forced = False
-        require(forced, 'firmware_rx_header_forced_include_missing'
+        require(forced, 'firmware_bulk_spi_forced_include_missing' if 'esp32_bulk_spi' in options else 'firmware_rx_header_forced_include_missing'
                 if 'rx_header_preserve' in options else 'firmware_spi_forced_include_missing')
     version = subprocess.check_output([str(python), '-I', '-c',
         'import importlib.metadata; print(importlib.metadata.version("platformio"))'], text=True).strip()
@@ -334,6 +381,8 @@ def main():
                       help='explicit Heltec-only SPI experiment; omission keeps the locked 2 MHz default')
     prep.add_argument('--rx-header-preserve', action='store_true',
                       help='opt in to conservative continuous-LoRa header IRQ preservation')
+    prep.add_argument('--esp32-bulk-spi', action='store_true',
+                      help='opt in to pinned ESP32 Heltec bulk SPI; XIAO keeps byte transfers')
     run = commands.add_parser('build')
     run.add_argument('--output-dir', required=True, type=Path)
     run.add_argument('--pio-python', required=True, type=Path)
@@ -344,7 +393,8 @@ def main():
     elif args.action == 'prepare':
         result = prepare(args.archive_dir, args.output_dir, native_profile=args.native_profile,
                          heltec_spi_hz=args.heltec_spi_hz,
-                         rx_header_preserve=args.rx_header_preserve)
+                         rx_header_preserve=args.rx_header_preserve,
+                         **({'esp32_bulk_spi': True} if args.esp32_bulk_spi else {}))
     else:
         result = build(args.output_dir, args.pio_python, args.target or list(TARGETS))
     print(json.dumps(result, sort_keys=True))
