@@ -8,9 +8,11 @@ performance, field range and broader qualification remain unproven.
 
 Alpha.5 adds opt-in authenticated DATA end-of-turn markers, bounded train32
 and larger-file bench modes, checked HAT receive rearm, and precise handling
-of proven host-budget refusal. Default paths and frozen reliable-flow bytes
-remain unchanged; explicit capabilities, original deadlines, replay decisions,
-owner checks and paid debt still govern experimental paths.
+of proven host-budget refusal. Experimental capabilities remain opt-in, and frozen reliable-flow bytes
+remain unchanged. Existing burst paths now classify proven pre-admission
+budget exhaustion explicitly and bound cleanup of already admitted work.
+Explicit capabilities, original deadlines, replay decisions, owner checks
+and paid debt still govern experimental paths.
 
 One 65,536-byte LoRa file using measured source
 `794ea7111aa51aa9c91867bc6f28b610f3ae79af` completed in **17.439448 seconds**
