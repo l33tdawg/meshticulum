@@ -9,7 +9,7 @@ import hashlib
 import json
 import math
 
-from .attempts import AttemptError
+from .attempts import AttemptError, AttemptBudgetExhausted
 from .burst_protocol import (CAPABILITY, CANCEL, TOKEN, INTER_PACKET_RX_US,
     REVERSE_LISTEN_US, MIN_MCU_RATE_PPM, CLOCK_MARGIN_US, BurstEvent, BurstStatus,
     ClockSnapshot, OpenBinding, ack_frame, check_capability, data_frame,
@@ -378,6 +378,7 @@ class BurstSerialWorker(SerialWorker):
         return self._queue_data(packet, logical_id=logical_id, owner_frame_id=owner_frame_id)
 
     def _queue_data(self, packet, *, logical_id, owner_frame_id=None, turn_end=None):
+        self._known_budget_refusal = None
         self._capability()
         require(type(packet) is bytes and 1 <= len(packet) <= 255, 'invalid_transmit')
         require(type(logical_id) is bytes and len(logical_id) == 32 and any(logical_id),
@@ -411,7 +412,13 @@ class BurstSerialWorker(SerialWorker):
         reservation = math.ceil(estimate * 1.10) + 1000
         metadata = self._metadata(logical_id, owner_frame_id, estimate)
         with phase(self.host_timing, Phase.QUEUE_RESERVE):
-            request = self.journal.reserve(packet, reservation, queue_metadata=metadata)
+            try:
+                request = self.journal.reserve(packet, reservation, queue_metadata=metadata)
+            except AttemptBudgetExhausted as error:
+                # Capture only the exact failed reservation, before any pending
+                # record or physical write. Never synthesize this after admission.
+                self._known_budget_refusal = (error, self.journal, packet)
+                raise
         descriptor = PacketDescriptor(request, template.size, template.digest,
                                       template.estimated_airtime_us, template.deadline_us)
         record = dict(packet=packet, descriptor=descriptor, logical_id=logical_id,

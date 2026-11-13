@@ -86,7 +86,7 @@ class RadioChannel(Channel):
 @pytest.fixture
 def composition(tmp_path):
     opened = []
-    def make(data=b'x' * 100, *, burst=True, train_depth=4, flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False, train12=False, train24=False, train32=False, turn_end=False, preamble=12):
+    def make(data=b'x' * 100, *, burst=True, train_depth=4, flow_window=None, repair_fill=False, terminal_retry=False, scalar_fill_pair=False, repeat_retry=False, repair_train=False, train12=False, train24=False, train32=False, turn_end=False, preamble=12, host_attempts=None):
         clock = Clock()
         directory = tmp_path / str(len(opened))
         directory.mkdir(mode=0o700)
@@ -125,7 +125,7 @@ def composition(tmp_path):
             identity = worker.discover(expected_board_id=1, expected_version=VERSION)
             journal = AttemptJournal(path / 'attempts.db',
                 binding=journal_binding(authority.grant.digest, identity, profile),
-                max_attempts=profile.max_boot_attempts,
+                max_attempts=host_attempts if index == 0 and host_attempts is not None else profile.max_boot_attempts,
                 max_airtime_us=profile.max_boot_estimated_airtime_us,
                 create=True, request_clock=lambda: clock()[0])
             worker.arm(journal=journal, profile=profile, context_digest=authority.grant.digest,

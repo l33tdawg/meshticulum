@@ -28,6 +28,7 @@ from .host_timing import Phase, check_timing, phase, timed
 from .gfsk_profile import radio_airtime_us,radio_is_fast,radio_is_sf5
 from .file_capability import admitted_object_limit, admitted_frame_limit
 from .turn_end import admitted as turn_end_admitted
+from .attempts import AttemptBudgetExhausted
 from .burst_protocol import policy_depth, policy_flow_window, policy_repair_fill, policy_terminal_retry, policy_scalar_fill_pair, policy_repeat_retry, policy_repair_train, policy_train_frames
 
 
@@ -101,6 +102,7 @@ class BenchFlow:
         self.events = deque(maxlen=512)
         self.counts = Counter()
         self.dispatch_budget_failure = None
+        self.host_attempt_budget_failure = None
         self.received = bytearray()
         self.last_activity_us = self.clock()[1]
         flow, port = _flow_modules()
@@ -260,6 +262,8 @@ class BenchFlow:
                                          self.ledger.epoch), now)
 
     def _send(self, frame):
+        if self.host_attempt_budget_failure is not None:
+            return CommitOutcome.REFUSED_CARRIER
         if self._turn_end_enabled and (self._turn_end_dispatch is not None
                 or self.sends and self.worker._turn_end_seal is not None):
             if self.sends:
@@ -388,6 +392,18 @@ class BenchFlow:
                   self.worker.queue_data(packet, logical_id=logical_id,
                                        owner_frame_id=frame.request.frame_id)
                   if self.data_burst and kind is FrameKind.DATA else self.worker.transmit(packet))
+        except AttemptBudgetExhausted as error:
+            proof = getattr(self.worker, '_known_budget_refusal', None)
+            if (not self.data_burst or kind is not FrameKind.DATA or type(proof) is not tuple
+                    or len(proof) != 3 or proof[0] is not error
+                    or proof[1] is not self.journal or proof[2] is not packet):
+                raise
+            # The journal rejected this candidate before a request/debt/DATA write.
+            # Existing pending attempts remain charged and require normal cleanup.
+            # Do not let the scheduler turn this proven refusal into UNKNOWN.
+            self.host_attempt_budget_failure = dict(error.details)
+            self.counts['host_attempt_budget_refused'] += 1
+            return CommitOutcome.REFUSED_CARRIER
         finally:
             self._turn_end_dispatch = None
         worker_finished_us = self.clock()[1]
@@ -970,6 +986,7 @@ class BenchFlow:
         queued_before, fresh_before, fast_before_step = ((self.counts['tx_QUEUED'],
             self.flow._next_seq, self.flow.fast_retransmits) if self._scalar_fill_pair else (None, None, None))
         require(self.dispatch_budget_failure is None, 'bench_own_airtime_budget_exhausted')
+        require(self.host_attempt_budget_failure is None, 'bench_host_attempt_budget_exhausted')
         require(not self.closed and self.authority.live(), 'bench_authority_not_live')
         self._poll_physical()
         self.update_counter()
@@ -1177,6 +1194,7 @@ class BenchFlow:
         return self._completion_ready()
 
     def _check_flow(self):
+        require(self.host_attempt_budget_failure is None, 'bench_host_attempt_budget_exhausted')
         if self.flow.failure:
             raise WireError('reliable_flow_' + self.flow.failure)
         if self.worker.fenced:
@@ -1256,6 +1274,8 @@ class BenchFlow:
             value['timing_policy']['selective_repair_train'] = True
         if self.dispatch_budget_failure is not None:
             value['dispatch_budget_failure'] = self.dispatch_budget_failure
+        if self.host_attempt_budget_failure is not None:
+            value['host_attempt_budget_failure'] = dict(self.host_attempt_budget_failure)
         if self.data_burst:
             value['physical_queue'] = dict(pending=len(self._physical_data),
                 worker_pending=len(self.worker.pending_physical),
