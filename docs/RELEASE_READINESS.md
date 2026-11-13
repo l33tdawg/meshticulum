@@ -23,17 +23,22 @@ retained, including across separately authorized recovery.
 
 [Benchmark and retained failure](../benchmarks/2026-11-13-alpha5-file64/README.md).
 
-The Python package is `1.0.0a5`, targeting `v1.0.0-alpha.5`. Release artifact
-validation and publication are pending the publisher’s final checks. Publication and release-artifact checks are
-recorded separately from the measured SDK commit above. A matching runtime
-inventory does not constitute another RF run. The publisher owns the final
-release manifest, checksums and publication record.
+Python package **`1.0.0a5`** was published as the immutable
+[`v1.0.0-alpha.5` prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.5)
+on **13 November 2026 at 13:05:02 UTC**, targeting release source
+`7a9e1ddc6b7f33ae9244910970a124133b062b2a`. The
+[publication record](../provenance/ALPHA5_RELEASE.json) retains the 12 downloaded
+asset hashes, validation and CI links, and the successful Pages deployment.
+The release manifest and checksums identify the wheel, normalized source
+archive and supporting records. Earlier releases remain unchanged.
 
 The release checkout passed 4,700 standalone tests (37 skipped) in the
-installed-package CI environment, and the frozen-flow verifier passed. The
-version metadata and test import configuration differ from the measured
-checkout; the transport runtime retains its measured source identity. Final
-wheel/source-archive validation remains a separate release step.
+installed-package CI environment, and the frozen-flow verifier passed.
+Release artifact validation is distinct from the physical measurement on
+`794ea7111aa51aa9c91867bc6f28b610f3ae79af`: version metadata, documentation
+and test import configuration changed for release, while the measured
+transport runtime was retained. Rebuilding and verifying the release wheel
+does not constitute another RF run.
 
 ## 1.0.0-alpha.4 — 2026-10-30
 

@@ -6,7 +6,7 @@
 
 A [SAGE Foundation](https://sage-foundation.net/) project, created and maintained by [Dhillon Andrew Kannabhiran (@l33tdawg)](https://github.com/l33tdawg). Part of the broader [SAGE project](https://github.com/l33tdawg/sage/).
 
-**Experimental `1.0.0-alpha.5` (`1.0.0a5`).** See [release status](docs/RELEASE_READINESS.md) for artifact validation and the exact measured scope. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Roadmap](docs/ROADMAP.md).
+**Published experimental [1.0.0-alpha.5](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.5) (`1.0.0a5`).** The [publication record](provenance/ALPHA5_RELEASE.json) binds the downloaded release assets and validation. See [release status](docs/RELEASE_READINESS.md) for artifact validation and the exact measured scope. [Project website](https://l33tdawg.github.io/meshticulum/) · [Documentation](docs/index.md) · [Roadmap](docs/ROADMAP.md).
 
 Alpha.5 adds opt-in authenticated DATA end-of-turn markers, bounded train32
 and larger-file bench modes, checked HAT receive rearm, and precise handling

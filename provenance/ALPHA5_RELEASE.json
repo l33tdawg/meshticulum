@@ -1,0 +1,89 @@
+{
+  "schema": "meshticulum.alpha5-publication-record.v1",
+  "published": true,
+  "experimental_prerelease": true,
+  "immutable": true,
+  "tag": "v1.0.0-alpha.5",
+  "source_commit": "7a9e1ddc6b7f33ae9244910970a124133b062b2a",
+  "measured_sdk_commit": "794ea7111aa51aa9c91867bc6f28b610f3ae79af",
+  "release_url": "https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.5",
+  "published_at": "2026-11-13T13:05:02Z",
+  "package_version": "1.0.0a5",
+  "verified_download_count": 12,
+  "assets": {
+    "FIRMWARE_SOURCE_BUILD.md": {
+      "bytes": 2255,
+      "sha256": "56b16a6d2521133281b388fac7b6d61f7c78e03ca1f5a8d62cab6ad7f24fce50",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/FIRMWARE_SOURCE_BUILD.md"
+    },
+    "LICENSE": {
+      "bytes": 10778,
+      "sha256": "ba61a1c596f3e771e379455f68124f793985196b84be0a6a41d2c489050facef",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/LICENSE"
+    },
+    "MCU_TRAIN32_CPU160_BUILD.json": {
+      "bytes": 1288,
+      "sha256": "78f241cba0f22fe4f5eb34b532bb28d30b5a7d0afb2fd527837dcdbda6a6fdc3",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/MCU_TRAIN32_CPU160_BUILD.json"
+    },
+    "MCU_TRAIN32_CPU160_SOURCE.json": {
+      "bytes": 2911265,
+      "sha256": "85d8d9f157a8289535f086b1314a5d0a9c2902edda5ec9788c535bc25222a1d2",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/MCU_TRAIN32_CPU160_SOURCE.json"
+    },
+    "meshticulum-1.0.0a5-py3-none-any.whl": {
+      "bytes": 334531,
+      "sha256": "8e0385df6bd38e8566f5bbfe3d5b5e4c8c6640fbe4abf4f02bef88ad7699324c",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/meshticulum-1.0.0a5-py3-none-any.whl"
+    },
+    "meshticulum-1.0.0a5.tar.gz": {
+      "bytes": 1510675,
+      "sha256": "f9cfd17bebf4176bfb550d0ad2704214a398f1944b5baf85585cc0962e1bd4b9",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/meshticulum-1.0.0a5.tar.gz"
+    },
+    "NOTICE": {
+      "bytes": 974,
+      "sha256": "387c1c228cbaf7a40b6729ae692603402387ac7308810709524bbde44d86e26c",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/NOTICE"
+    },
+    "PUBLIC_ALPHA5_QUALIFICATION.json": {
+      "bytes": 3913,
+      "sha256": "e9373f1f95ddd950357ca90d5d1fb5c9d672144071b9b043c0452ad10341b4e1",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/PUBLIC_ALPHA5_QUALIFICATION.json"
+    },
+    "RELEASE_MANIFEST.json": {
+      "bytes": 1927,
+      "sha256": "93d1a2d50ec763997bec44c37803fb22681e3f76533efd2cfa928770a5092d04",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/RELEASE_MANIFEST.json"
+    },
+    "RELEASE_NOTES.md": {
+      "bytes": 1998,
+      "sha256": "ef0d3a4d5a5c76bb5298bc63f91cce289b25ed6ad9ad932e9c275a57d5ee3308",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/RELEASE_NOTES.md"
+    },
+    "RELEASE_VALIDATION.json": {
+      "bytes": 3685,
+      "sha256": "7bd5592d2b9068736b85bbd53665f087728a8c709c0c3d5153b75a6bce3db326",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/RELEASE_VALIDATION.json"
+    },
+    "SHA256SUMS": {
+      "bytes": 987,
+      "sha256": "b39c4c5b633a21b7528305bbcb80a85d210af665413502ec6eb7e872bb4b2e1f",
+      "url": "https://github.com/l33tdawg/meshticulum/releases/download/v1.0.0-alpha.5/SHA256SUMS"
+    }
+  },
+  "anonymous_checksum_download_verified": true,
+  "source_ci": [
+    "https://github.com/l33tdawg/meshticulum/actions/runs/43429689001",
+    "https://github.com/l33tdawg/meshticulum/actions/runs/43429848584"
+  ],
+  "release_pr": "https://github.com/l33tdawg/meshticulum/pull/84",
+  "merged_commit": "a3ff10f92a4379c346f4b021735b81717febca7f",
+  "pages_deployment": "https://github.com/l33tdawg/meshticulum/actions/runs/43430592020",
+  "canonical_useful_Bps": 3757.917108385541,
+  "queue_only_useful_Bps": 3920.4268680607306,
+  "measurement_samples": 1,
+  "goal_4000_Bps_met": false,
+  "firmware_binary_included": false,
+  "prior_paid_debt_refunded": false
+}

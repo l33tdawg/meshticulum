@@ -6,7 +6,7 @@ The [public radio examples](../examples/README.md) have two fresh five-part 100 
 
 ## Install the alpha or checkout
 
-Use Python **3.11 or later**. Package version **`1.0.0a5`** targets the [`v1.0.0-alpha.5` GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.5). Download the wheel from that release page and install the local file, or use the source-checkout commands below. [Release status](RELEASE_READINESS.md) distinguishes the artifact checks from hardware measurements.
+Use Python **3.11 or later**. Package version **`1.0.0a5`** is available from the [`v1.0.0-alpha.5` GitHub prerelease](https://github.com/l33tdawg/meshticulum/releases/tag/v1.0.0-alpha.5). Download the wheel from that release page and install the local file, or use the source-checkout commands below. [Release status](RELEASE_READINESS.md) distinguishes the artifact checks from hardware measurements.
 
 Verify the downloaded wheel against the release's `SHA256SUMS` before installation. The accompanying manifest records the source commit and each asset hash. The release also includes the normalized source archive, firmware source-build guide and validation records. Prebuilt firmware is not included.
 
