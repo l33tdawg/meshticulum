@@ -24,8 +24,8 @@ TARGETS = {'mtbench_heltec_v4': ('Heltec_lora32_v4', 1, 10),
 ESP32_BULK_PATCH = dict(path='radiolib-esp32-bulk.patch',
     target='src/hal/Arduino/ArduinoHal.cpp',
     original_sha256='018c2555fd5f039e1b9159eded9c18bcdce19f72cadd6a929842d55d111160d1',
-    patched_sha256='1653532d49c1a9a7be820471fac1266547e9134c396cc32f767c2348c4007b4a',
-    patch_sha256='453ec62bd61a68555eee9d57d482645cfb46cdb706122375988299092a199587')
+    patched_sha256='2d93a05fbf38732b9ce4c2598dfb57727388f1b7ed7a4b6ea573d6d1f79a5fb9',
+    patch_sha256='c64d835bc3c2c0d7a7f0069fa82607b991457798295964e8b3f3166342e1ef3f')
 
 DISABLED = ('ENABLE_ADVERT_ON_BOOT', 'ENABLE_PRIVATE_KEY_IMPORT', 'ENABLE_PRIVATE_KEY_EXPORT',
     'ENV_INCLUDE_GPS', 'ENV_INCLUDE_AHTX0', 'ENV_INCLUDE_BME280', 'ENV_INCLUDE_BMP280',

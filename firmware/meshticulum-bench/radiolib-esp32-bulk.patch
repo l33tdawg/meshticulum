@@ -17,7 +17,7 @@
  
  #if defined(RADIOLIB_BUILD_ARDUINO)
  
-@@ -104,6 +116,33 @@
+@@ -104,6 +116,35 @@
  }
  
  void ArduinoHal::spiTransfer(uint8_t* out, size_t len, uint8_t* in) {
@@ -33,11 +33,13 @@
 +    // scratch avoids unaligned access and caller tail overread. Never widen
 +    // the wire length. Module still owns the original CS/transaction and
 +    // all command status, BUSY, RX priority and authority checks.
-+    alignas(uint32_t) uint8_t tx[64];
-+    alignas(uint32_t) uint8_t rx[64];
++    uint32_t txWords[16];
++    uint32_t rxWords[16];
++    auto* tx = reinterpret_cast<uint8_t*>(txWords);
++    auto* rx = reinterpret_cast<uint8_t*>(rxWords);
 +    while(len) {
-+      const size_t count = len < sizeof(tx) ? len : sizeof(tx);
-+      std::memset(tx, 0, sizeof(tx));
++      const size_t count = len < sizeof(txWords) ? len : sizeof(txWords);
++      std::memset(txWords, 0, sizeof(txWords));
 +      std::memcpy(tx, out, count);
 +      spi->transferBytes(tx, rx, static_cast<uint32_t>(count));
 +      std::memcpy(in, rx, count);
