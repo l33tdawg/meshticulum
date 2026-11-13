@@ -39,5 +39,6 @@ namespaces = false
 "meshticulum.flow" = ["README.md"]
 
 [tool.pytest.ini_options]
+pythonpath = ["examples"]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
