@@ -209,7 +209,10 @@ def test_actual_public_run_cleanup_and_preopen_gate(tmp_path,monkeypatch,fault):
     monkeypatch.setattr(radio_file,'RunAuthority',lambda *args,**kwargs:authority)
     monkeypatch.setattr(radio_file,'host_boot',lambda:'model');monkeypatch.setattr(radio_file,'clock',lambda:(1000000,100000000))
     monkeypatch.setattr(radio_file,'SessionStore',lambda *args,**kwargs:SimpleNamespace(close=lambda:calls.append('store.close'),retire=lambda:calls.append('store.retire')))
-    monkeypatch.setattr(radio_file,'SessionCipher',lambda *args:object())
+    def cipher_fixture(*args, turn_end=False):
+        assert turn_end is False
+        return object()
+    monkeypatch.setattr(radio_file,'SessionCipher',cipher_fixture)
     args=SimpleNamespace(boot_continuation=fault!='missing_optin',interface='usb',device='/never-open',usb_serial=i and a.approval.record.value()['baseline']['usb_serial'],grant_directory=tmp_path,unit='unit-a',chunk=0)
     window=SimpleNamespace(current=lambda:True,deadline_us=180000000,pin_mcu=lambda identity:None,check=lambda:None)
     if fault is None:assert radio_file.run_object(args,raw,a,i.version,None,window,lambda *args:Session())['sender_peer_receipt'] is True
