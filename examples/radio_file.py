@@ -515,10 +515,16 @@ def continuation_native_owner(owner, transport, record):
             and owner.transport is transport and owner.usb_serial == expected
             and owner.by_id is not None,'continuation_requires_held_usb_owner')
     by_id=owner.by_id;current=owner.current;fds=owner.fds
+    require(type(fds) is tuple and len(fds) == 2
+            and tuple(row[0] for row in fds) == ('fd', 'lock_fd')
+            and all(type(row[1]) is int and row[1] >= 0 for row in fds),
+            'continuation_usb_descriptors_invalid')
     def binding():
         return (type(owner) is HeldHardware and owner.transport is transport
                 and owner.usb_serial == expected and owner.by_id == by_id and owner.fds is fds
-                and owner.current.__func__ is current.__func__)
+                and owner.current.__func__ is current.__func__
+                and all(type(getattr(transport,name,None)) is int
+                        and getattr(transport,name) == fd for name,fd,_ in fds))
     def check():return binding() and current() is True and binding()
     require(check(),'continuation_usb_owner_changed')
     return ContinuationOwner(check,binding)

@@ -187,10 +187,10 @@ def test_actual_public_run_cleanup_and_preopen_gate(tmp_path,monkeypatch,fault):
         grant=SimpleNamespace(digest=b'x'*32),local_peer=object(),application_live=lambda:True,
         deadlines=SimpleNamespace(application_deadline_monotonic=180.),close=lambda:calls.append('authority.close'))
     class Transport:
-        def __init__(self,*args,**kwargs):calls.append('transport.open')
+        def __init__(self,*args,**kwargs):calls.append('transport.open');self.fd=10;self.lock_fd=11
         def close(self):calls.append('transport.close')
     class Owner:
-        def __init__(self,transport,*,by_id,usb_serial,**kwargs):self.transport=transport;self.by_id=by_id;self.usb_serial=usb_serial;self.fds=()
+        def __init__(self,transport,*,by_id,usb_serial,**kwargs):self.transport=transport;self.by_id=by_id;self.usb_serial=usb_serial;self.fds=(('fd',transport.fd,None),('lock_fd',transport.lock_fd,None))
         def current(self):return fault!='owner'
         def close(self):calls.append('owner.close')
     class Worker:
@@ -220,3 +220,30 @@ def test_actual_public_run_cleanup_and_preopen_gate(tmp_path,monkeypatch,fault):
         with pytest.raises(BaseExceptionGroup):radio_file.run_object(args,raw,a,i.version,None,window,lambda *args:Session())
     assert 'transport.close' in calls and 'owner.close' in calls and 'authority.close' in calls and 'worker.disarm' in calls
     if fault=='owner':assert 'worker.arm' not in calls
+
+@pytest.mark.parametrize('name',['fd','lock_fd'])
+def test_public_owner_refuses_final_write_clock_descriptor_rebinding(tmp_path,monkeypatch,name):
+    p,a,i,f,_,_=approved();c=Channel(i,f);c.fd=10;c.lock_fd=11
+    monkeypatch.setattr(radio_file,'ExclusiveSerial',Channel)
+    class Owner:
+        def current(self):return True
+    monkeypatch.setattr(radio_file,'HeldHardware',Owner)
+    o=Owner();o.transport=c;o.usb_serial=a.approval.record.value()['baseline']['usb_serial'];o.by_id='/model'
+    o.fds=(('fd',10,None),('lock_fd',11,None))
+    proof=radio_file.continuation_native_owner(o,c,a.approval.record)
+    class Worker(SerialWorker):
+        def _send(self,frame,deadline,*,before_write=None):
+            if frame.type is Message.ARM:c.rebind=True
+            return super()._send(frame,deadline,before_write=before_write)
+    c.rebind=False
+    def clock():
+        if c.rebind:setattr(c,name,99)
+        return c.time
+    c.monotonic=clock
+    w=Worker(c);w.identity=i;profile=RadioProfile(**p['profile']);tmp_path.chmod(0o700)
+    j=AttemptJournal(tmp_path/'journal',binding=journal_binding(b'x'*32,i,profile),max_attempts=358,max_airtime_us=18000000,create=True,request_clock=lambda:100000000)
+    try:
+        with pytest.raises((ValueError,HardwareError)):
+            w.arm(journal=j,profile=profile,context_digest=b'x'*32,authorize=lambda:True,authority_deadline=180.,continuation=a.approval.record,continuation_owner=proof)
+        assert c.rebind and not any(frame.type is Message.ARM for frame in c.writes)
+    finally:j.close()
