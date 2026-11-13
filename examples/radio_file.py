@@ -189,7 +189,10 @@ def firmware_source_identity(source):
                  'burst_adapter.hpp', 'experimental/tx_burst.hpp'},
                 {'main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
                  'burst_adapter.hpp', 'experimental/tx_burst.hpp', 'native_profile.hpp',
-                 'native_profile_config.hpp'})
+                 'native_profile_config.hpp'},
+                {'main.cpp', 'protocol.hpp', 'gfsk_profile.hpp', 'gfsk250_profile.hpp',
+                 'burst_adapter.hpp', 'experimental/tx_burst.hpp', 'native_profile.hpp',
+                 'native_profile_config.hpp', 'burst_wake_hint.hpp'})
             and all(type(value) is str and re.fullmatch('[0-9a-f]{64}', value)
                     for value in source['application'].values())
             and source.get('identity') == 'mtb1-' + sha(json.dumps(
