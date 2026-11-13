@@ -14,8 +14,12 @@ A later step cannot turn the exhausted operation into more retries.
 
 The result proves no DATA submission for the refused candidate. Existing setup,
 CLOCK, release or query commands may already have occurred. Previously admitted
-packets remain charged, even when still pending or subsequently cancelled. Their
-cleanup, cancellation, fencing and physical-result collection are unchanged. A
+packets remain charged, even when still pending or subsequently cancelled. On this known-refusal exit only, cleanup first drains already-admitted work for
+at most2.5seconds, bounded further by the remaining original worker deadline.
+No further DATA is submitted and native deadlines are unchanged. Drain failure
+retains its error, marks ambiguous outcomes through the normal worker path and
+attempts cancellation; a cancellation failure is retained alongside the drain
+error. Other failure cleanup is unchanged. A
 fenced DISARM response can still produce a cleanup error; this change does not
 reinterpret that response as successful closure.
 

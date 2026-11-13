@@ -1295,6 +1295,23 @@ class BenchFlow:
             self.owner.settle_sending()
             try:
                 if self.data_burst:
+                    if (self.host_attempt_budget_failure is not None
+                            and self.worker.pending_physical and not self.worker.fenced):
+                        # Only the next candidate was definitely unsubmitted.
+                        # Collect already-admitted work under its unchanged native
+                        # deadlines before cancelling it unnecessarily. This is
+                        # bounded cleanup, never another DATA admission. A failed
+                        # drain retains the worker's normal poison/cancel path.
+                        try:
+                            remaining = max(0.0, self.worker.deadline - self.worker.channel.monotonic())
+                            self._collect_physical(self.worker.drain_physical(timeout=min(2.5, remaining)))
+                        except BaseException as failure:
+                            try:
+                                self.worker.cancel_pending()
+                            except BaseException as cleanup:
+                                raise BaseExceptionGroup('Known budget drain and containment failed',
+                                                         [failure, cleanup]) from None
+                            raise
                     if self.worker.pending_physical:
                         self.worker.cancel_pending()
                     self._collect_physical(self.worker.drain_physical())

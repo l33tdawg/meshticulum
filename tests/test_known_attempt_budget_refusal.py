@@ -31,6 +31,14 @@ def test_exhaustion_with_two_pending_is_known_refusal_not_unknown(composition, m
     with pytest.raises(WireError, match='^bench_host_attempt_budget_exhausted$'):
         case.sender.step()
     assert case.journals[0].snapshot()['attempts'] == 3
+    original_deadline = case.workers[0]._burst_deadline
+    for pending in case.workers[0].pending_physical:
+        case.channels[0].event(pending, Stage.RF_DONE)
+    case.sender.close()
+    assert case.sender.counts['tx_RF_DONE'] == 3
+    assert not case.workers[0].fenced and not case.workers[0].pending_physical
+    assert case.workers[0]._burst_deadline == original_deadline
+    assert case.journals[0].snapshot()['attempts'] == 3
 
 
 def test_marked_tail_budget_refusal_keeps_seal_and_pending_debt(composition):
@@ -50,8 +58,16 @@ def test_marked_tail_budget_refusal_keeps_seal_and_pending_debt(composition):
     assert not worker.has_capacity and len(worker.pending_physical) == 2
     assert case.journals[0].snapshot()['attempts'] == 3
     assert case.sender.counts['tx_DATA_turn_end'] == 0
-    case.sender.close()
-    assert worker.fenced and not worker.pending_physical
+    from meshticulum.bench.linux_hat import HardwareError
+    deadline = worker._burst_deadline
+    started = case.clock()[1]
+    with pytest.raises(HardwareError, match='burst_drain_deadline'):
+        case.sender.close()
+    assert case.clock()[1] - started <= 3_000_000
+    assert worker.fenced and worker._cancelled and worker._burst_deadline == deadline
+    # Normal containment disarm subsequently drains cancelled physical evidence.
+    worker.disarm()
+    assert not worker.pending_physical
     assert case.journals[0].snapshot()['attempts'] == 3
     assert case.journals[0].snapshot()['fenced']
     assert not case.sender.flow.complete
